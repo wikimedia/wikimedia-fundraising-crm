@@ -59,7 +59,7 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
     return $this->parse_json_log_line($logline);
   }
 
-  protected function regex_for_recon() {
+  protected function regexForFilesToProcess() {
     return '/settlement_detail_report_|payments_accounting_report_/';
   }
 

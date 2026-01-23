@@ -45,8 +45,12 @@ class PaypalAuditProcessor extends BaseAuditProcessor {
     return $this->parse_json_log_line($logline);
   }
 
-  protected function regex_for_recon() {
+  protected function regexForFilesToProcess(): string {
     return '/TRR|STL-/';
+  }
+
+  protected function regexForFilesToIgnore(): string {
+    return '/(DDR-|PPA-|RPP-|WIkimedia_)/';
   }
 
 }

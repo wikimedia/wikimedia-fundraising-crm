@@ -36,7 +36,7 @@ class DlocalAuditProcessor extends BaseAuditProcessor {
     return $this->parse_json_log_line($logline);
   }
 
-  protected function regex_for_recon() {
+  protected function regexForFilesToProcess() {
     return '/_report|Settlement|border_/';
   }
 
@@ -60,6 +60,10 @@ class DlocalAuditProcessor extends BaseAuditProcessor {
     return [
       "payments-dlocal-{$date}",
     ];
+  }
+
+  protected function regexForFilesToIgnore(): string {
+    return '/_Cleared.csv/';
   }
 
 }

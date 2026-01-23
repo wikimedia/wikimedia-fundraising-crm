@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "abf882abf366beb6dc66d6abac16cda2",
+    "content-hash": "08753780a8295c7a0916741441462d37",
     "packages": [
         {
             "name": "adrienrn/php-mimetyper",
@@ -8621,16 +8621,16 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v1.1.1",
+            "version": "v1.1.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "5510b6021761a3631cb5951fd8aa1232b955c3b5"
+                "reference": "53b4e7902bc8e5795004fba2b711bf22c2eb7077"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/5510b6021761a3631cb5951fd8aa1232b955c3b5",
-                "reference": "5510b6021761a3631cb5951fd8aa1232b955c3b5",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/53b4e7902bc8e5795004fba2b711bf22c2eb7077",
+                "reference": "53b4e7902bc8e5795004fba2b711bf22c2eb7077",
                 "shasum": ""
             },
             "require": {
@@ -8644,6 +8644,7 @@
                 "gr4vy/gr4vy-php": "0.27",
                 "php": ">=8.0",
                 "phpmailer/phpmailer": "^6",
+                "phpseclib/phpseclib": "~3",
                 "predis/predis": "^1.1",
                 "psr/cache": "^1.0",
                 "psr/container": "~1.0 || ~2.0",
@@ -8699,6 +8700,18 @@
                 {
                     "name": "Andrew Russell Green",
                     "email": "agreen@wikimedia.org"
+                },
+                {
+                    "name": "Wenjun Fan",
+                    "email": "wfan@wikimedia.org"
+                },
+                {
+                    "name": "Damilare Adedoyin",
+                    "email": "dadedoyin@wikimedia.org"
+                },
+                {
+                    "name": "Eileen McNaughton",
+                    "email": "emcnaughton@wikimedia.org"
                 }
             ],
             "description": "The open source PHP flexible payments library and frontend/backend mediator.",
@@ -8708,9 +8721,9 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.1.1"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.1.1.1"
             },
-            "time": "2026-01-21T00:50:53+00:00"
+            "time": "2026-01-23T02:28:53+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -11286,7 +11299,7 @@
         "ext-mysqli": "*",
         "composer-runtime-api": "~2.0"
     },
-    "platform-dev": {},
+    "platform-dev": [],
     "platform-overrides": {
         "php": "8.2.26"
     },

@@ -87,7 +87,39 @@ abstract class BaseAuditProcessor {
    */
   abstract protected function get_recon_file_sort_key($file);
 
-  abstract protected function regex_for_recon();
+  abstract protected function regexForFilesToProcess();
+
+  /**
+   * @param string $file
+   * @param string $directory
+   *
+   * @return true
+   */
+  protected function moveFile(string $file, string $directory): bool {
+    if (!is_dir($directory)) {
+      if (!mkdir($directory, 0770)) {
+        $message = "Could not make $directory";
+        $this->logError($message, 'FILE_PERMS');
+        return FALSE;
+      }
+    }
+
+    $filename = basename($file);
+    $newFile = $directory . '/' . $filename;
+
+    if (!rename($file, $newFile)) {
+      $message = "Unable to move $file to $newFile";
+
+      $this->logError($message, 'FILE_PERMS');
+      return FALSE;
+    }
+    $this->echo("Moved $file to $newFile");
+    return TRUE;
+  }
+
+  protected function regexForFilesToIgnore(): string {
+    return '';
+  }
 
   /**
    * Check for consistency
@@ -235,6 +267,15 @@ abstract class BaseAuditProcessor {
    */
   protected function getCompletedFilesDirectory(): string {
     return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'completed' . DIRECTORY_SEPARATOR;
+  }
+
+  /**
+   * Returns the configurable path to the completed recon files
+   *
+   * @return string Path to the directory
+   */
+  protected function getIgnoredFilesDirectory(): string {
+    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'ignored' . DIRECTORY_SEPARATOR;
   }
 
   /**
@@ -680,11 +721,14 @@ abstract class BaseAuditProcessor {
         if (substr($file, 0, 1) == '.') {
           continue;
         }
-        if (preg_match($this->regex_for_recon(), $file)) {
+        if (preg_match($this->regexForFilesToProcess(), $file)) {
           // sort the files depending on how each processor handles the file names
           // the last three files in $files_by_sort_key will be the ones looked at
           $sort_key = $this->get_recon_file_sort_key($file);
           $files_by_sort_key[$sort_key][] = $files_directory . '/' . $file;
+        }
+        elseif ($this->regexForFilesToIgnore() && preg_match($this->regexForFilesToIgnore(), $file)) {
+          $this->moveFile($files_directory . '/' . $file, $this->getIgnoredFilesDirectory());
         }
       }
       closedir($handle);
@@ -1216,27 +1260,7 @@ abstract class BaseAuditProcessor {
       // Generally in unit tests we want the files left unmoved.
       return TRUE;
     }
-    $files_directory = $this->getCompletedFilesDirectory();
-    $completed_dir = $files_directory;
-    if (!is_dir($completed_dir)) {
-      if (!mkdir($completed_dir, 0770)) {
-        $message = "Could not make $completed_dir";
-        $this->logError($message, 'FILE_PERMS');
-        return FALSE;
-      }
-    }
-
-    $filename = basename($file);
-    $newfile = $completed_dir . '/' . $filename;
-
-    if (!rename($file, $newfile)) {
-      $message = "Unable to move $file to $newfile";
-
-      $this->logError($message, 'FILE_PERMS');
-      return FALSE;
-    }
-    $this->echo("Moved $file to $newfile");
-    return TRUE;
+    return $this->moveFile($file, $this->getCompletedFilesDirectory());
   }
 
   /**
