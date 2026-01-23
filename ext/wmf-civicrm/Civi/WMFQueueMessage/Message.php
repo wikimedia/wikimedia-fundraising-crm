@@ -178,6 +178,16 @@ class Message {
         'used_for' => 'All payment messages',
         'notes' => 'Propose removal - Does not appear to have been used in a meaningful way since 2018 - all values since are "live", "prod", "default", "WikimediaDonations" or "Wikimedia Foundation"',
       ],
+      'gateway_status' => [
+        'name' => 'gateway_status',
+        'description' => 'Raw status, maybe only from Paypal',
+        'title' => 'Gateway Status',
+        'data_type' => 'String',
+        'api_field' => 'contribution_extra.gateway_status_raw',
+        'api_entity' => 'Contribution',
+        'used_for' => 'PayPal audit messages + ?',
+        'notes' => 'PayPal only?',
+      ],
       'audit_file_gateway' => [
         'name' => 'audit_file_gateway',
         'title' => 'Audit file Gateway',

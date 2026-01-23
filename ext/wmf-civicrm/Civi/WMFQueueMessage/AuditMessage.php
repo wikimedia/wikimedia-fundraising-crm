@@ -23,6 +23,7 @@ class AuditMessage extends DonationMessage {
    *    gateway_txn_id: string,
    *    gateway_refund_id: string,
    *    gateway_account: string,
+   *    gateway_status: string,
    *    gateway_parent_id: string,
    *    invoice_id: string,
    *    contribution_tracking_id: string,
