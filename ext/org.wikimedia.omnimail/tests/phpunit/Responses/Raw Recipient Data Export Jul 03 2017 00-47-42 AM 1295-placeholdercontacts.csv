@@ -1,0 +1,3 @@
+Recipient Id,Recipient Type,Mailing Id,Report Id,Campaign Id,Email,Event Type,Event Timestamp,Body Type,Content Id,Click Name,URL,Conversion Action,Conversion Detail,Conversion Amount,Suppression Reason,ContactID
+248248624848,Normal,54132674,1164058778,,bob@example.com,Open,06/30/17 11:32 PM,HTML,,,,,,,,123
+508505678505,Normal,54132674,1164058778,,steve@example.com,Open,07/01/17 05:28 PM,HTML,,,,,,,,%mergedContactId%

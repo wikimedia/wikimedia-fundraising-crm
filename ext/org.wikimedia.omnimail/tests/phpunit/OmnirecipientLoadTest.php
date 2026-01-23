@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\Contact;
+
 require_once __DIR__ . '/OmnimailBaseTestClass.php';
 
 /**
@@ -18,8 +20,14 @@ require_once __DIR__ . '/OmnimailBaseTestClass.php';
  */
 class OmnirecipientLoadTest extends OmnimailBaseTestClass {
 
+  private string $tempFileName = 'Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295-replaced.csv';
+
   public function tearDown(): void {
     CRM_Core_DAO::executeQuery('DELETE FROM civicrm_mailing_provider_data');
+    $fullTempFilePath = __DIR__ . '/Responses/' . $this->tempFileName;
+    if (file_exists($fullTempFilePath)) {
+      unlink($fullTempFilePath);
+    }
     parent::tearDown();
   }
 
@@ -297,6 +305,66 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
       return;
     }
     $this->fail('No exception');
+  }
+
+  /**
+   * Test that we map merged contact IDs before inserting into the
+   * mailing provider data table
+   */
+  public function testOmnirecipientLoadWithRemap(): void {
+    $this->ids['Contact']['mergeTo'] = Contact::create(FALSE)
+      ->setValues([
+        'first_name' => 'bloop',
+        'last_name' => 'bleep',
+      ])
+      ->execute()
+      ->first()['id'];
+    $this->ids['Contact']['mergeFrom'] = Contact::create(FALSE)
+      ->setValues([
+        'first_name' => 'bloop',
+        'last_name' => 'bleep',
+      ])
+      ->execute()
+      ->first()['id'];
+    Contact::mergeDuplicates(FALSE)
+      ->setContactId($this->ids['Contact']['mergeTo'])
+      ->setDuplicateId($this->ids['Contact']['mergeFrom'])
+      ->execute();
+    $mergedTo = Contact::getMergedTo(FALSE)
+      ->setContactId($this->ids['Contact']['mergeFrom'])
+      ->execute()
+      ->first()['id'];
+    // Ensure setup worked
+    $this->assertEquals($this->ids['Contact']['mergeTo'], $mergedTo);
+    $fileContents = file_get_contents(
+      __DIR__ . '/Responses/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295-placeholdercontacts.csv'
+    );
+    $replaced = preg_replace('/%mergedContactId%/', $this->ids['Contact']['mergeFrom'], $fileContents);
+    file_put_contents(__DIR__ . '/Responses/' . $this->tempFileName, $replaced);
+    $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load', TRUE, $this->tempFileName);
+
+    $this->callAPISuccess('Omnirecipient', 'load', ['mail_provider' => 'Silverpop', 'username' => 'Donald', 'password' => 'Duck', 'debug' => 1, 'client' => $client]);
+    $data = CRM_Core_DAO::executeQuery('SELECT * FROM civicrm_mailing_provider_data')->fetchAll();
+    $this->assertEquals([
+      0 => [
+        'contact_identifier' => '248248624848',
+        'mailing_identifier' => 'sp54132674',
+        'email' => 'bob@example.com',
+        'event_type' => 'Open',
+        'recipient_action_datetime' => '2017-06-30 23:32:00',
+        'contact_id' => '123',
+        'is_civicrm_updated' => '0',
+      ],
+      1 => [
+        'contact_identifier' => '508505678505',
+        'mailing_identifier' => 'sp54132674',
+        'email' => 'steve@example.com',
+        'event_type' => 'Open',
+        'recipient_action_datetime' => '2017-07-01 17:28:00',
+        'contact_id' => $this->ids['Contact']['mergeTo'],
+        'is_civicrm_updated' => '0',
+      ],
+    ], $data);
   }
 
   /**
