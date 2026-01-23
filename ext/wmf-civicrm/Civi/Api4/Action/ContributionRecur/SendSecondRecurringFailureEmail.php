@@ -59,7 +59,7 @@ class SendSecondRecurringFailureEmail extends AbstractAction {
     foreach ($recurringQuery->execute() as $recurringContribution) {
       // Matching the behavior of the first failure email, don't send if there are any other active recurrings
       $recurringCheck = ContributionRecur::get(FALSE)
-        ->addSelect('COUNT(id)')
+        ->addSelect('id')
         ->addWhere('contact_id','=',$recurringContribution['contact_id'])
         ->addWhere(
           'contribution_status_id:name',
@@ -70,7 +70,7 @@ class SendSecondRecurringFailureEmail extends AbstractAction {
             'In Progress',
             'Failing'
           ]
-        )->execute()->first()['COUNT(id)'];
+        )->execute()->count();
 
       if ($recurringCheck > 0) {
         continue;
