@@ -17,6 +17,8 @@ use Civi\Api4\WorkflowMessage;
  * @method $this setContributionRecurID(int $contributionRecurID) Set recurring ID.
  * @method int getContributionRecurID() Get recurring ID.
  * @method $this setContactID(int $contactID) Set contact ID.
+ * @method $this setWorkflow(string $workflow) Set workflow
+ * @method string getWorkflow() Get workflow
  */
 class Render extends AbstractAction {
 
@@ -35,6 +37,11 @@ class Render extends AbstractAction {
    * @var int
    */
   protected $contactID;
+
+  /**
+   * @var string
+   */
+  protected $workflow = 'recurring_failed_message';
 
   /**
    * Get the contact ID, doing a DB lookup if required.
@@ -85,7 +92,7 @@ class Render extends AbstractAction {
     $rendered = WorkflowMessage::render(FALSE)
       ->setLanguage($email['contact_id.preferred_language'])
       ->setValues(['contributionRecurID' => $this->getContributionRecurID(), 'contactID' => $this->getContactID()])
-      ->setWorkflow('recurring_failed_message')->execute();
+      ->setWorkflow($this->getWorkflow())->execute();
 
     foreach ($rendered as $index => $value) {
       $value['email'] = $email['email'];
@@ -103,7 +110,10 @@ class Render extends AbstractAction {
    */
   protected function getSupportedLanguages(): array {
     if (!isset(Civi::$statics[__CLASS__]['languages'])) {
-      $templateID = Civi\Api4\MessageTemplate::get(FALSE)->addWhere('workflow_name', '=', 'recurring_failed_message')->addSelect('id')->execute()->first()['id'];
+      $templateID = Civi\Api4\MessageTemplate::get(FALSE)
+        ->addWhere('workflow_name', '=', $this->getWorkflow())
+        ->addSelect('id')
+        ->execute()->first()['id'];
       $supportedLanguages = (array) Civi\Api4\Translation::get(FALSE)
         ->setWhere([
           ['entity_id', '=', $templateID],

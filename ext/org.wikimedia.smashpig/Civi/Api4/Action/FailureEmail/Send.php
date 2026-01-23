@@ -16,6 +16,7 @@ use Civi\Api4\Activity;
  * @method $this setContributionRecurID(int $contributionRecurID) Set recurring ID.
  * @method int getContributionRecurID() Get recurring ID.
  * @method $this setContactID(int $contactID) Set contact ID.
+ * @method $this setSequenceNumber(int $sequenceNumber) Set sequence number.
  */
 class Send extends AbstractAction {
 
@@ -36,6 +37,22 @@ class Send extends AbstractAction {
   protected $contactID;
 
   /**
+   * 1 for first recurring failure notification, 2 for second
+   * @var int
+   */
+  protected $sequenceNumber = 1;
+
+  private const ACTIVITY_TYPES = [
+    1 => 'First Recurring Failure Email',
+    2 => 'Second Recurring Failure Email'
+  ];
+
+  private const WORKFLOWS = [
+    1 => 'recurring_failed_message',
+    2 => 'recurring_second_failed_message'
+  ];
+
+  /**
    * Get the contact ID, doing a DB lookup if required.
    *
    * @throws \CRM_Core_Exception
@@ -46,6 +63,14 @@ class Send extends AbstractAction {
       $this->contactID = \civicrm_api3('ContributionRecur', 'getvalue', ['return' => 'contact_id', 'id' => $this->getContributionRecurID()]);
     }
     return $this->contactID;
+  }
+
+  protected function getWorkflow(): string {
+    return self::WORKFLOWS[$this->sequenceNumber];
+  }
+
+  protected function getActivityType(): string {
+    return self::ACTIVITY_TYPES[$this->sequenceNumber];
   }
 
   /**
@@ -60,6 +85,7 @@ class Send extends AbstractAction {
       ->setCheckPermissions(FALSE)
       ->setContactID($this->getContactID())
       ->setContributionRecurID($this->getContributionRecurID())
+      ->setWorkflow($this->getWorkflow())
       ->execute()->first();
 
 
@@ -76,13 +102,14 @@ class Send extends AbstractAction {
       'toName' => $email['display_name'],
       'from' => "$domainEmailName <$domainEmailAddress>",
     ];
-    if (\CRM_Utils_Mail::send($params)) {
+    $success = \CRM_Utils_Mail::send($params);
+    if ($success) {
       Activity::create()->setCheckPermissions(FALSE)->setValues([
         'target_contact_id' => $this->getContactID(),
         'source_contact_id' => \CRM_Core_Session::getLoggedInContactID() ?? $this->getContactID(),
         'subject' => $email['msg_subject'],
         'details' => $email['msg_html'],
-        'activity_type_id:name' => 'First Recurring Failure Email',
+        'activity_type_id:name' => $this->getActivityType(),
         'activity_date_time' => 'now',
         'source_record_id' => $this->contributionRecurID,
       ])->execute();
@@ -92,6 +119,7 @@ class Send extends AbstractAction {
       $result[$this->getContributionRecurID()][$key] = $value;
     }
     $result[$this->getContributionRecurID()]['from'] = $params['from'];
+    $result[$this->getContributionRecurID()]['send_successful'] = $success;
 
   }
 
