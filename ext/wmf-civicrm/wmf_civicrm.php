@@ -146,6 +146,22 @@ function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermission
         'errorMsg' => E::ts('An error occurred while attempting to clear settlement fields for %1 %2.'),
       ],
     ];
+    $tasks['Contact']['set_modified_date'] = [
+      'title' => E::ts('Set modified date'),
+      'icon' => 'fa-clock-o',
+      'apiBatch' => [
+        'action' => 'update',
+        'params' => [
+          'values' => [
+            'modified_date' => date('Y-m-d H:i:s'),
+          ],
+        ],
+        'confirmMsg' => E::ts('Set modified date to now for %1 %2?'),
+        'runMsg' => E::ts('Setting modified date for %1 %2...'),
+        'successMsg' => E::ts('Successfully set modified date for %1 %2.'),
+        'errorMsg' => E::ts('An error occurred while attempting to set modified date for %1 %2.'),
+      ],
+    ];
   }
 }
 
