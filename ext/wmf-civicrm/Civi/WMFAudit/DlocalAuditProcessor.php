@@ -19,7 +19,7 @@ class DlocalAuditProcessor extends BaseAuditProcessor {
     $date_piece = $parts[count($parts) - 2];
     $date = preg_replace('/-/', '', $date_piece);
     if (!preg_match('/^\d{8}$/', $date)) {
-      throw new Exception("Unparseable reconciliation file name: {$file}");
+      throw new \Exception("Unparseable reconciliation file name: {$file}");
     }
     return $date;
   }
