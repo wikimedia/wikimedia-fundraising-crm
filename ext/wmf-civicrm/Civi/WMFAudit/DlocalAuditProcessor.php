@@ -13,16 +13,17 @@ class DlocalAuditProcessor extends BaseAuditProcessor {
   }
 
   protected function get_recon_file_sort_key($file) {
-    // Example:  wikimedia_report_2015-06-16.csv
-    // For that, we'd want to return 20150616
-    $parts = preg_split('/_|\./', $file);
-    $date_piece = $parts[count($parts) - 2];
-    $date = preg_replace('/-/', '', $date_piece);
-    if (!preg_match('/^\d{8}$/', $date)) {
-      throw new \Exception("Unparseable reconciliation file name: {$file}");
+    // Match YYYY-MM-DD
+    if (preg_match('/(\d{4})-(\d{2})-(\d{2})/', $file, $matches)) {
+      return $matches[1] . $matches[2] . $matches[3];
     }
-    return $date;
+    // Match YYYYMMDD (standalone or beginning of timestamp)
+    if (preg_match('/(\d{8})/', $file, $matches)) {
+      return $matches[1];
+    }
+    throw new \Exception("Unparseable reconciliation file name: {$file}");
   }
+
 
   protected function get_log_distilling_grep_string() {
     return 'Redirecting for transaction:';
