@@ -5,22 +5,10 @@ namespace Civi\WMFQueueMessage;
 use Civi\API\EntityLookupTrait;
 use Civi\Api4\ContributionRecur;
 use Civi\WMFException\WMFException;
-use Civi\WMFHelper\ContributionRecur as RecurHelper;
 
 class RecurDonationMessage extends DonationMessage {
 
   use EntityLookupTrait;
-
-  /**
-   * Contribution recur ID.
-   *
-   * This contains the ID of the contribution Recur record if it was looked up
-   * or set from external code rather than passed in. We keep the original $message array unchanged but
-   * track the value here to avoid duplicate lookups.
-   *
-   * @var int|null
-   */
-  private ?int $contributionRecurID;
 
   /**
    * True if recurring is in the incoming array or a contribution_recur_id is present.
@@ -145,11 +133,9 @@ class RecurDonationMessage extends DonationMessage {
    * @throws WMFException
    */
   public function getContributionRecurID(): ?int {
-    if (isset($this->contributionRecurID)) {
-      return $this->contributionRecurID;
-    }
-    if (!empty($this->message['contribution_recur_id'])) {
-      return (int) $this->message['contribution_recur_id'];
+    $id = parent::getContributionRecurID();
+    if ($id) {
+      return (int) $id;
     }
     if ($this->isAutoRescue()) {
       $recurRecord = ContributionRecur::get(FALSE)
@@ -187,16 +173,6 @@ class RecurDonationMessage extends DonationMessage {
         ]);
       }
       return $this->contributionRecurID;
-    }
-    if (!empty($this->getSubscriptionID())) {
-      $recurRecord = RecurHelper::getByGatewaySubscriptionId($this->getGateway(), $this->getSubscriptionID());
-      if ($recurRecord) {
-        \Civi::log('wmf')->info('recur_donation_import: Found matching recurring record for subscr_id: {subscriber_id}', ['subscriber_id' => $this->getSubscriptionID()]);
-        // Since we have loaded this we should register it so we can lazy access it.
-        $this->define('ContributionRecur', 'ContributionRecur', $recurRecord);
-        $this->contributionRecurID = $recurRecord['id'];
-        return $this->contributionRecurID;
-      }
     }
     $this->contributionRecurID = NULL;
     return $this->contributionRecurID;
@@ -246,7 +222,7 @@ class RecurDonationMessage extends DonationMessage {
    * @return string|null
    */
   public function getSubscriptionID(): ?string {
-    $subscriberID = trim($this->message['subscr_id'] ?? '');
+    $subscriberID = parent::getSubscriptionID();
     if ($subscriberID) {
       return $subscriberID;
     }

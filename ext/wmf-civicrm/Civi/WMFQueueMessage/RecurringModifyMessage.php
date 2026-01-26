@@ -11,8 +11,6 @@ class RecurringModifyMessage extends Message {
 
   public const DONOR_PORTAL_MESSAGE_SOURCE_TYPE = 'emailpreferences';
 
-  private $contributionRecurID;
-
   /**
    * Constructor.
    */

@@ -3,6 +3,7 @@
 namespace Civi\WMFQueue;
 
 use Civi\Api4\Activity;
+use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Email;
 use Civi\Api4\Queue;
@@ -21,6 +22,13 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
   protected string $queueConsumer = 'Recurring';
 
   public function tearDown(): void {
+    $contributions = Contribution::get(FALSE)
+      ->addWhere('trxn_id', 'LIKE', 'DLOCAL 647884%')
+      ->execute();
+    foreach ($contributions as $contribution) {
+      $this->cleanupContribution($contribution['id']);
+    }
+
     QueueItem::delete(FALSE)
       ->addWhere('queue_name', '=', 'email')
       ->execute();

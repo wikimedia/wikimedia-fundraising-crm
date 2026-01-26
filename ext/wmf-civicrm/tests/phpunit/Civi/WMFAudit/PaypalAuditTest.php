@@ -4,6 +4,7 @@ namespace phpunit\Civi\WMFAudit;
 
 use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
+use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\TransactionLog;
 use Civi\WMFAudit\BaseAuditTestCase;
@@ -26,12 +27,15 @@ class PaypalAuditTest extends BaseAuditTestCase {
       ->addWhere('name', 'LIKE', 'paypal_202601%')
       ->execute();
     $transactions = [
-      '1V551844CE5526421'
+      '1V551844CE5526421',
+      '5W55',
     ];
     TransactionLog::delete(FALSE)
       ->addWhere('gateway_txn_id', 'IN', $transactions)->execute();
     Contribution::delete(FALSE)
       ->addWhere('contribution_extra.gateway_txn_id', 'IN', $transactions)->execute();
+    ContributionRecur::delete(FALSE)
+      ->addWhere('trxn_id', 'IN', ['I-CRT'])->execute();
     parent::tearDown();
   }
 
@@ -80,6 +84,40 @@ class PaypalAuditTest extends BaseAuditTestCase {
     // is missing.
     $this->runAuditor($fileName);
     $this->assertQueueEmpty('donations');
+  }
+
+  /**
+   * Test basic trr donation file.
+   * @throws \CRM_Core_Exception
+   */
+  public function testTRRFileRecurringPayment(): void {
+    $contactID = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'John',
+      'last_name' => 'Mouse',
+    ], 'john')['id'];
+    $this->createTestEntity('ContributionRecur', [
+      'processor_id' => 'I-CRT',
+      'trxn_id' => 'I-CRT',
+      'amount' => 10,
+      'contact_id' => $contactID,
+    ], 'recur');
+    $this->createTestEntity('Contribution', [
+      'contribution_recur_id' => $this->ids['ContributionRecur']['recur'],
+      'contact_id' => $contactID,
+      'total_amount' => 10,
+      'financial_type_id:name' => 'Recurring Gift',
+      'contribution_extra.channel' => 'Email'
+    ]);
+    $this->runAuditBatch('trr_recur_payment', 'TRR-20260125.01.008.CSV');
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('contribution_extra.*', 'contribution_recur_id', 'Gift_Data.*', 'financial_type_id:name')
+      ->addWhere('contribution_extra.gateway', '=', 'paypal_ec')
+      ->addWhere('contribution_extra.gateway_txn_id', '=', '5W55')
+      ->execute()->single();
+    $this->assertEquals('Recurring Gift - Cash', $contribution['financial_type_id:name']);
+    $this->assertEquals('Recurring Gift', $contribution['Gift_Data.Channel']);
+    $this->assertEquals($this->ids['ContributionRecur']['recur'], $contribution['contribution_recur_id']);
   }
 
   public function testSTLFile(): void {

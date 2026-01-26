@@ -548,7 +548,7 @@ abstract class BaseAuditProcessor {
     foreach ($this->getMissingDonations() as $index => $record) {
       if (!empty($record['transaction_details'])) {
         $fullRecord = $this->merge_data($record['transaction_details']['message'], $record);
-        if (empty($record['contribution_tracking'])) {
+        if (empty($record['contribution_tracking']) && !empty($fullRecord['contribution_tracking_id'])) {
           $this->createContributionTracking($fullRecord['contribution_tracking_id'], $fullRecord['payment_method'] ?? '', $fullRecord['date'] ?? NULL, $fullRecord['language'] ?? NULL, $fullRecord['country'] ?? NULL);
         }
         unset($fullRecord['transaction_details'], $fullRecord['contribution_tracking']);
