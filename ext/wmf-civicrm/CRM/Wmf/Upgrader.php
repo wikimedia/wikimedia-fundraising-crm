@@ -3821,6 +3821,16 @@ AND channel <> 'Chapter Gifts'";
         AND LEFT(a.subject, 20) = "Email snoozed until "
         AND a.id != keeper.min_id;
     ';
+    return TRUE;
+  }
+
+  /**
+   * Create or update GrantTransaction table from entityType.
+   */
+  public function upgrade_4830() {
+    $filePath = __DIR__ . "/../../schema/GrantTransaction.entityType.php";
+    $entityDefn = include $filePath;
+    $sql = Civi::schemaHelper()->arrayToSql($entityDefn);
     CRM_Core_DAO::executeQuery($sql);
     return TRUE;
   }

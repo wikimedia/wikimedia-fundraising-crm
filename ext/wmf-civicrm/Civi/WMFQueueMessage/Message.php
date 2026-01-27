@@ -713,6 +713,13 @@ class Message {
         'description' => E::ts('Generally the identifier associated with the account with the gateway'),
         'used_for' => 'donation',
       ],
+      'grant_provider' => [
+        'name' => 'grant_provider',
+        'data_type' => 'String',
+        'label' => E::ts('Grant provider'),
+        'description' => E::ts('The name provided for PayPal grants donations telling us who sent the organisation. This is then linked with a payment hand-entered from the PayPal grants console.'),
+        'used_for' => 'audit message',
+      ],
     ];
     $contactFields = Contact::getFields(FALSE)
       ->setLoadOptions(TRUE)
@@ -1452,6 +1459,10 @@ class Message {
       return $this->getSettledAmount() - $this->getSettledFeeAmount();
     }
     return $this->getSettledAmount();
+  }
+
+  public function getSettledNetAmountRounded(): string {
+    return $this->round($this->getSettledNetAmount(), $this->getSettlementCurrency());
   }
 
   public function getReportingNetAmountRounded(): string {

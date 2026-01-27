@@ -2,7 +2,6 @@
 
 namespace Civi\WMFQueueMessage;
 
-use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\TransactionLog;
@@ -11,7 +10,7 @@ use Civi\WMFTransaction;
 class AuditMessage extends DonationMessage {
 
   /**
-   * WMF Settlement message.
+   * WMF Audit message incoming from our smashpig audit reconciliation framework.
    *
    * @var array{
    *    gateway: string,
@@ -20,6 +19,7 @@ class AuditMessage extends DonationMessage {
    *    backend_processor_txn_id: string,
    *    backend_processor_parent_id: string,
    *    backend_processor_refund_id: string,
+   *    grant_provider: string,
    *    gateway_txn_id: string,
    *    gateway_refund_id: string,
    *    gateway_account: string,
@@ -168,6 +168,7 @@ class AuditMessage extends DonationMessage {
    *   type: string,
    *   backend_processor_parent_id: string,
    *   backend_processor_refund_id: string,
+   *   grant_provider: string,
    *   original_total_amount: float,
    *   original_net_amount: float,
    *   original_fee_amount: float,
@@ -192,6 +193,7 @@ class AuditMessage extends DonationMessage {
     $message['gateway_txn_id'] = $this->getGatewayTxnId();
     $message['backend_processor'] = $this->getBackendProcessor();
     $message['backend_processor_txn_id'] = $this->getBackendProcessorTxnID();
+    $message['payment_method'] = $this->getPaymentMethod();
     if ($this->message['settlement_batch_reference'] ?? NULL) {
       $message['settlement_batch_reference'] = $this->getSettlementBatchReference();
     }
@@ -232,6 +234,10 @@ class AuditMessage extends DonationMessage {
         ->addWhere('id', '=', $message['contribution_tracking_id'])
         ->execute()->first();
     }
+    if ($this->isPaypalGrant()) {
+      $message['last_name'] = '';
+      $message['first_name'] = '';
+    }
     return $message;
   }
 
@@ -242,6 +248,9 @@ class AuditMessage extends DonationMessage {
    * @throws \CRM_Core_Exception
    */
   public function getContributionTrackingID(): ?int {
+    if ($this->isPaypalGrant()) {
+      return NULL;
+    }
     $id = parent::getContributionTrackingID();
     if (!$id) {
       $tracking = $this->getTransactionDetails();
@@ -388,8 +397,8 @@ class AuditMessage extends DonationMessage {
             ->execute()->first() ?? [];
         }
         if (empty($this->existingContribution) && $this->getGatewayParentTxnID()) {
-          $gatewayOperator = $this->isPaypal() ? 'LIKE' : '=';
-          $gatewayString = $this->isPaypal() ?'paypal%' : $this->getParentTransactionGateway();
+          $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
+          $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
             ->addWhere('financial_type_id:name', '!=', 'Chargeback Reversal')
@@ -530,6 +539,9 @@ class AuditMessage extends DonationMessage {
    * @return string
    */
   public function getPaymentMethod(): string {
+    if ($this->isPaypalGrant()) {
+      return 'Paypal Grants';
+    }
     return $this->message['payment_method'] ?? 'unknown';
   }
 
@@ -576,6 +588,10 @@ class AuditMessage extends DonationMessage {
       // For chargebacks we need to use the backend processor details.
       // This scenario only occurs with Gravy + adyen.
       return $this->message['backend_processor'];
+    }
+
+    if ($this->isPaypalGrant()) {
+      return 'Paypal DAF';
     }
     return $gateway;
   }
@@ -711,6 +727,17 @@ class AuditMessage extends DonationMessage {
 
   public function isFeeRow(): bool {
     return $this->getAuditMessageType() === 'fee';
+  }
+
+  /**
+   * @return bool|mixed
+   */
+  public function isPaypalGrant(): bool {
+    return $this->getGrantProvider() && $this->message['audit_file_gateway'] === 'paypal';
+  }
+
+  public function getGrantProvider(): ?string {
+    return ($this->message['grant_provider'] ?? NULL);
   }
 
 }

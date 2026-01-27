@@ -6,6 +6,7 @@ use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
+use Civi\Api4\GrantTransaction;
 use Civi\Api4\TransactionLog;
 use Civi\WMFAudit\BaseAuditTestCase;
 use League\Csv\Exception;
@@ -107,7 +108,7 @@ class PaypalAuditTest extends BaseAuditTestCase {
       'contact_id' => $contactID,
       'total_amount' => 10,
       'financial_type_id:name' => 'Recurring Gift',
-      'contribution_extra.channel' => 'Email'
+      'contribution_extra.channel' => 'Email',
     ]);
     $this->runAuditBatch('trr_recur_payment', 'TRR-20260125.01.008.CSV');
     $contribution = Contribution::get(FALSE)
@@ -130,6 +131,28 @@ class PaypalAuditTest extends BaseAuditTestCase {
     $this->assertEquals('BRL', $contribution['contribution_extra.original_currency']);
   }
 
+  public function testPaypalGrants() {
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->createIndividual(),
+      'total_amount' => 500,
+      'financial_type_id:name' => 'Cash',
+      'contribution_extra.gateway' => 'Paypal DAF',
+    ], 'grant');
+    $this->createTestEntity('Contact', ['contact_type' => 'Organization', 'organization_name' => 'Acme Endowment Program'], 'acme');
+    $this->createTestEntity('ContributionSoft', [
+      'contribution_id' => $this->ids['Contribution']['grant'],
+      'soft_credit_type_id:name' => 'Banking Institution',
+      'contact_id' => $this->ids['Contact']['acme'],
+      'amount' => 500,
+    ]);
+    $this->runAuditBatch('trr_grant', 'trr_grant.csv', '20260106');
+    $grantTransaction = GrantTransaction::get(FALSE)
+      ->addWhere('gateway', '=', 'paypal DAF')
+      ->addWhere('gateway_txn_id', '=', '1V05')
+      ->execute()->single();
+
+    $this->assertEquals('Acme Endowment Program', $grantTransaction['grant_provider']);
+  }
 
   /**
    * @param string $directory

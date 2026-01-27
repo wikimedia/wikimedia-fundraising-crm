@@ -6,6 +6,7 @@ use Brick\Math\RoundingMode;
 use Brick\Money\Money;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\GrantTransaction;
 use Civi\Api4\SettlementTransaction;
 use Civi\Api4\WMFAudit;
 use Civi\WMFQueueMessage\AuditMessage;
@@ -57,8 +58,28 @@ class Audit extends AbstractAction {
   public function _run(Result $result): void {
     $message = new AuditMessage($this->values);
     $isMissing = !$message->getExistingContributionID();
+    if ($message->isPaypalGrant()) {
+      GrantTransaction::save(FALSE)
+        ->addRecord([
+          'grant_provider' => $message->getGrantProvider(),
+          'order_id' => $message->getOrderID(),
+          'gateway_txn_id' => $message->getGatewayTxnID(),
+          'gateway' => $message->getGateway(),
+          'audit_file_gateway' => $message->getAuditFileGateway(),
+          'date' => $message->getDate(),
+          'backend_processor' => $message->getBackEndProcessor(),
+          'backend_txn_id' => $message->getBackendProcessorTxnID(),
+          'settlement_batch_reference' => $message->getSettlementBatchReference(),
+          'settled_date' => $message->getSettledDate(),
+          'settled_currency' => $message->getSettlementCurrency(),
+          'settled_total_amount' => $message->getSettledAmountRounded(),
+          'settled_net_amount' => $message->getSettledNetAmountRounded(),
+          'settled_fee_amount' => $message->getSettledFeeAmountRounded(),
+          'payment_method' => $message->getPaymentMethod(),
+        ])->setMatch(['gateway', 'gateway_txn_id'])->execute();
+    }
 
-    if ($this->processSettlement) {
+    elseif ($this->processSettlement) {
       // For now let's start tracking the messages...
       // Next will be to settle them.
       $record = $message->normalize();
@@ -104,8 +125,6 @@ class Audit extends AbstractAction {
         }
       }
     }
-   // @todo - we would ideally augment the missing messages here from the Pending table
-    // allowing us to drop 'log_hunt_and_send'
     // also @todo if we are unable to find the extra data then queue to (e.g) a missing
     // queue - this would allow us to process each audit file only once & the transactions would
     // be 'in the system' from then on until resolved. I guess the argument for the files is that
