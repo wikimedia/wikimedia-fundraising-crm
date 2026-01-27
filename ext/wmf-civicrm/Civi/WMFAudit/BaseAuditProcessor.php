@@ -544,17 +544,22 @@ abstract class BaseAuditProcessor {
     //get the date distribution on what's left... for ***main transactions only***
     //That should be to say: The things that are totally in the payments logs.
     //Other things, we will have to look other places, or just rebuild.
+    $queuedFromTransactionLog = 0;
     foreach ($this->getMissingDonations() as $index => $record) {
       if (!empty($record['transaction_details'])) {
         $fullRecord = $this->merge_data($record['transaction_details']['message'], $record);
-        if (empty($record['contribution_tracking'])) {
+        if (empty($record['contribution_tracking']) && !empty($fullRecord['contribution_tracking_id'])) {
           $this->createContributionTracking($fullRecord['contribution_tracking_id'], $fullRecord['payment_method'] ?? '', $fullRecord['date'] ?? NULL, $fullRecord['language'] ?? NULL, $fullRecord['country'] ?? NULL);
         }
         unset($fullRecord['transaction_details'], $fullRecord['contribution_tracking']);
         $this->send_queue_message($fullRecord, 'main');
         unset($this->missingTransactions['main'][$index]);
+        $queuedFromTransactionLog++;
         $this->echo('%');
       }
+    }
+    if ($this->getFileStatistic($file, 'total_missing')) {
+      $this->echo($queuedFromTransactionLog . ' donations were found in the transaction log and queued. Still to find in logs: ' . (((int) $this->getFileStatistic($file, 'total_missing')) - $queuedFromTransactionLog));
     }
     $missing_by_date = $this->getMissingByDate();
 

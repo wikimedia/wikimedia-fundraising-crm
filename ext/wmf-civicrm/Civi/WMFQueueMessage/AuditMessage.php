@@ -23,6 +23,7 @@ class AuditMessage extends DonationMessage {
    *    gateway_txn_id: string,
    *    gateway_refund_id: string,
    *    gateway_account: string,
+   *    gateway_status: string,
    *    gateway_parent_id: string,
    *    invoice_id: string,
    *    contribution_tracking_id: string,
@@ -246,7 +247,7 @@ class AuditMessage extends DonationMessage {
       $tracking = $this->getTransactionDetails();
       $id = $tracking['message']['contribution_tracking_id'] ?? NULL;
     }
-    return $id;
+    return is_numeric($id) ? (int) $id : NULL;
   }
 
   public function getParentContributionID(): ?int {
@@ -647,7 +648,7 @@ class AuditMessage extends DonationMessage {
           }
         }
         if ($contribution) {
-          $contributionTrackingID = explode('.', $this->getOrderID())[0];
+          $contributionTrackingID = explode('.', $this->getOrderID() ?? '')[0];
           $this->transactionDetails = [
             'gateway' => $this->getGateway(),
             'gateway_txn_id' => $this->getGatewayTxnID(),
@@ -669,13 +670,23 @@ class AuditMessage extends DonationMessage {
    */
   public function getFirstRecurringContribution(): array {
     if (!isset($this->firstRecurringContribution)) {
-      $contributionTrackingID = explode('.', $this->getOrderID())[0];
-      $this->firstRecurringContribution = Contribution::get(FALSE)
-        ->addWhere('invoice_id', 'LIKE', ($contributionTrackingID . '.%|recur%'))
-        ->addOrderBy('id')
-        ->addSelect('contact_id', 'contribution_recur_id')
-        ->setLimit(1)
-        ->execute()->first() ?? [];
+      if ($this->getContributionRecurID()) {
+        $this->firstRecurringContribution = Contribution::get(FALSE)
+          ->addWhere('contribution_recur_id', '=', $this->getContributionRecurID())
+          ->addOrderBy('id')
+          ->addSelect('contact_id', 'contribution_recur_id')
+          ->setLimit(1)
+          ->execute()->first() ?? [];
+      }
+      else {
+        $contributionTrackingID = explode('.', $this->getOrderID() ?? '')[0];
+        $this->firstRecurringContribution = Contribution::get(FALSE)
+          ->addWhere('invoice_id', 'LIKE', ($contributionTrackingID . '.%|recur%'))
+          ->addOrderBy('id')
+          ->addSelect('contact_id', 'contribution_recur_id')
+          ->setLimit(1)
+          ->execute()->first() ?? [];
+      }
     }
     return $this->firstRecurringContribution;
   }

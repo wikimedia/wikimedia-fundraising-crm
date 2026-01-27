@@ -76,110 +76,23 @@ class SendSecondRecurringFailureEmail extends AbstractAction {
         continue;
       }
       // Send the email
-      $sendResult = $this->sendNotification($recurringContribution, $secondFailureActivityType);
+      $sendResult = Civi\Api4\FailureEmail::send()
+        ->setContactID($recurringContribution['contact_id'])
+        ->setContributionRecurID($recurringContribution['id'])
+        ->setSequenceNumber(2)
+        ->execute()->first();
       if ($sendResult['send_successful']) {
         $result['send_success_count']++;
       } else {
         $result['send_failure_count']++;
       }
-      unset ($sendResult['html']); // keep the output reasonable
+      unset ($sendResult['msg_html']);
+      unset ($sendResult['msg_subject']);
+      unset ($sendResult['html']);
+      unset ($sendResult['text']);// keep the output reasonable
       $sendResult['contactID'] = $recurringContribution['contact_id'];
       $result['notifications'][$recurringContribution['id']] = $sendResult;
     }
   }
 
-  function sendNotification(array $recurringContribution, int $activityType): array {
-    $email = $this->renderEmail($recurringContribution);
-
-    // If no template exists just back out.
-    if (empty($email['msg_html']) && empty($email['msg_text'])) {
-      return ['send_successful' => FALSE];
-    }
-    list($domainEmailName, $domainEmailAddress) = \CRM_Core_BAO_Domain::getNameAndEmail();
-    $params = $return = [
-      'html' => $email['msg_html'] ?? NULL,
-      'text' => $email['msg_text'] ?? NULL,
-      'subject' => $email['msg_subject'],
-      'toEmail' => $email['email'],
-      'toName' => $email['display_name'],
-      'from' => "$domainEmailName <$domainEmailAddress>",
-    ];
-    if (\CRM_Utils_Mail::send($params)) {
-      Activity::create()->setCheckPermissions(FALSE)->setValues([
-        'target_contact_id' => $recurringContribution['contact_id'],
-        'source_contact_id' => \CRM_Core_Session::getLoggedInContactID() ?? $recurringContribution['contact_id'],
-        'subject' => $email['msg_subject'],
-        'details' => $email['msg_html'],
-        'activity_type_id' => $activityType,
-        'activity_date_time' => 'now',
-        'source_record_id' => $recurringContribution['id'],
-      ])->execute();
-      $return['send_successful'] = TRUE;
-    } else {
-      $return['send_successful'] = FALSE;
-    }
-    return $return;
-  }
-
-  protected function renderEmail(array $recurringContribution) {
-    $email = Email::get()
-      ->setCheckPermissions(FALSE)
-      ->addWhere('contact_id', '=', $recurringContribution['contact_id'])
-      ->addWhere('email', '<>', '')
-      ->setSelect(['contact_id.preferred_language', 'email', 'contact_id.display_name'])
-      ->addOrderBy('is_primary', 'DESC')
-      ->execute()->first();
-
-    if (empty($email)) {
-      return FALSE;
-    }
-
-    $supportedLanguages = $this->getSupportedLanguages();
-    if (!empty($email['contact_id.preferred_language'])
-      && strpos($email['contact_id.preferred_language'], 'en') !== 0
-      && !in_array($email['contact_id.preferred_language'], $supportedLanguages, TRUE)
-    ) {
-      // Temporary early return for non translated languages while we test them.
-      // The goal is to create a template for a bunch of languages - the
-      // syntax to create is
-      // \Civi\Api\MessageTemplate::create()->setLanguage('fr_FR')
-      // fall back not that well thought through yet.
-      return FALSE;
-    }
-
-    $rendered = WorkflowMessage::render(FALSE)
-      ->setLanguage($email['contact_id.preferred_language'])
-      ->setValues(['contributionRecurID' => $recurringContribution['id'], 'contactID' => $recurringContribution['contact_id']])
-      ->setWorkflow('recurring_second_failed_message')->execute()->first();
-
-    return [
-      'email' => $email['email'],
-      'display_name' => $email['contact_id.display_name'],
-      'language' => $email['contact_id.preferred_language'],
-      'msg_html' => $rendered['html'],
-      'msg_subject' => $rendered['subject'],
-      'msg_text' => $rendered['text'],
-    ];
-  }
-
-  /**
-   * @return string[]
-   */
-  protected function getSupportedLanguages(): array {
-    if (!isset(Civi::$statics[__CLASS__]['languages'])) {
-      $templateID = Civi\Api4\MessageTemplate::get(FALSE)
-        ->addWhere('workflow_name', '=', 'recurring_failed_message')
-        ->addSelect('id')
-        ->execute()
-        ->first()['id'];
-      $supportedLanguages = (array) Civi\Api4\Translation::get(FALSE)
-        ->setWhere([
-          ['entity_id', '=', $templateID],
-          ['entity_table', '=', 'civicrm_msg_template'],
-          ['status_id:name', '=', 'active'],
-        ])->addSelect('language')->execute()->indexBy('language');
-      Civi::$statics[__CLASS__]['languages'] = array_keys($supportedLanguages);
-    }
-    return Civi::$statics[__CLASS__]['languages'];
-  }
 }

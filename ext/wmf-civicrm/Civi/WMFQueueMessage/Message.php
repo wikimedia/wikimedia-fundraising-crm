@@ -10,6 +10,7 @@ use Civi\Api4\ExchangeRate;
 use Civi\Api4\Utils\ReflectionUtils;
 use Civi\ExchangeRates\ExchangeRatesException;
 use Civi\WMFException\WMFException;
+use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use CRM_Wmf_ExtensionUtil as E;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
@@ -53,6 +54,17 @@ class Message {
    * @var int|null
    */
   protected ?int $contributionTrackingID;
+
+  /**
+   * Contribution recur ID.
+   *
+   * This contains the ID of the contribution Recur record if it was looked up
+   * or set from external code rather than passed in. We keep the original $message array unchanged but
+   * track the value here to avoid duplicate lookups.
+   *
+   * @var int|null
+   */
+  protected ?int $contributionRecurID;
 
   /**
    * Constructor.
@@ -177,6 +189,16 @@ class Message {
         'api_entity' => 'Contribution',
         'used_for' => 'All payment messages',
         'notes' => 'Propose removal - Does not appear to have been used in a meaningful way since 2018 - all values since are "live", "prod", "default", "WikimediaDonations" or "Wikimedia Foundation"',
+      ],
+      'gateway_status' => [
+        'name' => 'gateway_status',
+        'description' => 'Raw status, maybe only from Paypal',
+        'title' => 'Gateway Status',
+        'data_type' => 'String',
+        'api_field' => 'contribution_extra.gateway_status_raw',
+        'api_entity' => 'Contribution',
+        'used_for' => 'PayPal audit messages + ?',
+        'notes' => 'PayPal only?',
       ],
       'audit_file_gateway' => [
         'name' => 'audit_file_gateway',
@@ -815,7 +837,31 @@ class Message {
    * @return int|null
    */
   public function getContributionRecurID(): ?int {
-    return !empty($this->message['contribution_recur_id']) ? (int) $this->message['contribution_recur_id'] : NULL;
+    if (isset($this->contributionRecurID)) {
+      return $this->contributionRecurID;
+    }
+    $this->contributionRecurID = !empty($this->message['contribution_recur_id']) ? (int) $this->message['contribution_recur_id'] : NULL;
+
+    if (!$this->contributionRecurID && !empty($this->message['subscr_id'])) {
+      $recurRecord = RecurHelper::getByGatewaySubscriptionId($this->getGateway(), $this->message['subscr_id']);
+      if ($recurRecord) {
+        \Civi::log('wmf')->info('recur_donation_import: Found matching recurring record for subscr_id: {subscriber_id}', ['subscriber_id' => $this->getSubscriptionID()]);
+        // Since we have loaded this we should register it so we can lazy access it.
+        $this->define('ContributionRecur', 'ContributionRecur', $recurRecord);
+        $this->contributionRecurID = $recurRecord['id'];
+        return $this->contributionRecurID;
+      }
+    }
+    return $this->contributionRecurID;
+  }
+
+  /**
+   * Get the subscriber ID.
+   *
+   * @return string|null
+   */
+  public function getSubscriptionID(): ?string {
+    return trim($this->message['subscr_id'] ?? '');
   }
 
   /**
