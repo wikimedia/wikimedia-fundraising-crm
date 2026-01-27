@@ -611,12 +611,18 @@ class AuditMessage extends DonationMessage {
         ->addWhere('gateway_txn_id', '=', $this->getGatewayTxnID())
         ->addWhere('gateway', $gatewayOperator, $gatewayString)
         ->execute();
+
       foreach ($transactionDetails as $transactionDetail) {
         if ($this->getBackendProcessorTxnID() === ($transactionDetail['message']['backend_processor_txn_id'] ?? FALSE)
           // Only checking isNegative here because I haven't fully worked
           // through the negative transactions & want to just
           // double check we are always loading the right one.
           || (!$this->getBackendProcessorTxnID() && !$this->isNegative())
+          // If we only found one for the relevant gateway then we want to use
+          // that - in practice this could be a paypal gravy that has a different
+          // txn_id in our SmashPig pending / TransactionLog vs the incoming
+          // but the important gravy ID matches
+          || count($transactionDetails) === 1
         ) {
           $this->transactionDetails = $transactionDetail;
           break;
