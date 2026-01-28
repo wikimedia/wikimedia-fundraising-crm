@@ -628,6 +628,11 @@ class AuditMessage extends DonationMessage {
           break;
         }
       }
+      if (!empty($transactionDetail)) {
+        // We found matches for the gravy ID. None match the back end processor ID but
+        // let's use what we got. https://phabricator.wikimedia.org/T415744
+        return $transactionDetail;
+      }
       if (empty($this->transactionDetails)) {
         $contribution = NULL;
         if ($this->isSubsequentRecurring()) {
