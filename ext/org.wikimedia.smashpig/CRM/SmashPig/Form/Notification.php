@@ -81,8 +81,14 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
 
   public function postProcess() {
     if ($this->notification) {
+      if ($this->type === 'recurringfailure') {
+        $sequence = 1;
+      } else if ($this->type === 'secondrecurringfailure') {
+        $sequence = 2;
+      }
       $results = \Civi\Api4\FailureEmail::send()
         ->setContributionRecurID($this->getEntityId())
+        ->setSequenceNumber($sequence)
         ->execute();
       // if not error
       CRM_Core_Session::setStatus("Email sent.");
@@ -148,6 +154,12 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
               ->execute();
            // assume only one result
           return $results->first();
+      } else if ($type === 'secondrecurringfailure') {
+        $results = \Civi\Api4\FailureEmail::render()
+          ->setContributionRecurID( $this->getEntityId() )
+          ->setWorkflow('recurring_second_failed_message')
+          ->execute();
+        return $results->first();
       }
   }
 

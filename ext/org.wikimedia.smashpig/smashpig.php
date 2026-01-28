@@ -63,13 +63,20 @@ function smashpig_civicrm_navigationMenu(&$menu) {
 function smashpig_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
   //create a Send Failure Notification link for a given recurring contribution
   if ($objectName === 'Contribution' && $op === 'contribution.selector.recurring') {
-    $links[] = [
+    $links = [[
       'name' => ts('Send Failure Notification'),
       'title' => ts('Send Failure Notification'),
       'url' => 'civicrm/smashpig/notification?type=recurringfailure',
       'qs' => "contribution_recur_id=$objectId&entity_id=$objectId",
       'class' => 'crm-popup large-popup',
       'weight' => 0,
-    ];
+    ],[
+      'name' => ts('Send Second Failure Notification'),
+      'title' => ts('Send Second Failure Notification'),
+      'url' => 'civicrm/smashpig/notification?type=secondrecurringfailure',
+      'qs' => "contribution_recur_id=$objectId&entity_id=$objectId",
+      'class' => 'crm-popup large-popup',
+      'weight' => 0,
+    ]];
   }
 }
