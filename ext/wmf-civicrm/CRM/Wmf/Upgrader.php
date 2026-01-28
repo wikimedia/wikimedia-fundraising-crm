@@ -3788,6 +3788,44 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Bug: T415642
+   *
+   * Delete all the snooze activities that are repeats.
+   * Find the lowest id activity when grouping by contact_id and activity subject (which contains the snooze until date),
+   * then delete all the activities with higher ids.
+   *
+   * @return bool
+   */
+  public function upgrade_4825(): bool {
+    $sql = '
+    DELETE a
+    FROM civicrm_activity a
+    INNER JOIN civicrm_activity_contact ac
+        ON ac.activity_id = a.id
+        AND ac.record_type_id = 2
+    INNER JOIN civicrm_contact c
+        ON ac.contact_id = c.id
+    INNER JOIN (
+        SELECT ac2.contact_id, a2.subject, MIN(a2.id) AS min_id
+        FROM civicrm_activity a2
+        INNER JOIN civicrm_activity_contact ac2
+            ON ac2.activity_id = a2.id
+            AND ac2.record_type_id = 2
+        WHERE a2.activity_type_id = 174
+            AND LEFT(a2.subject, 20) = "Email snoozed until "
+        GROUP BY ac2.contact_id, a2.subject
+        HAVING COUNT(a2.id) > 1
+    ) keeper ON keeper.contact_id = c.id
+        AND keeper.subject = a.subject
+    WHERE a.activity_type_id = 174
+        AND LEFT(a.subject, 20) = "Email snoozed until "
+        AND a.id != keeper.min_id;
+    ';
+    CRM_Core_DAO::executeQuery($sql);
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
