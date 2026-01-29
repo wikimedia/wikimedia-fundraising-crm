@@ -137,6 +137,10 @@ class PaypalAuditTest extends BaseAuditTestCase {
       'total_amount' => 500,
       'financial_type_id:name' => 'Cash',
       'contribution_extra.gateway' => 'Paypal DAF',
+      // This is intentionally two days earlier. It starts on the actual day & then day-by-day
+      // increases the range until the number of transactions to find = the number found
+      // before declaring a match.
+      'receive_date' => '2026-01-21 15:45:43',
     ], 'grant');
     $this->createTestEntity('Contact', ['contact_type' => 'Organization', 'organization_name' => 'Acme Endowment Program'], 'acme');
     $this->createTestEntity('ContributionSoft', [
@@ -152,6 +156,8 @@ class PaypalAuditTest extends BaseAuditTestCase {
       ->execute()->single();
 
     $this->assertEquals('Acme Endowment Program', $grantTransaction['grant_provider']);
+    $possibleMatches = GrantTransaction::getMatches()->execute();
+    $this->assertCount(1, $possibleMatches);
   }
 
   /**
