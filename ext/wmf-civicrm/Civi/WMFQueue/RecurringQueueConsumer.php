@@ -383,7 +383,9 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       throw new WMFException(WMFException::IMPORT_CONTRIB, 'Failed inserting subscriber signup for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ': ' . $e->getMessage());
     }
 
-    RecurHelper::sendSuccessThankYouMail($newContributionRecur, $ctRecord, $msg, $contactId, $contact);
+    if (isset($msg['recurring_payment_token']) && isset($newContributionRecur['id'])) {
+      RecurHelper::sendSuccessThankYouMail($newContributionRecur, $ctRecord['contribution_id']);
+    }
     Civi::log('wmf')->notice('recurring: Successfully inserted subscription signup for subscriber id: {subscriber_id}', ['subscriber_id' => $msg['subscr_id']]);
   }
 

@@ -44,4 +44,10 @@ class MonthlyConvert extends ThankYou {
    */
   public $dayOfMonth;
 
+  public function setDayOfMonth(int $dayOfMonth) {
+    // Format the day of the month as an ordinal number
+    $ordinal = new \NumberFormatter($this->getLocale(), \NumberFormatter::ORDINAL);
+    $this->dayOfMonth = $ordinal->format($dayOfMonth);
+  }
+
 }
