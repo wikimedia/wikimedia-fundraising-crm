@@ -132,7 +132,7 @@ FROM civicrm_value_contribution_settlement s
 WHERE (%1 = s.settlement_batch_reference)
   AND (COALESCE(settled_donation_amount, 0) <> 0)
   AND is_template = 0
-GROUP BY Fund, gift.channel, is_major_gift
+GROUP BY Fund, $accountCodeClause, is_major_gift
 
 UNION ALL
   SELECT
@@ -153,7 +153,7 @@ FROM civicrm_value_contribution_settlement s
 WHERE (%1 = s.settlement_batch_reversal_reference)
   AND (COALESCE(settled_reversal_amount, 0) <> 0)
   AND is_template = 0
-GROUP BY Fund, gift.channel, is_major_gift
+GROUP BY Fund, $accountCodeClause, is_major_gift
 
 UNION ALL
 

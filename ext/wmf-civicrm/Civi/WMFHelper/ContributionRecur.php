@@ -106,41 +106,44 @@ class ContributionRecur {
     // check if valid checksum
     if (\CRM_Contact_BAO_Contact_Utils::validChecksum($contact_id, $checksum)) {
       \Civi::log('wmf')->debug("Donor '$contact_id' has valid checksum");
-      $allContactIds = Contact::duplicateContactIds($contact_id);
-      \Civi::log('wmf')->debug("Check if donor " . json_encode($allContactIds) . " upgradable");
-      $contribution_recurs = \Civi\Api4\ContributionRecur::get(FALSE)
-        ->addSelect('id', 'currency', 'amount', 'next_sched_contribution_date', 'contact.first_name', 'contact.display_name', 'country.iso_code')
-        ->addJoin('Contact AS contact', 'LEFT', ['contact.id', '=', $contact_id])
-        ->addJoin('Address AS address', 'LEFT', ['address.contact_id', '=', $contact_id], ['address.is_primary', '=', 1])
-        ->addJoin('Country AS country', 'LEFT', ['country.id', '=', 'address.country_id'])
-        ->addJoin('PaymentProcessor AS payment_processor', 'LEFT', ['payment_processor.id', '=', 'payment_processor_id'])
-        ->addWhere('contact_id', 'IN', $allContactIds)
-        ->addWhere('cancel_date', 'IS NULL')
-        ->addWhere('next_sched_contribution_date', 'IS NOT NULL')
-        // use adyen and gravy first, find dlocal except upi later
-        ->addWhere('payment_processor.name', 'IN', ['adyen', 'gravy'])
-        ->execute();
-      // Also filter out multi recurring e.g. contact 1925710.
-      if (count($contribution_recurs) === 1) {
-        $recur = $contribution_recurs[0];
-        $result = [
-          'id' => $recur['id'],
-          'contact_id' => $contact_id,
-          'currency' => $recur['currency'],
-          'amount' => $recur['amount'],
-          'donor_name' => $recur['contact.first_name'] ?? $recur['contact.display_name'],
-          'country' => $recur['country.iso_code'],
-          'next_sched_contribution_date' => $recur['next_sched_contribution_date'],
-        ];
-      }
-      else {
-        \Civi::log('wmf')->info("Donor '$contact_id' has " . count($contribution_recurs) . " valid recurring");
-      }
+      return self::getUpgradeableWithoutChecksum($contact_id);
     }
     else {
       \Civi::log('wmf')->info("Donor '$contact_id' checksum not valid");
     }
     return $result;
+  }
+
+  public static function getUpgradeableWithoutChecksum(int $contact_id) {
+    $allContactIds = Contact::duplicateContactIds($contact_id);
+    \Civi::log('wmf')->debug("Check if donor " . json_encode($allContactIds) . " upgradable");
+    $contribution_recurs = \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addSelect('id', 'currency', 'amount', 'next_sched_contribution_date', 'contact.first_name', 'contact.display_name', 'country.iso_code')
+      ->addJoin('Contact AS contact', 'LEFT', ['contact.id', '=', $contact_id])
+      ->addJoin('Address AS address', 'LEFT', ['address.contact_id', '=', $contact_id], ['address.is_primary', '=', 1])
+      ->addJoin('Country AS country', 'LEFT', ['country.id', '=', 'address.country_id'])
+      ->addJoin('PaymentProcessor AS payment_processor', 'LEFT', ['payment_processor.id', '=', 'payment_processor_id'])
+      ->addWhere('contact_id', 'IN', $allContactIds)
+      ->addWhere('cancel_date', 'IS NULL')
+      ->addWhere('next_sched_contribution_date', 'IS NOT NULL')
+      // use adyen and gravy first, find dlocal except upi later
+      ->addWhere('payment_processor.name', 'IN', ['adyen', 'gravy'])
+      ->execute();
+    // Also filter out multi recurring e.g. contact 1925710.
+    if (count($contribution_recurs) === 1) {
+      $recur = $contribution_recurs[0];
+      return [
+        'id' => $recur['id'],
+        'contact_id' => $contact_id,
+        'currency' => $recur['currency'],
+        'amount' => $recur['amount'],
+        'donor_name' => $recur['contact.first_name'] ?? $recur['contact.display_name'],
+        'country' => $recur['country.iso_code'],
+        'next_sched_contribution_date' => $recur['next_sched_contribution_date'],
+      ];
+    }
+    \Civi::log('wmf')->info("Donor '$contact_id' has " . count($contribution_recurs) . " valid recurring");
+    return [];
   }
 
   public static function gatewayManagesOwnRecurringSchedule($gateway): bool {

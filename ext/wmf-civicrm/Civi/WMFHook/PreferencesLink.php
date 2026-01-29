@@ -40,7 +40,7 @@ class PreferencesLink {
       $preferencesLink = self::getPreferenceUrl($contactID);
       $page->assign('preferencesLink', $preferencesLink);
       $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
-      $upgradeableRecur = \Civi\WMFHelper\ContributionRecur::getUpgradeable($contactID, $checksum);
+      $upgradeableRecur = \Civi\WMFHelper\ContributionRecur::getUpgradeableWithoutChecksum($contactID);
       if ($upgradeableRecur) {
         $recurringUpgradeBaseUrl = (string) \Civi::settings()->get('wmf_recurring_upgrade_url');
         $recurringUpgradeUrl = self::addContactAndChecksumToUrl($recurringUpgradeBaseUrl, $contactID, $checksum);
