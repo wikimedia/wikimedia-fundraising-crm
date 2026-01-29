@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f4938e767ef248f0dc2fee790535ddcf",
+    "content-hash": "013424a7e57a23ea70868c8148bb0433",
     "packages": [
         {
             "name": "adrienrn/php-mimetyper",
@@ -8624,16 +8624,16 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v1.2.0",
+            "version": "v1.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "af302713e3e157368c5e0e24ec6ae6e7128c96f9"
+                "reference": "42ac02e18926f3ae5efbdc15866cff6fb3c7a3f8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/af302713e3e157368c5e0e24ec6ae6e7128c96f9",
-                "reference": "af302713e3e157368c5e0e24ec6ae6e7128c96f9",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/42ac02e18926f3ae5efbdc15866cff6fb3c7a3f8",
+                "reference": "42ac02e18926f3ae5efbdc15866cff6fb3c7a3f8",
                 "shasum": ""
             },
             "require": {
@@ -8659,7 +8659,7 @@
                 "ext-sqlite3": "*",
                 "mediawiki/mediawiki-codesniffer": "^46.0",
                 "php-parallel-lint/php-parallel-lint": "^1.2",
-                "phpunit/phpunit": "^9.5"
+                "phpunit/phpunit": "^9"
             },
             "type": "library",
             "autoload": {
@@ -8724,9 +8724,9 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.2.0"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.2.1"
             },
-            "time": "2026-01-27T22:02:24+00:00"
+            "time": "2026-01-29T03:31:52+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -11314,7 +11314,7 @@
         "ext-mysqli": "*",
         "composer-runtime-api": "~2.0"
     },
-    "platform-dev": {},
+    "platform-dev": [],
     "platform-overrides": {
         "php": "8.2.26"
     },
