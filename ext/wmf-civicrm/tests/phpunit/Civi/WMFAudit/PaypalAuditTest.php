@@ -158,6 +158,13 @@ class PaypalAuditTest extends BaseAuditTestCase {
     $this->assertEquals('Acme Endowment Program', $grantTransaction['grant_provider']);
     $possibleMatches = GrantTransaction::getMatches()->execute();
     $this->assertCount(1, $possibleMatches);
+    GrantTransaction::getMatches()->setIsDryRun(FALSE)->execute();
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('contribution_settlement.*')
+      ->addWhere('contribution_extra.gateway', '=', 'paypal DAF')
+      ->addWhere('contribution_extra.gateway_txn_id', '=', '1V05')
+      ->execute()->single();
+    $this->assertEquals('paypal_20260123_USD', $contribution['contribution_settlement.settlement_batch_reference']);
   }
 
   /**

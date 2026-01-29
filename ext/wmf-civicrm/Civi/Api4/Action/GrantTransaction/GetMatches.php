@@ -2,6 +2,7 @@
 
 namespace Civi\Api4\Action\GrantTransaction;
 
+use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 
@@ -9,6 +10,7 @@ use Civi\Api4\Generic\Result;
  * Get Matching Contributions for Grant transactions.
  *
  * @method $this setDaysToLookBack(int $numberOfDays)
+ * @method $this setIsDryRun(bool $isDryRun)
  */
 class GetMatches extends AbstractAction {
 
@@ -16,6 +18,15 @@ class GetMatches extends AbstractAction {
    * Number of days in the past to consider.
    */
   protected int $daysToLookBack = 5;
+
+  /**
+   * Is dry run.
+   *
+   * In dry run mode the api commands will be generated but not run.
+   *
+   * @var bool
+   */
+  protected bool $isDryRun = TRUE;
 
   /**
    * This function updates the settled transaction with new fee & currency conversion data.
@@ -67,6 +78,11 @@ class GetMatches extends AbstractAction {
       }
       \Civi::log('debug')->info("Link command :\n $command"
       );
+      if (!$this->isDryRun) {
+        Contribution::update(FALSE)
+          ->addWhere('id', '=', $pair['id'])
+          ->setValues($pair)->execute();
+      }
     }
   }
 
