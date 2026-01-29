@@ -26,12 +26,16 @@ function civicrm_api3_omnimailing_get($params) {
   CRM_Core_DAO::executeQuery("SET TIME_ZONE='+00:00'");
 
     /* @var \Omnimail\Silverpop\Mailer $mailer */
-    $mailer = Omnimail::create($params['mail_provider'], CRM_Omnimail_Helper::getCredentials($params));
+  $mailer = Omnimail::create($params['mail_provider'], CRM_Omnimail_Helper::getCredentials($params));
   $mailerParameters = [
     'StartTimeStamp' => strtotime($params['start_date']),
     'EndTimeStamp' => strtotime($params['end_date']),
     'timeout' => $params['timeout'],
+    'post_headers' => $params['post_headers'],
   ];
+  if (isset($params['curl_options'])) {
+    $mailerParameters['curl_options'] = $params['curl_options'];
+  }
   try {
     $mailings = (array) $mailer->getMailings($mailerParameters)->getResponse();
   }
@@ -176,6 +180,26 @@ function _civicrm_api3_omnimailing_get_spec(&$params) {
     'title' => ts('Http request time out'),
     'type' => CRM_Utils_Type::T_INT,
     'api.default' => 20,
+  ];
+  /*
+   Three things to try curl-18 issue:
+    1) 'headers'['Connection'] => 'close' => if this fixes then → keep-alive / idle timeout mismatch
+    2) 'headers'['Expect'] => '' *this is added to the default now* => if this fixes then → 100-continue / large POST handshake mishandling
+    3) 'curl_options'['CURLOPT_HTTP_VERSION'] => 'HTTP/1.1' => if this fixes then → HTTP/2 intermediary issues
+  */
+  $params['post_headers'] = [
+    'title' => ts('Http POST headers'),
+    'description' => ts('Headers passed in here will be added to the POST headers. The default is one possible fix for our timeouts'),
+    // disables 100-continue
+    // When POST bodies are “large enough”, libcurl may add
+    // Expect: 100-continue (or proxies behave as if it did).
+    // Some servers/LBs mishandle this and close the connection.
+    // Retrying immediately works because the next connection/path behaves differently.
+    'api.default' => ['Expect' => ''],
+  ];
+  $params['curl_options'] = [
+    'title' => ts('Http CURL options'),
+    'description' => ts('Headers passed in here will be added to the CURL options.'),
   ];
 
 }
