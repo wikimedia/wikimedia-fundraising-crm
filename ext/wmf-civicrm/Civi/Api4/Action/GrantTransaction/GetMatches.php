@@ -91,7 +91,7 @@ class GetMatches extends AbstractAction {
        INNER JOIN civicrm_contact c ON c.id = soft.contact_id
        LEFT JOIN civicrm_contribution cont ON cont.id = soft.contribution_id
      LEFT JOIN wmf_contribution_extra x ON x.entity_id = cont.id
-       WHERE (organization_name = %1 OR legal_identifier = %1)
+       WHERE (organization_name = %1 OR legal_name = %1)
          AND is_deleted = 0 AND contact_type = 'Organization' AND gateway = 'Paypal DAF'
          AND cont.total_amount = %2
          AND soft_credit_type_id = $softCreditTypeID AND gateway_txn_id IS NULL
