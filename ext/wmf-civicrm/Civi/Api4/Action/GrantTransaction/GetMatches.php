@@ -7,16 +7,15 @@ use Civi\Api4\Generic\Result;
 
 /**
  * Get Matching Contributions for Grant transactions.
+ *
+ * @method $this setDaysToLookBack(int $numberOfDays)
  */
 class GetMatches extends AbstractAction {
 
   /**
    * Number of days in the past to consider.
-   *
-   * We might make this set-able.
-   * @var int
    */
-  private int $daysToLookBack = 5;
+  protected int $daysToLookBack = 5;
 
   /**
    * This function updates the settled transaction with new fee & currency conversion data.
