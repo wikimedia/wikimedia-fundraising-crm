@@ -513,7 +513,7 @@ abstract class BaseAuditProcessor {
     $recon_file_stats = [];
     foreach ($this->getReconciliationFiles() as $file) {
       //parse the recon files into something relatively reasonable.
-      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'fee' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0];
+      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'fee' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'reversal' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0, 'total_queued_from_transaction_log' => 0];
       $parsed = $this->parseReconciliationFile($file);
       if (empty($parsed)) {
         $this->echo(__FUNCTION__ . $file . ': No transactions to find. Returning.');
@@ -528,7 +528,10 @@ abstract class BaseAuditProcessor {
       $recon_file_stats[$file] = $this->getFileStatistic($file, 'total_missing');
       $time = $this->stopTiming(' get missing on ' . $file);
       $this->echo($missingCount . ' missing transactions (of a possible ' . $this->getFileStatistic($file, 'total_records') . ") identified in $time seconds\n");
-
+      if ($this->getFileStatistic($file, 'total_missing')) {
+        $queuedFromTransactionLog = $this->getFileStatistic($file, 'total_queued_from_transaction_log');
+        $this->echo($queuedFromTransactionLog . ' donations were found in the transaction log and queued. Still to find in logs: ' . (((int) $this->getFileStatistic($file, 'total_missing')) - $queuedFromTransactionLog));
+      }
       //If the file is empty, move it off.
       // Note that we are not archiving files that have missing transactions,
       // which might be resolved below. Those are archived on the next run,
@@ -544,23 +547,6 @@ abstract class BaseAuditProcessor {
     //get the date distribution on what's left... for ***main transactions only***
     //That should be to say: The things that are totally in the payments logs.
     //Other things, we will have to look other places, or just rebuild.
-    $queuedFromTransactionLog = 0;
-    foreach ($this->getMissingDonations() as $index => $record) {
-      if (!empty($record['transaction_details'])) {
-        $fullRecord = $this->merge_data($record['transaction_details']['message'], $record);
-        if (empty($record['contribution_tracking']) && !empty($fullRecord['contribution_tracking_id'])) {
-          $this->createContributionTracking($fullRecord['contribution_tracking_id'], $fullRecord['payment_method'] ?? '', $fullRecord['date'] ?? NULL, $fullRecord['language'] ?? NULL, $fullRecord['country'] ?? NULL);
-        }
-        unset($fullRecord['transaction_details'], $fullRecord['contribution_tracking']);
-        $this->send_queue_message($fullRecord, 'main');
-        unset($this->missingTransactions['main'][$index]);
-        $queuedFromTransactionLog++;
-        $this->echo('%');
-      }
-    }
-    if ($this->getFileStatistic($file, 'total_missing')) {
-      $this->echo($queuedFromTransactionLog . ' donations were found in the transaction log and queued. Still to find in logs: ' . (((int) $this->getFileStatistic($file, 'total_missing')) - $queuedFromTransactionLog));
-    }
     $missing_by_date = $this->getMissingByDate();
 
     $remaining = NULL;
@@ -1381,7 +1367,19 @@ abstract class BaseAuditProcessor {
           continue;
         }
         $key = $auditRecord['is_negative'] ? 'negative' : 'main';
-        $this->missingTransactions[$key][] = $auditRecord['message'];
+        if ($key === 'main' && !empty($auditRecord['message']['transaction_details'])) {
+          $fullRecord = $this->merge_data($auditRecord['message']['transaction_details']['message'], $auditRecord['message']);
+          if (empty($record['contribution_tracking']) && !empty($fullRecord['contribution_tracking_id'])) {
+            $this->createContributionTracking($fullRecord['contribution_tracking_id'], $fullRecord['payment_method'] ?? '', $fullRecord['date'] ?? NULL, $fullRecord['language'] ?? NULL, $fullRecord['country'] ?? NULL);
+          }
+          unset($fullRecord['transaction_details'], $fullRecord['contribution_tracking']);
+          $this->send_queue_message($fullRecord, 'main');
+          $this->statistics[$file]['total_queued_from_transaction_log']++;
+          $this->echo('%');
+        }
+        else {
+          $this->missingTransactions[$key][] = $auditRecord['message'];
+        }
         if ($this->get_runtime_options('is_stop_on_first_missing')) {
           \Civi::log('wmf')->info('stopping on first missing', $auditRecord + ['transaction' => $transaction]);
           break;

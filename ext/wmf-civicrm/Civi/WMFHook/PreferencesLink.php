@@ -90,10 +90,12 @@ class PreferencesLink {
     $email = \Civi\Api4\Contact::get(FALSE)
       ->addWhere('id', '=', $contactID)
       ->addSelect('email_primary.email')
-      ->execute()->single()['email_primary.email'];
+      ->addSelect('preferred_language')
+      ->execute()->single();
     return WMFLink::getUnsubscribeURL(FALSE)
       ->setContactID($contactID)
-      ->setEmail($email)
+      ->setEmail($email['email_primary.email'])
+      ->setLanguage($email['preferred_language'])
       ->execute()->first()['unsubscribe_url'];
   }
 
