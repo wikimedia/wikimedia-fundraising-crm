@@ -189,7 +189,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
         ContributionRecurHelper::reactivateIfInactive([
           'contribution_status_id' => $message->getExistingContributionRecurValue('contribution_status_id'),
           'id' => $message->getContributionRecurID(),
-        ]);
+        ], $message->getDate());
       }
       if (!$message->getContributionRecurID()) {
         // This logic was copied from the old RecurringQueueConsumer for PayPal subscription payments created before the contribution recur row is created
