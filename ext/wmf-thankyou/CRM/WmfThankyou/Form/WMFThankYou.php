@@ -17,10 +17,19 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
    * @throws \CRM_Core_Exception
    */
   public function buildQuickForm(): void {
-    $contributionID = $this->getContributionID();
-    if (!$this->isValidContribution()) {
-      $this->assign('no_go_reason', E::ts('A valid contribution ID, WITH contribution_extra data is required'));
-      return;
+    $contributionRecurID = $this->getContributionRecurID();
+    if ($contributionRecurID) {
+      $contributionID = $this->getContributionIDForMonthlyConvert($contributionRecurID);
+      if (!$contributionID) {
+        $this->assign('no_go_reason', E::ts('Selected recurring contribution was not started via monthly convert'));
+        return;
+      }
+    } else {
+      $contributionID = $this->getContributionID();
+      if (!$this->isValidContribution()) {
+        $this->assign('no_go_reason', E::ts('A valid contribution ID, WITH contribution_extra data is required'));
+        return;
+      }
     }
 
     try {
@@ -37,27 +46,11 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
       return;
     }
     $preferredLanguage = $contact['preferred_language'] ?: 'en_US';
-    $this->setMessage($preferredLanguage);
     $preferredLanguageString = CRM_Core_PseudoConstant::getLabel('CRM_Contact_BAO_Contact', 'preferred_language', $preferredLanguage);
     $this->assign('language', $preferredLanguageString ?? $contact['preferred_language']);
     $this->assign('contact', $contact);
     $this->assign('contribution', $contribution);
-    if (!$this->isEndowment()) {
-      /** We decided not to display monthly convert - code left to help us if we want to add another
-      // as this logic is deceptively tricky
-      $this->add(
-        'Select',
-        'template',
-        ts('Type'),
-        [
-        'thank_you' => ts('Thank You'),
-        'monthly_convert' => ts('Monthly Convert'),
-        ],
-        TRUE,
-        ['onChange' => "CRM.loadPreview('" . $preferredLanguage . "'," . $contributionID . ", this.value);"]
-      );
-      **/
-    }
+    $this->setMessage($preferredLanguage, $contributionID, $contribution['contact_id'], $contributionRecurID);
     $this->addButtons([
       [
         'type' => 'submit',
@@ -73,15 +66,38 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
 
   /**
    * Set the rendered message property, if possible.
-   * @param string $preferredLanguage
    */
-  protected function setMessage(string $preferredLanguage): void {
+  protected function setMessage(string $preferredLanguage, int $contributionID, int $contactID, ?int $contributionRecurID): void {
     try {
-      $message = ThankYou::render()
-        ->setContributionID($this->getContributionID())
-        ->setTemplateName($this->getTemplateName())
-        ->setLanguage($preferredLanguage)
-        ->execute()->first();
+      $render = ThankYou::render()
+        ->setContributionID($contributionID)
+        ->setLanguage($preferredLanguage);
+
+      if ($contributionRecurID) {
+        $contributionRecur = \Civi\Api4\ContributionRecur::get(FALSE)
+          ->addWhere('id', '=', $contributionRecurID)
+          ->execute()->first();
+        $params = [
+          'amount' => $contributionRecur['amount'],
+          'contact_id' => $contactID,
+          'currency' => $contributionRecur['currency'],
+          'receive_date' => $contributionRecur['start_date'],
+          'day_of_month' => (new \DateTime($contributionRecur['start_date'], new \DateTimeZone('UTC')))
+            ->format('j'),
+          'recurring' => TRUE,
+          'transaction_id' => "CNTCT-{$contactID}",
+          // shown in the body of the text
+          'contribution_id' => $contributionID,
+         ];
+         $render
+           ->setTemplateName('monthly_convert')
+           ->setTemplateParameters($params);
+      }
+      else {
+        $render->setTemplateName($this->getTemplateName());
+      }
+
+      $message = $render->execute()->first();
       $this->assign('subject', $message['subject']);
       $this->assign('message', $message['html']);
     }
@@ -103,6 +119,10 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
     return $this->isEndowment() ? 'endowment_thank_you' : 'thank_you';
   }
 
+  protected function isMonthlyConvert(int $contributionRecurID): bool {
+    return (bool)$this->getContributionRecurID();
+  }
+
   /**
    * Is this an endowment gift.
    *
@@ -119,10 +139,18 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
    */
   public function postProcess(): void {
     try {
-      ThankYou::send(FALSE)
-        ->setContributionID(CRM_Utils_Request::retrieve('contribution_id', 'Integer', $this))
-        ->setTemplateName($this->getTemplateName())
-        ->execute();
+      if ($this->getContributionRecurID()) {
+        $contributionRecur = \Civi\Api4\ContributionRecur::get(FALSE)
+          ->addWhere('id', '=', $this->getContributionRecurID())
+          ->execute()->first();
+        $contributionID = $this->getContributionIDForMonthlyConvert($this->getContributionRecurID());
+        Civi\WMFHelper\ContributionRecur::sendSuccessThankYouMail($contributionRecur, $contributionID);
+      } else {
+        ThankYou::send(FALSE)
+          ->setContributionID(CRM_Utils_Request::retrieve('contribution_id', 'Integer', $this))
+          ->setTemplateName($this->getTemplateName())
+          ->execute();
+      }
       CRM_Core_Session::setStatus('Message sent', E::ts('Thank you Sent'), 'success');
     }
     catch (CRM_Core_Exception $e) {
@@ -160,6 +188,14 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
   }
 
   /**
+   * @return int
+   * @throws \CRM_Core_Exception
+   */
+  protected function getContributionRecurID(): int {
+    return (int) CRM_Utils_Request::retrieve('contribution_recur_id', 'Integer', $this);
+  }
+
+  /**
    * @return string
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
@@ -179,6 +215,13 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
    */
   protected function isValidContribution(): bool {
     return (bool) CRM_Core_DAO::singleValueQuery('SELECT id FROM wmf_contribution_extra WHERE entity_id = ' . $this->getContributionID());
+  }
+
+  protected function getContributionIDForMonthlyConvert(int $contributionRecurID): int {
+    return (int) CRM_Core_DAO::singleValueQuery('
+        SELECT c.id FROM civicrm_contribution c
+        INNER JOIN civicrm_contribution_recur r ON c.invoice_id = r.invoice_id
+        WHERE r.id = ' . $contributionRecurID);
   }
 
 }
