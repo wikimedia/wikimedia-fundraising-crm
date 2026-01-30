@@ -435,7 +435,20 @@ class Save extends AbstractAction {
         && !empty($this->message['last_name'])
       )
     ) {
-      $updateFields = ['first_name', 'last_name'];
+      // When new name fields only differ from old name fields in case, only update
+      // when the new case is better than the old case
+      foreach(['first_name', 'last_name'] as $field) {
+        $sameExceptForCase = (strcasecmp($existingContact[$field], $this->message[$field]) === 0);
+        if ($sameExceptForCase) {
+          if (\Civi\WMFHelper\Name::isBetterCapitalization(
+            $existingContact[$field], $this->message[$field]
+          )) {
+            $updateFields[] = $field;
+          }
+        } else {
+          $updateFields[] = $field;
+        }
+      }
     }
 
     $updateParams = [];

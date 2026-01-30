@@ -2135,6 +2135,38 @@ class DonationQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * If we get a matching contact name and email with different name case,
+   * use the 'better' casing.
+   */
+  public function testUpdateNameCasingWithContactExisting(): void {
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'TEST',
+      'last_name' => 'Mouse',
+      'email_primary.email' => 'dupe@example.org',
+    ], 'existing');
+
+    $msg = [
+      'first_name' => 'Test',
+      'last_name' => 'MOUSE',
+      'currency' => 'USD',
+      'date' => '2017-01-01 00:00:00',
+      'invoice_id' => mt_rand(),
+      'email' => 'dupe@example.org',
+      'country' => 'US',
+      'street_address' => '123 42nd St. #321',
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.25',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+    ];
+    $this->processDonationMessage($msg);
+    $this->assertContactValue($this->ids['Contact']['existing'], 'Test', 'first_name');
+    $this->assertContactValue($this->ids['Contact']['existing'], 'Mouse', 'last_name');
+  }
+
+  /**
    * If we get a matching contact email, add missing name fields from the message
    */
   public function testAddMissingNameWithContactExisting(): void {
