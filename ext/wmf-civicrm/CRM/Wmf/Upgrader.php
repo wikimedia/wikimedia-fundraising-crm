@@ -3788,17 +3788,6 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
-   * Create or update GrantTransaction table from entityType.
-   */
-  public function upgrade_4830() {
-    $filePath = __DIR__ . "/../../schema/GrantTransaction.entityType.php";
-    $entityDefn = include $filePath;
-    $sql = Civi::schemaHelper()->arrayToSql($entityDefn);
-    CRM_Core_DAO::executeQuery($sql);
-    return TRUE;
-  }
-
-  /**
    * Bug: T415642
    *
    * Delete all the snooze activities that are repeats.
@@ -3807,7 +3796,7 @@ AND channel <> 'Chapter Gifts'";
    *
    * @return bool
    */
-  public function upgrade_4835(): bool {
+  public function upgrade_4825(): bool {
     $sql = '
     DELETE a
     FROM civicrm_activity a
@@ -3832,6 +3821,16 @@ AND channel <> 'Chapter Gifts'";
         AND LEFT(a.subject, 20) = "Email snoozed until "
         AND a.id != keeper.min_id;
     ';
+    return TRUE;
+  }
+
+  /**
+   * Create or update GrantTransaction table from entityType.
+   */
+  public function upgrade_4830() {
+    $filePath = __DIR__ . "/../../schema/GrantTransaction.entityType.php";
+    $entityDefn = include $filePath;
+    $sql = Civi::schemaHelper()->arrayToSql($entityDefn);
     CRM_Core_DAO::executeQuery($sql);
     return TRUE;
   }
