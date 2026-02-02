@@ -3841,6 +3841,29 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Save screen height and width in their own contribution tracking fields
+   *
+   *
+   * Bug: T411901
+   *
+   * @return bool
+   */
+  public function upgrade_4840(): bool {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_contribution_tracking', 'screen_height', FALSE)) {
+      CRM_Core_DAO::executeQuery("
+        ALTER TABLE civicrm_contribution_tracking ADD COLUMN screen_height
+        varchar(255) COMMENT 'Device screen height.' DEFAULT NULL;
+      ");
+    }
+    if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_contribution_tracking', 'screen_width', FALSE)) {
+      CRM_Core_DAO::executeQuery("
+        ALTER TABLE civicrm_contribution_tracking ADD COLUMN screen_width
+        varchar(255) COMMENT 'Device screen width.' DEFAULT NULL;
+      ");
+    }
+    return TRUE;
+  }
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity

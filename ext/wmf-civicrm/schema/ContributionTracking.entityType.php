@@ -66,6 +66,16 @@ return [
         'banner_history_log_id' => TRUE,
       ],
     ],
+    'screen_width' => [
+      'fields' => [
+        'screen_width' => TRUE,
+      ],
+    ],
+    'screen_height' => [
+      'fields' => [
+        'screen_height' => TRUE,
+      ],
+    ],
   ],
   'getFields' => fn() => [
     'id' => [
@@ -293,6 +303,18 @@ return [
       'sql_type' => 'varchar(255)',
       'input_type' => 'Text',
       'description' => E::ts('Temporary banner history log ID to associate banner history EventLogging events.'),
+    ],
+    'screen_width' => [
+      'title' => E::ts('Screen Width'),
+      'sql_type' => 'int unsigned',
+      'input_type' => 'Number',
+      'description' => E::ts('Device screen width.'),
+    ],
+    'screen_height' => [
+      'title' => E::ts('Screen Height'),
+      'sql_type' => 'int unsigned',
+      'input_type' => 'Number',
+      'description' => E::ts('Device screen height.'),
     ],
   ],
 ];
