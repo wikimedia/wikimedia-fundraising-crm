@@ -60,16 +60,17 @@ class ContributionRecur {
    * If recur record is in an 'inactive' status (currently defined as Completed,
    * Cancelled, or Failed), reactivate it.
    *
-   * @param object $recur_record
-   *
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  public static function reactivateIfInactive(array $recur_record): void {
+  public static function reactivateIfInactive(array $recur_record, string $contributionDate): void {
     if (in_array($recur_record['contribution_status_id'], self::getInactiveStatusIds())) {
       \Civi::log('wmf')->info("Reactivating contribution_recur with id " . $recur_record['id']);
+      // If a donor cancels immediately after a payment is sent, the payment may be imported after
+      // the cancel message. The 'cancel_date' where condition ensures we don't uncancel those.
       \Civi\Api4\ContributionRecur::update(FALSE)
         ->addWhere('id', '=', $recur_record['id'])
+        ->addWhere('cancel_date', '<', $contributionDate)
         ->setValues([
           'cancel_date' => NULL,
           'cancel_reason' => '',

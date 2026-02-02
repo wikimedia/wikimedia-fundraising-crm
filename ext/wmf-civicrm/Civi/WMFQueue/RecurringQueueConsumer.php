@@ -111,7 +111,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       RecurHelper::reactivateIfInactive([
         'id' => $message->getContributionRecurID(),
         'contribution_status_id' => $message->getExistingContributionRecurValue('contribution_status_id'),
-      ]);
+      ], $message->getDate());
     }
 
     // Since October 2018 or so, PayPal has been doing two things that really

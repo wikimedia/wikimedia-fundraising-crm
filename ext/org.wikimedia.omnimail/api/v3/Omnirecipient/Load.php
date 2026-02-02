@@ -36,6 +36,7 @@ function civicrm_api3_omnirecipient_load($params) {
   try {
     $omnimail = new CRM_Omnimail_Omnirecipients($params);
     $recipients = $omnimail->getResult($params);
+    $map = _civicrm_api3_omnirecipient_load_batch_get_merged_contact_map($recipients);
     $jobSettings = $omnimail->getJobSettings();
 
     $throttleSeconds = $params['throttle_seconds'] ?? NULL;
@@ -62,6 +63,10 @@ function civicrm_api3_omnirecipient_load($params) {
         _civicrm_api3_omnirecipient_load_write_remainder_rows($valueStrings, $omnimail, $progressSettings, $omnimail->getOffset() + $count, 'omnirecipient_batch_limit_reached');
         return civicrm_api3_create_success(1);
       }
+      $contactId = $recipient->getContactReference();
+      if ($contactId && isset($map[(int)$contactId])) {
+        $contactId = $map[(int)$contactId];
+      }
       $insertValues = [
         1 => [(string) $recipient->getContactIdentifier(), 'String'],
         2 => [
@@ -74,7 +79,7 @@ function civicrm_api3_omnirecipient_load($params) {
           (string) $recipient->getRecipientActionIsoDateTime(),
           'String',
         ],
-        6 => [(string) $recipient->getContactReference() ?: 'NULL', 'String'],
+        6 => [(string) $contactId ?: 'NULL', 'String'],
       ];
       $rowsLeftBeforeThrottle--;
       $count++;
@@ -224,4 +229,29 @@ function _civicrm_api3_omnirecipient_load_spec(&$params) {
     'type' => CRM_Utils_Type::T_INT,
   ];
 
+}
+
+function _civicrm_api3_omnirecipient_load_batch_get_merged_contact_map($recipients): array {
+  $contactIds = [];
+  foreach ($recipients as $row) {
+    $recipient = new \Omnimail\Silverpop\Responses\Recipient($row);
+    $contactId = (int)$recipient->getContactReference();
+    if ($contactId) {
+      $contactIds[] = $contactId;
+    }
+  }
+  $mergedContacts = \Civi\Api4\Contact::get(FALSE)
+    ->addSelect('id')
+    ->addWhere('is_deleted', '=', TRUE)
+    ->addWhere('id', 'IN', $contactIds)
+    ->addChain('mergedTo', \Civi\Api4\Contact::getMergedTo(FALSE)->setContactId('$id'))
+    ->execute();
+  $map = [];
+  foreach ($mergedContacts as $mergedContact) {
+    $mergedToContact = $mergedContact['mergedTo'][0] ?? NULL;
+    if ($mergedToContact) {
+      $map[$mergedContact['id']] = $mergedToContact['id'];
+    }
+  }
+  return $map;
 }
