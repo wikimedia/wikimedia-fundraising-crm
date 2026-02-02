@@ -61,12 +61,20 @@ function smashpig_civicrm_navigationMenu(&$menu) {
 }
 
 function smashpig_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
-  //create a Send Failure Notification link for a given recurring contribution
+  // create links to preview and send all the custom recurring message template emails
   if ($objectName === 'Contribution' && $op === 'contribution.selector.recurring') {
     $links[] = [
-      'name' => ts('Send Failure Notification'),
-      'title' => ts('Send Failure Notification'),
-      'url' => 'civicrm/smashpig/notification?type=recurringfailure',
+      'name' => ts('Send 1st Failure Email'),
+      'title' => ts('Send 2nd Failure Email'),
+      'url' => 'civicrm/smashpig/notification?workflow=recurring_failed_message',
+      'qs' => "contribution_recur_id=$objectId&entity_id=$objectId",
+      'class' => 'crm-popup large-popup',
+      'weight' => 0,
+    ];
+    $links[] = [
+      'name' => ts('Send 2nd Failure Email'),
+      'title' => ts('Send 2nd Failure Email'),
+      'url' => 'civicrm/smashpig/notification?workflow=recurring_second_failed_message',
       'qs' => "contribution_recur_id=$objectId&entity_id=$objectId",
       'class' => 'crm-popup large-popup',
       'weight' => 0,

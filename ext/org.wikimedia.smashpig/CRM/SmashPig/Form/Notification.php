@@ -25,12 +25,12 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
    */
   private $qaNotification;
 
-  private $type;
+  private $workflow;
 
   public function preProcess() {
       parent::preProcess();
-      $this->type = $this->getNotificationType();
-      $this->notification = $this->renderNotification($this->type);
+      $this->workflow = $this->getNotificationWorkflow();
+      $this->notification = $this->renderNotification($this->workflow);
       $this->assign( 'notification', $this->notification);
   }
 
@@ -40,8 +40,8 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
     // add form elements
     $this->addElement(
       'hidden', // field type
-      'type', // field name
-      $this->getNotificationType()
+      'workflow', // field name
+      $this->getNotificationWorkflow()
 
     );
     $buttons = [];
@@ -83,6 +83,7 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
     if ($this->notification) {
       $results = \Civi\Api4\FailureEmail::send()
         ->setContributionRecurID($this->getEntityId())
+        ->setWorkflow($this->workflow)
         ->execute();
       // if not error
       CRM_Core_Session::setStatus("Email sent.");
@@ -112,7 +113,7 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
       }
       if ($this->controller->getActionName()[1] === 'upload') {
         Message::updatefromdraft()
-          ->setWorkflowName('recurring_failed_message')
+          ->setWorkflowName($this->workflow)
           ->setLanguage($this->qaNotification['language'])
           ->execute();
       }
@@ -141,10 +142,11 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
     return $elementNames;
   }
 
-  private function renderNotification( $type ) {
-      if ($type === 'recurringfailure') {
+  private function renderNotification( $workflow ) {
+      if ($workflow === 'recurring_failed_message' || $workflow === 'recurring_second_failed_message') {
           $results = \Civi\Api4\FailureEmail::render()
               ->setContributionRecurID( $this->getEntityId() )
+              ->setWorkflow($workflow)
               ->execute();
            // assume only one result
           return $results->first();
@@ -155,7 +157,7 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
       return CRM_Utils_Request::retrieve('entity_id', 'Int', $this);
   }
 
-  private function getNotificationType() {
-    return CRM_Utils_Request::retrieve('type', 'String');
+  private function getNotificationWorkflow() {
+    return CRM_Utils_Request::retrieve('workflow', 'String');
   }
 }

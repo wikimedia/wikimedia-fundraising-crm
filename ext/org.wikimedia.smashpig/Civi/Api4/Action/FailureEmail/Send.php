@@ -17,6 +17,7 @@ use Civi\Api4\Activity;
  * @method int getContributionRecurID() Get recurring ID.
  * @method $this setContactID(int $contactID) Set contact ID.
  * @method $this setSequenceNumber(int $sequenceNumber) Set sequence number.
+ * @method $this setWorkflow(string $workflow) Set workflow
  */
 class Send extends AbstractAction {
 
@@ -42,6 +43,12 @@ class Send extends AbstractAction {
    */
   protected $sequenceNumber = 1;
 
+  /**
+   * Name of the email template
+   * @var string
+   */
+  protected $workflow;
+
   private const ACTIVITY_TYPES = [
     1 => 'First Recurring Failure Email',
     2 => 'Second Recurring Failure Email'
@@ -66,7 +73,11 @@ class Send extends AbstractAction {
   }
 
   protected function getWorkflow(): string {
-    return self::WORKFLOWS[$this->sequenceNumber];
+    if ($this->workflow) {
+      return $this->workflow;
+    } else {
+      return self::WORKFLOWS[$this->sequenceNumber];
+    }
   }
 
   protected function getActivityType(): string {
