@@ -3788,6 +3788,17 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Create or update GrantTransaction table from entityType.
+   */
+  public function upgrade_4830() {
+    $filePath = __DIR__ . "/../../schema/GrantTransaction.entityType.php";
+    $entityDefn = include $filePath;
+    $sql = Civi::schemaHelper()->arrayToSql($entityDefn);
+    CRM_Core_DAO::executeQuery($sql);
+    return TRUE;
+  }
+
+  /**
    * Bug: T415642
    *
    * Delete all the snooze activities that are repeats.
@@ -3796,42 +3807,36 @@ AND channel <> 'Chapter Gifts'";
    *
    * @return bool
    */
-  public function upgrade_4825(): bool {
+  public function upgrade_4835(): bool {
+    $sql = '
+      CREATE TEMPORARY TABLE duplicate_activities AS
+      SELECT ac.contact_id, a.subject, MIN(a.id) AS min_id
+      FROM civicrm_activity a
+      INNER JOIN civicrm_activity_contact ac
+        ON ac.activity_id = a.id
+        AND ac.record_type_id = 2
+      WHERE a.activity_type_id = 174
+        AND a.subject LIKE "Email snoozed until %"
+      GROUP BY ac.contact_id, a.subject
+      HAVING COUNT(a.id) > 1
+    ';
+    CRM_Core_DAO::executeQuery($sql);
+    CRM_Core_DAO::executeQuery('ALTER TABLE duplicate_activities ADD INDEX idx_lookup (contact_id, subject)');
     $sql = '
     DELETE a
     FROM civicrm_activity a
     INNER JOIN civicrm_activity_contact ac
-        ON ac.activity_id = a.id
-        AND ac.record_type_id = 2
-    INNER JOIN civicrm_contact c
-        ON ac.contact_id = c.id
-    INNER JOIN (
-        SELECT ac2.contact_id, a2.subject, MIN(a2.id) AS min_id
-        FROM civicrm_activity a2
-        INNER JOIN civicrm_activity_contact ac2
-            ON ac2.activity_id = a2.id
-            AND ac2.record_type_id = 2
-        WHERE a2.activity_type_id = 174
-            AND LEFT(a2.subject, 20) = "Email snoozed until "
-        GROUP BY ac2.contact_id, a2.subject
-        HAVING COUNT(a2.id) > 1
-    ) keeper ON keeper.contact_id = c.id
-        AND keeper.subject = a.subject
+      ON ac.activity_id = a.id
+      AND ac.record_type_id = 2
+    INNER JOIN duplicate_activities keeper
+      ON keeper.contact_id = ac.contact_id
+      AND keeper.subject = a.subject
     WHERE a.activity_type_id = 174
-        AND LEFT(a.subject, 20) = "Email snoozed until "
-        AND a.id != keeper.min_id;
+      AND a.subject LIKE "Email snoozed until %"
+      AND a.id != keeper.min_id
     ';
-    return TRUE;
-  }
-
-  /**
-   * Create or update GrantTransaction table from entityType.
-   */
-  public function upgrade_4830() {
-    $filePath = __DIR__ . "/../../schema/GrantTransaction.entityType.php";
-    $entityDefn = include $filePath;
-    $sql = Civi::schemaHelper()->arrayToSql($entityDefn);
     CRM_Core_DAO::executeQuery($sql);
+    CRM_Core_DAO::executeQuery('DROP TEMPORARY TABLE duplicate_activities');
     return TRUE;
   }
 
