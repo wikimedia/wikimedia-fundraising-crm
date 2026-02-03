@@ -89,7 +89,13 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       if (!empty($message['payment_method']) && in_array($message['payment_method'], ['rtbt_ideal', 'sepadirectdebit'])) {
           // resolve message from pending table
           PendingDatabase::get()->markMessageResolved($message);
-          \Civi::log('wmf')->info( 'Deleting pending contribution for ' . strtoupper($gateway) . " " . $message['gateway_parent_id'] . ' ('. $message['payment_method'] . ') due to' . $reason, $context);
+          \Civi::log('wmf')->info( 'Resolving pending contribution for ' . strtoupper($gateway) . " " . $message['gateway_parent_id'] . ' ('. $message['payment_method'] . ') due to' . $reason, $context);
+      }
+      // similar as above, for Trustly ACH payments via Gr4vy we may not have a contribution in CiviCRM yet
+      if (!empty($message['backend_processor']) && $message['backend_processor'] === 'trustly') {
+          // resolve message from pending table
+          PendingDatabase::get()->markMessageResolved($message);
+          \Civi::log('wmf')->info( 'Resolving pending contribution for trustly' . strtoupper($gateway) . " " . $message['gateway_parent_id'] . ' (gr4vy_ach) due to' . $reason, $context);
       }
       else {
         \Civi::log('wmf')->error('refund {log_id}: Contribution not found for this transaction!', $context);

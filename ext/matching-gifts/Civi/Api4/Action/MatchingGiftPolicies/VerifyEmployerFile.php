@@ -4,6 +4,7 @@ namespace Civi\Api4\Action\MatchingGiftPolicies;
 
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\MatchingGiftPolicies;
 use Civi\Omnimail\MailFactory;
 
 /**
@@ -98,11 +99,9 @@ class VerifyEmployerFile extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   private function generateNewExport(): void {
-    $exportParams = [
-      'path' => $this->getExportFilePath(),
-    ];
-
-    civicrm_api3('MatchingGiftPolicies', 'Export', $exportParams);
+    MatchingGiftPolicies::export(FALSE)
+      ->setPath($this->getExportFilePath())
+      ->execute();
 
     \Civi::log('matching_gifts')->info(
       'civicrm_matching_gifts_employers_check: New employers data file created at {path}',

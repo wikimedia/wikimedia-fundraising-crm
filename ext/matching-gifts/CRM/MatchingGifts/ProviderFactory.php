@@ -1,7 +1,7 @@
 <?php
 
 class CRM_MatchingGifts_ProviderFactory {
-  public static function getProvider($providerName) {
+  public static function getProvider(string $providerName): CRM_MatchingGifts_ProviderInterface {
     $credentials = Civi::settings()->get(
       self::fullSettingName('credentials', $providerName)
     );
@@ -9,7 +9,7 @@ class CRM_MatchingGifts_ProviderFactory {
     return new $className($credentials);
   }
 
-  public static function getFetchDefaults($providerName) {
+  public static function getFetchDefaults(string $providerName): array {
     $settings = Civi::settings();
     return [
       'lastUpdated' => $settings->get(
@@ -21,7 +21,7 @@ class CRM_MatchingGifts_ProviderFactory {
     ];
   }
 
-  public static function fullSettingName($setting, $providerName) {
+  public static function fullSettingName(string $setting, string $providerName): string {
     return "matchinggifts.{$providerName}_{$setting}";
   }
 }

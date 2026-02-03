@@ -264,7 +264,10 @@ class Send extends AbstractAction {
         \Civi::log('wmf')->warning('Failed to mark civimail record delivered for TY message to ' . $params['recipient_address']);
       }
     }
-    $result[] = ['is_success' => $email_success];
+    $result[] = [
+      'email' => $this->getEmail(),
+      'is_success' => $email_success
+    ];
   }
 
   /**

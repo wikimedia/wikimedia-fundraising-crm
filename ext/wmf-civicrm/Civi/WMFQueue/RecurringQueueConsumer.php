@@ -340,7 +340,8 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       if (isset($msg['recurring_payment_token'])) {
         // Check that the original contribution has processed first
         if (empty($ctRecord['contribution_id'])) {
-          throw new WMFException(WMFException::MISSING_PREDECESSOR, 'Recurring queue processed before donations queue');
+          // adding log to check if they related with payment method like sepa or ach
+          throw new WMFException(WMFException::MISSING_PREDECESSOR, "Recurring queue processed before donations queue: " . $msg['recurring_payment_token']);
         }
 
         // Create a token
@@ -383,7 +384,9 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       throw new WMFException(WMFException::IMPORT_CONTRIB, 'Failed inserting subscriber signup for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ': ' . $e->getMessage());
     }
 
-    RecurHelper::sendSuccessThankYouMail($newContributionRecur, $ctRecord, $msg, $contactId, $contact);
+    if (isset($msg['recurring_payment_token']) && isset($newContributionRecur['id'])) {
+      RecurHelper::sendSuccessThankYouMail($newContributionRecur, $ctRecord['contribution_id']);
+    }
     Civi::log('wmf')->notice('recurring: Successfully inserted subscription signup for subscriber id: {subscriber_id}', ['subscriber_id' => $msg['subscr_id']]);
   }
 

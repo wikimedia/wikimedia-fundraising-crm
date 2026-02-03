@@ -7,18 +7,18 @@ class CRM_MatchingGifts_Synchronizer {
   /**
    * @var CRM_MatchingGifts_ProviderInterface
    */
-  protected $policyProvider;
+  protected CRM_MatchingGifts_ProviderInterface $policyProvider;
 
   /**
    * @var int|null
    */
-  protected $jobId;
+  protected ?int $jobId;
 
   /**
    * Timestamp of current job start
    * @var int|null
    */
-  protected $jobStart;
+  protected ?int $jobStart;
 
   protected ?array $corrections = NULL;
 
@@ -97,13 +97,13 @@ class CRM_MatchingGifts_Synchronizer {
     );
   }
 
-  protected function populateCurrentJobSettings() {
+  protected function populateCurrentJobSettings(): void {
     $settings = Civi::settings();
     $this->jobId = $settings->get($this->fullSettingName('current_job_id'));
     $this->jobStart = $settings->get($this->fullSettingName('current_job_start'));
   }
 
-  protected function createNewJobSettings() {
+  protected function createNewJobSettings(): void {
     $id = (int)CRM_Core_DAO::singleValueQuery(
         'SELECT COALESCE(MAX(job_id), 0)
          FROM civicrm_matching_gift_job_progress'
@@ -116,7 +116,7 @@ class CRM_MatchingGifts_Synchronizer {
     $this->jobStart = $start;
   }
 
-  protected function markCurrentJobDone() {
+  protected function markCurrentJobDone(): void {
     CRM_Core_DAO::executeQuery(
       'DELETE FROM civicrm_matching_gift_job_progress
        WHERE job_id=%1',
@@ -141,7 +141,7 @@ class CRM_MatchingGifts_Synchronizer {
    *
    * @throws \CRM_Core_Exception
    */
-  protected static function addOrUpdatePolicy(array $policyDetails) {
+  protected static function addOrUpdatePolicy(array $policyDetails): void {
     // Search for an existing org WITH matching gift data using
     // $policyDetails['matching_gifts_provider_id'] matching
     // matching_gifts_provider_id

@@ -2,14 +2,20 @@
 
 namespace Civi\Api4;
 
-use Civi\Api4\Generic\AbstractEntity;
+use Civi\Api4\Action\MatchingGiftPolicies\Export;
 use Civi\Api4\Action\MatchingGiftPolicies\VerifyEmployerFile;
+use Civi\Api4\Generic\AbstractEntity;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
 class MatchingGiftPolicies extends AbstractEntity {
 
   public static function verifyEmployerFile($checkPermissions = TRUE): VerifyEmployerFile {
     return (new VerifyEmployerFile(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  public static function export($checkPermissions = TRUE): Export {
+    return (new Export(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
