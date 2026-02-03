@@ -18,6 +18,7 @@ use Civi\Api4\WorkflowMessage;
  * @method string getTemplateName() Get the name of the template.
  * @method $this setTemplateName(string $templateName) Get the name of the template.
  * @method $this setContributionID(int $contributionID)
+ * @method $this setContributionRecurID(int $contributionRecurID)
  * @method $this setLanguage(string $language) Set the language to render in.
  * @method $this setReceiveDate(string $receiveDate) Set the receiveData to UTC contribution received date.
  */
@@ -41,11 +42,20 @@ class Render extends AbstractAction {
   protected $language;
 
   /**
+   * Contribution ID.
+   *
    * @var int
    *
    * @required
    */
   protected $contributionID;
+
+  /**
+   * Recurring Contribution ID.
+   *
+   * @var int|null
+   */
+  protected ?int $contributionRecurID = NULL;
 
   /**
    * The name of the selected template.
@@ -131,6 +141,9 @@ class Render extends AbstractAction {
     }
     // The contributionID is the minimum viable properties.
     $properties['contributionID'] = $this->getContributionID();
+    if ($this->contributionRecurID) {
+      $properties['contributionRecurId'] = $this->contributionRecurID;
+    }
     return $properties;
   }
 
