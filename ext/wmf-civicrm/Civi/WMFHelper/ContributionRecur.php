@@ -246,8 +246,7 @@ class ContributionRecur {
     $start_date = $contributionRecur['start_date'];
 
     // Get the day of the month
-    $day_of_month = \DateTime::createFromFormat('YmdHis', $start_date, new \DateTimeZone('UTC'))
-      ->format('j');
+    $day_of_month = (new \DateTime($start_date, new \DateTimeZone('UTC')))->format('j');
 
     $contactId = $contributionRecur['contact_id'];
 

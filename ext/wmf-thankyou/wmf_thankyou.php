@@ -47,6 +47,16 @@ function wmf_thankyou_civicrm_links($op, $objectName, $objectId, &$links, &$mask
       }
     }
   }
+  if ($objectName === 'Contribution' && $op === 'contribution.selector.recurring') {
+    $links[] = [
+      'name' => ts('Send Monthly Convert Thank You'),
+      'title' => ts('Send Monthly Convert Thank You'),
+      'url' => 'civicrm/wmf_thankyou',
+      'qs' => "contribution_recur_id=$objectId",
+      'class' => 'crm-popup medium-popup',
+      'weight' => 1,
+    ];
+  }
 }
 
 /**

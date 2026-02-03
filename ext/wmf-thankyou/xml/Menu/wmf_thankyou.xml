@@ -6,4 +6,10 @@
     <title>Send WMF Thank You</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/wmf_thankyou_monthlyconvert</path>
+    <page_callback>CRM_WmfThankyou_Form_MonthlyConvert</page_callback>
+    <title>Send Monthly Convert Thank You</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
 </menu>
