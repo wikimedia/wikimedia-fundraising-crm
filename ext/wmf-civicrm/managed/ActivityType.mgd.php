@@ -483,7 +483,7 @@ return [
         'name' => 'Double Opt-In',
         'value' => 220,
         'grouping' => NULL,
-        'filter' => 1,
+        'filter' => 0,
         'weight' => 98,
         'is_default' => FALSE,
         'description' => 'Donor confirmed that they want to receive emails. Opted in email address is in subject.',
