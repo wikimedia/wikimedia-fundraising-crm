@@ -23,6 +23,7 @@ use League\Csv\Writer;
  * @method $this setIsOutputRows(bool $isOutputRows)
  * @method $this setEmailSummaryAddress(string $email)
  * @method $this setIsDryRun(bool $isDryRun)
+ * @method $this setId(int $batch_id)
  */
 class GenerateBatch extends AbstractAction {
 
@@ -32,6 +33,15 @@ class GenerateBatch extends AbstractAction {
    * @var bool
    */
   protected bool $isDryRun = FALSE;
+
+  /**
+   * Batch ID.
+   *
+   * Optional to run on a specific batch.
+   *
+   * @var int
+   */
+  protected $id;
 
   /**
    * Batch prefix.
@@ -356,12 +366,23 @@ GROUP BY s.settlement_batch_reference
       $isValid = empty(array_filter($record['validation']));
       $this->batchSummary[$batch['name']]['is_valid'] = $isValid;
       $this->log($batch['name'] . ' ' . ($isValid ? 'has valid totals' : ' has a discrepancy '));
-      if (!$isValid) {
+      if ($isValid) {
+        Batch::update(FALSE)
+          ->addValue('status_id:name', 'validated')
+          ->addWhere('id', '=', $batch['id'])
+          ->execute();
+        $this->log('The following batches have been validated ' . implode(',', array_keys($this->batchSummary)));
+      }
+      else {
         foreach (array_filter($record['validation']) as $key => $value) {
           if ($key !== 'count') {
             $value = \Civi::format()->money($value, $this->batchSummary[$batch['name']]['currency']);
           }
-          $this->log($key . " has discrepancy of $value (expected {$record['expected'][$key]}, actual {$record['totals'][$key]} )");
+          $this->log($key . " has discrepancy of $value (expected {$record['expected'][$key]}, actual {$record['totals'][$key]} ). Batch needs attention");
+          Batch::update(FALSE)
+            ->addValue('status_id:name', 'needs_attention')
+            ->addWhere('id', '=', $batch['id'])
+            ->execute();
         }
       }
       if (!$this->isOutputRows) {
@@ -374,17 +395,6 @@ GROUP BY s.settlement_batch_reference
     // are right before closing.
     $draftFileName = $this->getDraftFileName();
     if (empty($this->getInvalidBatches()) && empty($this->incompleteRows)) {
-      if ($this->isDryRun) {
-        $this->log('The following batches have been closed' . implode(',', array_keys($this->batchSummary)));
-        $this->log('Batches not closed in dry run mode');
-      }
-      else {
-        Batch::update(FALSE)
-          ->addValue('status_id:name', 'validated')
-          ->addWhere('id', 'IN', array_keys($this->batchSummary))
-          ->execute();
-        $this->log('The following batches have been validated and closed ' . implode(',', array_keys($this->batchSummary)));
-      }
       if ($draftFileName) {
         $finalFileName = str_replace('-draft', '-final', $draftFileName);
         rename($draftFileName, $finalFileName);
@@ -933,7 +943,13 @@ END";
    * @throws \CRM_Core_Exception
    */
   private function getBatches(): array {
-    if ($this->batchPrefix) {
+    if ($this->id) {
+      $batches = (array)Batch::get(FALSE)
+        ->addWhere('id', '=', $this->id)
+        ->addSelect('batch_data.*', '*', 'status_id:name')
+        ->execute()->indexBy('name');
+    }
+    elseif ($this->batchPrefix) {
       $batches = (array)Batch::get(FALSE)
         ->addWhere('name', 'LIKE', '%' . $this->batchPrefix . '_%')
         ->addSelect('batch_data.*', '*', 'status_id:name')
@@ -941,7 +957,7 @@ END";
     }
     else {
       $batches = (array)Batch::get(FALSE)
-        ->addWhere('status_id:name', '=', 'total_verified')
+        ->addWhere('status_id:name', 'IN', ['total_verified', 'validated'])
         ->addSelect('batch_data.*', '*', 'status_id:name')
         ->execute()->indexBy('name');
     }
