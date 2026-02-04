@@ -46,33 +46,28 @@ class Submit extends AbstractProcessor {
         ->execute()->count();
 
       if ($afformSubmissionData > 0) {
-        throw new \CRM_Core_Exception(ts('Submission is already processed.'));
+        throw new \CRM_Core_Exception(ts('Submission Processed'), 0, ['validation' => ts('Submission is already processed.')]);
       }
     }
 
     // Call validation handlers
-    $event = new AfformValidateEvent($this->_afform, $this->_formDataModel, $this, $this->_entityValues);
+    $event = new AfformValidateEvent($this->_afform, $this->_formDataModel, $this);
     \Civi::dispatcher()->dispatch('civi.afform.validate', $event);
     $errors = $event->getErrors();
     if ($errors) {
       \Civi::log('afform')->error('Afform Validation errors: ' . print_r($errors, TRUE));
-      throw new \CRM_Core_Exception(implode("\n", $errors));
+      throw new \CRM_Core_Exception(implode("\n", $errors), 0, ['show_detailed_error' => TRUE]);
     }
 
     // Save submission record
-    $status = 'Processed';
     if (!empty($this->_afform['create_submission']) && empty($this->args['sid'])) {
-      if (!empty($this->_afform['manual_processing'])) {
-        $status = 'Pending';
-      }
-
       $userId = \CRM_Core_Session::getLoggedInContactID();
 
       $submissionRecord = [
         'contact_id' => $userId,
         'afform_name' => $this->name,
         'data' => $this->getValues(),
-        'status_id:name' => $status,
+        'status_id:name' => 'Pending',
       ];
       // Update draft if it exists
       if ($userId) {
@@ -95,7 +90,7 @@ class Submit extends AbstractProcessor {
     // let's not save the data in other CiviCRM table if manual verification is needed.
     if (!empty($this->_afform['manual_processing']) && empty($this->args['sid'])) {
       // check for verification email
-      $this->processVerficationEmail($submission['id']);
+      $this->processVerificationEmail($submission['id']);
     }
     else {
       // process and save various enities
@@ -112,7 +107,7 @@ class Submit extends AbstractProcessor {
         AfformSubmission::update(FALSE)
           ->addWhere('id', '=', $submissionId)
           ->addValue('data', $submissionData)
-          ->addValue('status_id:name', $status)
+          ->addValue('status_id:name', 'Processed')
           ->execute();
       }
 
@@ -125,7 +120,7 @@ class Submit extends AbstractProcessor {
     // todo - add only if needed?
     $this->setResponseItem('token', $this->generatePostSubmitToken());
 
-    if (isset($this->_response['redirect']) || isset($this->_reponse['message'])) {
+    if (isset($this->_response['redirect']) || isset($this->_response['message'])) {
       // redirect / message is already set, ignore defaults
     }
     elseif ($this->_afform['confirmation_type'] === 'show_confirmation_message') {
@@ -147,7 +142,7 @@ class Submit extends AbstractProcessor {
    */
   public static function validateFieldInput(AfformValidateEvent $event): void {
     foreach ($event->getFormDataModel()->getEntities() as $afEntityName => $afEntity) {
-      $entityValues = $event->getEntityValues()[$afEntityName] ?? [];
+      $entityValues = $event->getSubmittedValues()[$afEntityName] ?? [];
       foreach ($entityValues as $values) {
         foreach ($afEntity['fields'] as $fieldName => $attributes) {
           $error = self::getFieldInputError($event, $afEntity['type'], $fieldName, $attributes, $values['fields'][$fieldName] ?? NULL);
@@ -232,7 +227,7 @@ class Submit extends AbstractProcessor {
   public static function validateEntityRefFields(AfformValidateEvent $event): void {
     $formName = $event->getAfform()['name'];
     foreach ($event->getFormDataModel()->getEntities() as $entityName => $entity) {
-      $entityValues = $event->getEntityValues()[$entityName] ?? [];
+      $entityValues = $event->getSubmittedValues()[$entityName] ?? [];
       foreach ($entityValues as $values) {
         foreach ($entity['fields'] as $fieldName => $attributes) {
           $error = self::getEntityRefError($formName, $entityName, $entity['type'], $fieldName, $attributes, $values['fields'][$fieldName] ?? NULL);
@@ -301,7 +296,7 @@ class Submit extends AbstractProcessor {
     if ($isRequired) {
       $conditionals = $attributes['af-if'] ?? [];
       foreach ($conditionals as $conditional) {
-        $isVisible = self::checkAfformConditional($conditional, $event->getEntityValues());
+        $isVisible = self::checkAfformConditional($conditional, $event->getSubmittedValues());
         if (!$isVisible) {
           break;
         }
@@ -309,6 +304,9 @@ class Submit extends AbstractProcessor {
     }
     if ($isRequired && $isVisible) {
       $label = $attributes['defn']['label'] ?? $fullDefn['label'] ?? $fieldName;
+      if (empty($label)) {
+        $label = $attributes['name'];
+      }
       return E::ts('%1 is a required field.', [1 => $label]);
     }
     return NULL;
@@ -453,10 +451,16 @@ class Submit extends AbstractProcessor {
       if (empty($record['fields'])) {
         continue;
       }
+      if ($event->getEntityType() === 'Contribution') {
+        // "Contribution" requires more specialised processing using Order API and is handled by extensions like Afform Payments.
+        // We add a specific check here to ensure that it is not processed by the generic entity save.
+        continue;
+      }
       try {
         $idField = CoreUtil::getIdFieldName($event->getEntityType());
         $saved = $api4($event->getEntityType(), 'save', ['records' => [$record['fields']]])->first();
         $event->setEntityId($index, $saved[$idField]);
+        $event->setSaved($index, $saved);
         self::saveJoins($event, $index, $saved[$idField], $record['joins'] ?? []);
       }
       catch (\CRM_Core_Exception $e) {
@@ -725,7 +729,7 @@ class Submit extends AbstractProcessor {
    *
    * @return void
    */
-  private function processVerficationEmail(int $submissionId):void {
+  private function processVerificationEmail(int $submissionId):void {
     // check if email verification configured and message template is set
     if (empty($this->_afform['allow_verification_by_email']) || empty($this->_afform['email_confirmation_template_id'])) {
       return;

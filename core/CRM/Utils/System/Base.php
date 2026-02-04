@@ -1,5 +1,7 @@
 <?php
 
+use Psr\Http\Message\ServerRequestInterface;
+
 /**
  * Base class for UF system integrations
  */
@@ -108,9 +110,15 @@ abstract class CRM_Utils_System_Base {
    *
    * @param string $head
    *   The new string to be appended.
+   * @internal
+   *   Historically, this was a public method.
+   *   In practice, today, it's mostly used as internal plumbing for some UF-integrations.
+   *   For writing application logic, you should be looking at one of these:
+   *     - To add JS+CSS resources, see Civi::resources().
+   *     - To add novel markup, see CRM_Core_Region::instance('html-header').
    */
   public function addHTMLHead($head) {
-    \CRM_Core_Error::deprecatedFunctionWarning("addHTMLHead is deprecated in " . self::class);
+    \CRM_Core_Error::deprecatedFunctionWarning('Civi::resources() or CRM_Core_Region::instance("html-header")');
   }
 
   /**
@@ -1031,6 +1039,32 @@ abstract class CRM_Utils_System_Base {
     }
   }
 
+  public function createRequestFromGlobals(): ServerRequestInterface {
+    $request = \GuzzleHttp\Psr7\ServerRequest::fromGlobals();
+
+    $path = '/' . CRM_Utils_System::currentPath();
+    // PSR-7, generally: "The path can either be empty or absolute (starting with a slash) or rootless (not starting with a slash)."
+    // Civi, specifically: The choice of leading "/" is largely cosmetic, but it must be consistent.
+    // Comparing the environments, the only consistent option is "absolute":
+    //
+    //    Environment | PSR Impl | Absolute Paths ("/") | Rootless Paths (No "/")
+    //    -------------------------------------------------------
+    //    Backdrop    | Guzzle 7 | OK                   | OK
+    //    Drupal 9    | Guzzle 6 | OK                   | Coerced to absolute
+    //    Drupal 10   | Guzzle 7 | OK                   | OK
+    //    Standalone  | Guzzle 7 | OK                   | OK
+    //    WordPress   | Guzzle 7 | OK                   | OK
+
+    $path = preg_replace_callback(';([^-_/\.a-zA-Z0-9]);', fn($m) => rawurlencode($m[1]), $path);
+    // In CiviCRM, the canonical representation of current path comes from $_GET[$var], which is %-DECODED.
+    // (N.B. Civi's router treats "/" and "%2F" as equivalent.) This $_GET[$var] convention is entrenched.
+    // For PSR-7, getPath() must be %-ENCODED.
+    // This filter re-creates the %-ENCODED path with normalized "/"s.
+
+    $request = $request->withUri($request->getUri()->withPath($path));
+    return $request;
+  }
+
   /**
    * Send an HTTP Response base on PSR HTTP RespnseInterface response.
    *
@@ -1043,6 +1077,21 @@ abstract class CRM_Utils_System_Base {
     }
     echo $response->getBody();
     CRM_Utils_System::civiExit(0, ['response' => $response]);
+  }
+
+  /**
+   * Output JSON response to the client
+   *
+   * @param array $response
+   * @param int $httpResponseCode
+   *
+   * @return void
+   */
+  public static function sendJSONResponse(array $response, int $httpResponseCode): void {
+    http_response_code($httpResponseCode);
+    CRM_Utils_System::setHttpHeader('Content-Type', 'application/json');
+    echo json_encode($response, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    CRM_Utils_System::civiExit();
   }
 
   /**
