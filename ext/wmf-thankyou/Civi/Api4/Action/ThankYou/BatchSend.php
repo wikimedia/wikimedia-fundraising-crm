@@ -3,13 +3,18 @@
 namespace Civi\Api4\Action\ThankYou;
 
 use Civi;
+use Civi\Api4\Activity;
+use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\ThankYou;
+use Civi\Api4\WorkflowMessage;
+use Civi\Omnimail\MailFactory;
 use Civi\WMFException\WMFException;
 use Civi\WMFStatistic\PrometheusReporter;
 use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
+use Civi\WMFThankYou\From;
 use Civi\WMFTransaction;
 use CRM_Core_Exception;
 
@@ -53,6 +58,11 @@ class BatchSend extends AbstractAction {
   private int $startTime;
 
   /**
+   * @var array
+   */
+  protected array $doubleOptInCountries = [];
+
+  /**
    * @inheritDoc
    *
    * @param \Civi\Api4\Generic\Result $result
@@ -69,6 +79,7 @@ class BatchSend extends AbstractAction {
     ]);
 
     $this->updateContributionsWithoutEmail();
+    $this->doubleOptInCountries = Civi::settings()->get('thank_you_double_opt_in_countries');
 
     $ty_query = <<<EOT
 		SELECT civicrm_contribution.id, trxn_id, civicrm_contribution.contact_id
@@ -289,6 +300,11 @@ EOT;
         $ageInSeconds = time() - strtotime($mailingData['receive_date']);
         $counter->addAgeMeasurement($mailingData['gateway'], $ageInSeconds);
       }
+      try {
+        $this->sendDoubleOptInIfRequired($mailingData);
+      } catch (\Exception $e) {
+        Civi::log('wmf')->notice('thank_you: could not send double opt-in. {message}', ['message' => $e->getMessage()]);
+      }
       return TRUE;
     }
     return FALSE;
@@ -340,8 +356,10 @@ EOT;
       cntc.contact_type,
       cntc.email_greeting_display,
       cntc.preferred_language,
+      a.country_id,
       f.name AS financial_type,
       e.email,
+      e.id as email_id,
       x.gateway,
       x.no_thank_you,
       x.original_amount,
@@ -358,6 +376,7 @@ EOT;
     INNER JOIN civicrm_contact cntc ON cntr.contact_id = cntc.id
     LEFT JOIN civicrm_financial_type f ON f.id = cntr.financial_type_id
     LEFT JOIN civicrm_email e ON e.contact_id = cntc.id AND e.is_primary = 1
+    LEFT JOIN civicrm_address a ON a.contact_id = cntc.id AND a.is_primary = 1
     LEFT JOIN civicrm_contribution_recur recur ON cntr.contribution_recur_id = recur.id
     INNER JOIN wmf_contribution_extra x ON cntr.id = x.entity_id
     LEFT JOIN $giftTable g ON cntr.id = g.entity_id
@@ -479,6 +498,60 @@ EOT;
         ->addWhere('id', 'IN', array_keys($noEmailContributions))
         ->execute();
       \Civi::log('wmf')->info('thank_you: Updated no thank you for {count} contributions without email addresses.', ['count' => count($noEmailContributions)]);
+    }
+  }
+
+  protected function sendDoubleOptInIfRequired(array $mailingData): void {
+    if (!in_array($mailingData['country_id'], $this->doubleOptInCountries)) {
+      return;
+    }
+
+    $optIn = Contact::get(FALSE)
+      ->addWhere('id', '=', $mailingData['contact_id'])
+      ->setSelect(['Communication.opt_in'])
+      ->execute()->first()['Communication.opt_in'];
+    if (!$optIn) {
+      return;
+    }
+
+    $activity = Activity::get(FALSE)
+      ->addWhere('target_contact_id', '=', $mailingData['contact_id'])
+      ->addWhere('activity_type_id:name', '=', 'Double Opt-In')
+      ->setLimit(1)
+      ->execute()->count();
+    if ($activity) {
+      return;
+    }
+
+    $message = WorkflowMessage::render(FALSE)
+      ->setLanguage($mailingData['preferred_language'] ?: 'en_US')
+      ->setValues(['contactID' => $mailingData['contact_id']])
+      ->setWorkflow('double_opt_in')->execute()->first();
+
+    $email = [
+      'from_name' => From::getFromName('double_opt_in'),
+      'from_address' => From::getFromAddress('double_opt_in'),
+      'to_name' => $mailingData['display_name'],
+      'to_address' => $mailingData['email'],
+      'locale' => $mailingData['preferred_language'] ?: 'en_US',
+      'html' => $message['html'],
+      'subject' => $message['subject'],
+    ];
+
+    \Civi::log('wmf')->info(
+      'thank_you: Sending double opt-in email to: {to_address}',
+      ['to_address' => $email['to_address']]
+    );
+    if (MailFactory::singleton()->send($email, [])) {
+      Activity::create(FALSE)->setValues([
+        'source_contact_id' => $mailingData['contact_id'],
+        'target_contact_id' => $mailingData['contact_id'],
+        'activity_type_id:name' => 'Email',
+        'activity_date_time' => 'now',
+        'subject' => $message['subject'],
+        'details' => $message['html'],
+        'status_id:name' => 'Completed',
+      ])->execute();
     }
   }
 
