@@ -829,8 +829,7 @@ class CalculatedData extends TriggerHook {
           'is_view' => 1,
           'weight' => $weight,
           'is_search_range' => 1,
-          'select_clause' => "
-            SUM(COALESCE(IF(receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
+          'select_clause' => "SUM(COALESCE(IF(receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_{$year}_{$nextYear}",
         ];
@@ -892,11 +891,11 @@ class CalculatedData extends TriggerHook {
   protected function getUpdateWMFDonorSql(): string {
     return '
       INSERT INTO wmf_donor (
-        entity_id, ' . implode(', ', array_keys($this->getCalculatedFields())) . '
+        entity_id, ' . implode(",\n", array_keys($this->getCalculatedFields())) . '
       )'
       . $this->getSelectSQL() . '
      ON DUPLICATE KEY UPDATE
-    ' . implode(', ', $this->getUpdateClauses()) . ";";
+    ' . implode(",\n", $this->getUpdateClauses()) . ";";
   }
 
   /**
