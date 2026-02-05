@@ -517,6 +517,7 @@ EOT;
     $activity = Activity::get(FALSE)
       ->addWhere('target_contact_id', '=', $mailingData['contact_id'])
       ->addWhere('activity_type_id:name', '=', 'Double Opt-In')
+      ->addWhere('status_id:name', '=', 'Completed')
       ->setLimit(1)
       ->execute()->count();
     if ($activity) {
