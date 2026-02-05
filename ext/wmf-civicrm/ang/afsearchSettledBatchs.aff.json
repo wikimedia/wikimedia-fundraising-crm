@@ -9,7 +9,7 @@
     "placement_filters": [],
     "placement_weight": null,
     "tags": null,
-    "icon": "fa-list-alt",
+    "icon": "fa-cash-register",
     "server_route": "civicrm/contribution/settled",
     "is_public": false,
     "permission": [
@@ -27,9 +27,9 @@
     "navigation": {
         "parent": "Contributions",
         "label": "Settled batchs",
-        "weight": 0
+        "weight": 2
     },
-    "modified_date": "2025-10-16 21:54:36",
+    "modified_date": "2025-12-17 03:41:31",
     "confirmation_type": "redirect_to_url",
     "confirmation_message": null,
     "created_id": 11863262

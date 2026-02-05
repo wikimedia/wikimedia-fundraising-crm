@@ -1,12 +1,23 @@
-<div af-fieldset="">
+<div af-fieldset="" store-values="1">
   <div class="af-container af-layout-inline">
-    <af-field name="contribution_settlement.settlement_batch_reference" defn="{label: '\u00a0Batch Reference', input_attrs: {}, expose_operator: true, search_operator: 'LIKE'}" />
-    <af-field name="contribution_settlement.settlement_batch_reversal_reference" defn="{label: '\u00a0Reference for Reversal transaction', input_attrs: {}}" />
-    <af-field name="id" defn="{label: '\u00a0Contribution ID', input_attrs: {}}"/>
-    <af-field name="contribution_extra.gateway" defn="{label: '\u00a0Gateway', input_attrs: {}}"/>
-    <af-field name="contribution_extra.gateway_txn_id" defn="{label: '\u00a0Gateway Trxn ID', input_attrs: {}}"/>
-    <af-field name="contribution_extra.payment_orchestrator_reconciliation_id" defn="{label: '\u00a0Orchestrator Reconciliation ID', input_attrs: {}}"/>
+    <af-field name="contribution_settlement.settlement_batch_reference,contribution_settlement.settlement_batch_reversal_reference" defn="{label: '\u00a0Batch Reference (either)', input_attrs: {}, expose_operator: true, search_operator: '='}" />
+    <af-field name="contribution_settlement.settlement_batch_reference" defn="{label: 'Donation Batch Reference', input_attrs: {}}" />
+    <af-field name="contribution_settlement.settlement_batch_reversal_reference" defn="{label: '\u00a0Reversal batch reference', input_attrs: {}}" />
+    <af-field name="id" defn="{label: '\u00a0Contribution ID', input_attrs: {}}" />
+    <af-field name="contribution_extra.gateway" defn="{label: '\u00a0Gateway', input_attrs: {}}" />
+    <af-field name="contribution_extra.gateway_txn_id" defn="{label: '\u00a0Gateway Trxn ID', input_attrs: {}}" />
+    <af-field name="contribution_extra.payment_orchestrator_reconciliation_id" defn="{label: 'Gravy Reconciliation ID', input_attrs: {}, search_operator: 'LIKE'}" />
     <af-field name="contribution_status_id" defn="{label: '\u00a0Status', input_attrs: {multiple: true}}" />
+    <af-field name="contribution_settlement.settled_donation_amount" defn="{label: 'Settled Donation Amount', input_attrs: {step: 0.01}, input_type: 'Number', expose_operator: true, search_operator: '='}" />
+    <af-field name="contribution_settlement.settled_fee_amount" defn="{label: 'Settled Fee Amount', input_attrs: {step: 0.01}, input_type: 'Number', expose_operator: true, search_operator: '='}" />
+    <af-field name="Gift_Data.Fund" defn="{input_attrs: {multiple: true}}" />
+    <af-field name="contribution_settlement.settled_reversal_amount" defn="{label: 'Settled Reversal Amount', input_attrs: {}}" />
+    <af-field name="Gift_Data.Channel" defn="{input_attrs: {multiple: true}}" />
+    <af-field name="Gift_Data.is_major_gift" />
+    <af-field name="contribution_settlement.settled_fee_reversal_amount" defn="{label: 'Settled Fee Reversal Amount', input_attrs: {}, input_type: 'Number'}" />
+    <af-field name="contribution_extra.backend_processor_txn_id" defn="{label: 'Backend Processor Transaction ID', input_attrs: {}, search_operator: 'LIKE'}" />
+    <af-field name="financial_type_id" defn="{input_attrs: {multiple: true}}" />
+    <af-field name="contribution_extra.original_currency" defn="{label: 'Original Currency', input_attrs: {}}" />
   </div>
   <crm-search-display-table search-name="Settled_Transactions" display-name="Settled_Transactions_Table_1"></crm-search-display-table>
 </div>

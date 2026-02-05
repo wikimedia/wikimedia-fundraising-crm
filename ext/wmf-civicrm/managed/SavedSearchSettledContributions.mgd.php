@@ -39,6 +39,12 @@ return [
             'contribution_extra.backend_processor',
             'contribution_extra.backend_processor_txn_id',
             'contribution_extra.source_type',
+            'invoice_id',
+            'contact_id',
+            'contact_id.display_name',
+            'segment_Fund:label',
+            'Gift_Data.Channel:label',
+            'Gift_Data.is_major_gift',
           ],
           'orderBy' => [],
           'where' => [
@@ -90,66 +96,72 @@ return [
               'key' => 'contribution_settlement.settlement_batch_reference',
               'label' => E::ts('Batch Reference'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'contribution_settlement.settlement_batch_reversal_reference',
               'label' => E::ts('Batch Reference for Reversal'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'contribution_settlement.settled_donation_amount',
               'label' => E::ts('Settled Donation Amount'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => 'SUM',
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'contribution_settlement.settled_fee_amount',
               'label' => E::ts('Settled Fee Amount'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => 'SUM',
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'contribution_settlement.settled_reversal_amount',
               'label' => E::ts('Settled Reversal Amount'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => 'SUM',
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'contribution_settlement.settled_fee_reversal_amount',
               'label' => E::ts('Settled Fee Reversal Amount'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => 'SUM',
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'contribution_status_id:label',
               'label' => E::ts('Contribution Status'),
               'sortable' => TRUE,
-            ],
-            [
-              'type' => 'field',
-              'key' => 'total_amount',
-              'label' => E::ts('Total Amount'),
-              'sortable' => TRUE,
-            ],
-            [
-              'type' => 'field',
-              'key' => 'net_amount',
-              'label' => E::ts('Net Amount'),
-              'sortable' => TRUE,
-            ],
-            [
-              'type' => 'field',
-              'key' => 'fee_amount',
-              'label' => E::ts('Fee Amount'),
-              'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'contribution_extra.original_currency',
               'label' => E::ts('Original Currency'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
             ],
             [
               'type' => 'field',
@@ -165,65 +177,143 @@ return [
                 'task' => '',
               ],
               'title' => E::ts('View Contribution'),
+              'tally' => [
+                'fn' => 'COUNT',
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'receive_date',
               'label' => E::ts('Contribution Date'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'contact_id.sort_name',
               'label' => E::ts('Contact Sort Name'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
+              'link' => [
+                'path' => '',
+                'entity' => 'Contact',
+                'action' => 'view',
+                'join' => 'contact_id',
+                'target' => '_blank',
+                'task' => '',
+              ],
+              'title' => NULL,
             ],
             [
               'type' => 'field',
               'key' => 'financial_type_id:label',
               'label' => E::ts('Financial Type'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'contribution_extra.gateway',
               'label' => E::ts('Gateway'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'contribution_extra.gateway_txn_id',
               'label' => E::ts('Gateway Transaction ID'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'contribution_extra.payment_orchestrator_reconciliation_id',
               'label' => E::ts('Payment Orchestrator Reconciliation ID'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'contribution_extra.backend_processor_txn_id',
               'label' => E::ts('Backend Processor Transaction ID'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'contribution_extra.source_type',
               'label' => E::ts('Source Type'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'contribution_extra.backend_processor',
               'label' => E::ts('Backend Processor'),
               'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
             ],
             [
               'type' => 'field',
               'key' => 'contribution_extra.original_amount',
               'label' => E::ts('Original Amount Received (unconverted)'),
+              'sortable' => TRUE,
+              'tally' => [
+                'fn' => 'SUM',
+              ],
+            ],
+            [
+              'type' => 'field',
+              'key' => 'invoice_id',
+              'label' => E::ts('Invoice Reference'),
+              'sortable' => TRUE,
+            ],
+            [
+              'type' => 'field',
+              'key' => 'contact_id',
+              'label' => E::ts('Contact ID'),
+              'sortable' => TRUE,
+            ],
+            [
+              'type' => 'field',
+              'key' => 'contact_id.display_name',
+              'label' => E::ts('Contact Display Name'),
+              'sortable' => TRUE,
+            ],
+            [
+              'type' => 'field',
+              'key' => 'Gift_Data.is_major_gift',
+              'label' => E::ts('Gift Data: Is Major Gift'),
+              'sortable' => TRUE,
+            ],
+            [
+              'type' => 'field',
+              'key' => 'Gift_Data.Channel:label',
+              'label' => E::ts('Gift Data: Channel'),
+              'sortable' => TRUE,
+            ],
+            [
+              'type' => 'field',
+              'key' => 'segment_Fund:label',
+              'label' => E::ts('Fund'),
               'sortable' => TRUE,
             ],
           ],
@@ -233,6 +323,10 @@ return [
             'table-striped',
           ],
           'actions_display_mode' => 'menu',
+          'headerCount' => TRUE,
+          'tally' => [
+            'label' => E::ts('Total'),
+          ],
         ],
       ],
       'match' => [
