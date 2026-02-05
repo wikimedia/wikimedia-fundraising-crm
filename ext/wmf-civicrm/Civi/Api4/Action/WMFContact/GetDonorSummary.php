@@ -83,16 +83,13 @@ class GetDonorSummary extends AbstractAction {
         'contribution_recur_id.frequency_unit',
         'financial_type_id:name',
         'payment_instrument_id:name',
-        'receive_date'
+        'receive_date',
       )->execute()->getArrayCopy();
 
     // The donor portal will show a list of all active recurring contributions with links to manage them.
     $recurringContributions = $this->getRecurringContributions($contactIDList, TRUE);
-    // ... unless there are no active ones - then it will show the most recent inactive one with a link
-    // to re-establish it.
-    if (count($recurringContributions) === 0) {
-      $recurringContributions = $this->getRecurringContributions($contactIDList, FALSE);
-    }
+    $inactiveRecurringContributions = $this->getRecurringContributions($contactIDList, FALSE, count($recurringContributions) !== 0);
+    $recurringContributions = array_merge($recurringContributions, $inactiveRecurringContributions);
 
     $result[] = [
       'id' => $this->contact_id,
@@ -110,11 +107,19 @@ class GetDonorSummary extends AbstractAction {
       'contributions' => $this->mapContributions($allContributions),
       'recurringContributions' => $this->mapRecurringContributions(
         $recurringContributions, $contact['address_primary.country_id:abbr']
-      ),
+      )
     ];
   }
 
-  protected function getRecurringContributions(array $contactIDList, bool $active): array {
+  /**
+   * Gets the contacts recurring contributions
+   *
+   * @param array $contactIDList
+   * @param bool $active
+   * @param bool $getRecentInactiveRecurring flag to fetch recently (within 60 days) deactivated recurring
+   * @return array
+   */
+  protected function getRecurringContributions(array $contactIDList, bool $active, bool $getRecentInactiveRecurring = FALSE): array {
     $statusList = $active ?
       ['In Progress', 'Pending', 'Failing', 'Processing', 'Overdue'] :
       ['Completed', 'Failed', 'Cancelled'];
@@ -138,6 +143,9 @@ class GetDonorSummary extends AbstractAction {
       )->addGroupBy('id');
     if (!$active) {
       $get->setLimit(1);
+      if ($getRecentInactiveRecurring) {
+        $get->addWhere("cancel_date",">=","ending_60.day");
+      }
     }
     // Under API4, a LEFT JOIN is a bit different from raw SQL. When no recurring contribution exists, it
     // returns a single record with all NULL values. Filter out these empty records that have no valid ID.
