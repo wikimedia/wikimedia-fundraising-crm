@@ -168,7 +168,6 @@ class CRM_Api4_Page_AJAX extends CRM_Core_Page {
         \Civi\API\Exception\UnauthorizedException::class => 403,
       ];
       $status = $statusMap[get_class($e)] ?? 500;
-      \Civi::log('wmf')->alert(__CLASS__ . '::' . __FUNCTION__ . CRM_Core_Error::backtrace());
       $errorId = CRM_Core_Error::createErrorId();
 
       // Send error code (but don't overwrite success code if there are multiple calls and one was successful)
