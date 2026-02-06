@@ -1,13 +1,13 @@
 <div af-fieldset="" store-values="1">
   <div class="af-container af-layout-inline">
-    <af-field name="contribution_settlement.settlement_batch_reference,contribution_settlement.settlement_batch_reversal_reference" defn="{label: '\u00a0Batch Reference (either)', input_attrs: {}, expose_operator: true, search_operator: '='}" />
+    <af-field name="finance_batch" defn="{input_type: 'Select', input_attrs: {multiple: true}, required: true, expose_operator: true, search_operator: '='}" />
     <af-field name="contribution_settlement.settlement_batch_reference" defn="{label: 'Donation Batch Reference', input_attrs: {}}" />
-    <af-field name="contribution_settlement.settlement_batch_reversal_reference" defn="{label: '\u00a0Reversal batch reference', input_attrs: {}}" />
-    <af-field name="id" defn="{label: '\u00a0Contribution ID', input_attrs: {}}" />
-    <af-field name="contribution_extra.gateway" defn="{label: '\u00a0Gateway', input_attrs: {}}" />
-    <af-field name="contribution_extra.gateway_txn_id" defn="{label: '\u00a0Gateway Trxn ID', input_attrs: {}}" />
+    <af-field name="contribution_settlement.settlement_batch_reversal_reference" defn="{label: '&nbsp;Reversal batch reference', input_attrs: {}}" />
+    <af-field name="id" defn="{label: '&nbsp;Contribution ID', input_attrs: {}}" />
+    <af-field name="contribution_extra.gateway" defn="{label: '&nbsp;Gateway', input_attrs: {}}" />
+    <af-field name="contribution_extra.gateway_txn_id" defn="{label: '&nbsp;Gateway Trxn ID', input_attrs: {}}" />
     <af-field name="contribution_extra.payment_orchestrator_reconciliation_id" defn="{label: 'Gravy Reconciliation ID', input_attrs: {}, search_operator: 'LIKE'}" />
-    <af-field name="contribution_status_id" defn="{label: '\u00a0Status', input_attrs: {multiple: true}}" />
+    <af-field name="contribution_status_id" defn="{label: '&nbsp;Status', input_attrs: {multiple: true}}" />
     <af-field name="contribution_settlement.settled_donation_amount" defn="{label: 'Settled Donation Amount', input_attrs: {step: 0.01}, input_type: 'Number', expose_operator: true, search_operator: '='}" />
     <af-field name="contribution_settlement.settled_fee_amount" defn="{label: 'Settled Fee Amount', input_attrs: {step: 0.01}, input_type: 'Number', expose_operator: true, search_operator: '='}" />
     <af-field name="Gift_Data.Fund" defn="{input_attrs: {multiple: true}}" />

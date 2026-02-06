@@ -1,12 +1,11 @@
 <?php
-
 use CRM_Wmf_ExtensionUtil as E;
 
 return [
   [
     'name' => 'SavedSearch_Accounting_System_Batches',
     'entity' => 'SavedSearch',
-    'cleanup' => 'always',
+    'cleanup' => 'unused',
     'update' => 'unmodified',
     'params' => [
       'version' => 4,
@@ -43,15 +42,13 @@ return [
           'having' => [],
         ],
       ],
-      'match' => [
-        'name',
-      ],
+      'match' => ['name'],
     ],
   ],
   [
     'name' => 'SavedSearch_Accounting_System_Batches_SearchDisplay_Accounting_System_Batches',
     'entity' => 'SearchDisplay',
-    'cleanup' => 'always',
+    'cleanup' => 'unused',
     'update' => 'unmodified',
     'params' => [
       'version' => 4,
@@ -84,7 +81,7 @@ return [
               'label' => E::ts('Batch Title'),
               'sortable' => TRUE,
               'link' => [
-                'path' => 'civicrm/contribution/settled#?contribution_settlement.settlement_batch_reference,contribution_settlement.settlement_batch_reversal_reference=[name]',
+                'path' => 'civicrm/contribution/settled#?finance_batch=[name]',
                 'entity' => '',
                 'action' => '',
                 'join' => '',
@@ -159,10 +156,7 @@ return [
                     [
                       'status_id:name',
                       'IN',
-                      [
-                        'total_verified',
-                        'validated',
-                      ],
+                      ['total_verified', 'validated'],
                     ],
                   ],
                   'task' => '',
@@ -180,12 +174,7 @@ return [
                     [
                       'status_id:name',
                       'IN',
-                      [
-                        'Closed',
-                        'Exported',
-                        'total_verified',
-                        'validated',
-                      ],
+                      ['Closed', 'Exported', 'total_verified', 'validated'],
                     ],
                   ],
                   'task' => '',
@@ -213,10 +202,7 @@ return [
             ],
           ],
           'actions' => TRUE,
-          'classes' => [
-            'table',
-            'table-striped',
-          ],
+          'classes' => ['table', 'table-striped'],
           'actions_display_mode' => 'menu',
         ],
       ],

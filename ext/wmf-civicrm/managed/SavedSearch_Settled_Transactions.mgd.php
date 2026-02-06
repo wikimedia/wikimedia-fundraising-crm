@@ -1,12 +1,11 @@
 <?php
-
 use CRM_Wmf_ExtensionUtil as E;
 
 return [
   [
     'name' => 'SavedSearch_Settled_Transactions',
     'entity' => 'SavedSearch',
-    'cleanup' => 'always',
+    'cleanup' => 'unused',
     'update' => 'unmodified',
     'params' => [
       'version' => 4,
@@ -17,7 +16,11 @@ return [
         'api_params' => [
           'version' => 4,
           'select' => [
+            'finance_batch',
             'contribution_settlement.settlement_batch_reference',
+            'settled_total_amount',
+            'settled_fee_amount',
+            'settled_net_amount',
             'contribution_settlement.settlement_batch_reversal_reference',
             'contribution_settlement.settled_donation_amount',
             'contribution_settlement.settled_fee_reversal_amount',
@@ -48,34 +51,20 @@ return [
           ],
           'orderBy' => [],
           'where' => [
-            [
-              'OR',
-              [
-                [
-                  'contribution_settlement.settlement_batch_reference',
-                  'IS NOT EMPTY',
-                ],
-                [
-                  'contribution_settlement.settlement_batch_reversal_reference',
-                  'IS NOT EMPTY',
-                ],
-              ],
-            ],
+            ['finance_batch', 'IS NOT EMPTY'],
           ],
           'groupBy' => [],
           'join' => [],
           'having' => [],
         ],
       ],
-      'match' => [
-        'name',
-      ],
+      'match' => ['name'],
     ],
   ],
   [
     'name' => 'SavedSearch_Settled_Transactions_SearchDisplay_Settled_Transactions_Table_1',
     'entity' => 'SearchDisplay',
-    'cleanup' => 'always',
+    'cleanup' => 'unused',
     'update' => 'unmodified',
     'params' => [
       'version' => 4,
@@ -85,12 +74,156 @@ return [
         'saved_search_id.name' => 'Settled_Transactions',
         'type' => 'table',
         'settings' => [
-          'description' => NULL,
+          'description' => E::ts(NULL),
           'sort' => [],
           'limit' => 50,
           'pager' => [],
           'placeholder' => 5,
           'columns' => [
+            [
+              'type' => 'field',
+              'key' => 'finance_batch',
+              'label' => E::ts('Finance Settlement Batch'),
+              'sortable' => TRUE,
+            ],
+            [
+              'type' => 'field',
+              'key' => 'settled_total_amount',
+              'label' => E::ts('Settled total amount'),
+              'sortable' => TRUE,
+              'tally' => [
+                'fn' => 'SUM',
+              ],
+            ],
+            [
+              'type' => 'field',
+              'key' => 'settled_net_amount',
+              'label' => E::ts('Settled net amount'),
+              'sortable' => TRUE,
+              'tally' => [
+                'fn' => 'SUM',
+              ],
+            ],
+            [
+              'type' => 'field',
+              'key' => 'settled_fee_amount',
+              'label' => E::ts('Settled fee amount'),
+              'sortable' => TRUE,
+              'tally' => [
+                'fn' => 'SUM',
+              ],
+            ],
+            [
+              'type' => 'field',
+              'key' => 'id',
+              'label' => E::ts('Contribution ID'),
+              'sortable' => TRUE,
+              'link' => [
+                'path' => '',
+                'entity' => 'Contribution',
+                'action' => 'view',
+                'join' => '',
+                'target' => 'crm-popup',
+                'task' => '',
+              ],
+              'title' => E::ts('View Contribution'),
+              'tally' => [
+                'fn' => 'COUNT',
+              ],
+            ],
+            [
+              'type' => 'field',
+              'key' => 'receive_date',
+              'label' => E::ts('Contribution Date'),
+              'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
+            ],
+            [
+              'type' => 'field',
+              'key' => 'contact_id.sort_name',
+              'label' => E::ts('Contact Sort Name'),
+              'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
+              'link' => [
+                'path' => '',
+                'entity' => 'Contact',
+                'action' => 'view',
+                'join' => 'contact_id',
+                'target' => '_blank',
+                'task' => '',
+              ],
+              'title' => E::ts(NULL),
+            ],
+            [
+              'type' => 'field',
+              'key' => 'contribution_extra.gateway',
+              'label' => E::ts('Gateway'),
+              'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
+            ],
+            [
+              'type' => 'field',
+              'key' => 'contribution_extra.gateway_txn_id',
+              'label' => E::ts('Gateway Transaction ID'),
+              'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
+            ],
+            [
+              'type' => 'field',
+              'key' => 'contribution_extra.payment_orchestrator_reconciliation_id',
+              'label' => E::ts('Payment Orchestrator Reconciliation ID'),
+              'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
+            ],
+            [
+              'type' => 'field',
+              'key' => 'contribution_extra.backend_processor',
+              'label' => E::ts('Backend Processor'),
+              'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
+            ],
+            [
+              'type' => 'field',
+              'key' => 'contribution_extra.backend_processor_txn_id',
+              'label' => E::ts('Backend Processor Transaction ID'),
+              'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
+            ],
+            [
+              'type' => 'field',
+              'key' => 'contribution_extra.original_currency',
+              'label' => E::ts('Original Currency'),
+              'sortable' => TRUE,
+              'tally' => [
+                'fn' => NULL,
+              ],
+            ],
+            [
+              'type' => 'field',
+              'key' => 'Gift_Data.Channel:label',
+              'label' => E::ts('Gift Data: Channel'),
+              'sortable' => TRUE,
+            ],
+            [
+              'type' => 'field',
+              'key' => 'Gift_Data.is_major_gift',
+              'label' => E::ts('Gift Data: Is Major Gift'),
+              'sortable' => TRUE,
+            ],
             [
               'type' => 'field',
               'key' => 'contribution_settlement.settlement_batch_reference',
@@ -156,60 +289,6 @@ return [
             ],
             [
               'type' => 'field',
-              'key' => 'contribution_extra.original_currency',
-              'label' => E::ts('Original Currency'),
-              'sortable' => TRUE,
-              'tally' => [
-                'fn' => NULL,
-              ],
-            ],
-            [
-              'type' => 'field',
-              'key' => 'id',
-              'label' => E::ts('Contribution ID'),
-              'sortable' => TRUE,
-              'link' => [
-                'path' => '',
-                'entity' => 'Contribution',
-                'action' => 'view',
-                'join' => '',
-                'target' => 'crm-popup',
-                'task' => '',
-              ],
-              'title' => E::ts('View Contribution'),
-              'tally' => [
-                'fn' => 'COUNT',
-              ],
-            ],
-            [
-              'type' => 'field',
-              'key' => 'receive_date',
-              'label' => E::ts('Contribution Date'),
-              'sortable' => TRUE,
-              'tally' => [
-                'fn' => NULL,
-              ],
-            ],
-            [
-              'type' => 'field',
-              'key' => 'contact_id.sort_name',
-              'label' => E::ts('Contact Sort Name'),
-              'sortable' => TRUE,
-              'tally' => [
-                'fn' => NULL,
-              ],
-              'link' => [
-                'path' => '',
-                'entity' => 'Contact',
-                'action' => 'view',
-                'join' => 'contact_id',
-                'target' => '_blank',
-                'task' => '',
-              ],
-              'title' => NULL,
-            ],
-            [
-              'type' => 'field',
               'key' => 'financial_type_id:label',
               'label' => E::ts('Financial Type'),
               'sortable' => TRUE,
@@ -219,53 +298,8 @@ return [
             ],
             [
               'type' => 'field',
-              'key' => 'contribution_extra.gateway',
-              'label' => E::ts('Gateway'),
-              'sortable' => TRUE,
-              'tally' => [
-                'fn' => NULL,
-              ],
-            ],
-            [
-              'type' => 'field',
-              'key' => 'contribution_extra.gateway_txn_id',
-              'label' => E::ts('Gateway Transaction ID'),
-              'sortable' => TRUE,
-              'tally' => [
-                'fn' => NULL,
-              ],
-            ],
-            [
-              'type' => 'field',
-              'key' => 'contribution_extra.payment_orchestrator_reconciliation_id',
-              'label' => E::ts('Payment Orchestrator Reconciliation ID'),
-              'sortable' => TRUE,
-              'tally' => [
-                'fn' => NULL,
-              ],
-            ],
-            [
-              'type' => 'field',
-              'key' => 'contribution_extra.backend_processor_txn_id',
-              'label' => E::ts('Backend Processor Transaction ID'),
-              'sortable' => TRUE,
-              'tally' => [
-                'fn' => NULL,
-              ],
-            ],
-            [
-              'type' => 'field',
               'key' => 'contribution_extra.source_type',
               'label' => E::ts('Source Type'),
-              'sortable' => TRUE,
-              'tally' => [
-                'fn' => NULL,
-              ],
-            ],
-            [
-              'type' => 'field',
-              'key' => 'contribution_extra.backend_processor',
-              'label' => E::ts('Backend Processor'),
               'sortable' => TRUE,
               'tally' => [
                 'fn' => NULL,
@@ -298,30 +332,9 @@ return [
               'label' => E::ts('Contact Display Name'),
               'sortable' => TRUE,
             ],
-            [
-              'type' => 'field',
-              'key' => 'Gift_Data.is_major_gift',
-              'label' => E::ts('Gift Data: Is Major Gift'),
-              'sortable' => TRUE,
-            ],
-            [
-              'type' => 'field',
-              'key' => 'Gift_Data.Channel:label',
-              'label' => E::ts('Gift Data: Channel'),
-              'sortable' => TRUE,
-            ],
-            [
-              'type' => 'field',
-              'key' => 'segment_Fund:label',
-              'label' => E::ts('Fund'),
-              'sortable' => TRUE,
-            ],
           ],
           'actions' => TRUE,
-          'classes' => [
-            'table',
-            'table-striped',
-          ],
+          'classes' => ['table', 'table-striped'],
           'actions_display_mode' => 'menu',
           'headerCount' => TRUE,
           'tally' => [
