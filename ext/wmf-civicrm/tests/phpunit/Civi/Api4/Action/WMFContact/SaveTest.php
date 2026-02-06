@@ -117,6 +117,60 @@ class SaveTest extends TestCase {
     $this->assertEquals($new_email, $contact[0]['email_primary.email']);
     $this->assertEquals($new_first_name, $contact[0]['first_name']);
   }
+  public function testVenmoDifferentExternalButPhoneMatched(): void {
+    // Create a contact with phone
+    $donationMessage = new RecurDonationMessage([
+      'first_name' => 'Venmo',
+      'last_name' => 'Test',
+      'nick_name' => '',
+      'email' => '123@aa.com',
+      'gateway' => 'braintree',
+      'external_identifier' => '@venmojoe_123',
+      'payment_method' => 'venmo',
+      'phone' => '1234567890',
+      'country' => 'US',
+      'street_address' => '',
+      'city' => '',
+      'street_number' => '',
+      'postal_code' => '',
+      'state_province' => '',
+    ]);
+    WMFContact::save(FALSE)->setMessage($donationMessage->normalize())->execute();
+    // Verify this contact is unique
+    $contacts = Contact::get(FALSE)
+      ->addWhere('phone_primary.phone', '=', '1234567890')
+      ->addSelect('id')
+      ->execute();
+    $this->assertCount(1, $contacts);
+    // Consume a donation message with the same phone but different external identifier
+    $anotherDonationMessage = new RecurDonationMessage([
+      'first_name' => 'diff-firstname',
+      'last_name' => 'Test',
+      'nick_name' => '',
+      'email' => 'diff@aa.com',
+      'gateway' => 'braintree',
+      'external_identifier' => '@venmojoe_diff',
+      'payment_method' => 'venmo',
+      'phone' => '1234567890',
+      'country' => 'US',
+      'street_address' => '',
+      'city' => '',
+      'street_number' => '',
+      'postal_code' => '',
+      'state_province' => '',
+    ]);
+    WMFContact::save(FALSE)->setMessage($anotherDonationMessage->normalize())->execute();
+    $afterContacts = Contact::get(FALSE)
+      ->addSelect('id', 'External_Identifiers.venmo_user_name', 'email_primary.email', 'phone_primary.phone')
+      ->addWhere('phone_primary.phone', '=', '1234567890')
+      ->execute();
+    // Verify that no new contact was created since the phone matches
+    $this->assertCount(1, $afterContacts);
+    $this->assertEquals('1234567890', $afterContacts[0]['phone_primary.phone']);
+    $this->assertEquals('diff@aa.com', $afterContacts[0]['email_primary.email']);
+    $this->assertEquals('@venmojoe_diff', $afterContacts[0]['External_Identifiers.venmo_user_name']);
+    $this->assertEquals($contacts[0]['id'], $afterContacts[0]['id']);
+  }
 
   public function testVenmoDiffNameDedupe(): void {
     // Create a contact with email

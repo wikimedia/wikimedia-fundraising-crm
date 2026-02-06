@@ -94,6 +94,7 @@ class Save extends AbstractAction {
       // For inserts however we can rely on the core api.
       $contact['email_primary.email'] = $msg['email'];
     }
+    // for gravy ACH, assign email as billing email
     if (!empty($msg['billing_email'])) {
       \Civi::log('wmf')->info('add additional billing email');
       $contact['email_billing.location_type_id:name'] = 'Billing';
@@ -749,16 +750,22 @@ WHERE
     }
     $externalIdentifiers = array_flip($this->getExternalIdentifierFields());
     if ($externalIdentifiers) {
-      // since venmo allow user to update their user_name, we can not use this as single select param,
-      // we can probably use venmo_user_id in the future for this dedupe function works for venmo
       $external_identifier_field = array_key_first($externalIdentifiers);
-      $contactMatch = Contact::get(FALSE)
-        ->addWhere($external_identifier_field, '=', $this->message[$external_identifier_field]);
-      if (!empty($externalIdentifiers['External_Identifiers.venmo_user_name'])) {
-        // venmo_user_id can be updated manually, so dedupe with double check email
-        $contactMatch->addWhere('email_primary.email', '=', $msg['email']);
+      if ($this->message['payment_method'] === 'venmo' && !empty($this->message['phone'])) {
+        // venmo_user_name can be updated manually, so should use the only unique identifier - phone for venmo
+        // check if contact has primary phone with source venmo and the same phone number, if not,
+        // fallback to check with external identifier field
+        $matches = Contact::get(FALSE)
+        ->addWhere('phone_primary.phone_data.phone_source', '=', 'Venmo')
+        ->addWhere('phone_primary.phone', '=', $this->message['phone'])->execute()->first();
+        if (!empty($matches)) {
+          return $matches;
+        }
       }
-      $matches = $contactMatch->execute()->first();
+      // fallback to check with external identifier field for venmo if no phone matched, and for other payment method
+      $matches = Contact::get(FALSE)
+        ->addWhere($external_identifier_field, '=', $this->message[$external_identifier_field])
+        ->execute()->first();
       if (!empty($matches)) {
         return $matches;
       }
