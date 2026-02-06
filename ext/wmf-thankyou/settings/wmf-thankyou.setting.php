@@ -219,4 +219,27 @@ return [
      'help_text' => '',
     'settings_pages' => ['wmf-thankyou' => ['weight' => 60]],
   ],
+
+  'thank_you_double_opt_in_countries' => [
+    'group_name' => 'WMF Thank You Settings',
+    'group' => 'wmf-thankyou',
+    'name' => 'thank_you_double_opt_in_countries',
+    'title' => E::ts('Double opt-in countries'),
+    'type' => 'Array',
+    'html_type' => 'select',
+    'description' => E::ts('For these countries, send double opt-in emails with the TY mail (skipped if already done or opted out).'),
+    'default' => [1014, 1107], // Italy and Austria
+    'pseudoconstant' => [
+      'table' => 'civicrm_country',
+      'keyColumn' => 'id',
+      'labelColumn' => 'name',
+    ],
+    'html_attributes' => [
+      'class' => 'crm-select2',
+      'multiple' => 1,
+    ],
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 45]],
+  ],
 ];

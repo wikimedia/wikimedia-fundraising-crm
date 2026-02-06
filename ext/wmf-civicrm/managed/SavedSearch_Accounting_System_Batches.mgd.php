@@ -1,12 +1,11 @@
 <?php
-
 use CRM_Wmf_ExtensionUtil as E;
 
 return [
   [
     'name' => 'SavedSearch_Accounting_System_Batches',
     'entity' => 'SavedSearch',
-    'cleanup' => 'always',
+    'cleanup' => 'unused',
     'update' => 'unmodified',
     'params' => [
       'version' => 4,
@@ -28,6 +27,7 @@ return [
             'batch_data.settled_reversal_amount',
             'item_count',
             'status_id:label',
+            'name',
           ],
           'orderBy' => [],
           'where' => [
@@ -42,15 +42,13 @@ return [
           'having' => [],
         ],
       ],
-      'match' => [
-        'name',
-      ],
+      'match' => ['name'],
     ],
   ],
   [
     'name' => 'SavedSearch_Accounting_System_Batches_SearchDisplay_Accounting_System_Batches',
     'entity' => 'SearchDisplay',
-    'cleanup' => 'always',
+    'cleanup' => 'unused',
     'update' => 'unmodified',
     'params' => [
       'version' => 4,
@@ -82,6 +80,15 @@ return [
               'key' => 'title',
               'label' => E::ts('Batch Title'),
               'sortable' => TRUE,
+              'link' => [
+                'path' => 'civicrm/contribution/settled#?finance_batch=[name]',
+                'entity' => '',
+                'action' => '',
+                'join' => '',
+                'target' => '',
+                'task' => '',
+              ],
+              'title' => E::ts('Delete Batches'),
             ],
             [
               'type' => 'field',
@@ -137,12 +144,65 @@ return [
               'label' => E::ts('Batch Status'),
               'sortable' => TRUE,
             ],
+            [
+              'size' => 'btn-xs',
+              'links' => [
+                [
+                  'path' => 'civicrm/batch/download?type=details&batch=[name]',
+                  'icon' => 'fa-external-link',
+                  'text' => E::ts('Download Journals'),
+                  'style' => 'default',
+                  'conditions' => [
+                    [
+                      'status_id:name',
+                      'IN',
+                      ['total_verified', 'validated'],
+                    ],
+                  ],
+                  'task' => '',
+                  'entity' => '',
+                  'action' => '',
+                  'join' => '',
+                  'target' => '',
+                ],
+                [
+                  'path' => 'civicrm/batch/download?type=journals&batch=[name]',
+                  'icon' => 'fa-external-link',
+                  'text' => E::ts('Download Transations'),
+                  'style' => 'default',
+                  'conditions' => [
+                    [
+                      'status_id:name',
+                      'IN',
+                      ['Closed', 'Exported', 'total_verified', 'validated'],
+                    ],
+                  ],
+                  'task' => '',
+                  'entity' => '',
+                  'action' => '',
+                  'join' => '',
+                  'target' => '',
+                ],
+                [
+                  'path' => 'civicrm/contribution/settled#?contribution_settlement.settlement_batch_reference,contribution_settlement.settlement_batch_reversal_reference=[name]',
+                  'icon' => 'fa-external-link',
+                  'text' => E::ts('Search Transactions'),
+                  'style' => 'default',
+                  'conditions' => [],
+                  'task' => '',
+                  'entity' => '',
+                  'action' => '',
+                  'join' => '',
+                  'target' => '_blank',
+                ],
+              ],
+              'type' => 'buttons',
+              'alignment' => 'text-right',
+              'label' => E::ts('Download Transactions'),
+            ],
           ],
           'actions' => TRUE,
-          'classes' => [
-            'table',
-            'table-striped',
-          ],
+          'classes' => ['table', 'table-striped'],
           'actions_display_mode' => 'menu',
         ],
       ],

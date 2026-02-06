@@ -1,4 +1,7 @@
 <div af-fieldset="" af-title="Accounting system batches">
-  <af-field name="name" defn="{search_operator: 'REGEXP', input_attrs: {}}" />
+  <div class="af-container af-layout-cols">
+    <af-field name="name" defn="{search_operator: 'REGEXP', input_attrs: {}}" />
+    <af-field name="status_id" defn="{input_attrs: {multiple: true}, search_operator: 'IN'}" />
+  </div>
   <crm-search-display-table search-name="Accounting_System_Batches" display-name="Accounting_System_Batches"></crm-search-display-table>
 </div>

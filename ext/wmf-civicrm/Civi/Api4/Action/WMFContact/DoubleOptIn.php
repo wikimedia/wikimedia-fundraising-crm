@@ -86,6 +86,7 @@ class DoubleOptIn extends AbstractAction {
     $activity = Activity::create(FALSE)
       ->addValue('source_record_id', $emailID)
       ->addValue('source_contact_id', $this->contact_id)
+      ->addValue('target_contact_id', $this->contact_id)
       ->addValue('subject', $this->email)
       ->addValue('activity_tracking.activity_campaign', $this->campaign)
       ->addValue('activity_tracking.activity_medium', $this->medium)

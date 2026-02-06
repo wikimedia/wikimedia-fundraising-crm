@@ -3863,6 +3863,30 @@ AND channel <> 'Chapter Gifts'";
     }
     return TRUE;
   }
+
+  /**
+   * Bug: T416018
+   *
+   * Add target contact (same as source contact) to existing double opt in activities
+   *
+   * @return bool
+   */
+  public function upgrade_4845(): bool {
+    $sql = '
+      INSERT INTO civicrm_activity_contact (activity_id, contact_id, record_type_id)
+      SELECT
+          ac.activity_id,
+          ac.contact_id,
+          3
+      FROM civicrm_activity_contact ac
+      INNER JOIN civicrm_activity a ON ac.activity_id = a.id
+      WHERE a.activity_type_id = 220
+        AND ac.record_type_id = 2
+    ';
+    CRM_Core_DAO::executeQuery($sql);
+    return TRUE;
+  }
+
   /**
    * Queue up an API4 update.
    *

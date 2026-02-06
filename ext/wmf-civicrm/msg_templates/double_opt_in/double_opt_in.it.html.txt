@@ -1,8 +1,9 @@
 {* START ASSIGN VARIABLES *}
 {capture assign=firstName}{contact.first_name}{/capture}
 {capture assign=commaFirstName}{if $firstName}, {$firstName}{/if}{/capture}
+{capture assign=spaceFirstName}{if $firstName} {$firstName}{/if}{/capture}
 <!DOCTYPE html>
-<html lang="en" xml:lang="en" dir="ltr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<html lang="it" xml:lang="it" dir="ltr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 {literal}
 <head>
 <!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
@@ -110,11 +111,11 @@ padding: 10px 16px 20px 16px !important;
 <!-- START EMAIL BODY -->
 <body class="body body--foundation" bgcolor="#FFFFFF">
 <!-- START PREHEADER -->
-<div style="display:none">Please confirm your email to stay connected with Wikipedia. &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &nbsp;
+<div style="display:none">Conferma il tuo indirizzo e-mail per rimanere in contatto con Wikipedia. &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &#8199;&#847; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &shy; &nbsp;
 </div>
 <!-- END PREHEADER -->
 <!-- START EMAIL WRAPPER -->
-<table role="article" aria-roledescription="email" aria-label="Wikimedia Foundation" lang="en" dir="ltr" border="0" cellpadding="0" cellspacing="0" width="100%">
+<table role="article" aria-roledescription="email" aria-label="Wikimedia Foundation" lang="it" dir="ltr" border="0" cellpadding="0" cellspacing="0" width="100%">
 <tr>
 <td align="center" bgcolor="#FFFFFF" class="gap--base">
 <!--[if mso]><table role="none" align="center" border="0" cellpadding="0" cellspacing="0" width="600"><tr><td><![endif]-->
@@ -162,15 +163,14 @@ padding: 10px 16px 20px 16px !important;
 <!-- START PARAGRAPH (BASE) -->
 <tr>
 <td align="left" class="container" style="padding-left: 20px; padding-right: 20px; padding-bottom: 24px;">
-<div class="text text--base" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 16px; line-height: 26px;">Hello{$commaFirstName}!<br /><br />
-Thank you again for supporting Wikipedia—the world’s largest source of free, reliable information.</div>
+<div class="text text--base" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 16px; line-height: 26px;">Ciao{$spaceFirstName}!<br /><br />Grazie ancora per il tuo sostegno a Wikipedia, la più grande risorsa al mondo di informazioni libere e affidabili.</div>
 </td>
 </tr>
 <!-- END PARAGRAPH (BASE) -->
 <!-- START PARAGRAPH (BASE) -->
 <tr>
 <td align="left" class="container" style="padding-left: 20px; padding-right: 20px; padding-bottom: 24px;">
-<div class="text text--base" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 16px; line-height: 26px;">We’d love to stay in touch. <strong>Is {contact.email_primary.email} still the best way to reach&nbsp;you?</strong></div>
+<div class="text text--base" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 16px; line-height: 26px;">Ci piacerebbe rimanere in contatto. <strong>L'indirizzo {contact.email_primary.email} è ancora il modo migliore per contattarti?</strong></div>
 </td>
 </tr>
 <!-- END PARAGRAPH (BASE) -->
@@ -180,7 +180,7 @@ Thank you again for supporting Wikipedia—the world’s largest source of free,
 <table role="none" border="0" cellpadding="0" cellspacing="0" width="100%">
 <tr>
 <td class="button-box button-box--primary is-base" style="border-radius: 2px; mso-padding-alt: 8px; text-align: center; background-color: #3056a9; border: 1px solid #3056a9;">
-<a href="https://donorpreferences.wikimedia.org/index.php?title=Special:EmailPreferences/optIn&contact_id={contact.id}&checksum={contact.checksum_value}&email={contact.email_primary.email}" name="link_button_1" class target="_blank" style="padding: 8px; display: block; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size: 18px; font-weight: 700; line-height: 28px; text-decoration: none; color: #ffffff;">Yes, confirm my email</a>
+<a href="https://donorpreferences.wikimedia.org/index.php?title=Special:EmailPreferences/optIn&contact_id={contact.id}&checksum={contact.checksum_value}&email={contact.email_primary.email}" name="link_button_1" class target="_blank" style="padding: 8px; display: block; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-size: 18px; font-weight: 700; line-height: 28px; text-decoration: none; color: #ffffff;">Sì, confermo la mia e-mail</a>
 </td>
 </tr>
 </table>
@@ -190,28 +190,28 @@ Thank you again for supporting Wikipedia—the world’s largest source of free,
 <!-- START PARAGRAPH (BASE) -->
 <tr>
 <td align="left" class="container" style="padding-left: 20px; padding-right: 20px; padding-bottom: 24px;">
-<div class="text text--base" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 16px; line-height: 26px;">By clicking the button above, you will continue to receive occasional emails from the Wikimedia Foundation. We hope to keep you with us!</div>
+<div class="text text--base" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 16px; line-height: 26px;">Cliccando sul pulsante sopra, continuerai a ricevere occasionalmente e-mail dalla Wikimedia Foundation. Speriamo di poterti avere ancora con noi!</div>
 </td>
 </tr>
 <!-- END PARAGRAPH (BASE) -->
 <!-- START PARAGRAPH (BASE) -->
 <tr>
 <td align="left" class="container" style="padding-left: 20px; padding-right: 20px; padding-bottom: 24px;">
-<div class="text text--base" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 16px; line-height: 26px;">Wikipedia could not exist without people like you{$commaFirstName}. We truly appreciate your support.</div>
+<div class="text text--base" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 16px; line-height: 26px;">Wikipedia non potrebbe esistere senza persone come te{$commaFirstName}. Apprezziamo sinceramente il tuo sostegno.</div>
 </td>
 </tr>
 <!-- END PARAGRAPH (BASE) -->
 <!-- START PARAGRAPH (BASE) -->
 <tr>
 <td align="left" class="container" style="padding-left: 20px; padding-right: 20px; padding-bottom: 24px;">
-<div class="text text--base" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 16px; line-height: 26px;">With gratitude,<br /> <a href="https://wikimediafoundation.org/" name="link_1" class="link" target="_blank" style="color: #3366cc; text-decoration: underline;">The Wikimedia Foundation</a> Team</div>
+<div class="text text--base" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 16px; line-height: 26px;">Con gratitudine,<br />Il team della <a href="https://wikimediafoundation.org/" name="link_1" class="link" target="_blank" style="color: #3366cc; text-decoration: underline;">Wikimedia Foundation</a></div>
 </td>
 </tr>
 <!-- END PARAGRAPH (BASE) -->
 <!-- START PARAGRAPH (BASE) -->
 <tr>
 <td align="left" class="container" style="padding-left: 20px; padding-right: 20px; padding-bottom: 24px;">
-<div class="text text--base" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 16px; line-height: 26px;">P.S. Please let us know if you'd like us to <a href="mailto:donate@wikimedia.org?subject=Please%20change%20my%20email%20address&body=My%20old%20email%20address%20is%3A%20____%0AMy%20new%20email%20address%20is%3A%20____" name="link_2" class="link" target="_blank" style="color: #3366cc; text-decoration: underline;">update your email address</a>, we'd be happy to help.</div>
+<div class="text text--base" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 16px; line-height: 26px;">P.S. Se desideri <a href="mailto:donate@wikimedia.org?subject=Modifica%20il%20mio%20indirizzo%20e-mail&body=Il%20mio%20vecchio%20indirizzo%20e-mail%20è%3A%20____%0AIl%20mio%20nuovo%20indirizzo%20e-mail%20è%3A%20____" name="link_2" class="link" target="_blank" style="color: #3366cc; text-decoration: underline;">aggiornare il tuo indirizzo e-mail</a>, non esitare a comunicarcelo: saremo lieti di aiutarti.</div>
 </td>
 </tr>
 <!-- END PARAGRAPH (BASE) -->
@@ -227,7 +227,7 @@ Thank you again for supporting Wikipedia—the world’s largest source of free,
 <table align="left" role="none" border="0" cellpadding="0" cellspacing="0" class="image image--180w image--floating floating-left" style="padding-right: 16px; float: left; width: 180px;" width="180">
 <tr>
 <td>
-<img src="https://upload.wikimedia.org/wikipedia/donate/9/9c/Logo-wikipedia-landscape-wkfrds.png" align="left" alt="Wikipedia Logo" class="image--180w" style="width: 180px;" width="180">
+<img src="https://upload.wikimedia.org/wikipedia/donate/b/b1/Logo-wikipedia-landscape-wkfrds_it.png" align="left" alt="Wikipedia Logo" class="image--180w" style="width: 180px;" width="180">
 </td>
 </tr>
 </table>
@@ -236,7 +236,7 @@ Thank you again for supporting Wikipedia—the world’s largest source of free,
 <!-- START PARAGRAPH (BASE) -->
 <tr>
 <td align="left" class="container" style="padding-top: 8px;">
-<div class="text text--base" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 16px; line-height: 26px;"><br />Wikipedia is hosted by the Wikimedia Foundation, a nonprofit organization. We support the people and technology that enable information to be shared freely with the world.</div>
+<div class="text text--base" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 16px; line-height: 26px;"><br />Wikipedia è ospitata dalla Wikimedia Foundation, un'organizzazione non profit. Sosteniamo le persone e la tecnologia che consentono la libera condivisione delle informazioni con il mondo.</div>
 </td>
 </tr>
 <!-- END PARAGRAPH (BASE) -->
@@ -281,8 +281,9 @@ Thank you again for supporting Wikipedia—the world’s largest source of free,
 <!-- START PARAGRAPH (FOOTER) -->
 <tr>
 <td align="left" class="container" style="padding-bottom: 24px;">
-<div class="text text--footer" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 12px; line-height: 18px;"> You are receiving this email at {contact.email_primary.email} as a valued donor of the Wikimedia Foundation.<br /><br />
-If you do not wish to receive any future emails from the Wikimedia Foundation, <a href="{wmf_url.unsubscribe}" name="link_3" class="link" target="_blank" style="text-decoration: underline; color: #202122;">unsubscribe now</a>. If you've already donated recently, we may have an alternate email address on file for you. <a href="mailto:donate@wikimedia.org?subject=Please%20change%20my%20email%20address&body=My%20old%20email%20address%20is%3A%20____%0AMy%20new%20email%20address%20is%3A%20____" name="link_4" class="link" target="_blank" style="text-decoration: underline; color: #202122;">Please let us know it!</a> We'd also be happy to update your contact preferences, including your personal details such as your name or email address, should you wish for these to be changed.
+<div class="text text--footer" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 12px; line-height: 18px;">
+Hai ricevuto questa email all'indirizzo {contact.email_primary.email} in qualità di generoso donatore della Wikimedia Foundation.<br /><br />
+Se non desideri ricevere ulteriori email dalla Wikimedia Foundation, <a href="{wmf_url.unsubscribe}" name="link_3" class="link" target="_blank" style="text-decoration: underline; color: #202122;">annulla l'iscrizione ora</a>. Se hai già effettuato una donazione di recente, potremmo avere un altro indirizzo e-mail registrato per te. <a href="mailto:donate@wikimedia.org?subject=Modifica%20il%20mio%20indirizzo%20e-mail&body=Il%20mio%20vecchio%20indirizzo%20e-mail%20è%3A%20____%0AIl%20mio%20nuovo%20indirizzo%20e-mail%20è%3A%20____" name="link_4" class="link" target="_blank" style="text-decoration: underline; color: #202122;">Ti preghiamo di comunicarcelo!</a> Saremo lieti di aggiornare le tue preferenze di contatto, compresi i tuoi dati personali come il nome o l'indirizzo e-mail, qualora desiderassi modificarli.
 </div>
 </td>
 </tr>
@@ -290,14 +291,14 @@ If you do not wish to receive any future emails from the Wikimedia Foundation, <
 <!-- START PARAGRAPH (FOOTER) -->
 <tr>
 <td align="left" class="container" style="padding-bottom: 24px;">
-<div class="text text--footer" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 12px; line-height: 18px;">We respect your privacy. Learn more in our <a href="https://foundation.wikimedia.org/wiki/Policy:Donor_privacy_policy/en" name="link_5" class="link" target="_blank" style="text-decoration: underline; color: #202122;">donor privacy policy</a>.</div>
+<div class="text text--footer" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 12px; line-height: 18px;">Rispettiamo la tua privacy. Per saperne di più, consulta la nostra <a href="https://foundation.wikimedia.org/wiki/Policy:Donor_privacy_policy/it" name="link_5" class="link" target="_blank" style="text-decoration: underline; color: #202122;">informativa sulla privacy dei&nbsp;donatori</a>.</div>
 </td>
 </tr>
 <!-- END PARAGRAPH (FOOTER) -->
 <!-- START PARAGRAPH (FOOTER) -->
 <tr>
 <td align="left" class="container">
-<div class="text text--footer" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 12px; line-height: 18px;">Wikimedia Foundation, Inc. | P.O. Box 98204 | Washington, DC 20090-8204 | USA<br />U.S. tax-exempt number: 20-0049703</div>
+<div class="text text--footer" style="margin: 0; color: #202122; font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Lato,Helvetica,Arial,sans-serif; font-weight: 400; text-wrap: pretty; font-size: 12px; line-height: 18px;">Wikimedia Foundation, Inc. | P.O. Box 98204 | Washington, DC 20090-8204 | USA<br />Numero di esenzione fiscale USA: 20-0049703</div>
 </td>
 </tr>
 <!-- END PARAGRAPH (FOOTER) -->

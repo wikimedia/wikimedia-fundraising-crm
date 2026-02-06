@@ -1,0 +1,2 @@
+{capture assign=firstName}{contact.first_name}{/capture}
+Grazie per il tuo sostegno{if $firstName}, {$firstName}{/if}: restiamo in contatto?

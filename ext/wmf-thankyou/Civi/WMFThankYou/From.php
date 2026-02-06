@@ -18,7 +18,11 @@ class From {
     'eoy' => [
       'name' => 'wmf_eoy_thank_you_from_name',
       'address' => 'wmf_eoy_thank_you_from_address'
-    ]
+    ],
+    'double_opt_in' => [
+      'name' => 'wmf_thank_you_from_name',
+      'address' => 'wmf_thank_you_from_address'
+    ],
   ];
 
   public static function getFromName($template) {
