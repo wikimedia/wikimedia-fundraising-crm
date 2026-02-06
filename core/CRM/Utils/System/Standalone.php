@@ -624,8 +624,6 @@ class CRM_Utils_System_Standalone extends CRM_Utils_System_Base {
    * - Otherwise, show a "Permission Denied" page
    */
   public function permissionDenied() {
-    \Civi::log('wmf')->alert(__CLASS__ . '::' . __FUNCTION__ . CRM_Core_Error::backtrace());
-
     http_response_code(403);
 
     $session = CRM_Core_Session::singleton();
