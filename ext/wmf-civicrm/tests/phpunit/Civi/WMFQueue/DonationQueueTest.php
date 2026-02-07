@@ -2257,6 +2257,7 @@ class DonationQueueTest extends BaseQueueTestCase {
     $existingContact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'email_primary.email' => 'noname@example.org',
+      'email_primary.location_type_id:name' => 'ach',
       'preferred_language' => 'es_ES',
     ], 'existing');
 
