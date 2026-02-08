@@ -155,33 +155,21 @@ class Import {
         $this->doFidelityWrangling();
       }
 
-      $isRequireOrganizationResolution = !$this->isFidelity();
-
       if (!empty($this->mappedRow['SoftCreditContact'])) {
         if (($this->mappedRow['Contact']['contact_type'] ?? NULL) === 'Organization') {
           // If we can identify the organization here then we can try to improve on the dedupe
           // contact look up for the related individual by looking for contacts
           // with a relationship or prior soft credit.
-          try {
-            $organizationName = self::resolveOrganization($this->mappedRow['Contact']);
-            $this->mappedRow['Contribution']['contact_id'] = $this->mappedRow['Contact']['id'];
-            foreach ($this->mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
-              if (empty($this->mappedRow['SoftCreditContact'][$index]['id'])) {
-                $this->mappedRow['SoftCreditContact'][$index]['id'] = Contact::getIndividualID(
-                  $softCreditContact['email_primary.email'] ?? NULL,
-                  $softCreditContact['first_name'] ?? NULL,
-                  $softCreditContact['last_name'] ?? NULL,
-                  $organizationName
-                );
-              }
-            }
-          }
-          catch (\CRM_Core_Exception $e) {
-            if ($isRequireOrganizationResolution) {
-              // The prior soft-credit resolution is possibly going out of favour - it
-              // may have been more transitional. Regardless we only want it as an optional
-              // extra for Fidelity.
-              throw $e;
+          $organizationName = self::resolveOrganization($this->mappedRow['Contact']);
+          $this->mappedRow['Contribution']['contact_id'] = $this->mappedRow['Contact']['id'];
+          foreach ($this->mappedRow['SoftCreditContact'] as $index => $softCreditContact) {
+            if (empty($this->mappedRow['SoftCreditContact'][$index]['id'])) {
+              $this->mappedRow['SoftCreditContact'][$index]['id'] = Contact::getIndividualID(
+                $softCreditContact['email_primary.email'] ?? NULL,
+                $softCreditContact['first_name'] ?? NULL,
+                $softCreditContact['last_name'] ?? NULL,
+                $organizationName
+              );
             }
           }
         }
@@ -261,10 +249,6 @@ class Import {
     else {
       $organizationName = Contact::getOrganizationName($organizationContact['id']);
     }
-    // We don't want to over-write the organization_name as we might have matched on nick name.
-    // It's arguable as to whether this is the right behaviour when id is set (perhaps
-    // they are trying to update the name?) but this is at least consistent.
-    unset($organizationContact['organization_name']);
     return $organizationName;
   }
 

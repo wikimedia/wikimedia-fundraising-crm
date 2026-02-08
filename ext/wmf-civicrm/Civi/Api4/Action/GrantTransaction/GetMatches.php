@@ -93,6 +93,7 @@ class GetMatches extends AbstractAction {
        WHERE (organization_name = %1 OR legal_name = %1)
          AND is_deleted = 0 AND contact_type = 'Organization' AND gateway = 'Paypal DAF'
          AND cont.total_amount = %2
+         AND cont.contribution_status_id = 1
          AND soft_credit_type_id = $softCreditTypeID AND (gateway_txn_id IS NULL OR gateway_txn_id = '')
          AND receive_date BETWEEN '{$dateRangeStart}' AND '{$dateRangeEnd} 23:59:59'
        ORDER BY receive_date DESC

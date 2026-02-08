@@ -50,8 +50,8 @@ class BraintreeAuditProcessor extends BaseAuditProcessor {
    *
    * @return string
    */
-  protected function regexForFilesToProcess() {
-    return '/[settlement|raw]_batch_report_/';
+  protected function regexForFilesToProcess(): string {
+    return '/^(settlement|raw)_(disbursement|batch)_report_/';
   }
 
 }

@@ -14,26 +14,26 @@ class Contact {
    * This function is used during imports where the organization may go by more
    * than one name.
    *
-   * If there are no possible matches this will fail, unless isCreateIfNotExists
-   * is passed in.
+   * If there are no possible matches, it will return null and we'll let the org be created later.
+   * If there are multiple matches, it will throw an exception, forcing the use to resolve before importing.
    *
-   * It will also fail if there
-   * are multiple possible matches of the same priority (ie. multiple nick names
-   * or multiple organization names.)
+   * Note this ignores the UI selected dedupe rule and first/unique match selection,
+   * potentially confusing the user who won't understand why the behavior doesn't match their selections.
+   * Ideally, we would instead fetch and use the selected dedupe rule and first/unique match selection
+   * and then add our org name = nickname match on top of that.
+   *
    *
    * @param string $organizationName
-   * @param bool $isCreateIfNotExists
-   * @param array $createParameters
    *
-   * @return int
+   * @return int|null
    *
    * @throws \CRM_Core_Exception
    */
-  public static function getOrganizationID(string $organizationName, bool $isCreateIfNotExists = FALSE, $createParameters = []): int {
+  public static function getOrganizationID(string $organizationName): int|null {
     // Using the Civi Statics pattern for php caching makes it easier to reset in unit tests.
     self::resolveOrganizationName($organizationName);
     $contactID = Civi::$statics['wmf_contact']['organization'][$organizationName]['id'] ?? NULL;
-    if (!$contactID) {
+    if (!isset($contactID)) {
       $contacts = \Civi\Api4\Contact::get(FALSE)
         ->addWhere('contact_type', '=', 'Organization')
         ->addWhere('organization_name', '=', $organizationName)
@@ -41,26 +41,16 @@ class Contact {
       if (count($contacts) === 1) {
         Civi::$statics['wmf_contact']['organization'][$organizationName]['id'] = $contacts->first()['id'];
       }
-      elseif ($isCreateIfNotExists && count($contacts) === 0) {
-        Civi::$statics['wmf_contact']['organization'][$organizationName]['id'] = \Civi\Api4\Contact::create(FALSE)->setValues(array_merge([
-          'organization_name' => $organizationName,
-        ], $createParameters)
-        )->execute()->first()['id'];
+      elseif (count($contacts) > 1) {
+        throw new \CRM_Core_Exception(
+          ts("Found more than one organization named: %1. Please merge them or rename one.",
+            [1 => $organizationName]));
       }
       else {
         \Civi::$statics['wmf_contact']['organization'][$organizationName]['id'] = FALSE;
       }
     }
-    if (\Civi::$statics['wmf_contact']['organization'][$organizationName]['id']) {
-      return \Civi::$statics['wmf_contact']['organization'][$organizationName]['id'];
-    }
-    throw new \CRM_Core_Exception(
-      ts("Did not find exactly one Organization with the details: %1 You will need to ensure a single Organization record exists for the contact first",
-        [
-          1 => $organizationName,
-        ]
-      )
-    );
+    return \Civi::$statics['wmf_contact']['organization'][$organizationName]['id'] ?: NULL;
   }
 
   /**

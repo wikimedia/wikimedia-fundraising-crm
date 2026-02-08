@@ -29,4 +29,44 @@ return [
       'display_name' => 'SMS Mobile',
     ],
   ],
+  'paypal' => [
+    'name' => 'paypal',
+    'entity' => 'LocationType',
+    'cleanup' => 'never',
+    'params' => [
+      'version' => 3,
+      'name' => 'paypal',
+      'display_name' => 'Paypal',
+    ],
+  ],
+  'apple' => [
+    'name' => 'apple',
+    'entity' => 'LocationType',
+    'cleanup' => 'never',
+    'params' => [
+      'version' => 3,
+      'name' => 'apple',
+      'display_name' => 'Apple',
+    ],
+  ],
+  'google' => [
+    'name' => 'google',
+    'entity' => 'LocationType',
+    'cleanup' => 'never',
+    'params' => [
+      'version' => 3,
+      'name' => 'google',
+      'display_name' => 'Google',
+    ],
+  ],
+  'venmo' => [
+    'name' => 'venmo',
+    'entity' => 'LocationType',
+    'cleanup' => 'never',
+    'params' => [
+      'version' => 3,
+      'name' => 'venmo',
+      'display_name' => 'Venmo',
+    ],
+  ],
 ];
