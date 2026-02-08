@@ -71,7 +71,7 @@ return [
       'values' => [
         'option_group_id.name' => 'batch_status',
         'label' => 'Needs attention',
-        'value' => 7,
+        'value' => 8,
         'name' => 'needs_attention',
         'filter' => 1,
         'is_default' => FALSE,
