@@ -183,19 +183,14 @@ function _civicrm_api3_omnimailing_get_spec(&$params) {
   ];
   /*
    Three things to try curl-18 issue:
-    1) 'headers'['Connection'] => 'close' => if this fixes then → keep-alive / idle timeout mismatch
-    2) 'headers'['Expect'] => '' *this is added to the default now* => if this fixes then → 100-continue / large POST handshake mishandling
+    1) 'headers'['Connection'] => 'close' *this is added to the default now* => if this fixes then → keep-alive / idle timeout mismatch
+    2) 'headers'['Expect'] => ''  => if this fixes then → 100-continue / large POST handshake mishandling
     3) 'curl_options'['CURLOPT_HTTP_VERSION'] => 'HTTP/1.1' => if this fixes then → HTTP/2 intermediary issues
   */
   $params['post_headers'] = [
     'title' => ts('Http POST headers'),
     'description' => ts('Headers passed in here will be added to the POST headers. The default is one possible fix for our timeouts'),
-    // disables 100-continue
-    // When POST bodies are “large enough”, libcurl may add
-    // Expect: 100-continue (or proxies behave as if it did).
-    // Some servers/LBs mishandle this and close the connection.
-    // Retrying immediately works because the next connection/path behaves differently.
-    'api.default' => ['Expect' => ''],
+    'api.default' => ['Connection' => 'close'],
   ];
   $params['curl_options'] = [
     'title' => ts('Http CURL options'),
