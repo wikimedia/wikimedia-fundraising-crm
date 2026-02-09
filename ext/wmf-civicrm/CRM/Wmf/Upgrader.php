@@ -3888,6 +3888,43 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Bug: T416722
+   *
+   * Fix bad data in contribution_tracking source and banner for app donations.
+   *
+   * @return bool
+   */
+  public function upgrade_4850(): bool {
+    // 51 rows
+    $contributionTrackings = \Civi\Api4\ContributionTracking::get(FALSE)
+      ->addSelect('utm_source', 'banner')
+      ->addWhere('banner', 'REGEXP', 'enCA_CA_2025_1215_Test[Ai]')
+      ->addWhere('utm_medium', '=', 'WikipediaApp')
+      ->execute();
+    foreach ($contributionTrackings as $tracking) {
+      \Civi\Api4\ContributionTracking::update(FALSE)
+        ->addValue('utm_source', str_replace('Test', 'Test_', $tracking['utm_source']))
+        ->addValue('banner', str_replace('Test', 'Test_', $tracking['banner']))
+        ->addWhere('id', '=', $tracking['id'])
+        ->execute();
+    }
+    // 3942 rows
+    $contributionTrackings = \Civi\Api4\ContributionTracking::get(FALSE)
+      ->addSelect('utm_source', 'banner')
+      ->addWhere('banner', 'REGEXP', '_2025_121[58]_')
+      ->addWhere('utm_medium', '=', 'WikipediaApp')
+      ->execute();
+    foreach ($contributionTrackings as $tracking) {
+      \Civi\Api4\ContributionTracking::update(FALSE)
+        ->addValue('utm_source', str_replace('2025_12', '2025_B2526_12', $tracking['utm_source']))
+        ->addValue('banner', str_replace('2025_12', '2025_B2526_12', $tracking['banner']))
+        ->addWhere('id', '=', $tracking['id'])
+        ->execute();
+    }
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
