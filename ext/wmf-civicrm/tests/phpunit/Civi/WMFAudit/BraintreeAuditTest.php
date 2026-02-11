@@ -2,9 +2,10 @@
 
 namespace Civi\WMFAudit;
 
+use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
-use SmashPig\Core\DataStores\QueueWrapper;
+use SmashPig\Core\UtcDate;
 
 /**
  * @group Braintree
@@ -205,13 +206,31 @@ class BraintreeAuditTest extends BaseAuditTestCase {
       $rows = json_decode(file_get_contents($file, 'r'), true, 512, JSON_THROW_ON_ERROR);
     }
     catch (\JsonException $e) {
-      $this->fail('Failed to read json' . $file . ': ' . $e->getMessage());
+      // File is in new NDJSON format - each line is a valid json object.
+      // Format is not valid json as a whole but easier to grep.
+      foreach ( file( $file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) as $line ) {
+        $item = json_decode($line, TRUE);
+        if (!is_array($item)) {
+          $this->fail('Failed to read json' . $file . ': ' . $e->getMessage());
+        }
+        $rows[] = $item;
+      }
     }
     return $rows;
   }
 
   public function createTransactionLog(array $row): void {
-    $trackingID = $row['contribution_tracking_id'];
+    if ($row['type'] ?? '' === 'CHARGEBACK') {
+      // Simplest for now - we don't have enough to create one.
+      return;
+    }
+    $orderParts = explode('.', $row['orderId'] ?? '');
+    if (!empty($orderParts[0])) {
+      $trackingID = $orderParts[0];
+    }
+    else {
+      $trackingID = $row['contribution_tracking_id'];
+    }
     $utmSource = "B2526_082914_esLA_m_p1_lg_twn_twin1_optIn0.no-LP.apple_amex";
     $this->ids['ContributionTracking'][] = ContributionTracking::save(FALSE)
       ->addRecord([
@@ -220,9 +239,9 @@ class BraintreeAuditTest extends BaseAuditTestCase {
       ])
       ->execute()->first()['id'];
     $gateway = $this->gateway;
-    $gatewayTxnID = $row['gateway_txn_id'];
+    $gatewayTxnID = $row['id'] ?? $row['gateway_txn_id'];
     $this->createTestEntity('TransactionLog', [
-      'date' => $row['date'],
+      'date' => $row['date'] ?? UtcDate::getUtcTimestamp( $row['createdAt'] ),
       'gateway' => $gateway,
       'gateway_account' => 'WikimediaDonations',
       'order_id' => $trackingID . '.1',
@@ -232,12 +251,12 @@ class BraintreeAuditTest extends BaseAuditTestCase {
         "response" => FALSE,
         "gateway_account" => "WikimediaDonations",
         "fee" => 0,
-        "gross" => $row['gross'],
+        "gross" => $row['amount']['value'] ?? $row['gross'],
         "backend_processor" => $gateway,
         "backend_processor_txn_id" => NULL,
         "contribution_tracking_id" => $trackingID,
         "payment_orchestrator_reconciliation_id" => NULL,
-        "currency" => $row['currency'],
+        "currency" => $row['amount']['currencyCode'] ?? $row['currency'],
         "order_id" => $trackingID . '.1',
         "payment_method" => "apple",
         "payment_submethod" => "amex",
@@ -249,7 +268,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
         "utm_campaign" => "WMF_FR_C2526_esLA_m_0805",
         "utm_medium" => "sitenotice",
         "utm_source" => $utmSource,
-        "date" => strtotime($row['date']),
+        "date" => strtotime($row['date'] ?? UtcDate::getUtcTimestamp( $row['createdAt'] )),
       ]
     ], $gatewayTxnID);
   }
@@ -295,6 +314,22 @@ class BraintreeAuditTest extends BaseAuditTestCase {
       ->execute();
     $this->runAuditor();
     $this->assertMessages($expectedMessages);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function testPayoutMatches(): void {
+    $this->runAuditBatch('raw_batch', 'raw_disbursement_report_consolidated_2026-01-15_2026-01-15.json');
+    $batches = Batch::get(FALSE)->addWhere('name', 'LIKE', 'braintree_20251221_%USD')
+      ->addSelect('status_id:name', 'batch_data.*', 'name')
+      ->execute();
+    foreach ($batches as $batch) {
+      // For cleanup.
+      $this->ids['Batch'][] = $batch['id'];
+      $this->assertEquals('total_verified', $batch['status_id:name']);
+    }
+    $this->assertCount(2, $batches);
   }
 
 }

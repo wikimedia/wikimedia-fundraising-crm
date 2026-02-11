@@ -1410,14 +1410,11 @@ abstract class BaseAuditProcessor {
     $transaction = $auditRecord['message'];
     $type = $auditRecord['audit_message_type'];
     if ($type === 'aggregate') {
-      $this->totals[$file][$transaction['settled_currency']] ??= Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP);
-      $this->totals[$file][$transaction['settled_currency']] = $this->totals[$file][$transaction['settled_currency']]->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
+      $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] ??= Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP);
+      $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] = $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']]->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
       return;
     }
-
     if (isset($transaction['audit_file_gateway']) && !empty($transaction['settlement_batch_reference'])) {
-      // For now this means we are only doing it for adyen.
-      // The batching is by the audit file gateway (ie adyen) not gravy.
       $this->addToBatch($transaction, $file);
     }
     if (!isset($fileStatistics[$type]['by_payment'][$paymentMethod])) {
@@ -1880,7 +1877,7 @@ abstract class BaseAuditProcessor {
     $validBatches = [];
     foreach ($this->batches as $fileName => $fileBatches) {
       foreach ($fileBatches as $batchName => $batch) {
-        if (empty($this->totals[$fileName][$batch['settlement_currency']])) {
+        if (empty($this->totals[$fileName][$batchName][$batch['settlement_currency']])) {
           \Civi::log('wmf')->info("Unable to validate batch for {currency} - settlement row not parsed. This is expected for payment files", [
             'currency' => $batch['settlement_currency'],
           ]);
@@ -1888,7 +1885,7 @@ abstract class BaseAuditProcessor {
         }
         $currency = $batch['settlement_currency'];
         /** @var Money $expectedAmount */
-        $expectedAmount = $this->totals[$fileName][$currency];
+        $expectedAmount = $this->totals[$fileName][$batchName][$currency];
         /** @var Money $settledNetAmount */
         $settledNetAmount = $batch['settled_net_amount'];
         if ($expectedAmount->compareTo($settledNetAmount) === 0) {

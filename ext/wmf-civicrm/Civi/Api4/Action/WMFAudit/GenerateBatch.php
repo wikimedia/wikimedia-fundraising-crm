@@ -291,7 +291,7 @@ GROUP BY s.settlement_batch_reference
       if ($batch['status_id:name'] !== 'total_verified') {
         // @todo what should we do - return information but not export?
         // export in debug mode?
-        throw new \CRM_Core_Exception('batch verified - cannot export');
+        throw new \CRM_Core_Exception('batch not verified - cannot export');
       }
       $this->batchSummary[$batch['name']] = [
         'currency' => $batch['batch_data.settlement_currency'],
