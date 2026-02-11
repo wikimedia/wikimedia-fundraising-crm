@@ -572,19 +572,12 @@ function _wmf_civicrm_managed_get_translations(string $workflowName): array {
 function wmf_civicrm_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$values) {
   // links on the right side of the Recurring Contributions tab in Contributions
   if ($objectName === 'Contribution' && $op === 'contribution.selector.recurring') {
-    // rearrange the order to be friendlier to Donor Relations
-    $order = [
-      'View',
-      'Cancel',
-      'Edit',
-      'View Template',
-    ];
-
-    usort($links, function($a, $b) use ($order) {
-      $pos_a = array_search($a['name'], $order);
-      $pos_b = array_search($b['name'], $order);
-      return $pos_a - $pos_b;
-    });
+    // Move Cancel to second position.
+    foreach ($links as &$link) {
+      if ($link['name'] === 'Cancel') {
+        $link['weight'] = -15;
+      }
+    }
   }
 
   if ($objectName === 'Activity') {

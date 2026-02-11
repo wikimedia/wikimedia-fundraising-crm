@@ -69,7 +69,7 @@ function smashpig_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$
       'url' => 'civicrm/smashpig/notification?workflow=recurring_failed_message',
       'qs' => "contribution_recur_id=$objectId&entity_id=$objectId",
       'class' => 'crm-popup large-popup',
-      'weight' => 0,
+      'weight' => 10,
     ];
     $links[] = [
       'name' => ts('Send 2nd Failure Email'),
@@ -77,7 +77,7 @@ function smashpig_civicrm_links($op, $objectName, $objectId, &$links, &$mask, &$
       'url' => 'civicrm/smashpig/notification?workflow=recurring_second_failed_message',
       'qs' => "contribution_recur_id=$objectId&entity_id=$objectId",
       'class' => 'crm-popup large-popup',
-      'weight' => 0,
+      'weight' => 20,
     ];
   }
 }
