@@ -683,6 +683,28 @@ class AdyenAuditTest extends BaseAuditTestCase {
 
   /**
    * @throws \CRM_Core_Exception
+   */
+  public function testProcessNoGatewayInPending(): void {
+    $fileName = 'settlement_detail_report_batch_2.csv';
+    $directory = 'donation_plain';
+    $this->prepareForAuditProcessing($directory, $fileName);
+    $transaction = TransactionLog::get(FALSE)->addOrderBy('id', 'DESC')->execute()->first();
+    TransactionLog::update(FALSE)
+      ->addWhere('gateway_txn_id', '=', '5364893193133131')
+      ->setValues(['gateway_txn_id' => ''])
+      ->execute();
+    $this->runAuditor($fileName);
+    $this->processDonationsQueue();
+    $this->processContributionTrackingQueue();
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('invoice_id', '=', $transaction['order_id'])
+      ->addSelect('contribution_extra.gateway_txn_id')
+      ->execute()->single();
+    $this->assertEquals('5364893193133131', $contribution['contribution_extra.gateway_txn_id']);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function testParseMissingContributionTracking(): void {
