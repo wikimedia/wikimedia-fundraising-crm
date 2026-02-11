@@ -2,7 +2,6 @@
 
 namespace Civi\Test;
 
-use Civi\Api4\Monolog;
 use Civi\MonoLog\MonologManager;
 
 /**
@@ -29,62 +28,67 @@ use Civi\MonoLog\MonologManager;
  * @see HeadlessInterface
  * @see HookInterface
  */
-class WMFTestListener implements \PHPUnit\Framework\TestListener {
+// Use conditional interface for quick & dirty way to deal with scanClasses
+// including this - more nuanced hook rather than the mixin is the alternative.
+if (interface_exists(\PHPUnit\Framework\TestListener::class)) {
+  class WMFTestListener implements \PHPUnit\Framework\TestListener {
 
-  use \PHPUnit\Framework\TestListenerDefaultImplementation;
+    use \PHPUnit\Framework\TestListenerDefaultImplementation;
 
-  /**
-   * @var \CRM_Core_Transaction|null
-   */
-  private $tx;
+    /**
+     * @var \CRM_Core_Transaction|null
+     */
+    private $tx;
 
-  private array $originalStatic;
+    private array $originalStatic;
 
-  private array $originalSettings;
+    private array $originalSettings;
 
-  public function endTestSuite(\PHPUnit\Framework\TestSuite $suite): void {}
+    public function endTestSuite(\PHPUnit\Framework\TestSuite $suite): void {}
 
-  public function startTest(\PHPUnit\Framework\Test $test): void {
-    error_reporting(E_ALL);
-    // Calling this populates \Civi::$statics with boot variables.
-    // When this was not being called before the statics are stashed
-    // sometimes \Civi::$statics held a translation related key, which seemed
-    // to block it loading the container into statics.
-    \CRM_Core_Config::singleton();
-    $this->originalStatic = \Civi::$statics;
-    $GLOBALS['CIVICRM_TEST_CASE'] = $test;
-    \CRM_Core_Session::singleton()->set('userID', NULL);
-    if ($test instanceof TransactionalInterface) {
-      $this->tx = new \CRM_Core_Transaction(TRUE);
-      $this->tx->rollback();
+    public function startTest(\PHPUnit\Framework\Test $test): void {
+      error_reporting(E_ALL);
+      // Calling this populates \Civi::$statics with boot variables.
+      // When this was not being called before the statics are stashed
+      // sometimes \Civi::$statics held a translation related key, which seemed
+      // to block it loading the container into statics.
+      \CRM_Core_Config::singleton();
+      $this->originalStatic = \Civi::$statics;
+      $GLOBALS['CIVICRM_TEST_CASE'] = $test;
+      \CRM_Core_Session::singleton()->set('userID', NULL);
+      if ($test instanceof TransactionalInterface) {
+        $this->tx = new \CRM_Core_Transaction(TRUE);
+        $this->tx->rollback();
+      }
+      else {
+        $this->tx = NULL;
+      }
+      $this->originalSettings = \Civi::settings()->all();
+      \Civi::settings()
+        ->set('mailing_backend', ['outBound_option' => \CRM_Mailing_Config::OUTBOUND_OPTION_REDIRECT_TO_DB]);
+      // Our main test logger has a higher weight than the other loggers
+      // and runs first, blocking them.
+      \CRM_Core_DAO::executeQuery('UPDATE civicrm_monolog SET is_active = 1 WHERE type = "test"');
+      set_time_limit(210);
+      if ($test instanceof \Civi\Core\HookInterface) {
+        $listenerMap = \Civi\Core\Event\EventScanner::findListeners($test);
+        \Civi::dispatcher()->addListenerMap($test, $listenerMap);
+      }
     }
-    else {
-      $this->tx = NULL;
+
+    public function endTest(\PHPUnit\Framework\Test $test, float $time): void {
+      \CRM_Core_DAO::executeQuery('UPDATE civicrm_monolog SET is_active = 0 WHERE type = "test"');
+      MonologManager::flush();
+      // @todo - should we set ALL settings here?
+      \Civi::settings()->set('mailing_backend', $this->originalSettings['mailing_backend']);
+      if ($test instanceof TransactionalInterface) {
+        $this->tx->rollback()->commit();
+        $this->tx = NULL;
+      }
+      \CRM_Utils_Time::resetTime();
+      unset($GLOBALS['CIVICRM_TEST_CASE']);
+      \Civi::$statics = $this->originalStatic;
     }
-    $this->originalSettings = \Civi::settings()->all();
-    \Civi::settings()->set('mailing_backend', ['outBound_option' => \CRM_Mailing_Config::OUTBOUND_OPTION_REDIRECT_TO_DB]);
-    // Our main test logger has a higher weight than the other loggers
-    // and runs first, blocking them.
-    \CRM_Core_DAO::executeQuery('UPDATE civicrm_monolog SET is_active = 1 WHERE type = "test"');
-    set_time_limit(210);
-    if ($test instanceof \Civi\Core\HookInterface) {
-      $listenerMap = \Civi\Core\Event\EventScanner::findListeners($test);
-      \Civi::dispatcher()->addListenerMap($test, $listenerMap);
-    }
+
   }
-
-  public function endTest(\PHPUnit\Framework\Test $test, float $time): void {
-    \CRM_Core_DAO::executeQuery('UPDATE civicrm_monolog SET is_active = 0 WHERE type = "test"');
-    MonologManager::flush();
-    // @todo - should we set ALL settings here?
-    \Civi::settings()->set('mailing_backend', $this->originalSettings['mailing_backend']);
-    if ($test instanceof TransactionalInterface) {
-      $this->tx->rollback()->commit();
-      $this->tx = NULL;
-    }
-    \CRM_Utils_Time::resetTime();
-    unset($GLOBALS['CIVICRM_TEST_CASE']);
-    \Civi::$statics = $this->originalStatic;
-  }
-
 }
