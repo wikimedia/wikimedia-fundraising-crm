@@ -9,18 +9,22 @@
       ngForm: 'form'
     },
     controller: function($scope, $element, $timeout, crmApi4, crmStatus, $window, $location, $parse, FileUploader) {
-      var schema = {},
-        data = {extra: {}},
+      const
+        ctrl = this,
+        ts = CRM.ts('org.civicrm.afform'),
+        saveDraftButtons = [],
+        schema = {},
+        data = {extra: {}};
+
+      let
         status,
         args,
         submissionResponse,
-        autoSave = _.noop,
-        saveDraftButtons = [],
+        // Default autosave function does nothing
+        autoSave = () => {},
         draftStatus = 'pristine',
         cancelDraftWatcher,
-        uploadingDraftFiles = false,
-        ts = CRM.ts('org.civicrm.afform'),
-        ctrl = this;
+        uploadingDraftFiles = false;
 
       this.$onInit = function() {
         // This component has no template. It makes its controller available within it by adding it to the parent scope.
@@ -83,8 +87,8 @@
         // Prefill entire form
         else {
           params.fillMode = 'form';
-          args = _.assign({}, $scope.$parent.routeParams || {}, $scope.$parent.options || {});
-          _.each(schema, function (entity, entityName) {
+          args = Object.assign({}, $scope.$parent.routeParams || {}, $scope.$parent.options || {});
+          Object.keys(schema).forEach(entityName => {
             if (args[entityName] && typeof args[entityName] === 'string') {
               args[entityName] = args[entityName].split(',');
             }
@@ -134,8 +138,8 @@
       }
 
       // Used when submitting file fields
-      var token = new URLSearchParams(window.location.search).get('_aff');
-      var headers = {'X-Requested-With': 'XMLHttpRequest'};
+      const token = new URLSearchParams(window.location.search).get('_aff');
+      const headers = {'X-Requested-With': 'XMLHttpRequest'};
       if (token) {
         headers['X-Civi-Auth-Afform'] = token;
       }
@@ -155,7 +159,7 @@
 
       function onFileUploadSuccess(item, response, status, headers) {
         if (response.values && response.values[0] && response.values[0].id) {
-          var dataProvider = item.crmDataProvider;
+          const dataProvider = item.crmDataProvider;
           dataProvider.getFieldData()[item.crmFieldName] = response.values[0];
         }
       }
@@ -216,18 +220,18 @@
         op = op || 'AND';
         // OR and AND have the opposite behavior so the logic is inverted
         // NOT works identically to OR but gets flipped at the end
-        var ret = op === 'AND',
+        let ret = op === 'AND',
           flip = !ret;
         _.each(conditions, function(clause) {
           // Recurse into nested group
-          if (_.isArray(clause[1])) {
+          if (Array.isArray(clause[1])) {
             if (ctrl.checkConditions(clause[1], clause[0]) === flip) {
               ret = flip;
             }
           } else {
             // Angular can't handle expressions with quotes inside brackets, so they are omitted
             // Here we add them back to make valid js
-            if (_.isString(clause[0]) && clause[0].charAt(0) !== '"') {
+            if (typeof clause[0] === 'string' && clause[0].charAt(0) !== '"') {
               clause[0] = clause[0].replace(/\[([^'"])/g, "['$1").replace(/([^'"])]/g, "$1']");
             }
             let parser1 = $parse(clause[0]);
@@ -313,7 +317,7 @@
 
       // Called after form is submitted and files are uploaded
       function postProcess() {
-        var metaData = ctrl.getFormMeta(),
+        const metaData = ctrl.getFormMeta(),
           dialog = $element.closest('.ui-dialog-content');
 
         $element.trigger('crmFormSuccess', {
@@ -340,7 +344,7 @@
         if (submissionResponse[0].message) {
           $element.hide();
           const $confirmation = $('<div class="afform-confirmation" />');
-          $confirmation.text(submissionResponse[0].message);
+          $confirmation.html(submissionResponse[0].message);
           $confirmation.insertAfter($element);
         }
         else if (dialog.length) {
@@ -352,7 +356,7 @@
       }
 
       function validateFileFields() {
-        var valid = true;
+        let valid = true;
         $("af-form[ng-form=" + ctrl.getFormMeta().name + "] input[type='file']").each((index, fld) => {
           if ($(fld).attr('required') && $(fld).get(0).files.length == 0) {
             valid = false;
@@ -368,15 +372,15 @@
         displayError(errorMsg, ts('Sorry'), 'error');
       }
 
-     function displayError(error, title, type) {
+     function displayError(errorMsg, title, type) {
         if (typeof Swal === 'function') {
           Swal.fire({
             icon: type,
-            html: error.error_message.replace("\n", '<br>')
+            html: errorMsg.replace("\n", '<br>')
           });
         }
         else {
-          CRM.alert(error.error_message, title, type);
+          CRM.alert(errorMsg, title, type);
         }
       }
 

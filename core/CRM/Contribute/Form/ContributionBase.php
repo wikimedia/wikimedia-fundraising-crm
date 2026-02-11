@@ -16,6 +16,7 @@
  */
 
 use Civi\Api4\Contribution;
+use Civi\Api4\Pledge;
 use Civi\Api4\PledgeBlock;
 use Civi\Api4\PremiumsProduct;
 use Civi\Api4\PriceSet;
@@ -148,13 +149,6 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
   public $_contactID;
 
   /**
-   * The Membership ID for membership renewal
-   *
-   * @var int
-   */
-  public $_membershipId;
-
-  /**
    * Price Set ID, if the new price set method is used
    *
    * @var int
@@ -241,6 +235,13 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
    */
   public function isQuickConfig(): bool {
     return $this->getPriceSetID() && CRM_Price_BAO_PriceSet::isQuickConfig($this->getPriceSetID());
+  }
+
+  /**
+   * @return bool
+   */
+  protected function isEmailReceipt(): bool {
+    return (bool) $this->getContributionPageValue('is_email_receipt');
   }
 
   /**
@@ -432,8 +433,8 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
       $this->_values = [];
       $this->_fields = [];
 
-      CRM_Contribute_BAO_ContributionPage::setValues($this->_id, $this->_values);
-      if (empty($this->_values['is_active'])) {
+      $this->loadContributionPageValues($this->_values);
+      if (!$this->getContributionPageValue('is_active')) {
         if ($this->isTest() && CRM_Core_Permission::check('administer CiviCRM')) {
           CRM_Core_Session::setStatus(ts('This page is disabled. It is accessible in test mode to administrators only.'), '', 'alert', ['expires' => 0]);
         }
@@ -458,17 +459,13 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
       // check for is_monetary status
       $isPayLater = $this->_values['is_pay_later'] ?? NULL;
       if ($this->getExistingContributionID()) {
-        $this->_values['financial_type_id'] = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_Contribution',
-          $this->getExistingContributionID(),
-          'financial_type_id'
-        );
         if ($isPayLater) {
           $isPayLater = FALSE;
           $this->_values['is_pay_later'] = FALSE;
         }
       }
       if ($isPayLater) {
-        $this->setPayLaterLabel($this->_values['pay_later_text']);
+        $this->setPayLaterLabel($this->getContributionValue('pay_later_text') ?? '');
       }
 
       $this->_paymentProcessorIDs = array_filter(explode(
@@ -538,7 +535,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
 
     //assigning is_monetary and is_email_receipt to template
     $this->assign('is_monetary', $this->_values['is_monetary']);
-    $this->assign('is_email_receipt', $this->_values['is_email_receipt']);
+    $this->assign('is_email_receipt', $this->isEmailReceipt());
     $this->assign('bltID', $this->_bltID);
 
     //assign cancelSubscription URL to templates
@@ -568,6 +565,60 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     if (!empty($this->_values['is_pay_later'])) {
       $this->_isBillingAddressRequiredForPayLater = $this->_values['is_billing_required'] ?? NULL;
       $this->assign('isBillingAddressRequiredForPayLater', $this->_isBillingAddressRequiredForPayLater);
+    }
+  }
+
+  /**
+   * Load values for a contribution page.
+   *
+   * @param array $values
+   */
+  protected function loadContributionPageValues(&$values) {
+    $modules = ['CiviContribute', 'soft_credit', 'on_behalf'];
+    $values['custom_pre_id'] = $values['custom_post_id'] = NULL;
+    $id = $this->getContributionPageID();
+
+    $params = ['id' => $id];
+    CRM_Core_DAO::commonRetrieve('CRM_Contribute_DAO_ContributionPage', $params, $values);
+
+    // get the profile ids
+    $ufJoinParams = [
+      'entity_table' => 'civicrm_contribution_page',
+      'entity_id' => $id,
+    ];
+
+    // retrieve profile id as also unserialize module_data corresponding to each $module
+    foreach ($modules as $module) {
+      $ufJoinParams['module'] = $module;
+      $ufJoin = new CRM_Core_DAO_UFJoin();
+      $ufJoin->copyValues($ufJoinParams);
+      if ($module == 'CiviContribute') {
+        $ufJoin->orderBy('weight asc');
+        $ufJoin->find();
+        while ($ufJoin->fetch()) {
+          if ($ufJoin->weight == 1) {
+            $values['custom_pre_id'] = $ufJoin->uf_group_id;
+          }
+          else {
+            $values['custom_post_id'] = $ufJoin->uf_group_id;
+          }
+        }
+      }
+      else {
+        $ufJoin->find(TRUE);
+        if (!$ufJoin->is_active) {
+          continue;
+        }
+        $params = CRM_Contribute_BAO_ContributionPage::formatModuleData($ufJoin->module_data, TRUE, $module);
+        $values = array_merge($params, $values);
+        if ($module == 'soft_credit') {
+          $values['honoree_profile_id'] = $ufJoin->uf_group_id;
+          $values['honor_block_is_active'] = $ufJoin->is_active;
+        }
+        else {
+          $values['onbehalf_profile_id'] = $ufJoin->uf_group_id;
+        }
+      }
     }
   }
 
@@ -654,6 +705,22 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
       $this->membershipTypes = CRM_Member_BAO_Membership::buildMembershipTypeValues($this, $this->getAvailableMembershipTypeIDs()) ?? [];
     }
     return $this->membershipTypes;
+  }
+
+  /**
+   * Get the tope level financial_type_id.
+   *
+   * @return int
+   * @throws CRM_Core_Exception
+   */
+  protected function getFinancialTypeID(): int {
+    if ($this->getContributionValue('financial_type_id')) {
+      return (int) $this->getContributionValue('financial_type_id');
+    }
+    if ($this->isFormSupportsNonMembershipContributions()) {
+      return (int) $this->getContributionPageValue('financial_type_id');
+    }
+    return (int) $this->getFirstSelectedMembershipType()['financial_type_id'];
   }
 
   /**
@@ -1143,18 +1210,10 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     $contactID = CRM_Utils_Request::retrieve('cid', 'Positive', $this);
 
     //get pledge status and contact id
-    $pledgeValues = [];
-    $pledgeParams = ['id' => $this->getPledgeID()];
-    $returnProperties = ['contact_id', 'status_id'];
-    CRM_Core_DAO::commonRetrieve('CRM_Pledge_DAO_Pledge', $pledgeParams, $pledgeValues, $returnProperties);
-
-    //get all status
-    $allStatus = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
-    $validStatus = [
-      array_search('Pending', $allStatus),
-      array_search('In Progress', $allStatus),
-      array_search('Overdue', $allStatus),
-    ];
+    $pledgeValues = Pledge::get(FALSE)
+      ->addWhere('id', '=', $this->getPledgeID())
+      ->addSelect('contact_id', 'status_id:name')
+      ->execute()->first();
 
     $validUser = FALSE;
     // @todo - override getRequestedContactID to add in checking pledge values, then
@@ -1181,8 +1240,8 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     }
 
     //check for valid pledge status.
-    if (!in_array($pledgeValues['status_id'], $validStatus)) {
-      CRM_Core_Error::statusBounce(ts('Oops. You cannot make a payment for this pledge - pledge status is %1.', [1 => $allStatus[$pledgeValues['status_id']] ?? '']));
+    if (!in_array($pledgeValues['status_id:name'], ['Pending', 'In Progress', 'Overdue'])) {
+      CRM_Core_Error::statusBounce(ts('Oops. You cannot make a payment for this pledge - pledge status is %1.', [1 => $pledgeValues['status_id:name']]));
     }
   }
 

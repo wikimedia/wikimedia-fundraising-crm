@@ -18,8 +18,6 @@
 use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\MailingGroup;
 
-require_once 'Mail/mime.php';
-
 /**
  * Class CRM_Mailing_BAO_Mailing
  */
@@ -1983,7 +1981,7 @@ LEFT JOIN civicrm_mailing_group g ON g.mailing_id   = m.id
       'text_message' => ts('HTML Format'),
       'sms_text_message' => ts('SMS Message'),
     ];
-    $modePrefixes = ['Mail' => NULL, 'SMS' => 'SMS'];
+    $modePrefixes = ['Mail' => '', 'SMS' => 'SMS'];
 
     $className = CRM_Utils_System::getClassName($form);
 

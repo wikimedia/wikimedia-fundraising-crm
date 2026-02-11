@@ -56,9 +56,13 @@ class Get extends DAOGetAction {
     $this->isSelectPhase = FALSE;
   }
 
-  public function entityFields(): array {
+  /**
+   * @param string|null $entityName
+   * @param string|null $actionName
+   */
+  public function entityFields(?string $entityName = null, ?string $actionName = null): array {
     if (!$this->isSelectPhase) {
-      return parent::entityFields();
+      return parent::entityFields($entityName, $actionName);
     }
     $getFields = Request::create('WMFDonor', 'getFields', [
       'version' => 4,
