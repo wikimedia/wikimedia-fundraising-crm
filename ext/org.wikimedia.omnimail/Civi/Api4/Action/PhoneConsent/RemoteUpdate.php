@@ -56,15 +56,27 @@ class RemoteUpdate extends AbstractUpdateAction {
   /**
    * Update the Acoustic records.
    *
+   * @see https://wikitech.wikimedia.org/wiki/Fundraising/Data_and_Integrated_Processes/SMS
+   *
+   * This action is taken on all records that match the criteria - ie any PhoneConsent
+   * data passed in plus the additional INNER JOIN on civicrm_phone, meaning
+   * only PhoneConsents with phone records in CiviCRM.
+   *
+   * Our goal is to link the phone to any appropriate email record already in Acoustic,
+   * make sure the consent is up-to-date (Acoustic applies the consent to a phone+recipient
+   * combo so if the phone is against a different recipient the consent needs to be re-applied
+   * - this is mostly precautionary) and to mark the prior phone-only record as an orphan.
+   *
    * We need to run 3 jobs here - Acoustic will not let us combine them & 1 must
-   * run before 2.
-   * 1) add the mobile_phone to the relevant email
-   * 2) re-consent the mobile_phone
-   * 3) update the orphan record as being an orphan.
+   * run before 2. If only 1 runs then next run the others will get picked up.
+   * 1) add the mobile_phone to the relevant email (will potentially create a record, based on email match) @todo is create OK here?
+   * 2) re-consent the mobile_phone (will only update existing record)
+   * 3) update the orphan record as being an orphan (will only update existing record, based on phone match).
    *
    * @param array $items
+   *
    * @return array
-   * @throws \CRM_Core_Exception
+   * @throws \CRM_Core_Exception|\League\Csv\CannotInsertRecord
    */
   protected function updateRecords(array $items): array {
     $folders = \Civi::settings()->get('omnimail_allowed_upload_folders');
@@ -98,6 +110,11 @@ class RemoteUpdate extends AbstractUpdateAction {
     }
     \Civi::log('omnimail')->info('output to file {path}', ['path' => $path]);
     $result = Omnicontact::upload(FALSE)
+      // in Upload it sets the default action to save which would create an email.
+      // we could force update-only using ->setUploadAction('update')
+      // although in that scenario it would skip entirely if the email is not present remotely.
+      // it's hard to do a conditional action on those that do not work with update
+      // because we don't find out which ones were updated so maybe it's OK not to worry about this edgecase.
       ->setClient($this->getClient())
       ->setIsAlreadyUploaded($this->getIsTest())
       ->setCsvFile($addEmailCsv->getPathname())->execute();
@@ -137,9 +154,13 @@ class RemoteUpdate extends AbstractUpdateAction {
    * This is similar to `getBatchRecords()`, but you may further refine the
    * API call (e.g. selecting different fields or data-pages) before executing.
    *
-   * @return \Civi\Api4\Generic\AbstractGetAction
+   * Note that in this usage this combines the implicit WHERE criteria that might be passed
+   * in, describing a PhoneConsent record with an INNER JOIN on the civicrm_phone table.
+   * The effect is that we get PhoneConsent records that have phone numbers in CiviCRM.
+   *
+   * @return \Civi\Api4\Generic\AbstractAction
    */
-  protected function getBatchAction() {
+  protected function getBatchAction(): \Civi\Api4\Generic\AbstractAction {
     $params = [
       'checkPermissions' => $this->checkPermissions,
       'where' => $this->where,
