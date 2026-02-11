@@ -673,12 +673,11 @@ WHERE
 
       // Look up contact's existing email to get the id and to determine
       // if the email has changed.
-      $existingEmails = civicrm_api3("Email", 'get', [
-        'return' => ['location_type_id', 'email', 'is_primary'],
-        'contact_id' => $contact_id,
-        'sequential' => 1,
-        'options' => ['sort' => 'is_primary'],
-      ])['values'];
+      $existingEmails = Email::get(FALSE)
+        ->addWhere('contact_id', $contact_id)
+        ->addOrderBy('is_primary')
+        ->addSelect('location_type_id', 'email', 'is_primary', 'on_hold', 'location_type_id:name')
+        ->execute();
 
       if (!empty($existingEmails)) {
         foreach ($existingEmails as $prospectiveEmail) {
@@ -714,7 +713,7 @@ WHERE
         }
       }
 
-      civicrm_api3('Email', 'create', $emailParams);
+      Email::save(FALSE)->addRecord($emailParams)->execute();
     }
     catch (\CRM_Core_Exception $e) {
       // Constraint violations occur when data is rolled back to resolve a deadlock.
