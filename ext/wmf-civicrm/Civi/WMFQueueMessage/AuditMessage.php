@@ -624,7 +624,7 @@ class AuditMessage extends DonationMessage {
       $gatewayOperator = $this->isPaypal() ? 'LIKE' : '=';
       $gatewayString = $this->isPaypal() ?'paypal%' : $this->getGateway();
       $transactionDetails = (array)TransactionLog::get(FALSE)
-        ->addWhere('gateway_txn_id', '=', $this->getGatewayTxnID())
+        ->addClause('OR', ['gateway_txn_id', '=', $this->getGatewayTxnID()], ['order_id', '=', $this->getInvoiceID()])
         ->addWhere('gateway', $gatewayOperator, $gatewayString)
         ->execute();
 
@@ -632,7 +632,7 @@ class AuditMessage extends DonationMessage {
         if ($this->getBackendProcessorTxnID() === ($transactionDetail['message']['backend_processor_txn_id'] ?? FALSE)
           // Only checking isNegative here because I haven't fully worked
           // through the negative transactions & want to just
-          // double check we are always loading the right one.
+          // double-check we are always loading the right one.
           || (!$this->getBackendProcessorTxnID() && !$this->isNegative())
           // If we only found one for the relevant gateway then we want to use
           // that - in practice this could be a paypal gravy that has a different

@@ -81,9 +81,11 @@ class GetDonorSummary extends AbstractAction {
         'contribution_extra.original_currency',
         'contribution_recur_id',
         'contribution_recur_id.frequency_unit',
+        'contribution_recur_id.contribution_status_id:name',
         'financial_type_id:name',
         'payment_instrument_id:name',
         'receive_date',
+        'contribution_status_id:name'
       )->execute()->getArrayCopy();
 
     // The donor portal will show a list of all active recurring contributions with links to manage them.
@@ -164,6 +166,8 @@ class GetDonorSummary extends AbstractAction {
         'is_recurring' => (bool) $contribution['contribution_recur_id'],
         'payment_method' => $contribution['payment_instrument_id:name'],
         'receive_date' => $contribution['receive_date'],
+        'status' => $contribution['contribution_status_id:name'],
+        'recurring_status' => $contribution['contribution_recur_id.contribution_status_id:name'],
       ];
     }
     return $mapped;
