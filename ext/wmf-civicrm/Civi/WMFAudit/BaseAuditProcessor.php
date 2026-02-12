@@ -1403,16 +1403,17 @@ abstract class BaseAuditProcessor {
     $fileStatistics = &$this->statistics[$file];
     $paymentMethod = $auditRecord['payment_method'];
     $transaction = $auditRecord['message'];
-    if (isset($transaction['audit_file_gateway']) && !empty($transaction['settlement_batch_reference'])) {
-      // For now this means we are only doing it for adyen.
-      // The batching is by the audit file gateway (ie adyen) not gravy.
-      $this->addToBatch($transaction, $file);
-    }
     $type = $auditRecord['audit_message_type'];
     if ($type === 'aggregate') {
       $this->totals[$file][$transaction['settled_currency']] ??= Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP);
       $this->totals[$file][$transaction['settled_currency']] = $this->totals[$file][$transaction['settled_currency']]->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
       return;
+    }
+
+    if (isset($transaction['audit_file_gateway']) && !empty($transaction['settlement_batch_reference'])) {
+      // For now this means we are only doing it for adyen.
+      // The batching is by the audit file gateway (ie adyen) not gravy.
+      $this->addToBatch($transaction, $file);
     }
     if (!isset($fileStatistics[$type]['by_payment'][$paymentMethod])) {
       $fileStatistics[$type]['by_payment'][$paymentMethod] = ['missing' => 0, 'found' => 0];
