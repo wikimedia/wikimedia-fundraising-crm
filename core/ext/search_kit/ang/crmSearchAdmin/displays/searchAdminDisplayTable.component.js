@@ -34,7 +34,33 @@
         // Table can be draggable if the main entity is a SortableEntity.
         ctrl.sortableEntity = _.includes(searchMeta.getEntity(ctrl.apiEntity).type, 'SortableEntity');
         ctrl.hierarchicalEntity = _.includes(searchMeta.getEntity(ctrl.apiEntity).type, 'HierarchicalEntity');
-        ctrl.parent.initColumns({label: true, sortable: true});
+
+        if (ctrl.display.settings.columnMode) {
+          // calling the setter seems redundant, but will run initColumns if needed
+          this.setColumnMode(ctrl.display.settings.columnMode);
+        }
+        else {
+          // determine the column mode to use:
+          // - for new displays is the default is `auto`
+          // - EXCEPT if we already have columns defined, this is reloading a display
+          // created before columnMode existed => use `custom` to preserve
+          // existing behaviour
+          if (ctrl.display.settings.columns) {
+            this.setColumnMode('custom');
+          }
+          else {
+            this.setColumnMode('auto');
+          }
+        }
+      };
+
+      this.setColumnMode = (value) => {
+        // if not using auto columns we need to run initColumns to initialise defaults
+        // and populate or validate this.settings.columns
+        if (value !== 'auto') {
+          this.parent.initColumns({label: true, sortable: true});
+        }
+        this.display.settings.columnMode = value;
       };
 
       this.toggleEditableRowMode = function(name, value) {

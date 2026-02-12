@@ -664,13 +664,13 @@ class CRM_Import_Forms extends CRM_Core_Form {
     $form->set('user_job_id', $userJobID);
 
     $form->getUserJob();
-    $writer = Writer::createFromFileObject(new SplTempFileObject());
+    $writer = Writer::from(new SplTempFileObject());
     $headers = $form->getOutputColumnsHeaders();
     $writer->insertOne($headers);
     // Note this might be more inefficient by iterating the result
     // set & doing insertOne - possibly something to explore later.
     $writer->insertAll($form->getOutputRows($status));
-    $writer->output($saveFileName);
+    $writer->download($saveFileName);
     CRM_Utils_System::civiExit();
   }
 

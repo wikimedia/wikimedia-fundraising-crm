@@ -1120,7 +1120,13 @@ class CRM_Core_BAO_CustomField extends CRM_Core_DAO_CustomField implements \Civi
   private static function formatDisplayValue($value, $field, $entityId = NULL) {
 
     if (self::isSerialized($field) && !is_array($value)) {
-      $value = CRM_Utils_Array::explodePadded($value);
+      // The autocomplete widget for selecting a default value uses a comma in-between values.
+      if ($field['html_type'] === 'Autocomplete-Select' && str_contains($value, ',')) {
+        $value = explode(',', $value);
+      }
+      else {
+        $value = CRM_Utils_Array::explodePadded($value);
+      }
     }
     // CRM-12989 fix
     if ($field['html_type'] == 'CheckBox' && $value) {
@@ -1172,7 +1178,7 @@ class CRM_Core_BAO_CustomField extends CRM_Core_DAO_CustomField implements \Civi
           $display = implode(', ', $v);
         }
         else {
-          $display = $field['options'][$value] ?? '';
+          $display = $field['options'][$value ?? ''] ?? '';
           // For float type (see Number and Money) $value would be decimal like
           // 1.00 (because it is stored in db as decimal), while options array
           // key would be integer like 1. In this case expression on line above
@@ -2449,17 +2455,6 @@ AND      default_value IS NOT NULL";
     foreach ($params as $key => $value) {
       $customFieldInfo = CRM_Core_BAO_CustomField::getKeyID($key, TRUE);
       if ($customFieldInfo[0]) {
-
-        // for autocomplete transfer hidden value instead of label
-        if ($params[$key] && isset($params[$key . '_id'])) {
-          $value = $params[$key . '_id'];
-        }
-
-        // we need to append time with date
-        if ($params[$key] && isset($params[$key . '_time'])) {
-          $value .= ' ' . $params[$key . '_time'];
-        }
-
         CRM_Core_BAO_CustomField::formatCustomField($customFieldInfo[0],
           $customData,
           $value,

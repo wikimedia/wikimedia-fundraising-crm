@@ -45,6 +45,7 @@ class RecurringExample extends WorkflowMessageExample {
       'id' => 0,
       'amount' => '12.30',
       'frequency_unit' => $parts[2],
+      'next_sched_contribution_date' => '2026-01-01',
       'currency' => 'USD',
     ];
   }

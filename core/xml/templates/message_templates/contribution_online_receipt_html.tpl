@@ -142,13 +142,13 @@
   {/if}
 
 
-     {if !empty($receive_date)}
+    {if {contribution.receive_date|boolean}}
       <tr>
        <td {$labelStyle}>
         {ts}Date{/ts}
        </td>
        <td {$valueStyle}>
-        {$receive_date|crmDate}
+         {contribution.receive_date}
        </td>
       </tr>
      {/if}
@@ -189,7 +189,7 @@
       {/if}
     {/if}
 
-     {if $honor_block_is_active}
+    {if $honor_block_is_active}
       <tr>
        <th {$headerStyle}>
         {$soft_credit_type}
@@ -205,7 +205,7 @@
          </td>
         </tr>
       {/foreach}
-      {elseif !empty($softCreditTypes) and !empty($softCredits)}
+    {elseif !empty($softCreditTypes) and !empty($softCredits)}
       {foreach from=$softCreditTypes item=softCreditType key=n}
        <tr>
         <th {$headerStyle}>
@@ -329,7 +329,7 @@
       </tr>
      {/if}
 
-     {if !empty($selectPremium)}
+     {if {contribution_product.id|boolean}}
       <tr>
        <th {$headerStyle}>
         {ts}Premium Information{/ts}
@@ -337,26 +337,26 @@
       </tr>
       <tr>
        <td colspan="2" {$labelStyle}>
-        {$product_name}
+         {contribution_product.product_id.name}
        </td>
       </tr>
-      {if $option}
+      {if {contribution_product.product_option|boolean}}
        <tr>
         <td {$labelStyle}>
          {ts}Option{/ts}
         </td>
         <td {$valueStyle}>
-         {$option}
+          {contribution_product.product_option:label}
         </td>
        </tr>
       {/if}
-      {if $sku}
+      {if {contribution_product.product_id.sku|boolean}}
        <tr>
         <td {$labelStyle}>
          {ts}SKU{/ts}
         </td>
         <td {$valueStyle}>
-         {$sku}
+          {contribution_product.product_id.sku}
         </td>
        </tr>
       {/if}
@@ -393,10 +393,10 @@
         </td>
        </tr>
       {/if}
-      {if $is_deductible AND !empty($price)}
+      {if {contribution.non_deductible_amount|boolean} AND {contribution_product.product_id.price|boolean}}
         <tr>
          <td colspan="2" {$valueStyle}>
-          <p>{ts 1=$price|crmMoney:$currency}The value of this premium is %1. This may affect the amount of the tax deduction you can claim. Consult your tax advisor for more information.{/ts}</p>
+          <p>{ts 1='{contribution_product.product_id.price|crmMoney}'}The value of this premium is %1. This may affect the amount of the tax deduction you can claim. Consult your tax advisor for more information.{/ts}</p>
          </td>
         </tr>
       {/if}

@@ -1898,6 +1898,8 @@ abstract class BaseAuditProcessor {
             'expected' => $expectedAmount->getAmount(),
             'actual' => $settledNetAmount->getAmount(),
             'currency' => $currency,
+            'batch' => $batchName,
+            'file' => $fileName,
           ]);
         }
       }

@@ -123,7 +123,6 @@ class CRM_Core_Payment_FirstData extends CRM_Core_Payment {
     //  $requestFields[       ''  ]          =  $params[ 'billing_middle_name'    ];
     //  $requestFields[       ''  ]          =  $params[ 'billing_last_name'  ];
     //  $requestFields[       ''  ]          =  $params[ 'contributionPageID'  ];
-    //  $requestFields[       ''  ]          =  $params[ 'contributionType_accounting_code'  ];
     //  $requestFields[       ''  ]          =  $params['amount_level'  ];
     //  $requestFields[       ''  ]          =  $params['credit_card_type'  ];
     //  $requestFields[       'addrnum'  ]    =  numeric portion of street address - not yet implemented
@@ -269,12 +268,6 @@ class CRM_Core_Payment_FirstData extends CRM_Core_Payment {
     if (empty($responseData)) {
       throw new PaymentProcessorException('Error: No data returned from payment gateway.', 9007);
     }
-
-    //----------------------------------------------------------------------------------------------------
-    // Success so far - close the curl and check the data
-    //----------------------------------------------------------------------------------------------------
-    curl_close($ch);
-
     //----------------------------------------------------------------------------------------------------
     // Payment successfully sent to gateway - process the response now
     //----------------------------------------------------------------------------------------------------

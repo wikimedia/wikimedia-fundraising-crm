@@ -163,11 +163,13 @@ class RemoteUpdate extends AbstractUpdateAction {
    * We are just sneaking in a 'get all' where because the parent requires a where.
    *
    * @param array $record
+   * @param string|null $entityName
+   * @param string|null $actionName
    * @throws \CRM_Core_Exception
    */
-  protected function formatWriteValues(&$record) {
+  protected function formatWriteValues(&$record, ?string $entityName = null, ?string $actionName = null) {
     $this->where = [['id', '>', 0]];
-    parent::formatWriteValues($record);
+    parent::formatWriteValues($record, $entityName, $actionName);
   }
   /**
    * Get the remote database ID.

@@ -167,7 +167,7 @@ class FormattingUtil {
    */
   public static function formatDateValue($format, $value, &$operator = NULL, $index = NULL) {
     // Non-relative dates (or if no search operator)
-    if (!$operator || !array_key_exists($value, \CRM_Core_OptionGroup::values('relative_date_filters'))) {
+    if (!$operator || !array_key_exists($value ?? '', (array) \CRM_Core_OptionGroup::values('relative_date_filters'))) {
       return date($format, strtotime($value ?? ''));
     }
     if (isset($index) && !strstr($operator, 'BETWEEN')) {
@@ -248,7 +248,7 @@ class FormattingUtil {
         $fieldExpr = $fieldExprs[$key];
         $fieldName = \CRM_Utils_Array::first($fieldExpr->getFields());
         $baseName = $fieldName ? \CRM_Utils_Array::first(explode(':', $fieldName)) : NULL;
-        $field = $fields[$fieldName] ?? $fields[$baseName] ?? NULL;
+        $field = $fields[$fieldName ?? ''] ?? $fields[$baseName ?? ''] ?? NULL;
         $dataType = $field['data_type'] ?? ($fieldName == 'id' ? 'Integer' : NULL);
         // Allow Sql Functions to alter the value and/or $dataType
         if (method_exists($fieldExpr, 'formatOutputValue') && is_string($value)) {

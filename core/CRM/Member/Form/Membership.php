@@ -1227,9 +1227,6 @@ DESC limit 1");
 
       $this->set('params', $formValues);
       $this->assign('trxn_id', $result['trxn_id'] ?? NULL);
-      $this->assign('receive_date',
-        CRM_Utils_Date::mysqlToIso($params['receive_date'])
-      );
 
       // required for creating membership for related contacts
       $params['action'] = $this->_action;
@@ -1586,10 +1583,6 @@ DESC limit 1");
       $this->assign('is_pay_later', 0);
       $this->assign('isPrimary', 1);
     }
-    //insert financial type name in receipt.
-    $formValues['contributionType_name'] = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_FinancialType',
-      $this->getFinancialTypeID()
-    );
     $this->emailReceipt($formValues);
     return TRUE;
   }

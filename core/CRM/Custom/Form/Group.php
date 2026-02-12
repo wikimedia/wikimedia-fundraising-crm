@@ -184,8 +184,8 @@ class CRM_Custom_Form_Group extends CRM_Admin_Form {
     $this->add('select2', 'extends_entity_column_value', ts('Sub Type'), $initialEntityColumnValueOptions, FALSE, ['multiple' => TRUE, 'placeholder' => ts('Any')]);
 
     // help text
-    $this->add('wysiwyg', 'help_pre', ts('Pre-form Help'), $attributes['help_pre']);
-    $this->add('wysiwyg', 'help_post', ts('Post-form Help'), $attributes['help_post']);
+    $this->add('wysiwyg', 'help_pre', ts('Pre-form Help'), ['class' => 'collapsed']);
+    $this->add('wysiwyg', 'help_post', ts('Post-form Help'), ['class' => 'collapsed']);
 
     // weight
     $this->add('number', 'weight', ts('Order'), $attributes['weight'], TRUE);
@@ -247,12 +247,15 @@ class CRM_Custom_Form_Group extends CRM_Admin_Form {
    * @return array
    */
   public function setDefaultValues(): array {
-    $defaults = &$this->_values;
+    $defaults = parent::setDefaultValues();
     if ($this->_action == CRM_Core_Action::ADD) {
-      $defaults['weight'] = CRM_Utils_Weight::getDefaultWeight('CRM_Core_DAO_CustomGroup');
-
-      $defaults['is_active'] = $defaults['is_public'] = $defaults['collapse_adv_display'] = 1;
-      $defaults['style'] = 'Inline';
+      $defaults += [
+        'weight' => CRM_Utils_Weight::getDefaultWeight('CRM_Core_DAO_CustomGroup'),
+        'is_active' => 1,
+        'is_public' => 1,
+        'collapse_adv_display' => 1,
+        'style' => 'Inline',
+      ];
     }
     return $defaults;
   }

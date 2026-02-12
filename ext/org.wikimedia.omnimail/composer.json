@@ -11,7 +11,7 @@
   ],
     "require": {
         "wikimedia/omnimail-silverpop" : "*",
-        "league/csv" : "9.8.*",
+        "league/csv" : "9.28.*",
         "guzzlehttp/guzzle": "^7.0",
         "omnimail/omnimail" : "dev-master#6b5104b",
         "ext-dom": "*",

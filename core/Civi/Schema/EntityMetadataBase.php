@@ -161,12 +161,15 @@ abstract class EntityMetadataBase implements EntityMetadataInterface {
       if (isset($fields['is_active'])) {
         $select->select('`is_active`');
       }
+      if (isset($fields['is_reserved'])) {
+        $select->select('`is_reserved`');
+      }
       // Also component_id for filtering (this is legacy, the new way for extensions to add options is via hook)
       if (isset($fields['component_id'])) {
         $select->select('`component_id`');
       }
       // Order by: prefer order_column; or else 'weight' column; or else label_column; or as a last resort, $idCol
-      $orderColumns = [$pseudoconstant['order_column'] ?? NULL, 'weight', $pseudoconstant['label_column'] ?? NULL, $idCol];
+      $orderColumns = array_filter([$pseudoconstant['order_column'] ?? NULL, 'weight', $pseudoconstant['label_column'] ?? NULL, $idCol]);
       foreach ($orderColumns as $orderColumn) {
         if (isset($fields[$orderColumn])) {
           $select->orderBy($orderColumn);
