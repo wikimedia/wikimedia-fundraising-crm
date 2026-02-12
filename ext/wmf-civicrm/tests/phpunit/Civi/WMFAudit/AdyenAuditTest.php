@@ -691,7 +691,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $transaction = TransactionLog::get(FALSE)->addOrderBy('id', 'DESC')->execute()->first();
     TransactionLog::update(FALSE)
       ->addWhere('gateway_txn_id', '=', '5364893193133131')
-      ->setValues(['gateway_txn_id' => ''])
+      ->setValues(['gateway_txn_id' => '', 'message' => ['gateway_txn_id' => FALSE] + $transaction['message']])
       ->execute();
     $this->runAuditor($fileName);
     $this->processDonationsQueue();

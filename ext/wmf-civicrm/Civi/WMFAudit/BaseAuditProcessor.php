@@ -242,6 +242,11 @@ abstract class BaseAuditProcessor {
       }
       $absentFromMerged = !array_key_exists($key, $merged);
       $logDataNotBlank = ($value !== '');
+      if ($value === FALSE && $key === 'gateway_txn_id') {
+        // Unclear whether we should apply this to other keys as well but in gateway_txn_id
+        // we definitely have cases of it being false in the json rather than an empty string
+        $logDataNotBlank = FALSE;
+      }
       if ($absentFromMerged || $logDataNotBlank || $merged[$key] === '') {
         $merged[$key] = $value;
       }
