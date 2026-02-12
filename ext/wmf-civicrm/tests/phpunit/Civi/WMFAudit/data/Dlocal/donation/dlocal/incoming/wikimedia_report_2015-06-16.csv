@@ -1,3 +1,3 @@
 Type;"Creation date";"Settlement date";Reference;Invoice;Country;"Payment Method";"Payment Method Type";"Net Amount (local)";"Amount (USD)";currency;Status;"User Mail";"Transaction Reference";"Transaction Invoice";Fee;IOF
-Payment;"2015-06-16 17:59:12";"2015-06-16 18:00:32";5258111;26683111.0;BR;MC;"Credit Card";5.00;1.50;BRL;Cleared;nonchalant@gmail.com;;;0.03;0.02
-Payment;"2015-06-16 17:59:30";"2015-06-16 18:00:59";5258222;26683222.0;BR;MC;"Credit Card";5.00;1.50;BRL;Cleared;borg@yahoo.com.br;;;0.03;0.02
+Payment;"2015-06-16 17:59:12";"2015-06-16 18:00:32";5258111;26683111.0;BR;MC;"Credit Card";5.00;1.50;BRL;Cleared;nonchalant@example.com;;;0.03;0.02
+Payment;"2015-06-16 17:59:30";"2015-06-16 18:00:59";5258222;26683222.0;BR;MC;"Credit Card";5.00;1.50;BRL;Cleared;borg@example.com;;;0.03;0.02
