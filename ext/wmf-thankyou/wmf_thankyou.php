@@ -54,7 +54,7 @@ function wmf_thankyou_civicrm_links($op, $objectName, $objectId, &$links, &$mask
       'url' => 'civicrm/wmf_thankyou',
       'qs' => "contribution_recur_id=$objectId",
       'class' => 'crm-popup medium-popup',
-      'weight' => 1,
+      'weight' => 30,
     ];
   }
 }

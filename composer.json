@@ -27,7 +27,7 @@
         "amzn/login-and-pay-with-amazon-sdk-php": "^2.5",
         "coderkungfu/php-queue": "^1.0",
         "ext-intl": "*",
-        "wikimedia/smash-pig": "v1.2.2.1",
+        "wikimedia/smash-pig": "v1.2.2.3",
         "phpmailer/phpmailer": "^6",
         "phpseclib/phpseclib":  "~2.0|~3",
         "predis/predis": "1.*",
@@ -71,7 +71,7 @@
     "scripts": {
       "test": [
         "parallel-lint -e php,module,install,inc --exclude core/packages/smarty5/vendor/symfony/polyfill-mbstring --exclude vendor --exclude core/vendor --exclude ext/org.wikimedia.omnimail/vendor .",
-        "jsonlint $(find . -type f -iname \"*.json\" ! -path \"*/vendor/*\" ! -path \"*/bower*\" ! -path \"*/tests/data/*\" ! -path \"*/civicrm/*/afform*\" -printf \"%p \")"
+        "jsonlint $(find . -type f -iname \"*.json\" ! -path \"*/vendor/*\" ! -path \"*/bower*\" ! -path \"*/tests/data/*\"  ! -path \"*/ext/wmf-civicrm/tests/phpunit/Civi/WMFAudit/data/*\" ! -path \"*/civicrm/*/afform*\" -printf \"%p \")"
       ],
       "civilint": "phpcs --standard=\"vendor/drupal/coder/coder_sniffer/Drupal\" --extensions=php,module,inc,install,test,profile,theme,css,info,txt,md,yml -p",
       "fix": "phpcbf --standard=\"vendor/drupal/coder/coder_sniffer/Drupal\""

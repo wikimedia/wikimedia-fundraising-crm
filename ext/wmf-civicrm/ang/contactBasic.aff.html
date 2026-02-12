@@ -2,7 +2,9 @@
     {{ts('No contact id provided')}}
   </div>
   <div ng-if="options.contact_id"
-    af-api4="['Contact', 'get', {select: ['first_name','last_name','is_opt_out','email_primary.email', 'email_primary.on_hold', 'email_primary.hold_date', 'middle_name', 'display_name', 'contact_type', 'nick_name', 'address_primary.street_address', 'address_primary.city', 'Partner.Partner'], where: [['id', '=', options.contact_id]]}]"
+    af-api4="['Contact', 'get', {select: ['first_name','last_name','is_opt_out','email_primary.email', 'email_primary.on_hold', 'email_primary.hold_date', 'middle_name', 'display_name', 'contact_type', 'nick_name', 'address_primary.street_address', 'address_primary.city', 'Partner.Partner', 'activity.id'],
+    join: [['Activity AS activity', 'LEFT', ['activity.target_contact_id', '=', 'id'], ['activity.activity_type_id', '=', 220], ['activity.status_id', '=', 2], ['email_primary.email', '=', 'activity.subject']]],
+    where: [['id', '=', options.contact_id]]}]"
     af-api4-ctrl="contact"
  >
 
@@ -42,7 +44,8 @@
     <div ng-show=contact['result'][0]['address_primary.street_address']><strong class="basic-contact-field">{{ts('Street Address')}}</strong>: <span>{{contact['result'][0]['address_primary.street_address']}}</span></div>
     <div ng-show=contact['result'][0]['address_primary.city']><strong class="basic-contact-field">{{ts('City')}}</strong>: <span>{{contact['result'][0]['address_primary.city']}}</span></div>
     <div><strong class="basic-contact-field">{{ts('Is Opt Out')}}</strong>:
-      <span ng-style="{'display': 'inline-block !important'}" editable-checkbox="contact['result'][0]['is_opt_out']" ng-class="contact['result'][0]['is_opt_out'] ? 'text-danger': ''">{{contact['result'][0]['is_opt_out'] ? "Yes" : "No"}}</span>
+      <span ng-if="contact['result'][0]['activity.id']" ng-style="{'display': 'inline-block !important'}">{{ts('Double Opt-In')}}</span>
+      <span ng-if="!contact['result'][0]['activity.id']" ng-style="{'display': 'inline-block !important'}" editable-checkbox="contact['result'][0]['is_opt_out']" ng-class="contact['result'][0]['is_opt_out'] ? 'text-danger': ''">{{contact['result'][0]['is_opt_out'] ? "Yes" : "No"}}</span>
     </div>
     <div><strong class="basic-contact-field">{{ts('Contact ID')}}</strong>: <a target="_blank" ng-if="options.contact_url" href="{{options.contact_url}}{{contact['result'][0]['id']}}">{{contact['result'][0]['id']}}</a></div>
 

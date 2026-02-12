@@ -74,24 +74,9 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
         ->setLanguage($preferredLanguage);
 
       if ($contributionRecurID) {
-        $contributionRecur = \Civi\Api4\ContributionRecur::get(FALSE)
-          ->addWhere('id', '=', $contributionRecurID)
-          ->execute()->first();
-        $params = [
-          'amount' => $contributionRecur['amount'],
-          'contact_id' => $contactID,
-          'currency' => $contributionRecur['currency'],
-          'receive_date' => $contributionRecur['start_date'],
-          'day_of_month' => (new \DateTime($contributionRecur['start_date'], new \DateTimeZone('UTC')))
-            ->format('j'),
-          'recurring' => TRUE,
-          'transaction_id' => "CNTCT-{$contactID}",
-          // shown in the body of the text
-          'contribution_id' => $contributionID,
-         ];
          $render
            ->setTemplateName('monthly_convert')
-           ->setTemplateParameters($params);
+           ->setContributionRecurID($contributionRecurID);
       }
       else {
         $render->setTemplateName($this->getTemplateName());

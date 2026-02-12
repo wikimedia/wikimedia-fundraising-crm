@@ -242,6 +242,11 @@ abstract class BaseAuditProcessor {
       }
       $absentFromMerged = !array_key_exists($key, $merged);
       $logDataNotBlank = ($value !== '');
+      if ($value === FALSE && $key === 'gateway_txn_id') {
+        // Unclear whether we should apply this to other keys as well but in gateway_txn_id
+        // we definitely have cases of it being false in the json rather than an empty string
+        $logDataNotBlank = FALSE;
+      }
       if ($absentFromMerged || $logDataNotBlank || $merged[$key] === '') {
         $merged[$key] = $value;
       }
@@ -1403,16 +1408,14 @@ abstract class BaseAuditProcessor {
     $fileStatistics = &$this->statistics[$file];
     $paymentMethod = $auditRecord['payment_method'];
     $transaction = $auditRecord['message'];
-    if (isset($transaction['audit_file_gateway']) && !empty($transaction['settlement_batch_reference'])) {
-      // For now this means we are only doing it for adyen.
-      // The batching is by the audit file gateway (ie adyen) not gravy.
-      $this->addToBatch($transaction, $file);
-    }
     $type = $auditRecord['audit_message_type'];
     if ($type === 'aggregate') {
-      $this->totals[$file][$transaction['settled_currency']] ??= Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP);
-      $this->totals[$file][$transaction['settled_currency']] = $this->totals[$file][$transaction['settled_currency']]->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
+      $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] ??= Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP);
+      $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] = $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']]->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
       return;
+    }
+    if (isset($transaction['audit_file_gateway']) && !empty($transaction['settlement_batch_reference'])) {
+      $this->addToBatch($transaction, $file);
     }
     if (!isset($fileStatistics[$type]['by_payment'][$paymentMethod])) {
       $fileStatistics[$type]['by_payment'][$paymentMethod] = ['missing' => 0, 'found' => 0];
@@ -1874,7 +1877,7 @@ abstract class BaseAuditProcessor {
     $validBatches = [];
     foreach ($this->batches as $fileName => $fileBatches) {
       foreach ($fileBatches as $batchName => $batch) {
-        if (empty($this->totals[$fileName][$batch['settlement_currency']])) {
+        if (empty($this->totals[$fileName][$batchName][$batch['settlement_currency']])) {
           \Civi::log('wmf')->info("Unable to validate batch for {currency} - settlement row not parsed. This is expected for payment files", [
             'currency' => $batch['settlement_currency'],
           ]);
@@ -1882,7 +1885,7 @@ abstract class BaseAuditProcessor {
         }
         $currency = $batch['settlement_currency'];
         /** @var Money $expectedAmount */
-        $expectedAmount = $this->totals[$fileName][$currency];
+        $expectedAmount = $this->totals[$fileName][$batchName][$currency];
         /** @var Money $settledNetAmount */
         $settledNetAmount = $batch['settled_net_amount'];
         if ($expectedAmount->compareTo($settledNetAmount) === 0) {
