@@ -3,6 +3,7 @@
 
 namespace Civi\WMFHook;
 
+use Civi\Api4\Contact;
 use Civi\WMFHelper\ContributionRecur;
 use CRM_Activity_Form_Activity;
 use CRM_Core_Form;
@@ -17,15 +18,6 @@ class QuickForm {
    */
   public static function buildForm($formName, $form) {
     switch ($formName) {
-      case 'CRM_Activity_Form_Activity':
-        /** @var CRM_Activity_Form_Activity $form */
-        if (self::isRecurringUpgradeDeclineForm($form)) {
-          $completedID = self::getCompletedStatusID();
-          $statusElement = $form->getElement('status_id');
-          $statusElement->setValue($completedID);
-        }
-        break;
-
       case 'CRM_Contribute_Form_Contribution':
         self::buildFormContributionForm($form);
         break;
@@ -118,8 +110,16 @@ class QuickForm {
         /** @var CRM_Activity_Form_Activity $form */
         if (self::isRecurringUpgradeDeclineForm($form)) {
           $form->setDefaults([
-            'subject' => 'Decline recurring upgrade',
-            'status_id' => self::getCompletedStatusID()
+            'subject' => 'Decline recurring upgrade'
+          ]);
+        } elseif (self::isDoubleOptInForm($form)) {
+          // pre-populate subject with primary email
+          $primaryEmail = Contact::get(FALSE)
+            ->addWhere('id', '=', \CRM_Utils_Request::retrieve('cid', 'Integer'))
+            ->addSelect('email_primary.email')
+            ->execute()->first()['email_primary.email'];
+          $form->setDefaults([
+            'subject' => $primaryEmail
           ]);
         }
         break;
@@ -160,18 +160,17 @@ class QuickForm {
     \CRM_Core_Resources::singleton()->addScript(self::getSourceJS());
   }
 
+  protected static function isDoubleOptInForm(CRM_Activity_Form_Activity $form): bool {
+    $activityTypeName = \CRM_Core_PseudoConstant::getName(
+      'CRM_Activity_BAO_Activity', 'activity_type_id', $form->_activityTypeId
+    );
+    return ('Double Opt-In' === $activityTypeName);
+  }
+
   protected static function isRecurringUpgradeDeclineForm(CRM_Activity_Form_Activity $form): bool {
     $activityTypeName = \CRM_Core_PseudoConstant::getName(
       'CRM_Activity_BAO_Activity', 'activity_type_id', $form->_activityTypeId
     );
     return ('Recurring Upgrade Decline' === $activityTypeName);
-  }
-
-  /**
-   * @return false|int|string
-   */
-  public static function getCompletedStatusID() {
-    $statusOptions = \CRM_Activity_BAO_Activity::buildOptions( 'status_id' );
-    return array_search( 'Completed', $statusOptions );
   }
 }
