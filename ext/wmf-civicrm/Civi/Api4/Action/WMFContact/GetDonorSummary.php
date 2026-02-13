@@ -30,10 +30,20 @@ class GetDonorSummary extends AbstractAction {
    * we should make adjustments to no longer set last_donor_portal_login for that use.
    */
   public function _run(Result $result) {
-    if (!\CRM_Core_Permission::check('access CiviContribute') || !\CRM_Contact_BAO_Contact_Utils::validChecksum($this->contact_id,  $this->checksum)) {
-      \Civi::log('wmf')->warning('Donor portal access denied {contact_id} {checksum}', ['contact_id' => $this->contact_id, 'checksum' => $this->checksum]);
+    if (!\CRM_Core_Permission::check('access CiviContribute')) {
+      \Civi::log('wmf')->warning('Donor portal access denied (Invalid permissions) {contact_id} {checksum}', ['contact_id' => $this->contact_id, 'checksum' => $this->checksum]);
       throw new \CRM_Core_Exception('Authorization failed');
     }
+    if (!\CRM_Contact_BAO_Contact_Utils::validChecksum($this->contact_id,  $this->checksum)) {
+      \Civi::log('wmf')->warning('Donor portal access denied (Invalid credentials) {contact_id} {checksum}', ['contact_id' => $this->contact_id, 'checksum' => $this->checksum]);
+      $result[] = [
+        'error' => TRUE,
+        'error_code' => 'InvalidCredentials',
+        'message' => 'Invalid credentials'
+      ];
+      return;
+    }
+
     $contact = $this->getContact();
     if (!$contact) {
       $mergedToId = Contact::getMergedTo()
