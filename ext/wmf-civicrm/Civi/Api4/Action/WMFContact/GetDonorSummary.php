@@ -173,7 +173,7 @@ class GetDonorSummary extends AbstractAction {
     return $mapped;
   }
 
-  protected function mapRecurringContributions(array $recurringContributions, string $donorCountry): array {
+  protected function mapRecurringContributions(array $recurringContributions, ?string $donorCountry): array {
     $mapped = [];
     foreach ($recurringContributions as $recurringContribution) {
       $mapped[] = [
