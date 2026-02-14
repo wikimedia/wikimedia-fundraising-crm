@@ -34,27 +34,19 @@ class GetDonorSummary extends AbstractAction {
       \Civi::log('wmf')->warning('Donor portal access denied {contact_id} {checksum}', ['contact_id' => $this->contact_id, 'checksum' => $this->checksum]);
       throw new \CRM_Core_Exception('Authorization failed');
     }
-    $mergedToId = Contact::getMergedTo()
-      ->setContactId($this->contact_id)
-      ->execute()
-      ->first()['id'] ?? null;
-    if ($mergedToId) {
-      $this->contact_id = $mergedToId;
+    $contact = $this->getContact();
+    if (!$contact) {
+      $mergedToId = Contact::getMergedTo()
+        ->setContactId($this->contact_id)
+        ->execute()
+        ->first()['id'] ?? null;
+      if ($mergedToId) {
+        $this->contact_id = $mergedToId;
+        $contact = $this->getContact();
+      } else {
+        throw new \CRM_Core_Exception("No contact found with id $this->contact_id");
+      }
     }
-    $contact = Contact::get(FALSE)
-      ->addWhere('id', '=', $this->contact_id)
-      ->addSelect(
-        'email_primary.email',
-        'display_name',
-        'first_name',
-        'address_primary.street_address',
-        'address_primary.city',
-        'address_primary.state_province_id:abbr',
-        'address_primary.postal_code',
-        'address_primary.country_id:abbr',
-      )
-      ->execute()
-      ->first();
     $email = $contact['email_primary.email'];
 
     // Since our database has a lot of duplicate contact records, we show donations for
@@ -67,7 +59,7 @@ class GetDonorSummary extends AbstractAction {
       ->execute()->getArrayCopy();
     $contactIDList = array_column($allContactIDsWithEmail, 'contact_id');
 
-    \Civi\Api4\Contact::update(FALSE)
+    Contact::update(FALSE)
       ->addValue('Communication.last_donor_portal_login', 'now')
       ->addWhere('id', 'IN', $contactIDList)
       ->execute();
@@ -146,7 +138,7 @@ class GetDonorSummary extends AbstractAction {
     if (!$active) {
       $get->setLimit(1);
       if ($getRecentInactiveRecurring) {
-        $get->addWhere("cancel_date",">=","ending_60.day");
+        $get->addWhere('cancel_date', '>=', 'ending_60.day');
       }
     }
     // Under API4, a LEFT JOIN is a bit different from raw SQL. When no recurring contribution exists, it
@@ -197,5 +189,23 @@ class GetDonorSummary extends AbstractAction {
       ];
     }
     return $mapped;
+  }
+
+  protected function getContact() {
+    return Contact::get(FALSE)
+      ->addWhere('id', '=', $this->contact_id)
+      ->addWhere('is_deleted', '=', 0)
+      ->addSelect(
+        'email_primary.email',
+        'display_name',
+        'first_name',
+        'address_primary.street_address',
+        'address_primary.city',
+        'address_primary.state_province_id:abbr',
+        'address_primary.postal_code',
+        'address_primary.country_id:abbr',
+      )
+      ->execute()
+      ->first();
   }
 }
