@@ -109,6 +109,8 @@ class GenerateBatch extends AbstractAction {
   private string $startDate = '';
   private string $endDate = '';
 
+  private array $batches;
+
   /**
    * This function updates the settled transaction with new fee & currency conversion data.
    *
@@ -123,7 +125,6 @@ class GenerateBatch extends AbstractAction {
     $accountCodeClause = $this->getAccountClause();
     $deptIDClause = $this->getDeptIDClause();
     $restrictionsClause = $this->getRestrictionsClause();
-    $batches = $this->getBatches();
 
     $sql = "SELECT
     CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
@@ -249,7 +250,7 @@ GROUP BY s.settlement_batch_reference
 
     $rowNumber = 1;
 
-    foreach ($batches as $batch) {
+    foreach ($this->getBatches() as $batch) {
       $defaults = [
         'DONOTIMPORT' => '',
         'JOURNAL' => 'CREV',
@@ -970,40 +971,43 @@ END";
    * @throws \CRM_Core_Exception
    */
   private function getBatches(): array {
-    if ($this->id) {
-      $batches = (array)Batch::get(FALSE)
-        ->addWhere('id', '=', $this->id)
-        ->addSelect('batch_data.*', '*', 'status_id:name')
-        ->execute()->indexBy('name');
-    }
-    elseif ($this->batchPrefix) {
-      $batches = (array)Batch::get(FALSE)
-        ->addWhere('status_id:name', 'IN', ['total_verified', 'validated'])
-        ->addWhere('name', 'LIKE', '%' . $this->batchPrefix . '_%')
-        ->addSelect('batch_data.*', '*', 'status_id:name')
-        ->execute()->indexBy('name');
-    }
-    else {
-      $batches = (array)Batch::get(FALSE)
-        ->addWhere('status_id:name', 'IN', ['total_verified', 'validated'])
-        ->addSelect('batch_data.*', '*', 'status_id:name')
-        ->execute()->indexBy('name');
-    }
-    if (empty($batches)) {
-      return [];
-    }
-
-    foreach ($batches as $batch) {
-      if (!isset($this->endDate) || strtotime($batch['batch_data.settlement_date']) > strtotime($this->endDate)) {
-        $this->endDate = $batch['batch_data.settlement_date'];
+    if (!isset($this->batches)) {
+      $this->batches = [];
+      if ($this->id) {
+        $this->batches = (array) Batch::get(FALSE)
+          ->addWhere('id', '=', $this->id)
+          ->addSelect('batch_data.*', '*', 'status_id:name')
+          ->execute()->indexBy('name');
       }
-    }
+      elseif ($this->batchPrefix) {
+        $this->batches = (array) Batch::get(FALSE)
+          ->addWhere('name', 'LIKE', '%' . $this->batchPrefix . '_%')
+          ->addWhere('status_id:name', 'IN', ['total_verified', 'validated'])
+          ->addSelect('batch_data.*', '*', 'status_id:name')
+          ->execute()->indexBy('name');
+      }
+      else {
+        $this->batches = (array) Batch::get(FALSE)
+          ->addWhere('status_id:name', 'IN', ['total_verified', 'validated'])
+          ->addSelect('batch_data.*', '*', 'status_id:name')
+          ->execute()->indexBy('name');
+      }
+      if (empty($this->batches)) {
+        return [];
+      }
 
-    $this->startDate = Contribution::get(FALSE)
-      ->addWhere('contribution_settlement.settlement_batch_reference', 'IN', array_keys($batches))
-      ->addSelect('MIN(contribution_settlement.settlement_date) AS start_date')
-      ->execute()->first()['start_date'] ?? $this->endDate;
-    return $batches;
+      foreach ($this->batches as $batch) {
+        if (!isset($this->endDate) || strtotime($batch['batch_data.settlement_date']) > strtotime($this->endDate)) {
+          $this->endDate = $batch['batch_data.settlement_date'];
+        }
+      }
+
+      $this->startDate = Contribution::get(FALSE)
+        ->addWhere('contribution_settlement.settlement_batch_reference', 'IN', array_keys($this->batches))
+        ->addSelect('MIN(contribution_settlement.settlement_date) AS start_date')
+        ->execute()->first()['start_date'] ?? $this->endDate;
+    }
+    return $this->batches;
   }
 
   /**
