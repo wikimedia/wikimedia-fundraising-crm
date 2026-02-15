@@ -122,132 +122,6 @@ class GenerateBatch extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   public function _run(Result $result): void {
-    $accountCodeClause = $this->getAccountClause();
-    $deptIDClause = $this->getDeptIDClause();
-    $restrictionsClause = $this->getRestrictionsClause();
-
-    $sql = "SELECT
-    CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
-    $accountCodeClause AS ACCT_NO,
-    -- @todo - not for endowment - need the number for that
-    '100-WMF' as LOCATION_ID,
-    $deptIDClause as DEPT_ID,
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | " . date('m/d/y', strtotime($this->startDate)) . " | " . date('m/d/y', strtotime($this->endDate)) . " | ', COUNT(*), ' | ', ' Donations') as MEMO,
-    IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, 0, -SUM(COALESCE(settled_donation_amount, 0)))  as DEBIT,
-    IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, SUM(COALESCE(settled_donation_amount, 0)), 0) as CREDIT,
-    s.settlement_currency as CURRENCY,
-    $restrictionsClause as GLDIMFUNDING
-FROM civicrm_value_contribution_settlement s
-  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
-         LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
-WHERE (%1 = s.settlement_batch_reference)
-  AND (COALESCE(settled_donation_amount, 0) <> 0)
-  AND is_template = 0
-GROUP BY Fund, $accountCodeClause, is_major_gift
-
-UNION ALL
-  SELECT
-   CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
-   $accountCodeClause AS ACCT_NO,
-    -- @todo - not for endowment - need the number for that
-    '100-WMF' as LOCATION_ID,
-    $deptIDClause as DEPT_ID,
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Refunds') as MEMO,
-
-    IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, SUM(-COALESCE(settled_reversal_amount, 0)),0) as DEBIT,
-    IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, 0, SUM(-COALESCE(settled_reversal_amount, 0)))  as CREDIT,
-    s.settlement_currency as CURRENCY,
-    $restrictionsClause as GLDIMFUNDING
-FROM civicrm_value_contribution_settlement s
-  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
-         LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
-WHERE (%1 = s.settlement_batch_reversal_reference)
-  AND (COALESCE(settled_reversal_amount, 0) <> 0)
-  AND is_template = 0
-GROUP BY Fund, $accountCodeClause, is_major_gift
-
-UNION ALL
-
--- Fee transactions part.
-SELECT
--- note GROUP BY here....
-    CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
-    60917 as ACCT_NO,
-
--- @todo - not for endowment - need the number for that
-    '100-WMF' as LOCATION_ID,
--- cost centre - CC-1014 for all fees
-    'CC-1014' as DEPT_ID,
-    -- @todo - not always donations at the end of memo
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
-    IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_amount, 0)), 0) as DEBIT,
-    IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0))) as CREDIT,
-    s.settlement_currency as CURRENCY,
-    'Unrestricted' as GLDIMFUNDING
-FROM civicrm_value_contribution_settlement s
-  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
-  LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
-WHERE (%1 = settlement_batch_reference)
-  AND ( settled_fee_amount <> 0)
-  AND trxn_id NOT LIKE 'adyen transaction%'
-  AND trxn_id NOT LIKE 'adyen invoice%'
-  AND is_template = 0
-GROUP BY s.settlement_batch_reference
-
-UNION ALL
-
-SELECT
--- note GROUP BY here....
-    CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
-    60917 as ACCT_NO,
-
--- @todo - not for endowment - need the number for that
-    '100-WMF' as LOCATION_ID,
--- cost centre - CC-1014 for all fees
-    'CC-1014' as DEPT_ID,
-    -- @todo - not always donations at the end of memo
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
-    -- @todo obv some cleaup in here
-    IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_reversal_amount, 0)), 0) as DEBIT,
-    IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_reversal_amount, 0)))  as CREDIT,
-    s.settlement_currency as CURRENCY,
-    'Unrestricted' as GLDIMFUNDING
-FROM civicrm_value_contribution_settlement s
-  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
-  LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
-WHERE (%1 = settlement_batch_reversal_reference)
-  AND ( settled_fee_reversal_amount <> 0)
-  AND (trxn_id NOT LIKE 'adyen transaction%' AND trxn_id NOT LIKE 'adyen invoice %')
-  AND is_template = 0
-GROUP BY s.settlement_batch_reversal_reference
-
-UNION ALL
--- Fee transactions part.
-SELECT
--- note GROUP BY here....
-    CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
-    60917 as ACCT_NO,
--- @todo - not for endowment - need the number for that
-    '100-WMF' as LOCATION_ID,
--- cost centre - CC-1014 for all fees
-    'CC-1014' as DEPT_ID,
-    -- @todo - not always donations at the end of memo
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Invoice Fees') as MEMO,
-    -- @todo obv some cleaup in here
-    IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, SUM(COALESCE(-settled_fee_amount, 0)),0) as DEBIT,
-    IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0)))  as CREDIT,
-    s.settlement_currency as CURRENCY,
-    'Unrestricted' as GLDIMFUNDING
-FROM civicrm_value_contribution_settlement s
-  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
-  LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
-WHERE (%1 = settlement_batch_reference)
-  AND ( settled_fee_amount <> 0)
-  AND (trxn_id LIKE 'adyen transaction%' OR trxn_id LIKE 'adyen invoice %')
-  AND is_template = 0
-GROUP BY s.settlement_batch_reference
-";
-
     $rowNumber = 1;
 
     foreach ($this->getBatches() as $batch) {
@@ -299,10 +173,7 @@ GROUP BY s.settlement_batch_reference
         'annual_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
         'endowment_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
       ];
-
-      $renderedSql = CRM_Core_DAO::composeQuery($sql, [
-        1 => [$batch['name'], 'String']]
-      );
+      $renderedSql = $this->getRenderedSql($batch);
       $batchedData = CRM_Core_DAO::executeQuery($renderedSql)->fetchAll();
       $this->setHeaders($defaults);
       $record = [
@@ -1065,6 +936,152 @@ END";
       // V01729	Wikimedia CH
     ];
     return $codes;
+  }
+
+  /**
+   * @return string
+   */
+  public function getBatchSql(): string {
+    $accountCodeClause = $this->getAccountClause();
+    $deptIDClause = $this->getDeptIDClause();
+    $restrictionsClause = $this->getRestrictionsClause();
+
+    $sql = "SELECT
+    CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
+    $accountCodeClause AS ACCT_NO,
+    -- @todo - not for endowment - need the number for that
+    '100-WMF' as LOCATION_ID,
+    $deptIDClause as DEPT_ID,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | " . date('m/d/y', strtotime($this->startDate)) . " | " . date('m/d/y', strtotime($this->endDate)) . " | ', COUNT(*), ' | ', ' Donations') as MEMO,
+    IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, 0, -SUM(COALESCE(settled_donation_amount, 0)))  as DEBIT,
+    IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, SUM(COALESCE(settled_donation_amount, 0)), 0) as CREDIT,
+    s.settlement_currency as CURRENCY,
+    $restrictionsClause as GLDIMFUNDING
+FROM civicrm_value_contribution_settlement s
+  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
+         LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
+WHERE (%1 = s.settlement_batch_reference)
+  AND (COALESCE(settled_donation_amount, 0) <> 0)
+  AND is_template = 0
+GROUP BY Fund, $accountCodeClause, is_major_gift
+
+UNION ALL
+  SELECT
+   CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
+   $accountCodeClause AS ACCT_NO,
+    -- @todo - not for endowment - need the number for that
+    '100-WMF' as LOCATION_ID,
+    $deptIDClause as DEPT_ID,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Refunds') as MEMO,
+
+    IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, SUM(-COALESCE(settled_reversal_amount, 0)),0) as DEBIT,
+    IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, 0, SUM(-COALESCE(settled_reversal_amount, 0)))  as CREDIT,
+    s.settlement_currency as CURRENCY,
+    $restrictionsClause as GLDIMFUNDING
+FROM civicrm_value_contribution_settlement s
+  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
+         LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
+WHERE (%1 = s.settlement_batch_reversal_reference)
+  AND (COALESCE(settled_reversal_amount, 0) <> 0)
+  AND is_template = 0
+GROUP BY Fund, $accountCodeClause, is_major_gift
+
+UNION ALL
+
+-- Fee transactions part.
+SELECT
+-- note GROUP BY here....
+    CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
+    60917 as ACCT_NO,
+
+-- @todo - not for endowment - need the number for that
+    '100-WMF' as LOCATION_ID,
+-- cost centre - CC-1014 for all fees
+    'CC-1014' as DEPT_ID,
+    -- @todo - not always donations at the end of memo
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
+    IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_amount, 0)), 0) as DEBIT,
+    IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0))) as CREDIT,
+    s.settlement_currency as CURRENCY,
+    'Unrestricted' as GLDIMFUNDING
+FROM civicrm_value_contribution_settlement s
+  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
+  LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
+WHERE (%1 = settlement_batch_reference)
+  AND ( settled_fee_amount <> 0)
+  AND trxn_id NOT LIKE 'adyen transaction%'
+  AND trxn_id NOT LIKE 'adyen invoice%'
+  AND is_template = 0
+GROUP BY s.settlement_batch_reference
+
+UNION ALL
+
+SELECT
+-- note GROUP BY here....
+    CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
+    60917 as ACCT_NO,
+
+-- @todo - not for endowment - need the number for that
+    '100-WMF' as LOCATION_ID,
+-- cost centre - CC-1014 for all fees
+    'CC-1014' as DEPT_ID,
+    -- @todo - not always donations at the end of memo
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
+    -- @todo obv some cleaup in here
+    IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_reversal_amount, 0)), 0) as DEBIT,
+    IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_reversal_amount, 0)))  as CREDIT,
+    s.settlement_currency as CURRENCY,
+    'Unrestricted' as GLDIMFUNDING
+FROM civicrm_value_contribution_settlement s
+  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
+  LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
+WHERE (%1 = settlement_batch_reversal_reference)
+  AND ( settled_fee_reversal_amount <> 0)
+  AND (trxn_id NOT LIKE 'adyen transaction%' AND trxn_id NOT LIKE 'adyen invoice %')
+  AND is_template = 0
+GROUP BY s.settlement_batch_reversal_reference
+
+UNION ALL
+-- Fee transactions part.
+SELECT
+-- note GROUP BY here....
+    CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
+    60917 as ACCT_NO,
+-- @todo - not for endowment - need the number for that
+    '100-WMF' as LOCATION_ID,
+-- cost centre - CC-1014 for all fees
+    'CC-1014' as DEPT_ID,
+    -- @todo - not always donations at the end of memo
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Invoice Fees') as MEMO,
+    -- @todo obv some cleaup in here
+    IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, SUM(COALESCE(-settled_fee_amount, 0)),0) as DEBIT,
+    IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0)))  as CREDIT,
+    s.settlement_currency as CURRENCY,
+    'Unrestricted' as GLDIMFUNDING
+FROM civicrm_value_contribution_settlement s
+  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
+  LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
+WHERE (%1 = settlement_batch_reference)
+  AND ( settled_fee_amount <> 0)
+  AND (trxn_id LIKE 'adyen transaction%' OR trxn_id LIKE 'adyen invoice %')
+  AND is_template = 0
+GROUP BY s.settlement_batch_reference
+";
+    return $sql;
+  }
+
+  /**
+   * @param array $batch
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  private function getRenderedSql(array $batch): string {
+    $sql = $this->getBatchSql();
+    return CRM_Core_DAO::composeQuery($sql, [
+        1 => [$batch['name'], 'String']
+      ]
+    );
   }
 
 }
