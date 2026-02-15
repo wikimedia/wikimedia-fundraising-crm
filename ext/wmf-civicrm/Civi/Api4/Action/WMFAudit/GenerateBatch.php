@@ -346,7 +346,7 @@ GROUP BY s.settlement_batch_reference
         'fee_credit' => (string) $feeCredit->getAmount(),
         'fee' => (string) $feeDebit->minus($feeCredit)->getAmount(),
         'settled' => (string) $credit->minus($debit)->minus($feeDebit)->plus($feeCredit)->getAmount(),
-        'count' => $count
+        'count' => $count,
       ];
       $record['expected'] = [
         'count' => $batch['item_count'],
@@ -628,17 +628,7 @@ END";
    */
   public function getVendorCode($batchName): string {
     $parts = explode('_', $batchName);
-    $codes = [
-      'adyen' => 'V01670',
-      'braintree' => 'V05089',
-      'paypal' => 'V00282',
-      'dlocal' => 'V04134',
-      'engage' => 'V01948',
-      'stripe' => 'V04137',
-      'trustly' => 'V05354',
-      // V00343	Wikimedia Deutschland
-      // V01729	Wikimedia CH
-    ];
+    $codes = $this->getVendorCodesForGateways();
     return $codes[$parts[0]];
   }
 
@@ -690,13 +680,50 @@ END";
       $reversalRow['DEBIT'] = $row['CREDIT'];
       $reversalRow['CREDIT'] = $row['DEBIT'];
       $reversalRow['LINE_NO'] = $row['LINE_NO'] + 1;
-      $reversalRow['ACCT_NO'] = 11250;
+      $reversalRow['ACCT_NO'] = $this->getReversalAccountCode($row['CURRENCY'], $row['GLENTRY_VENDORID']);
       $memoParts = explode(' | ', $row['MEMO']);
       unset($memoParts[4], $memoParts[5], $memoParts[6]);
       $reversalRow['MEMO'] = implode(' | ', $memoParts);
       $rowsWithReversals[] = $reversalRow;
     }
     return $rowsWithReversals;
+  }
+
+  private function getReversalAccountCode($currency, $vendor): int {
+    $gateway = array_search($vendor, $this->getVendorCodesForGateways());
+    if ($gateway === 'dlocal') {
+      return 10835;
+    }
+    if ($gateway === 'paypal') {
+      $codes = [
+        'USD' => 10900,
+        'CAD' => 10901,
+        'EUR' => 10902,
+        'GBP' => 10903,
+        'JPY' => 10904,
+        'AUD' => 10906,
+        'NZD' => 10907,
+        'HKD' => 10908,
+        'SGD' => 10909,
+        'CHF' => 10910,
+        'SEK' => 10911,
+        'NOK' => 10912,
+        'DKK' => 10913,
+        'PLN' => 10914,
+        'HUF' => 10915,
+        'CZK' => 10916,
+        'BRL' => 10917,
+        'ILS' => 10918,
+        'MXN' => 10919,
+        'PHP' => 10920,
+        'THB' => 10921,
+        'TWD' => 10922,
+        'ZAR' => 10925,
+        'KRW' => 10926,
+      ];
+      return $codes[$currency];
+    }
+    return 11250;
   }
 
   /**
@@ -1016,6 +1043,24 @@ END";
     }
     $html .= '</tr></thead><tbody>';
     return $html;
+  }
+
+  /**
+   * @return string[]
+   */
+  public function getVendorCodesForGateways(): array {
+    $codes = [
+      'adyen' => 'V01670',
+      'braintree' => 'V05089',
+      'paypal' => 'V00282',
+      'dlocal' => 'V04134',
+      'engage' => 'V01948',
+      'stripe' => 'V04137',
+      'trustly' => 'V05354',
+      // V00343	Wikimedia Deutschland
+      // V01729	Wikimedia CH
+    ];
+    return $codes;
   }
 
 }
