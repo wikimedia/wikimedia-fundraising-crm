@@ -288,7 +288,7 @@ GROUP BY s.settlement_batch_reference
         ->addSelect('contribution_extra.*', 'contribution_settlement.*', 'total_amount', 'fee_amount', 'net_amount', 'trxn_id', 'invoice_id', 'source', 'currency', 'financial_type_id', 'receive_date')
         ->execute();
       */
-      if ($batch['status_id:name'] !== 'total_verified') {
+      if (!in_array($batch['status_id:name'],  ['validated', 'total_verified'])) {
         // @todo what should we do - return information but not export?
         // export in debug mode?
         throw new \CRM_Core_Exception('batch not verified - cannot export');
