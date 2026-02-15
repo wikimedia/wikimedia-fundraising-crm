@@ -951,6 +951,7 @@ END";
     }
     elseif ($this->batchPrefix) {
       $batches = (array)Batch::get(FALSE)
+        ->addWhere('status_id:name', 'IN', ['total_verified', 'validated'])
         ->addWhere('name', 'LIKE', '%' . $this->batchPrefix . '_%')
         ->addSelect('batch_data.*', '*', 'status_id:name')
         ->execute()->indexBy('name');
