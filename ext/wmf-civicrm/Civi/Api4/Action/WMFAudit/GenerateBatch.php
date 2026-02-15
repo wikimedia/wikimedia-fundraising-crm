@@ -682,7 +682,7 @@ END";
       $reversalRow['LINE_NO'] = $row['LINE_NO'] + 1;
       $reversalRow['ACCT_NO'] = $this->getReversalAccountCode($row['CURRENCY'], $row['GLENTRY_VENDORID']);
       $memoParts = explode(' | ', $row['MEMO']);
-      unset($memoParts[4], $memoParts[5], $memoParts[6]);
+      unset($memoParts[4], $memoParts[6]);
       $reversalRow['MEMO'] = implode(' | ', $memoParts);
       $rowsWithReversals[] = $reversalRow;
     }
