@@ -210,8 +210,8 @@ class GenerateBatchTest extends BaseAuditTestCase {
       return NULL;
     }
     $parts = explode(' | ', $row['MEMO']);
-    if (isset($parts[4]) && is_numeric($parts[4])) {
-      return (int) $parts[4];
+    if (isset($parts[3]) && is_numeric($parts[3])) {
+      return (int) $parts[3];
     }
     return NULL;
   }
