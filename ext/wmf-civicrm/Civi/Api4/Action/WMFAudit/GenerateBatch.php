@@ -171,7 +171,7 @@ class GenerateBatch extends AbstractAction {
         'batch' => $batch,
       ];
       if ($this->isOutputSQL) {
-        $record['sql'] = $renderedSql;
+        $record['sql'] = $this->getBatchValue($batch['name'], 'sql');
       }
       $debit = $credit = $feeDebit = $feeCredit = Money::of(0, $batch['batch_data.settlement_currency']);
       $count = 0;
@@ -224,7 +224,7 @@ class GenerateBatch extends AbstractAction {
         'fee' => $record['expected']['fee'] + $record['totals']['fee'],
         'settled' => $record['expected']['settled'] - $record['totals']['settled'],
       ];
-      $record['csv'] = $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $renderedSql, $batch['name']);
+      $record['csv'] = $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $batch['name']);
       $isValid = empty(array_filter($record['validation']));
       $this->batchSummary[$batch['name']]['is_valid'] = $isValid;
       $this->log($batch['name'] . ' ' . ($isValid ? 'has valid totals' : ' has a discrepancy '));
@@ -327,10 +327,17 @@ class GenerateBatch extends AbstractAction {
   }
 
   /**
-   * @param $csv_rows
-   * @return void
+   * @param array $csv_rows
+   * @param string $batchName
+   *
+   * @return array
+   * @throws \Brick\Money\Exception\UnknownCurrencyException
+   * @throws \Civi\Core\Exception\DBQueryException
+   * @throws \League\Csv\CannotInsertRecord
+   * @throws \League\Csv\Exception
    */
-  public function addToCsv($csv_rows, $renderedSql, string $batchName): array {
+  private function addToCsv(array $csv_rows, string $batchName): array {
+    $renderedSql = $this->getBatchValue($batchName, 'sql');
     if ($this->isOutputCsv) {
       $writer = $this->getWriter();
       $writer->insertAll($csv_rows);
@@ -1087,10 +1094,22 @@ GROUP BY s.settlement_batch_reference
    */
   private function getRenderedSql(array $batch): string {
     $sql = $this->getBatchSql($batch['name']);
-    return CRM_Core_DAO::composeQuery($sql, [
+    $renderedSql = CRM_Core_DAO::composeQuery($sql, [
         1 => [$batch['name'], 'String']
       ]
     );
+    $this->batches[$batch['name']]['sql'] = $renderedSql;
+    return $renderedSql;
+  }
+
+  /**
+   * @param string $name
+   * @param string $value
+   *
+   * @return mixed
+   */
+  private function getBatchValue(string $name, string $value): mixed {
+    return $this->batches[$name][$value];
   }
 
 }
