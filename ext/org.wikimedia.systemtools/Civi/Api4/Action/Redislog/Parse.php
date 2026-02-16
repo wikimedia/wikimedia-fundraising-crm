@@ -49,7 +49,7 @@ class Parse extends AbstractAction {
     $writer = Writer::createFromPath(dirname($this->getFileName()) . '/redis_log_parsed.csv', 'w+');
     $writer->insertOne(['Timestamp', 'Connection', 'Action', 'Detail', 'TTL', 'Data']);
     $writer->setDelimiter('`');
-    $reader = Reader::createFromPath($this->getFileName());
+    $reader = Reader::from($this->getFileName());
     $reader->setDelimiter(' ');
 
     $patterns = [];

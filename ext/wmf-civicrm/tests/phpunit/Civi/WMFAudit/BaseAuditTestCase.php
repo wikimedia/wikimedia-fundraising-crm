@@ -54,7 +54,7 @@ class BaseAuditTestCase extends TestCase {
     // First let's have a process to create some TransactionLog entries.
     $file = $this->auditFileBaseDirectory . DIRECTORY_SEPARATOR . $directory . DIRECTORY_SEPARATOR . $this->gateway . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR . $fileName;
     try {
-      $csv = Reader::createFromPath($file, 'r');
+      $csv = Reader::from($file, 'r');
       $csv->setHeaderOffset(0);
     } catch (Exception $e) {
       $this->fail('Failed to read csv' . $file . ': ' . $e->getMessage());
@@ -177,7 +177,7 @@ class BaseAuditTestCase extends TestCase {
       foreach ($auditResult['validate'] as $row) {
         $this->assertEquals(0, array_sum($row['validation']), print_r(array_filter($row), TRUE));
         foreach ($row['csv'] ?? [] as $path) {
-          $rows = Reader::createFromPath($path)->setHeaderOffset(0)->getRecords();
+          $rows = Reader::from($path)->setHeaderOffset(0)->getRecords();
           foreach ($rows as $line) {
             $this->assertGreaterThanOrEqual(0, $line['DEBIT']);
             $this->assertGreaterThanOrEqual(0, $line['CREDIT']);

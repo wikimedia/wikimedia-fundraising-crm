@@ -179,7 +179,7 @@ class PaypalAuditTest extends BaseAuditTestCase {
     $columnHeaders = [];
     $rows = [];
     try {
-      $csv = Reader::createFromPath($file, 'r');
+      $csv = Reader::from($file, 'r');
       $file = fopen( $file, 'r' );
       while ( ( $line = fgetcsv( $file, 0 ) ) !== false ) {
         // skip empty lines

@@ -24,7 +24,7 @@ class BatchFile {
     if (!in_array($type, $allowedTypes, true)) {
       CRM_Utils_System::statusBounce(ts('Invalid batch type.'));
     }
-    $reader = Reader::createFromPath($file);
+    $reader = Reader::from($file);
     $reader->output(basename($file));
     CRM_Utils_System::civiExit();
   }

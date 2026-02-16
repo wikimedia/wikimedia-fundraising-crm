@@ -349,7 +349,7 @@ class UploadedFile extends \CRM_Import_DataSource {
   public function getReader(): Reader {
     if (!isset($this->reader)) {
       $filePath = $this->getResolvedFilePath() . DIRECTORY_SEPARATOR . $this->getSubmittedValue('file_name');
-      $this->reader = Reader::createFromPath($filePath);
+      $this->reader = Reader::from($filePath);
       // Remove the header
       if ($this->getSubmittedValue('skipColumnHeader')) {
         $this->reader->setHeaderOffset(0);

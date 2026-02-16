@@ -81,7 +81,7 @@ class TrustlyAuditTest extends BaseAuditTestCase {
     // First let's have a process to create some TransactionLog entries.
     $file = $this->auditFileBaseDirectory . DIRECTORY_SEPARATOR . $directory . DIRECTORY_SEPARATOR . $this->gateway . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR . $fileName;
     try {
-      $csv = Reader::createFromPath($file, 'r');
+      $csv = Reader::from($file, 'r');
     } catch (Exception $e) {
       $this->fail('Failed to read csv' . $file . ': ' . $e->getMessage());
     }

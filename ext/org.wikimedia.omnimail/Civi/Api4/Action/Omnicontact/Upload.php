@@ -152,7 +152,7 @@ class Upload extends AbstractAction {
   }
 
   protected function createMappingFile(): void {
-    $reader = Reader::createFromPath($this->getCsvFile());
+    $reader = Reader::from($this->getCsvFile());
     $reader->setHeaderOffset(0);
     $headers = $reader->getHeader();
     $temporaryDirectory = sys_get_temp_dir();
