@@ -125,58 +125,16 @@ class GenerateBatch extends AbstractAction {
     $rowNumber = 1;
 
     foreach ($this->getBatches() as $batch) {
-      $defaults = [
-        'DONOTIMPORT' => '',
-        'JOURNAL' => 'CREV',
-        'DATE' => date('m/d/Y', strtotime($batch['batch_data.settlement_date'])),
-        'REVERSEDATE' => '',
-        'REFERENCE_NO' => '',
-        'LINE_NO' => '',
-        'ACCT_NO' => '',
-        'LOCATION_ID' => '',
-        'DEPT_ID' => '',
-        'DOCUMENT' => $batch['name'],
-        'DEBIT' => 0,
-        'CREDIT' => 0,
-        'SOURCEENTITY' => '',
-        'CURRENCY' => $batch['batch_data.settlement_currency'],
-        'EXCH_RATE_DATE' => date('m/d/Y', strtotime($batch['batch_data.settlement_date'])),
-        'EXCH_RATE_TYPE_ID' => '',
-        'EXCHANGE_RATE' => '',
-        'STATE' => 'Draft',
-        'ALLOCATION_ID' => '',
-        'BILLABLE' => '',
-        'GLDIMEVENT_ID' => '',
-        'GLDIMFUNDING' => '',
-        'GLENTRY_PROJECTID' => '',
-        'GLENTRY_CLASSID' => '',
-        'GLENTRY_CUSTOMERID' => '',
-        'GLENTRY_VENDORID' => $this->getVendorCode($batch['name']),
-        'GLENTRY_ITEMID' => '',
-        'GLENTRY_EMPLOYEEID' => '',
-        'DESCRIPTION' => '',
-        'MEMO' => '',
-      ];
-
-      $this->batchSummary[$batch['name']] = [
-        'currency' => $batch['batch_data.settlement_currency'],
-        'annual_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
-        'endowment_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
-      ];
-      $renderedSql = $this->getRenderedSql($batch);
-      $batchedData = CRM_Core_DAO::executeQuery($renderedSql)->fetchAll();
-      $this->setHeaders($defaults);
-      $record = [
+      $batchedData = $this->getJournalRows($batch);
+      $record = array_filter([
         'csv_rows' => $batchedData,
         'batch' => $batch,
-      ];
-      if ($this->isOutputSQL) {
-        $record['sql'] = $this->getBatchValue($batch['name'], 'sql');
-      }
+        'sql' => $this->isOutputSQL ? $this->getBatchValue($batch['name'], 'sql') : NULL,
+      ]);
+
       $debit = $credit = $feeDebit = $feeCredit = Money::of(0, $batch['batch_data.settlement_currency']);
       $count = 0;
       foreach ($record['csv_rows'] as $index => $row) {
-        $record['csv_rows'][$index] = [...$defaults, ...$row];
         $record['csv_rows'][$index]['LINE_NO'] = $rowNumber;
         $rowNumber+= 2;
         $isFee = $this->isFee($row);
@@ -1100,6 +1058,62 @@ GROUP BY s.settlement_batch_reference
     );
     $this->batches[$batch['name']]['sql'] = $renderedSql;
     return $renderedSql;
+  }
+
+  /**
+   * @param mixed $batch
+   *
+   * @return array
+   * @throws \Brick\Money\Exception\UnknownCurrencyException
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  private function getJournalRows(array $batch): array {
+    $defaults = [
+      'DONOTIMPORT' => '',
+      'JOURNAL' => 'CREV',
+      'DATE' => date('m/d/Y', strtotime($batch['batch_data.settlement_date'])),
+      'REVERSEDATE' => '',
+      'REFERENCE_NO' => '',
+      'LINE_NO' => '',
+      'ACCT_NO' => '',
+      'LOCATION_ID' => '',
+      'DEPT_ID' => '',
+      'DOCUMENT' => $batch['name'],
+      'DEBIT' => 0,
+      'CREDIT' => 0,
+      'SOURCEENTITY' => '',
+      'CURRENCY' => $batch['batch_data.settlement_currency'],
+      'EXCH_RATE_DATE' => date('m/d/Y', strtotime($batch['batch_data.settlement_date'])),
+      'EXCH_RATE_TYPE_ID' => '',
+      'EXCHANGE_RATE' => '',
+      'STATE' => 'Draft',
+      'ALLOCATION_ID' => '',
+      'BILLABLE' => '',
+      'GLDIMEVENT_ID' => '',
+      'GLDIMFUNDING' => '',
+      'GLENTRY_PROJECTID' => '',
+      'GLENTRY_CLASSID' => '',
+      'GLENTRY_CUSTOMERID' => '',
+      'GLENTRY_VENDORID' => $this->getVendorCode($batch['name']),
+      'GLENTRY_ITEMID' => '',
+      'GLENTRY_EMPLOYEEID' => '',
+      'DESCRIPTION' => '',
+      'MEMO' => '',
+    ];
+
+    $this->batchSummary[$batch['name']] = [
+      'currency' => $batch['batch_data.settlement_currency'],
+      'annual_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
+      'endowment_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
+    ];
+    $renderedSql = $this->getRenderedSql($batch);
+    $batchedData = CRM_Core_DAO::executeQuery($renderedSql)->fetchAll();
+    $this->setHeaders($defaults);
+    foreach ($batchedData as $index => $row) {
+      $batchedData[$index] = [...$defaults, ...$row];
+    }
+    return $batchedData;
   }
 
   /**
