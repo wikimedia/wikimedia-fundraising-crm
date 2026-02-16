@@ -3925,6 +3925,24 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Bug: T417595
+   *
+   * Fix inconsistency with Wikipedia App channel.
+   *
+   * Took almost no time on staging
+   * Query OK, 14098 rows affected (8.055 sec)
+   * Rows matched: 14098  Changed: 14098  Warnings: 0
+   *
+   * @return bool
+   */
+  public function upgrade_4855(): bool {
+    CRM_Core_DAO::executeQuery(
+      "UPDATE civicrm_value_1_gift_data_7 SET channel = 'Wikipedia App'  WHERE channel = 'WikipediaApp'"
+    );
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
