@@ -157,17 +157,7 @@ class GenerateBatch extends AbstractAction {
         'DESCRIPTION' => '',
         'MEMO' => '',
       ];
-      /**
-      $record['contributions'] = (array) Contribution::get(FALSE)
-        ->addWhere('contribution_settlement.settlement_batch_reference', '=', $batch['name'])
-        ->addSelect('contribution_extra.*', 'contribution_settlement.*', 'total_amount', 'fee_amount', 'net_amount', 'trxn_id', 'invoice_id', 'source', 'currency', 'financial_type_id', 'receive_date')
-        ->execute();
-      */
-      if (!in_array($batch['status_id:name'],  ['validated', 'total_verified'])) {
-        // @todo what should we do - return information but not export?
-        // export in debug mode?
-        throw new \CRM_Core_Exception('batch not verified - cannot export');
-      }
+
       $this->batchSummary[$batch['name']] = [
         'currency' => $batch['batch_data.settlement_currency'],
         'annual_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
@@ -849,6 +839,11 @@ END";
           ->addWhere('id', '=', $this->id)
           ->addSelect('batch_data.*', '*', 'status_id:name')
           ->execute()->indexBy('name');
+        $batch = reset($this->batches);
+        if (!in_array($batch['status_id:name'], ['validated', 'total_verified'])) {
+          // They have selected a specific batch, but it is not exportable, throw an exception.
+          throw new \CRM_Core_Exception('batch status of ' . $batch['status_id:name'] . ' is not valid for export');
+        }
       }
       elseif ($this->batchPrefix) {
         $this->batches = (array) Batch::get(FALSE)
