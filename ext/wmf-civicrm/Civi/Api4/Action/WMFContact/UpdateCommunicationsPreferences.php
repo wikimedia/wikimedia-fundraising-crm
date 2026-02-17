@@ -11,6 +11,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\Address;
 use Civi\Api4\Activity;
 use Civi\Api4\WorkflowMessage;
+use Civi\WMFHelper\Activity as ActivityHelper;
 use Civi\WorkflowMessage\SetPrimaryEmailMessage;
 
 /**
@@ -116,13 +117,11 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     $oldLanguageValue = $contact['preferred_language'];
     $oldEmailValue = $contact['email.email'];
     $oldCountryValue = $contact['address.country_id:name'];
-
     $email = Email::get(FALSE)
       ->addWhere('contact_id', '=', $this->contactID)
       ->addWhere('is_primary', '=', 1)
       ->execute();
     $isEmailUpdated = $oldEmailValue !== $this->email;
-
     // 1: send email update
     if ($this->sendEmail !== null) {
       $newOptIn = $this->sendEmail === 'true' ? 1 : 0;
@@ -159,7 +158,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
           }
           if (
             in_array($countryID,\Civi::settings()->get('thank_you_double_opt_in_countries')) &&
-            !in_array($this->getEmail(), $this->getDoubleOptInEmails()) &&
+            !$this->hasDoubleOptInActivity() &&
             !$isEmailUpdated // On email change we will send a verification email in step 5
           ) {
             $this->sendDoubleOptInEmail($contact);
@@ -352,13 +351,9 @@ class UpdateCommunicationsPreferences extends AbstractAction {
       ->execute()->first();
   }
 
-  function getDoubleOptInEmails(): array {
-    return Activity::get(FALSE)
-      ->addWhere('target_contact_id', '=', $this->contactID)
-      ->addWhere('activity_type_id:name', '=', 'Double Opt-In')
-      ->addWhere('status_id:name', '=', 'Completed')
-      ->addSelect('subject')
-      ->execute()->column('subject');
+  function hasDoubleOptInActivity(): bool {
+    $activities = ActivityHelper::getDoubleOptInActivities($this->contactID);
+    return !empty($activities[$this->getEmail()]);
   }
 
   protected function sendDoubleOptInEmail(array $contact): void {

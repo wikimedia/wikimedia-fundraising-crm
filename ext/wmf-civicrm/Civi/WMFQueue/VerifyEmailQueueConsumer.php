@@ -6,6 +6,7 @@ use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Activity;
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
+use Civi\WMFHelper\Activity as ActivityHelper;
 
 /**
  * Consumer for the "verify-email" queue.
@@ -43,7 +44,7 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
     }
 
     if ($contact['email_primary.email'] !== $message['email']) {
-      $this->updatePrimaryEmail($contact['email_primary.email'], $message['email'], $contactID);
+      $this->updatePrimaryEmail($contact, $message['email']);
     } else {
       \Civi::log('wmf')->info("No need to update primary email for contact ID $contactID, already {$message['email']}");
     }
@@ -83,6 +84,8 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
     return Contact::get(FALSE)
       ->addWhere('id', '=', $contactID)
       ->addSelect('email_primary.email')
+      ->addSelect('email_primary.id')
+      ->addSelect('address_primary.country_id')
       ->execute()
       ->first();
   }
@@ -109,10 +112,11 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
    * @throws \CRM_Core_Exception
    * @throws UnauthorizedException
    */
-  private function updatePrimaryEmail(string $oldEmail, string $newEmail, int $contactID): void {
+  private function updatePrimaryEmail(array $contact, string $newEmail): void {
+    $oldEmail = $contact['email_primary.email'];
     $updatePrimaryEmail = Email::update()
       ->addWhere('email', '=', $oldEmail)
-      ->addWhere('contact_id', '=', $contactID)
+      ->addWhere('contact_id', '=', $contact['id'])
       ->setValues([
           'email' => $newEmail,
           'location_type_id:name' => 'EmailPreference'
@@ -120,7 +124,7 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
       ->execute();
 
     if (!$updatePrimaryEmail->first()) {
-      throw new \CRM_Core_Exception("Failed to update $contactID's email from $oldEmail to $newEmail.");
+      throw new \CRM_Core_Exception("Failed to update {$contact['id']}'s email from $oldEmail to $newEmail.");
     }
 
     Activity::create(FALSE)
@@ -128,11 +132,28 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
       ->addValue('status_id:name', 'Completed')
       ->addValue('subject', "Update Primary Email to {$newEmail}")
       ->addValue('details', "The email address {$oldEmail} has been replaced with {$newEmail} as the primary email address.")
-      ->addValue('source_contact_id', $contactID)
-      ->addValue('source_record_id', $contactID)
+      ->addValue('source_contact_id', $contact['id'])
+      ->addValue('source_record_id', $contact['id'])
       ->addValue('activity_date_time', 'now')
       ->execute();
 
-    \Civi::log('wmf')->info("Updated primary email for contact ID $contactID to $newEmail");
+    \Civi::log('wmf')->info("Updated primary email for contact ID {$contact['id']} to $newEmail");
+
+    if (in_array(
+      $contact['address_primary.country_id'],
+      \Civi::settings()->get('thank_you_double_opt_in_countries')
+    )) {
+      $doubleOptInEmails = ActivityHelper::getDoubleOptInActivities($contact['id']);
+      if (empty($doubleOptInEmails[$newEmail])) {
+        Activity::create(FALSE)
+          ->addValue('source_record_id', $contact['email_primary.id'])
+          ->addValue('source_contact_id', $contact['id'])
+          ->addValue('target_contact_id', $contact['id'])
+          ->addValue('subject', $newEmail)
+          ->addValue('activity_tracking.activity_source', 'Email Preferences')
+          ->addValue('activity_type_id:name', 'Double Opt-In')
+          ->execute();
+      }
+    }
   }
 }
