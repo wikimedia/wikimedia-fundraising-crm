@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS `civicrm_contact_name_pair` (
    * Pre-populate name match table with common mis-spellings & alternatives.
    */
   public function prePopulateNameMatchTable() {
-    $reader = Reader::createFromPath(__DIR__ . '/name_matches.csv', 'r');
+    $reader = Reader::from(__DIR__ . '/name_matches.csv', 'r');
     $reader->setHeaderOffset(0);
     foreach ($reader as $row) {
       CRM_Core_DAO::executeQuery(
@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS `civicrm_contact_name_pair_family` (
    * @throws \League\Csv\Exception
    */
   public function prePopulateFamilyNameMatchTable(): void {
-    $reader = Reader::createFromPath(__DIR__ . '/Upgrader/japanese-family-names.csv', 'r');
+    $reader = Reader::from(__DIR__ . '/Upgrader/japanese-family-names.csv', 'r');
     $reader->setHeaderOffset(0);
     foreach ($reader as $row) {
       CRM_Core_DAO::executeQuery(

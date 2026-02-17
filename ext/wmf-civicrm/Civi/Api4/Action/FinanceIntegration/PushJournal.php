@@ -190,7 +190,7 @@ class PushJournal extends AbstractAction {
 
     try {
       $this->throwIfNotInAllowedFolder($csvPath);
-      $csv = Reader::createFromPath($csvPath, 'r');
+      $csv = Reader::from($csvPath, 'r');
       $csv->setHeaderOffset(0);
     }
     catch (Exception $e) {

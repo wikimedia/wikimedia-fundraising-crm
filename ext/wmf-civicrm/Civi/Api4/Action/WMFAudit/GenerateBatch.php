@@ -122,131 +122,16 @@ class GenerateBatch extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   public function _run(Result $result): void {
-    $rowNumber = 1;
-
     foreach ($this->getBatches() as $batch) {
-      $defaults = [
-        'DONOTIMPORT' => '',
-        'JOURNAL' => 'CREV',
-        'DATE' => date('m/d/Y', strtotime($batch['batch_data.settlement_date'])),
-        'REVERSEDATE' => '',
-        'REFERENCE_NO' => '',
-        'LINE_NO' => '',
-        'ACCT_NO' => '',
-        'LOCATION_ID' => '',
-        'DEPT_ID' => '',
-        'DOCUMENT' => $batch['name'],
-        'DEBIT' => 0,
-        'CREDIT' => 0,
-        'SOURCEENTITY' => '',
-        'CURRENCY' => $batch['batch_data.settlement_currency'],
-        'EXCH_RATE_DATE' => date('m/d/Y', strtotime($batch['batch_data.settlement_date'])),
-        'EXCH_RATE_TYPE_ID' => '',
-        'EXCHANGE_RATE' => '',
-        'STATE' => 'Draft',
-        'ALLOCATION_ID' => '',
-        'BILLABLE' => '',
-        'GLDIMEVENT_ID' => '',
-        'GLDIMFUNDING' => '',
-        'GLENTRY_PROJECTID' => '',
-        'GLENTRY_CLASSID' => '',
-        'GLENTRY_CUSTOMERID' => '',
-        'GLENTRY_VENDORID' => $this->getVendorCode($batch['name']),
-        'GLENTRY_ITEMID' => '',
-        'GLENTRY_EMPLOYEEID' => '',
-        'DESCRIPTION' => '',
-        'MEMO' => '',
-      ];
-
-      $this->batchSummary[$batch['name']] = [
-        'currency' => $batch['batch_data.settlement_currency'],
-        'annual_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
-        'endowment_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
-      ];
-      $renderedSql = $this->getRenderedSql($batch);
-      $batchedData = CRM_Core_DAO::executeQuery($renderedSql)->fetchAll();
-      $this->setHeaders($defaults);
-      $record = [
+      $batchedData = $this->getJournalRows($batch);
+      $record = array_filter([
         'csv_rows' => $batchedData,
         'batch' => $batch,
-      ];
-      if ($this->isOutputSQL) {
-        $record['sql'] = $renderedSql;
-      }
-      $debit = $credit = $feeDebit = $feeCredit = Money::of(0, $batch['batch_data.settlement_currency']);
-      $count = 0;
-      foreach ($record['csv_rows'] as $index => $row) {
-        $record['csv_rows'][$index] = [...$defaults, ...$row];
-        $record['csv_rows'][$index]['LINE_NO'] = $rowNumber;
-        $rowNumber+= 2;
-        $isFee = $this->isFee($row);
-        $rowCount = (int)(explode(' | ', $row['MEMO'])[3]);
-        if (!$isFee) {
-          $count += $rowCount;
-        }
-        if (str_ends_with($row['MEMO'], 'Fees')
-        && !str_ends_with($row['MEMO'], 'Donation Fees')
-        ) {
-          // These are the fee-only rows. Include them in the count
-          // as they are in the batch count...
-          $count += $rowCount;
-        }
-        if ($isFee) {
-          $feeDebit = $feeDebit->plus($row['DEBIT'] ?: 0);
-          $feeCredit = $feeCredit->plus($row['CREDIT'] ?: 0);
-        }
-        else {
-          $debit = $debit->plus($row['DEBIT'] ?: 0);
-          $credit = $credit->plus($row['CREDIT'] ?: 0);
-        }
-      }
+        'sql' => $this->isOutputSQL ? $this->getBatchValue($batch['name'], 'sql') : NULL,
+      ]);
 
-      $record['totals'] = [
-        'debit' => (string) $debit->getAmount(),
-        'credit' => (string) $credit->getAmount(),
-        'fee_debit' => (string) $feeDebit->getAmount(),
-        'fee_credit' => (string) $feeCredit->getAmount(),
-        'fee' => (string) $feeDebit->minus($feeCredit)->getAmount(),
-        'settled' => (string) $credit->minus($debit)->minus($feeDebit)->plus($feeCredit)->getAmount(),
-        'count' => $count,
-      ];
-      $record['expected'] = [
-        'count' => $batch['item_count'],
-        'credit' => round($batch['batch_data.settled_donation_amount'], 2),
-        'debit' => round($batch['batch_data.settled_reversal_amount'], 2),
-        'fee' => $batch['batch_data.settled_fee_amount'],
-        'settled' => round($batch['batch_data.settled_net_amount'], 2),
-      ];
-      $record['validation'] = [
-        'count' => $record['expected']['count'] - $record['totals']['count'],
-        'credit' => $record['expected']['credit'] - $record['totals']['credit'],
-        'debit' =>  $record['expected']['debit'] + $record['totals']['debit'],
-        'fee' => $record['expected']['fee'] + $record['totals']['fee'],
-        'settled' => $record['expected']['settled'] - $record['totals']['settled'],
-      ];
-      $record['csv'] = $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $renderedSql, $batch['name']);
-      $isValid = empty(array_filter($record['validation']));
-      $this->batchSummary[$batch['name']]['is_valid'] = $isValid;
-      $this->log($batch['name'] . ' ' . ($isValid ? 'has valid totals' : ' has a discrepancy '));
-      if ($isValid) {
-        Batch::update(FALSE)
-          ->addValue('status_id:name', 'validated')
-          ->addWhere('id', '=', $batch['id'])
-          ->execute();
-        $this->log('The following batches have been validated ' . implode(',', array_keys($this->batchSummary)));
-      }
-      else {
-        foreach (array_filter($record['validation']) as $key => $value) {
-          if ($key !== 'count') {
-            $value = \Civi::format()->money($value, $this->batchSummary[$batch['name']]['currency']);
-          }
-          $this->log($key . " has discrepancy of $value (expected {$record['expected'][$key]}, actual {$record['totals'][$key]} ). Batch needs attention");
-          Batch::update(FALSE)
-            ->addValue('status_id:name', 'needs_attention')
-            ->addWhere('id', '=', $batch['id'])
-            ->execute();
-        }
-      }
+      $record += $this->validateBatch($batch, $batchedData);
+      $record['csv'] = $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $batch['name']);
       if (!$this->isOutputRows) {
         unset($record['csv_rows']);
       }
@@ -327,10 +212,17 @@ class GenerateBatch extends AbstractAction {
   }
 
   /**
-   * @param $csv_rows
-   * @return void
+   * @param array $csv_rows
+   * @param string $batchName
+   *
+   * @return array
+   * @throws \Brick\Money\Exception\UnknownCurrencyException
+   * @throws \Civi\Core\Exception\DBQueryException
+   * @throws \League\Csv\CannotInsertRecord
+   * @throws \League\Csv\Exception
    */
-  public function addToCsv($csv_rows, $renderedSql, string $batchName): array {
+  private function addToCsv(array $csv_rows, string $batchName): array {
+    $renderedSql = $this->getBatchValue($batchName, 'sql');
     if ($this->isOutputCsv) {
       $writer = $this->getWriter();
       $writer->insertAll($csv_rows);
@@ -375,7 +267,7 @@ class GenerateBatch extends AbstractAction {
    */
   public function getWriter(): Writer {
     if (!isset($this->writer)) {
-      $this->writer = Writer::createFromPath(\Civi::settings()->get('wmf_audit_intact_files') . '/' . date('c') . $this->batchPrefix . '-draft.csv', 'w');
+      $this->writer = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . date('c') . $this->batchPrefix . '-draft.csv', 'w');
       $this->writer->insertOne($this->headers);
     }
     return $this->writer;
@@ -386,7 +278,7 @@ class GenerateBatch extends AbstractAction {
    */
   public function getDetailsWriter(array $headers, $batchName): Writer {
     if (!isset($this->detailWriters[$batchName])) {
-      $this->detailWriters[$batchName] = Writer::createFromPath(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_details.csv', 'w');
+      $this->detailWriters[$batchName] = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_details.csv', 'w');
       $this->detailWriters[$batchName]->insertOne($headers);
     }
     return $this->detailWriters[$batchName];
@@ -397,7 +289,7 @@ class GenerateBatch extends AbstractAction {
    */
   private function getBatchJournalWriter(string $batchName): Writer {
     if (!isset($this->journalWriters[$batchName])) {
-      $this->journalWriters[$batchName] = Writer::createFromPath(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_journals.csv', 'w');
+      $this->journalWriters[$batchName] = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_journals.csv', 'w');
       $this->journalWriters[$batchName]->insertOne($this->headers);
     }
     return $this->journalWriters[$batchName];
@@ -1087,10 +979,172 @@ GROUP BY s.settlement_batch_reference
    */
   private function getRenderedSql(array $batch): string {
     $sql = $this->getBatchSql($batch['name']);
-    return CRM_Core_DAO::composeQuery($sql, [
+    $renderedSql = CRM_Core_DAO::composeQuery($sql, [
         1 => [$batch['name'], 'String']
       ]
     );
+    $this->batches[$batch['name']]['sql'] = $renderedSql;
+    return $renderedSql;
+  }
+
+  /**
+   * @param mixed $batch
+   *
+   * @return array
+   * @throws \Brick\Money\Exception\UnknownCurrencyException
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  private function getJournalRows(array $batch): array {
+    $defaults = [
+      'DONOTIMPORT' => '',
+      'JOURNAL' => 'CREV',
+      'DATE' => date('m/d/Y', strtotime($batch['batch_data.settlement_date'])),
+      'REVERSEDATE' => '',
+      'REFERENCE_NO' => '',
+      'LINE_NO' => '',
+      'ACCT_NO' => '',
+      'LOCATION_ID' => '',
+      'DEPT_ID' => '',
+      'DOCUMENT' => $batch['name'],
+      'DEBIT' => 0,
+      'CREDIT' => 0,
+      'SOURCEENTITY' => '',
+      'CURRENCY' => $batch['batch_data.settlement_currency'],
+      'EXCH_RATE_DATE' => date('m/d/Y', strtotime($batch['batch_data.settlement_date'])),
+      'EXCH_RATE_TYPE_ID' => '',
+      'EXCHANGE_RATE' => '',
+      'STATE' => 'Draft',
+      'ALLOCATION_ID' => '',
+      'BILLABLE' => '',
+      'GLDIMEVENT_ID' => '',
+      'GLDIMFUNDING' => '',
+      'GLENTRY_PROJECTID' => '',
+      'GLENTRY_CLASSID' => '',
+      'GLENTRY_CUSTOMERID' => '',
+      'GLENTRY_VENDORID' => $this->getVendorCode($batch['name']),
+      'GLENTRY_ITEMID' => '',
+      'GLENTRY_EMPLOYEEID' => '',
+      'DESCRIPTION' => '',
+      'MEMO' => '',
+    ];
+
+    $this->batchSummary[$batch['name']] = [
+      'currency' => $batch['batch_data.settlement_currency'],
+      'annual_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
+      'endowment_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
+    ];
+    $renderedSql = $this->getRenderedSql($batch);
+    $batchedData = CRM_Core_DAO::executeQuery($renderedSql)->fetchAll();
+    $this->setHeaders($defaults);
+
+    $rowNumber = 1;
+    foreach ($batchedData as $index => $row) {
+      $batchedData[$index] = [...$defaults, ...$row];
+      // This requirement for adding contiguous line numbers is likely defunct.
+      // It was part of the SFTP csv file upload spec and originally multiple
+      // batches were in one file so the line number was per file, not per batch.
+      // When using the api upload line no is not used. However, it might be
+      // that finance still wish to see it in output file so retaining for now.
+      $batchedData[$index]['LINE_NO'] = $rowNumber;
+      $rowNumber+= 2;
+    }
+    return $batchedData;
+  }
+
+  /**
+   * @param string $name
+   * @param string $value
+   *
+   * @return mixed
+   */
+  private function getBatchValue(string $name, string $value): mixed {
+    return $this->batches[$name][$value];
+  }
+
+  /**
+   * @param mixed $batch
+   * @param array $journalRows
+   *
+   * @return array
+   * @throws \Brick\Money\Exception\MoneyMismatchException
+   * @throws \Brick\Money\Exception\UnknownCurrencyException
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  private function validateBatch(array $batch, array $journalRows): array {
+    $debit = $credit = $feeDebit = $feeCredit = Money::of(0, $batch['batch_data.settlement_currency']);
+    $count = 0;
+    foreach ($journalRows as $row) {
+      $isFee = $this->isFee($row);
+      $rowCount = (int) (explode(' | ', $row['MEMO'])[3]);
+      if (!$isFee) {
+        $count += $rowCount;
+      }
+      if (str_ends_with($row['MEMO'], 'Fees')
+        && !str_ends_with($row['MEMO'], 'Donation Fees')
+      ) {
+        // These are the fee-only rows. Include them in the count
+        // as they are in the batch count...
+        $count += $rowCount;
+      }
+      if ($isFee) {
+        $feeDebit = $feeDebit->plus($row['DEBIT'] ?: 0);
+        $feeCredit = $feeCredit->plus($row['CREDIT'] ?: 0);
+      }
+      else {
+        $debit = $debit->plus($row['DEBIT'] ?: 0);
+        $credit = $credit->plus($row['CREDIT'] ?: 0);
+      }
+    }
+    $result = [];
+
+    $result['totals'] = [
+      'debit' => (string) $debit->getAmount(),
+      'credit' => (string) $credit->getAmount(),
+      'fee_debit' => (string) $feeDebit->getAmount(),
+      'fee_credit' => (string) $feeCredit->getAmount(),
+      'fee' => (string) $feeDebit->minus($feeCredit)->getAmount(),
+      'settled' => (string) $credit->minus($debit)->minus($feeDebit)->plus($feeCredit)->getAmount(),
+      'count' => $count,
+    ];
+    $result['expected'] = [
+      'count' => $batch['item_count'],
+      'credit' => round($batch['batch_data.settled_donation_amount'], 2),
+      'debit' => round($batch['batch_data.settled_reversal_amount'], 2),
+      'fee' => $batch['batch_data.settled_fee_amount'],
+      'settled' => round($batch['batch_data.settled_net_amount'], 2),
+    ];
+    $result['validation'] = [
+      'count' => $result['expected']['count'] - $result['totals']['count'],
+      'credit' => $result['expected']['credit'] - $result['totals']['credit'],
+      'debit' => $result['expected']['debit'] + $result['totals']['debit'],
+      'fee' => $result['expected']['fee'] + $result['totals']['fee'],
+      'settled' => $result['expected']['settled'] - $result['totals']['settled'],
+    ];
+    $isValid = empty(array_filter($result['validation']));
+    $this->batchSummary[$batch['name']]['is_valid'] = $isValid;
+    $this->log($batch['name'] . ' ' . ($isValid ? 'has valid totals' : ' has a discrepancy '));
+    if ($isValid) {
+      Batch::update(FALSE)
+        ->addValue('status_id:name', 'validated')
+        ->addWhere('id', '=', $batch['id'])
+        ->execute();
+      $this->log('The following batches have been validated ' . implode(',', array_keys($this->batchSummary)));
+    }
+    else {
+      foreach (array_filter($result['validation']) as $key => $value) {
+        if ($key !== 'count') {
+          $value = \Civi::format()->money($value, $this->batchSummary[$batch['name']]['currency']);
+        }
+        $this->log($key . " has discrepancy of $value (expected {$result['expected'][$key]}, actual {$result['totals'][$key]} ). Batch needs attention");
+        Batch::update(FALSE)
+          ->addValue('status_id:name', 'needs_attention')
+          ->addWhere('id', '=', $batch['id'])
+          ->execute();
+      }
+    }
+    return $result;
   }
 
 }

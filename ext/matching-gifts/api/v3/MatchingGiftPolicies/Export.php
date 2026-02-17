@@ -46,7 +46,7 @@ function civicrm_api3_matching_gift_policies_export($params) {
     return civicrm_api3_create_error("Output path $outputPath is not writeable.");
   }
 
-  $writer = Writer::createFromPath($outputPath, 'w');
+  $writer = Writer::from($outputPath, 'w');
   foreach ($orgContacts['values'] as $contact) {
     $parentCompanyName = trim($contact[$mgNameFieldId]);
     $writer->insertOne([$contact['contact_id'], $parentCompanyName]);

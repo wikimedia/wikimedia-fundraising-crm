@@ -31,17 +31,21 @@ function civicrm_api3_omnimailing_get($params) {
     'StartTimeStamp' => strtotime($params['start_date']),
     'EndTimeStamp' => strtotime($params['end_date']),
     'timeout' => $params['timeout'],
-    'post_headers' => $params['post_headers'],
   ];
+  if (isset($params['post_headers'])) {
+    $mailerParameters['post_headers'] = $params['post_headers'];
+    \Civi::log('wmf')->info('HTTP post headers used :' . json_encode($params['post_headers']));
+  }
   if (isset($params['curl_options'])) {
     $mailerParameters['curl_options'] = $params['curl_options'];
+    \Civi::log('wmf')->info('Curl options used :' . json_encode($params['curl_options']));
   }
   try {
     $mailings = (array) $mailer->getMailings($mailerParameters)->getResponse();
   }
   catch (Exception $e) {
     \Civi::log('wmf')->error(get_class($e) . '
-      : start time {StartTimeStamp} end time {EndTimeStamp} timeout {timeout}' . $e->getMessage(), [
+      : ' . $e->getMessage(), [
       $mailerParameters
     ]);
     throw $e;
@@ -190,11 +194,14 @@ function _civicrm_api3_omnimailing_get_spec(&$params) {
   $params['post_headers'] = [
     'title' => ts('Http POST headers'),
     'description' => ts('Headers passed in here will be added to the POST headers. The default is one possible fix for our timeouts'),
-    'api.default' => ['Connection' => 'close'],
   ];
   $params['curl_options'] = [
     'title' => ts('Http CURL options'),
     'description' => ts('Headers passed in here will be added to the CURL options.'),
+    'api.default' => [
+      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+      CURLOPT_VERBOSE => TRUE,
+    ],
   ];
 
 }
