@@ -48,6 +48,29 @@ class OmnigroupmemberGetTest extends OmnimailBaseTestClass {
     $this->assertEquals('07/04/17', $result['values'][2]['created_date']);
   }
 
+  /**
+   * Example: Test that a version is returned.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testOmnigroupmemberGetEmptyCountry() {
+    $client = $this->setupUnsuccessfulDownloadClient();
+
+    $result = civicrm_api3('Omnigroupmember', 'get', ['mail_provider' => 'Silverpop', 'username' => 'Shreky', 'password' => 'Fiona', 'options' => array('limit' => 3), 'client' => $client, 'group_identifier' => 123])['values'];
+    $this->assertCount(3, $result);
+    $this->assertEquals('eric@example.com', $result[0]['email']);
+    $this->assertEquals('', $result[0]['contact_id']);
+    $this->assertEquals(1, $result[0]['is_opt_out']);
+    $this->assertEquals('2016-10-18 20:01:00', $result[0]['opt_in_date']);
+    $this->assertEquals('2017-07-04 11:11:00', $result[0]['opt_out_date']);
+    $this->assertEquals('Added by WebForms', $result[0]['opt_in_source']);
+    $this->assertEquals('Opt out via email opt out.', $result[0]['opt_out_source']);
+    $this->assertEquals('clever place', $result[2]['source']);
+    $this->assertEquals('US', $result[2]['country']);
+    $this->assertArrayNotHasKey('language', $result[2]);
+    $this->assertEquals('07/04/17', $result[2]['created_date']);
+  }
+
 
   /**
    * @param string $job
@@ -73,4 +96,23 @@ class OmnigroupmemberGetTest extends OmnimailBaseTestClass {
     $client = $this->getMockRequest($responses);
     return $client;
   }
+
+  /**
+   * @param string $job
+   *
+   *@return \GuzzleHttp\Client
+   *
+   */
+  protected function setupUnsuccessfulDownloadClient(string $job = 'omnimail_omnigroupmembers_load'): Client {
+    $responses = [
+      file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
+      file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
+    ];
+    copy(__DIR__ . '/Responses/20170509_noCID - All - Jul 5 2017 06-27-45 AM-no-country.csv', sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM-no-country.csv');
+    fopen(sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM-no-country.csv.complete', 'c');
+    $this->createSetting(['job' => $job, 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800']);
+
+    return $this->getMockRequest($responses);
+  }
+
 }

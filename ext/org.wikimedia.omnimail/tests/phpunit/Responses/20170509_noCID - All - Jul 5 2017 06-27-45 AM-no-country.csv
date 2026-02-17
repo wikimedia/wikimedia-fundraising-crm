@@ -1,0 +1,4 @@
+Email,Opt In Date,Opted Out,Opt In Details,Email Type,Opted Out Date,Opt Out Details,ContactID,IsoLang,LastClickDate,LastOpenDate,LastSentDate,Segment,Segment_AOL,Segment_Newsletter,Segment_Newsletter2,SendHour,firstname,lastname,postal_code,rml_country,rml_device,rml_language,rml_phone,rml_segment,rml_source,rml_submitDate,state,timezone
+eric@example.com,10/18/16 08:01 PM,T,Added by WebForms,0,07/04/17 11:11 AM,Opt out via email opt out.,,,,12/04/16,10/22/16,0,0,0,0,9,,,,FR,,fr,,35,,10/18/16,,
+sarah@example.com,12/13/16 12:27 AM,T,Added by WebForms,0,07/03/17 03:34 PM,Optout by WebForms,,,,,12/24/16,0,0,0,0,0,,,,US,,en,,83,,12/12/16,,
+lisa@example.com,04/26/17 02:18 PM,F,Added by WebForms,0,,,,,,,,0,0,0,0,0,,,,US,,en,,28,clever place,07/04/17,,
