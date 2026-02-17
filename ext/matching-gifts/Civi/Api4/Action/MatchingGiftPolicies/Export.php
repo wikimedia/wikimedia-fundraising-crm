@@ -37,7 +37,7 @@ class Export extends AbstractAction {
       ->addWhere('matching_gift_policies.suppress_from_employer_field', '=', FALSE)
       ->execute();
 
-    $writer = Writer::createFromPath($this->path, 'w');
+    $writer = Writer::from($this->path, 'w');
     $rowsExported = 0;
     foreach ($contacts as $contact) {
       $parentCompanyName = trim($contact['matching_gift_policies.name_from_matching_gift_db']);

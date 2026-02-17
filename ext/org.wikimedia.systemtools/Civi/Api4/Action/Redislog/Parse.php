@@ -46,7 +46,7 @@ class Parse extends AbstractAction {
    * @throws \League\Csv\Exception
    */
   public function _run(Result $result) {
-    $writer = Writer::createFromPath(dirname($this->getFileName()) . '/redis_log_parsed.csv', 'w+');
+    $writer = Writer::from(dirname($this->getFileName()) . '/redis_log_parsed.csv', 'w+');
     $writer->insertOne(['Timestamp', 'Connection', 'Action', 'Detail', 'TTL', 'Data']);
     $writer->setDelimiter('`');
     $reader = Reader::from($this->getFileName());

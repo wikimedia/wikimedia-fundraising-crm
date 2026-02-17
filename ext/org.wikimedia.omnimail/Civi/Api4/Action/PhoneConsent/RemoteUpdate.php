@@ -69,9 +69,9 @@ class RemoteUpdate extends AbstractUpdateAction {
   protected function updateRecords(array $items): array {
     $folders = \Civi::settings()->get('omnimail_allowed_upload_folders');
     $path = reset($folders) . '/' . 'remote-upload' . date('YmdHis');
-    $addEmailCsv = Writer::createFromPath($path . '-add-email.csv', 'w+');
-    $addConsentCsv = Writer::createFromPath($path . '-add-consent.csv', 'w+');
-    $orphanCsv = Writer::createFromPath($path . '-set-orphan.csv', 'w+');
+    $addEmailCsv = Writer::from($path . '-add-email.csv', 'w+');
+    $addConsentCsv = Writer::from($path . '-add-consent.csv', 'w+');
+    $orphanCsv = Writer::from($path . '-set-orphan.csv', 'w+');
 
     // Write header rows
     $addEmailCsv->insertOne(['email', 'mobile_phone']);

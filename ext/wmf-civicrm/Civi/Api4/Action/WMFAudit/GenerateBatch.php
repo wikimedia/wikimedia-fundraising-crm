@@ -336,7 +336,7 @@ class GenerateBatch extends AbstractAction {
    */
   public function getWriter(): Writer {
     if (!isset($this->writer)) {
-      $this->writer = Writer::createFromPath(\Civi::settings()->get('wmf_audit_intact_files') . '/' . date('c') . $this->batchPrefix . '-draft.csv', 'w');
+      $this->writer = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . date('c') . $this->batchPrefix . '-draft.csv', 'w');
       $this->writer->insertOne($this->headers);
     }
     return $this->writer;
@@ -347,7 +347,7 @@ class GenerateBatch extends AbstractAction {
    */
   public function getDetailsWriter(array $headers, $batchName): Writer {
     if (!isset($this->detailWriters[$batchName])) {
-      $this->detailWriters[$batchName] = Writer::createFromPath(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_details.csv', 'w');
+      $this->detailWriters[$batchName] = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_details.csv', 'w');
       $this->detailWriters[$batchName]->insertOne($headers);
     }
     return $this->detailWriters[$batchName];
@@ -358,7 +358,7 @@ class GenerateBatch extends AbstractAction {
    */
   private function getBatchJournalWriter(string $batchName): Writer {
     if (!isset($this->journalWriters[$batchName])) {
-      $this->journalWriters[$batchName] = Writer::createFromPath(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_journals.csv', 'w');
+      $this->journalWriters[$batchName] = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_journals.csv', 'w');
       $this->journalWriters[$batchName]->insertOne($this->headers);
     }
     return $this->journalWriters[$batchName];

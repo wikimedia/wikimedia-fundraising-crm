@@ -46,7 +46,7 @@ class Parse extends AbstractAction {
   public function _run(Result $result) {
     $lines = file($this->getFileName(), FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     $parsed = [];
-    $writer = Writer::createFromPath(dirname($this->getFileName()) . '/query_log_parsed.csv', 'w+');
+    $writer = Writer::from(dirname($this->getFileName()) . '/query_log_parsed.csv', 'w+');
     $writer->insertOne(['Date', 'Query', 'Seconds taken', 'Affected rows', 'Affected columns', 'Deleted Records', 'Updated Records', 'Inserted Records']);
 
     $currentIndex = 0;
