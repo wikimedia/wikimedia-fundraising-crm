@@ -137,6 +137,7 @@ class GenerateBatch extends AbstractAction {
             $apiOutcome = FinanceIntegration::pushJournal(FALSE)
               ->setJournalFile($record['csv']['journal_file'])
               ->setIsDryRun($this->isDryRun)
+              ->setBatchDescriptionPrefix($batch['batch_data.settlement_gateway'])
               ->execute();
             $record['is_uploaded'] = TRUE;
             $this->log('Journal successfully pushed to Intacct with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
