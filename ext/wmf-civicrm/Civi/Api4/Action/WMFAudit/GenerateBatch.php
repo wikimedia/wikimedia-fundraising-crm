@@ -93,10 +93,6 @@ class GenerateBatch extends AbstractAction {
    */
   protected ?string $emailSummaryAddress = NULL;
 
-  private array $detailWriters;
-
-  private array $journalWriters;
-
   private array $headers = [];
 
   private array $incompleteRows = [];
@@ -241,22 +237,18 @@ class GenerateBatch extends AbstractAction {
    * @return Writer
    */
   public function getDetailsWriter(array $headers, $batchName): Writer {
-    if (!isset($this->detailWriters[$batchName])) {
-      $this->detailWriters[$batchName] = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_details.csv', 'w');
-      $this->detailWriters[$batchName]->insertOne($headers);
-    }
-    return $this->detailWriters[$batchName];
+    $detailWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_details.csv', 'w');
+    $detailWriter->insertOne($headers);
+    return $detailWriter;
   }
 
   /**
    * @return Writer
    */
   private function getBatchJournalWriter(string $batchName): Writer {
-    if (!isset($this->journalWriters[$batchName])) {
-      $this->journalWriters[$batchName] = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_journals.csv', 'w');
-      $this->journalWriters[$batchName]->insertOne($this->headers);
-    }
-    return $this->journalWriters[$batchName];
+    $journalWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_journals.csv', 'w');
+    $journalWriter->insertOne($this->headers);
+    return $journalWriter;
   }
 
   /**
