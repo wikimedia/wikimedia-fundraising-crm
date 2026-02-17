@@ -16,8 +16,8 @@ use Civi\Api4\Activity;
  * @method $this setContributionRecurID(int $contributionRecurID) Set recurring ID.
  * @method int getContributionRecurID() Get recurring ID.
  * @method $this setContactID(int $contactID) Set contact ID.
- * @method $this setSequenceNumber(int $sequenceNumber) Set sequence number.
  * @method $this setWorkflow(string $workflow) Set workflow
+ * @method string getWorkflow()
  */
 class Send extends AbstractAction {
 
@@ -38,25 +38,14 @@ class Send extends AbstractAction {
   protected $contactID;
 
   /**
-   * 1 for first recurring failure notification, 2 for second
-   * @var int
-   */
-  protected $sequenceNumber = 1;
-
-  /**
    * Name of the email template
    * @var string
    */
-  protected $workflow;
+  protected $workflow = 'recurring_failed_message';
 
   private const ACTIVITY_TYPES = [
-    1 => 'First Recurring Failure Email',
-    2 => 'Second Recurring Failure Email'
-  ];
-
-  private const WORKFLOWS = [
-    1 => 'recurring_failed_message',
-    2 => 'recurring_second_failed_message'
+    'recurring_failed_message' => 'First Recurring Failure Email',
+    'recurring_second_failed_message' => 'Second Recurring Failure Email'
   ];
 
   /**
@@ -72,16 +61,8 @@ class Send extends AbstractAction {
     return $this->contactID;
   }
 
-  protected function getWorkflow(): string {
-    if ($this->workflow) {
-      return $this->workflow;
-    } else {
-      return self::WORKFLOWS[$this->sequenceNumber];
-    }
-  }
-
   protected function getActivityType(): string {
-    return self::ACTIVITY_TYPES[$this->sequenceNumber];
+    return self::ACTIVITY_TYPES[$this->workflow];
   }
 
   /**
@@ -99,10 +80,9 @@ class Send extends AbstractAction {
       ->setWorkflow($this->getWorkflow())
       ->execute()->first();
 
-
     // If no template exists just back out.
     if (empty($email['msg_html']) && empty($email['msg_text'])) {
-      return FALSE;
+      return;
     }
     list($domainEmailName, $domainEmailAddress) = \CRM_Core_BAO_Domain::getNameAndEmail();
     $params = [
@@ -131,7 +111,6 @@ class Send extends AbstractAction {
     }
     $result[$this->getContributionRecurID()]['from'] = $params['from'];
     $result[$this->getContributionRecurID()]['send_successful'] = $success;
-
   }
 
 }

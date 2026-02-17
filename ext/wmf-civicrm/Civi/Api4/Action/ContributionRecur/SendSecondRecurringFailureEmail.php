@@ -2,12 +2,9 @@
 namespace Civi\Api4\Action\ContributionRecur;
 
 use Civi;
-use Civi\Api4\Activity;
 use Civi\Api4\ContributionRecur;
-use Civi\Api4\Email;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use Civi\Api4\WorkflowMessage;
 use CRM_Core_PseudoConstant;
 
 /**
@@ -79,7 +76,7 @@ class SendSecondRecurringFailureEmail extends AbstractAction {
       $sendResult = Civi\Api4\FailureEmail::send()
         ->setContactID($recurringContribution['contact_id'])
         ->setContributionRecurID($recurringContribution['id'])
-        ->setSequenceNumber(2)
+        ->setWorkflow('recurring_second_failed_message')
         ->execute()->first();
       if ($sendResult['send_successful']) {
         $result['send_success_count']++;
