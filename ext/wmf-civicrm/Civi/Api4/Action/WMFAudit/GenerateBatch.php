@@ -157,17 +157,7 @@ class GenerateBatch extends AbstractAction {
         'DESCRIPTION' => '',
         'MEMO' => '',
       ];
-      /**
-      $record['contributions'] = (array) Contribution::get(FALSE)
-        ->addWhere('contribution_settlement.settlement_batch_reference', '=', $batch['name'])
-        ->addSelect('contribution_extra.*', 'contribution_settlement.*', 'total_amount', 'fee_amount', 'net_amount', 'trxn_id', 'invoice_id', 'source', 'currency', 'financial_type_id', 'receive_date')
-        ->execute();
-      */
-      if (!in_array($batch['status_id:name'],  ['validated', 'total_verified'])) {
-        // @todo what should we do - return information but not export?
-        // export in debug mode?
-        throw new \CRM_Core_Exception('batch not verified - cannot export');
-      }
+
       $this->batchSummary[$batch['name']] = [
         'currency' => $batch['batch_data.settlement_currency'],
         'annual_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
@@ -190,7 +180,7 @@ class GenerateBatch extends AbstractAction {
         $record['csv_rows'][$index]['LINE_NO'] = $rowNumber;
         $rowNumber+= 2;
         $isFee = $this->isFee($row);
-        $rowCount = (int)(explode(' | ', $row['MEMO'])[4]);
+        $rowCount = (int)(explode(' | ', $row['MEMO'])[3]);
         if (!$isFee) {
           $count += $rowCount;
         }
@@ -554,7 +544,7 @@ END";
       $reversalRow['LINE_NO'] = $row['LINE_NO'] + 1;
       $reversalRow['ACCT_NO'] = $this->getReversalAccountCode($row['CURRENCY'], $row['GLENTRY_VENDORID']);
       $memoParts = explode(' | ', $row['MEMO']);
-      unset($memoParts[4], $memoParts[6]);
+      unset($memoParts[3], $memoParts[6]);
       $reversalRow['MEMO'] = implode(' | ', $memoParts);
       $rowsWithReversals[] = $reversalRow;
     }
@@ -849,6 +839,11 @@ END";
           ->addWhere('id', '=', $this->id)
           ->addSelect('batch_data.*', '*', 'status_id:name')
           ->execute()->indexBy('name');
+        $batch = reset($this->batches);
+        if (!in_array($batch['status_id:name'], ['validated', 'total_verified'])) {
+          // They have selected a specific batch, but it is not exportable, throw an exception.
+          throw new \CRM_Core_Exception('batch status of ' . $batch['status_id:name'] . ' is not valid for export');
+        }
       }
       elseif ($this->batchPrefix) {
         $this->batches = (array) Batch::get(FALSE)
@@ -877,6 +872,20 @@ END";
         ->addWhere('contribution_settlement.settlement_batch_reference', 'IN', array_keys($this->batches))
         ->addSelect('MIN(contribution_settlement.settlement_date) AS start_date')
         ->execute()->first()['start_date'] ?? $this->endDate;
+      foreach ($this->batches as $index => $batch) {
+        // Get the settlement date range - this would be when it was settled to, e.g. our adyen account.
+        // Fallback is required as we don't have a field for reversal settlement date so if it were only reversals...
+        // Note in most cases settlement is daily so the date from the batch is expected to become the primary
+        // way of doing this rather than just a fall-back.
+        $result = CRM_Core_DAO::executeQuery(
+          'SELECT MIN(DATE(settlement_date)) as from_date, MAX(DATE(settlement_date)) as to_date
+           FROM civicrm_value_contribution_settlement
+           WHERE settlement_batch_reference = %1', [1 => [$batch['name'], 'String']]
+         )->fetchAll()[0] ?? ['from_date' => $batch['batch_data.settlement_date'], 'to_date' => $batch['batch_data.settlement_date']];
+
+        $this->batches[$index] += $result;
+        $this->batches[$index]['date_description'] = $result['from_date'] === $result['to_date'] ? gmdate('m/d/Y', strtotime($result['from_date'])) : gmdate('m/d/Y', strtotime($result['from_date'])) . ' - ' . gmdate('m/d/Y', strtotime($result['to_date']));
+      }
     }
     return $this->batches;
   }
@@ -941,18 +950,19 @@ END";
   /**
    * @return string
    */
-  public function getBatchSql(): string {
+  public function getBatchSql($batchName): string {
     $accountCodeClause = $this->getAccountClause();
     $deptIDClause = $this->getDeptIDClause();
     $restrictionsClause = $this->getRestrictionsClause();
+    $dateDescription = $this->getBatches()[$batchName]['date_description'];
 
-    $sql = "SELECT
-    CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
+    return "SELECT
+    CONCAT('Contribution Revenue ', '{$dateDescription}') as DESCRIPTION,
     $accountCodeClause AS ACCT_NO,
     -- @todo - not for endowment - need the number for that
     '100-WMF' as LOCATION_ID,
     $deptIDClause as DEPT_ID,
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | " . date('m/d/y', strtotime($this->startDate)) . " | " . date('m/d/y', strtotime($this->endDate)) . " | ', COUNT(*), ' | ', ' Donations') as MEMO,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Donations') as MEMO,
     IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, 0, -SUM(COALESCE(settled_donation_amount, 0)))  as DEBIT,
     IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, SUM(COALESCE(settled_donation_amount, 0)), 0) as CREDIT,
     s.settlement_currency as CURRENCY,
@@ -967,12 +977,12 @@ GROUP BY Fund, $accountCodeClause, is_major_gift
 
 UNION ALL
   SELECT
-   CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
+   CONCAT('Contribution Revenue ', '{$dateDescription}' ) as DESCRIPTION,
    $accountCodeClause AS ACCT_NO,
     -- @todo - not for endowment - need the number for that
     '100-WMF' as LOCATION_ID,
     $deptIDClause as DEPT_ID,
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Refunds') as MEMO,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Refunds') as MEMO,
 
     IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, SUM(-COALESCE(settled_reversal_amount, 0)),0) as DEBIT,
     IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, 0, SUM(-COALESCE(settled_reversal_amount, 0)))  as CREDIT,
@@ -991,7 +1001,7 @@ UNION ALL
 -- Fee transactions part.
 SELECT
 -- note GROUP BY here....
-    CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
+    CONCAT('Contribution Revenue ', '{$dateDescription}' ) as DESCRIPTION,
     60917 as ACCT_NO,
 
 -- @todo - not for endowment - need the number for that
@@ -999,7 +1009,7 @@ SELECT
 -- cost centre - CC-1014 for all fees
     'CC-1014' as DEPT_ID,
     -- @todo - not always donations at the end of memo
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
     IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_amount, 0)), 0) as DEBIT,
     IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0))) as CREDIT,
     s.settlement_currency as CURRENCY,
@@ -1018,7 +1028,7 @@ UNION ALL
 
 SELECT
 -- note GROUP BY here....
-    CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
+    CONCAT('Contribution Revenue ', '{$dateDescription}') as DESCRIPTION,
     60917 as ACCT_NO,
 
 -- @todo - not for endowment - need the number for that
@@ -1026,7 +1036,7 @@ SELECT
 -- cost centre - CC-1014 for all fees
     'CC-1014' as DEPT_ID,
     -- @todo - not always donations at the end of memo
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
     -- @todo obv some cleaup in here
     IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_reversal_amount, 0)), 0) as DEBIT,
     IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_reversal_amount, 0)))  as CREDIT,
@@ -1045,14 +1055,14 @@ UNION ALL
 -- Fee transactions part.
 SELECT
 -- note GROUP BY here....
-    CONCAT('Contribution Revenue ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'), ' - ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y') ) as DESCRIPTION,
+    CONCAT('Contribution Revenue ', '{$dateDescription}' ) as DESCRIPTION,
     60917 as ACCT_NO,
 -- @todo - not for endowment - need the number for that
     '100-WMF' as LOCATION_ID,
 -- cost centre - CC-1014 for all fees
     'CC-1014' as DEPT_ID,
     -- @todo - not always donations at the end of memo
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | ', DATE_FORMAT(MIN(receive_date), '%m/%d/%Y'),' | ' , DATE_FORMAT(MAX(receive_date), '%m/%d/%Y'), ' | ', COUNT(*), ' | ', ' Invoice Fees') as MEMO,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Invoice Fees') as MEMO,
     -- @todo obv some cleaup in here
     IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, SUM(COALESCE(-settled_fee_amount, 0)),0) as DEBIT,
     IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0)))  as CREDIT,
@@ -1067,7 +1077,6 @@ WHERE (%1 = settlement_batch_reference)
   AND is_template = 0
 GROUP BY s.settlement_batch_reference
 ";
-    return $sql;
   }
 
   /**
@@ -1077,7 +1086,7 @@ GROUP BY s.settlement_batch_reference
    * @throws \CRM_Core_Exception
    */
   private function getRenderedSql(array $batch): string {
-    $sql = $this->getBatchSql();
+    $sql = $this->getBatchSql($batch['name']);
     return CRM_Core_DAO::composeQuery($sql, [
         1 => [$batch['name'], 'String']
       ]
