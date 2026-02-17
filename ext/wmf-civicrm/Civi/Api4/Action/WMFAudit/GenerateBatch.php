@@ -93,8 +93,6 @@ class GenerateBatch extends AbstractAction {
    */
   protected ?string $emailSummaryAddress = NULL;
 
-  private Writer $writer;
-
   private array $detailWriters;
 
   private array $journalWriters;
@@ -127,82 +125,62 @@ class GenerateBatch extends AbstractAction {
         'csv_rows' => $batchedData,
         'batch' => $batch,
         'sql' => $this->isOutputSQL ? $this->getBatchValue($batch['name'], 'sql') : NULL,
+        'is_uploaded' => FALSE,
       ]);
 
       $record += $this->validateBatch($batch, $batchedData);
-      $record['csv'] = $this->addToCsv($this->getRowsWithReversals($record['csv_rows']), $batch['name']);
+      if ($this->getBatchValue($batch['name'], 'is_valid')) {
+        $record['csv'] = $this->writeJournalToCsv($this->getRowsWithReversals($batchedData), $batch['name']);
+        if ($this->outputMethod === 'api') {
+          try {
+            $this->log('Journal being pushed to the staging version of Intacct via the api: ' . $batch['name']);
+            $apiOutcome = FinanceIntegration::pushJournal(FALSE)
+              ->setJournalFile($record['csv']['journal_file'])
+              ->setIsDryRun($this->isDryRun)
+              ->execute();
+            $record['is_uploaded'] = TRUE;
+            $this->log('Journal successfully pushed to Intacct with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
+            foreach ($apiOutcome as $apiBatch) {
+              if ($apiBatch['status'] === 'Valid Remotely') {
+                $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct and is now being closed (status set to Exported)');
+                $remote = [
+                  'url' => $apiBatch['url'],
+                  'id' => $apiBatch['remote_journal_id'],
+                  'exchange_rate' => $apiBatch['exchange_rate'] ?? 1,
+                  'txn_number' => $apiBatch['txn_number'],
+                  'usd_journal_total' => $apiBatch['usd_journal_total'] ?? '',
+                  'usd_credit' => $apiBatch['usd_credit'] ?? '',
+                  'usd_debit' => $apiBatch['usd_debit'] ?? ''
+                ];
+                $record['remote'] = $remote;
+                Batch::update(FALSE)
+                  ->addWhere('name', '=', $apiBatch['name'])
+                  ->addValue('status_id:name', 'Exported')
+                  ->execute();
+              }
+              $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['txn_number'] . '</a>');
+            }
+          }
+          catch (\Exception $e) {
+            $this->log('failed to upload to Intacct with error ' . $e->getMessage());
+            foreach ($result as $index => $row) {
+              $result[$index]['upload_errors'] = 'journal upload failed';
+            }
+          }
+        }
+      }
+      else {
+        $this->log('Batch not valid & hence not closed ' . $batch['name']);
+      }
+
       if (!$this->isOutputRows) {
         unset($record['csv_rows']);
       }
       $result[] = $record;
     }
 
-    // Do not close any batches unless all verified batches are valid. We will make sure they
-    // are right before closing.
-    $draftFileName = $this->getDraftFileName();
-    if (empty($this->getInvalidBatches()) && empty($this->incompleteRows)) {
-      if ($draftFileName) {
-        $finalFileName = str_replace('-draft', '-final', $draftFileName);
-        rename($draftFileName, $finalFileName);
-        $this->log('final file name ' . $finalFileName);
-      }
-      else {
-        $this->log('no file generated due to input parameters');
-      }
-    }
-    else {
-      if (!empty($this->incompleteRows)) {
-        $this->log('No batches closed due to presence of rows without account codes ' . implode(',', $this->getInvalidBatches()));
-      }
-      if ($this->getInvalidBatches()) {
-        $this->log('No batches closed due to presence of invalid batches ' . implode(',', $this->getInvalidBatches()));
-      }
-      if ($draftFileName) {
-        $this->log('draft file location ' . $draftFileName);
-      }
-    }
-
-    $isUploadSuccess = FALSE;
-    if ($this->outputMethod === 'api' && !empty($finalFileName)) {
-      try {
-        $this->log('The journals are being pushed to the staging version of Intacct via the api. When an sftp alternative has been built this is where that will be plugged in');
-        $apiOutcome = FinanceIntegration::pushJournal(FALSE)
-          ->setJournalFile($finalFileName)
-          ->setIsDryRun($this->isDryRun)
-          ->execute();
-        $isUploadSuccess = TRUE;
-        $this->log('Journal successfully pushed to Intacct with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
-        foreach ($apiOutcome as $apiBatch) {
-          if ($apiBatch['status'] === 'Valid Remotely') {
-            $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct and is now being closed (status set to Exported)');
-            foreach ($result as $index => $row) {
-              if ($row['batch']['name'] === $apiBatch['name']) {
-                $result[$index]['remote']['url'] = $apiBatch['url'];
-                $result[$index]['remote']['id'] = $apiBatch['remote_journal_id'];
-                $result[$index]['remote']['exchange_rate'] = $apiBatch['exchange_rate'] ?? 1;
-                $result[$index]['remote']['txn_number'] = $apiBatch['txn_number'];
-                $result[$index]['remote']['usd_journal_total'] = $apiBatch['usd_journal_total'] ?? '';
-                $result[$index]['remote']['usd_credit'] = $apiBatch['usd_credit'] ?? '';
-                $result[$index]['remote']['usd_debit'] = $apiBatch['usd_debit'] ?? '';
-              }
-            }
-            Batch::update(FALSE)
-              ->addWhere('name', '=', $apiBatch['name'])
-              ->addValue('status_id:name', 'Exported')
-              ->execute();
-          }
-          $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['txn_number'] . '</a>');
-        }
-      }
-      catch (\Exception $e) {
-        $this->log('failed to upload to Intacct with error ' . $e->getMessage());
-        foreach ($result as $index => $row) {
-          $result[$index]['upload_errors'] = 'journal upload failed';
-        }
-      }
-    }
     $this->log('Account code logic ' . nl2br($this->getAccountClause()));
-    $this->sendSummary($result, !$isUploadSuccess);
+    $this->sendSummary($result);
   }
 
   public static function fields(): array {
@@ -219,11 +197,9 @@ class GenerateBatch extends AbstractAction {
    * @throws \League\Csv\CannotInsertRecord
    * @throws \League\Csv\Exception
    */
-  private function addToCsv(array $csv_rows, string $batchName): array {
+  private function writeJournalToCsv(array $csv_rows, string $batchName): array {
     $renderedSql = $this->getBatchValue($batchName, 'sql');
     if ($this->isOutputCsv) {
-      $writer = $this->getWriter();
-      $writer->insertAll($csv_rows);
       $batchJournalWriter = $this->getBatchJournalWriter($batchName);
       $batchJournalWriter->insertAll($csv_rows);
       $detailedData = $this->getDetailData($renderedSql);
@@ -258,17 +234,6 @@ class GenerateBatch extends AbstractAction {
       return ['journal_file' => $batchJournalWriter->getPathname(), 'detail_file' => $detailWriter->getPathname()];
     }
     return [];
-  }
-
-  /**
-   * @return Writer|null
-   */
-  public function getWriter(): Writer {
-    if (!isset($this->writer)) {
-      $this->writer = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . date('c') . $this->batchPrefix . '-draft.csv', 'w');
-      $this->writer->insertOne($this->headers);
-    }
-    return $this->writer;
   }
 
   /**
@@ -480,12 +445,17 @@ END";
 
   /**
    * @param Result $result
-   * @param bool $hasUploadErrors
    * @return void
    * @throws \CRM_Core_Exception
 
    */
-  public function sendSummary(Result $result, bool $hasUploadErrors): void {
+  public function sendSummary(Result $result): void {
+    $hasUploadErrors = FALSE;
+    foreach ($result as $row) {
+      if ($this->outputMethod === 'api' && !$row['is_uploaded']) {
+        $hasUploadErrors = TRUE;
+      }
+    }
     if (count($result)) {
       if ($this->emailSummaryAddress) {
         $params = [
@@ -504,7 +474,7 @@ END";
             $html .= '<p>All batches have validated and the batches have been closed.</p>';
           }
           else {
-            $html .= '<p>All batches have validated and the batches have been closed but upload was unsuccesful.</p>';
+            $html .= '<p>All batches have validated and the batches have been closed but upload was not fully succesful.</p>';
           }
         }
         else {
@@ -684,7 +654,7 @@ END";
    */
   private function getInvalidBatches(): array {
     $invalidBatches = [];
-    foreach ($this->batchSummary as $batchName => $batch) {
+    foreach ($this->batches as $batchName => $batch) {
       if (!$batch['is_valid']) {
         $invalidBatches[] = $batchName;
       }
@@ -698,16 +668,6 @@ END";
    */
   public function isFee($row): bool {
     return str_contains($row['MEMO'], 'Fee');
-  }
-
-  /**
-   * @return string
-   */
-  private function getDraftFileName(): string {
-    if (!isset($this->writer)) {
-      return '';
-    }
-    return $this->writer->getPathname();
   }
 
   /**
@@ -1101,7 +1061,7 @@ GROUP BY s.settlement_batch_reference
       'settled' => $result['expected']['settled'] - $result['totals']['settled'],
     ];
     $isValid = empty(array_filter($result['validation']));
-    $this->batchSummary[$batch['name']]['is_valid'] = $isValid;
+    $this->batches[$batch['name']]['is_valid'] = $isValid;
     $this->log($batch['name'] . ' ' . ($isValid ? 'has valid totals' : ' has a discrepancy '));
     if ($isValid) {
       Batch::update(FALSE)

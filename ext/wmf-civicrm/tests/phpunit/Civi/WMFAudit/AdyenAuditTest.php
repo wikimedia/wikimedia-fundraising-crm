@@ -888,7 +888,6 @@ class AdyenAuditTest extends BaseAuditTestCase {
 
   /**
    * @throws \CRM_Core_Exception
-   * @throws Exception
    */
   public function testAlreadyFeeInCreditDueToRefund(): void {
     $directory = 'refund_credit_fee';
