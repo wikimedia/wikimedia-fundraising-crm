@@ -997,6 +997,25 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->runAuditBatch('batch_2', 'settlement_detail_report_batch_1129.csv', 'adyen_1129');
   }
 
+  /**
+   * Test running validateBatch in isolation.
+   * @return void
+   */
+  public function testAdyenValidateBatch(): void {
+    $fileName = 'settlement_detail_report_batch_1128.csv';
+    $directory = 'batch_1';
+    $this->runAuditBatch($directory, $fileName);
+    $result = Batch::validate(FALSE)
+      ->addWhere('name', '=', 'adyen_1128_USD')
+      ->execute();
+    $this->assertEquals(2, $result->first()['validation']['count']);
+    $this->runAuditBatch($directory, $fileName);
+    $result = Batch::validate(FALSE)
+      ->addWhere('name', '=', 'adyen_1128_USD')
+      ->execute();
+    $this->assertEquals(0, $result->first()['validation']['count']);
+  }
+
   public function testBatchMoreThanOneFile(): void {
     $this->prepareForAuditProcessing('batch_2', 'settlement_detail_report_batch_1129.csv');
     $result = $this->runAuditor();

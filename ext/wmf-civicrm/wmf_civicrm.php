@@ -162,6 +162,22 @@ function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermission
         'errorMsg' => E::ts('An error occurred while attempting to set modified date for %1 %2.'),
       ],
     ];
+    $tasks['batch_validate'] = [
+      'title' => ts('Validate (WMF Audit)'),
+      'entity' => 'Batch',
+      'description' => ts('Run WMF audit validation for selected batches.'),
+      'ui' => [
+        'confirm' => ts('Validate %1 selected batch(es)?', [1 => '{count}']),
+        'successMsg' => ts('Validation complete for %1 batch(es).', [1 => '{count}']),
+      ],
+      'apiBatch' => [
+       'action' => 'validate',
+        // Run in small batches.
+        'batchSize' => 2,
+        // Optional: continue even if some items fail
+        'continueOnError' => TRUE,
+      ],
+    ];
   }
 }
 
