@@ -5,6 +5,7 @@ namespace Civi\Api4\Action\WMFContact;
 use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\DoubleOptIn;
 use Civi\Api4\Email;
 use Civi\Api4\Contact;
 use Civi\Api4\Address;
@@ -115,6 +116,13 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     $oldLanguageValue = $contact['preferred_language'];
     $oldEmailValue = $contact['email.email'];
     $oldCountryValue = $contact['address.country_id:name'];
+
+    $email = Email::get(FALSE)
+      ->addWhere('contact_id', '=', $this->contactID)
+      ->addWhere('is_primary', '=', 1)
+      ->execute();
+    $isEmailUpdated = $oldEmailValue !== $this->email;
+
     // 1: send email update
     if ($this->sendEmail !== null) {
       $newOptIn = $this->sendEmail === 'true' ? 1 : 0;
@@ -140,6 +148,22 @@ class UpdateCommunicationsPreferences extends AbstractAction {
         $detail = "Email Preference Center update opt_in from {$oldOptInValue} to {$newOptIn}";
         if ($this->sendEmail === 'true') {
           $this->logActivity("OptIn", $detail, $this->contactID);
+          $countryID = $contact['address.country_id'];
+          if ($this->country) {
+            // If they are updating their country, use the new one
+            $countries = \CRM_Core_PseudoConstant::countryIsoCode(FALSE, FALSE);
+            $newCountryID = array_search($this->country, $countries);
+            if ($newCountryID) {
+              $countryID = $newCountryID;
+            }
+          }
+          if (
+            in_array($countryID,\Civi::settings()->get('thank_you_double_opt_in_countries')) &&
+            !in_array($this->getEmail(), $this->getDoubleOptInEmails()) &&
+            !$isEmailUpdated // On email change we will send a verification email in step 5
+          ) {
+            $this->sendDoubleOptInEmail($contact);
+          }
         } else {
           $this->logActivity("unsubscribe", $detail, $this->contactID);
         }
@@ -167,6 +191,8 @@ class UpdateCommunicationsPreferences extends AbstractAction {
         ->addWhere('location_type_id:name', '=', 'EmailPreference')
         ->execute();
 
+      // FIXME if we have enriched the EmailPreferences address with more info
+      // at some point we shouldn't just change country and leave city/state/postal
       if (count($address) === 1) {
         $addressResult = Address::update(FALSE)->setValues([
           'country_id.iso_code' => (string) $this->country,
@@ -197,11 +223,6 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     }
 
     // 5: update email - trigger verification email if email changed
-    $email = Email::get(FALSE)
-      ->addWhere('contact_id', '=', $this->contactID)
-      ->addWhere('is_primary', '=',1)
-      ->execute();
-    $isEmailUpdated = $oldEmailValue !== $this->email;
     if ($isEmailUpdated) {
       // Send verification email to donor to confirm if confirm primary update
       $this->sendVerificationEmail(
@@ -317,8 +338,10 @@ class UpdateCommunicationsPreferences extends AbstractAction {
       ->addWhere('is_deleted', '=', FALSE)
       ->setSelect([
         'preferred_language',
+        'display_name',
         'first_name',
         'address.country_id:name',
+        'address.country_id',
         'email.email',
         'is_opt_out',
         'Communication.opt_in',
@@ -327,6 +350,24 @@ class UpdateCommunicationsPreferences extends AbstractAction {
       ->addJoin('Address AS address', 'LEFT', ['address.is_primary', '=', 1])
       ->addJoin('Email AS email', 'LEFT', ['email.is_primary', '=', 1])
       ->execute()->first();
+  }
+
+  function getDoubleOptInEmails(): array {
+    return Activity::get(FALSE)
+      ->addWhere('target_contact_id', '=', $this->contactID)
+      ->addWhere('activity_type_id:name', '=', 'Double Opt-In')
+      ->addWhere('status_id:name', '=', 'Completed')
+      ->addSelect('subject')
+      ->execute()->column('subject');
+  }
+
+  protected function sendDoubleOptInEmail(array $contact): void {
+    DoubleOptIn::send(FALSE)
+      ->setDisplayName($contact['display_name'])
+      ->setContactID($this->contactID)
+      ->setEmail($this->email)
+      ->setPreferredLanguage($this->language ?? $contact['preferred_language'])
+      ->execute();
   }
 
   /**
