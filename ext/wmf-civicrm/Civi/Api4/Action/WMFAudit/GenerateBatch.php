@@ -122,8 +122,6 @@ class GenerateBatch extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   public function _run(Result $result): void {
-    $rowNumber = 1;
-
     foreach ($this->getBatches() as $batch) {
       $batchedData = $this->getJournalRows($batch);
       $record = array_filter([
@@ -134,9 +132,7 @@ class GenerateBatch extends AbstractAction {
 
       $debit = $credit = $feeDebit = $feeCredit = Money::of(0, $batch['batch_data.settlement_currency']);
       $count = 0;
-      foreach ($record['csv_rows'] as $index => $row) {
-        $record['csv_rows'][$index]['LINE_NO'] = $rowNumber;
-        $rowNumber+= 2;
+      foreach ($record['csv_rows'] as $row) {
         $isFee = $this->isFee($row);
         $rowCount = (int)(explode(' | ', $row['MEMO'])[3]);
         if (!$isFee) {
@@ -1110,8 +1106,17 @@ GROUP BY s.settlement_batch_reference
     $renderedSql = $this->getRenderedSql($batch);
     $batchedData = CRM_Core_DAO::executeQuery($renderedSql)->fetchAll();
     $this->setHeaders($defaults);
+
+    $rowNumber = 1;
     foreach ($batchedData as $index => $row) {
       $batchedData[$index] = [...$defaults, ...$row];
+      // This requirement for adding contiguous line numbers is likely defunct.
+      // It was part of the SFTP csv file upload spec and originally multiple
+      // batches were in one file so the line number was per file, not per batch.
+      // When using the api upload line no is not used. However, it might be
+      // that finance still wish to see it in output file so retaining for now.
+      $batchedData[$index]['LINE_NO'] = $rowNumber;
+      $rowNumber+= 2;
     }
     return $batchedData;
   }
