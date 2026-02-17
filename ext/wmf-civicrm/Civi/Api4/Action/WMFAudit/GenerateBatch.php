@@ -82,7 +82,7 @@ class GenerateBatch extends AbstractAction {
    *
    * @var bool
    */
-  protected bool $isOutputSQL = FALSE;
+  protected bool $isOutputSql = FALSE;
 
   /**
    * The address to email a summary to.
@@ -124,7 +124,7 @@ class GenerateBatch extends AbstractAction {
       $record = array_filter([
         'csv_rows' => $batchedData,
         'batch' => $batch,
-        'sql' => $this->isOutputSQL ? $this->getBatchValue($batch['name'], 'sql') : NULL,
+        'sql' => $this->isOutputSql ? $this->getBatchValue($batch['name'], 'sql') : NULL,
         'is_uploaded' => FALSE,
       ]);
 
