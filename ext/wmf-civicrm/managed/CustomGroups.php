@@ -633,9 +633,9 @@ function _wmf_civicrm_get_gift_adjustment_fields(): array {
       'is_searchable' => 1,
       'weight' => 8,
       'option_values' => [
-        'Direct Mail Appeal' => 'Direct Mail Appeal',
-        'Change Restriction to Unrestricted - General' => 'Change Restriction to Unrestricted - General',
-        'Change Restriction to Endowment Fund' => 'Change Restriction to Endowment Fund',
+        ['name' => 'Direct_Mail_Appeal', 'label' => 'Direct Mail Appeal', 'value' => 1],
+        ['name' => 'Original_deposit_WMF_move_to_EN', 'label' => 'Original deposit WMF - move to END', 'value' => 4],
+        ['name' => 'Original_deposit_END_move_to_WM', 'label' => 'Original deposit END - move to WMF', 'value' => 'Original deposit END - move to WMF'],
       ],
     ],
     'Notes' => [
