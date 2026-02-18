@@ -824,7 +824,7 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'note_rows' => 4,
       // "option_group_id":"32",
     ],
-    'On Hold' => [
+    'On_Hold' => [
       'name' => 'On_Hold',
       'label' => 'On Hold',
       'data_type' => 'Boolean',
@@ -933,17 +933,17 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'note_columns' => 60,
       'note_rows' => 4,
       'option_values' => [
-        '1' => '1',
-        '2' => '2',
-        '3' => '3',
-        '4' => '4',
-        '5 ' => '5',
-        '6' => '6',
-        '7' => '7',
-        '8' => '8',
-        '9' => '9',
-        '10' => '10',
-        '11' => '11',
+        ['name' => 'c4ca4238a0b923820dcc509a6f75849', 'label' => '1', 'value' => '1'],
+        ['name' => 'c81e728d9d4c2f636f067f89cc14862', 'label' => '2', 'value' => '2'],
+        ['name' => 'eccbc87e4b5ce2fe28308fd9f2a7baf', 'label' => '3', 'value' => '3'],
+        ['name' => 'a87ff679a2f3e71d9181a67b7542122', 'label' => '4', 'value' => '4'],
+        ['name' => 'e4da3b7fbbce2345d7772b0674a318d', 'label' => '5', 'value' => '5'],
+        ['name' => '1679091c5a880faf6fb5e6087eb1b2d', 'label' => '6', 'value' => '6'],
+        ['name' => '8f14e45fceea167a5a36dedd4bea254', 'label' => '7', 'value' => '7'],
+        ['name' => 'c9f0f895fb98ab9159f51fd0297e236', 'label' => '8', 'value' => '8'],
+        ['name' => '45c48cce2e2d7fbdea1afc51c7c6ad2', 'label' => '9', 'value' => '9'],
+        ['name' => '10', 'label' => '10', 'value' => '10'],
+        ['name' => '11', 'label' => '11', 'value' => '11'],
       ],
     ],
     'Disc_Income_Decile' => [
@@ -957,17 +957,17 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'note_columns' => 60,
       'note_rows' => 4,
       'option_values' => [
-        '1' => '1',
-        '2' => '2',
-        '3' => '3',
-        '4' => '4',
-        '5' => '5',
-        '6' => '6',
-        '7' => '7',
-        '8' => '8',
-        '9' => '9',
-        '10' => '10',
-        '11' => '11',
+        ['name' => 'c4ca4238a0b923820dcc509a6f75849', 'label' => '1', 'value' => '1'],
+        ['name' => 'c81e728d9d4c2f636f067f89cc14862', 'label' => '2', 'value' => '2'],
+        ['name' => 'eccbc87e4b5ce2fe28308fd9f2a7baf', 'label' => '3', 'value' => '3'],
+        ['name' => 'a87ff679a2f3e71d9181a67b7542122', 'label' => '4', 'value' => '4'],
+        ['name' => 'e4da3b7fbbce2345d7772b0674a318d', 'label' => '5', 'value' => '5'],
+        ['name' => '1679091c5a880faf6fb5e6087eb1b2d', 'label' => '6', 'value' => '6'],
+        ['name' => '8f14e45fceea167a5a36dedd4bea254', 'label' => '7', 'value' => '7'],
+        ['name' => 'c9f0f895fb98ab9159f51fd0297e236', 'label' => '8', 'value' => '8'],
+        ['name' => '45c48cce2e2d7fbdea1afc51c7c6ad2', 'label' => '9', 'value' => '9'],
+        ['name' => '10', 'label' => '10', 'value' => '10'],
+        ['name' => '11', 'label' => '11', 'value' => '11'],
       ],
     ],
     'ask_amount' => [
@@ -1082,23 +1082,23 @@ function _wmf_civicrm_get_prospect_fields(): array {
         15 => 'Religious',
       ],
     ],
-    'IRA and 401K Decile' => [
+    'IRA_and_401K_Decile' => [
       'label' => '(TS) IRA and 401K Decile',
       'name' => 'IRA_and_401K_Decile',
       'data_type' => 'String',
       'html_type' => 'Select',
       'is_searchable' => 1,
       'option_values' => [
-        '1' => '1',
-        '2' => '2',
-        '3' => '3',
-        '4' => '4',
-        '5' => '5',
-        '6' => '6',
-        '7' => '7',
-        '8' => '8',
-        '9' => '9',
-        '10' => '10',
+        ['name' => 'c4ca4238a0b923820dcc509a6f75849', 'label' => '1', 'value' => '1'],
+        ['name' => 'c81e728d9d4c2f636f067f89cc14862', 'label' => '2', 'value' => '2'],
+        ['name' => 'eccbc87e4b5ce2fe28308fd9f2a7baf', 'label' => '3', 'value' => '3'],
+        ['name' => 'a87ff679a2f3e71d9181a67b7542122', 'label' => '4', 'value' => '4'],
+        ['name' => 'e4da3b7fbbce2345d7772b0674a318d', 'label' => '5', 'value' => '5'],
+        ['name' => '1679091c5a880faf6fb5e6087eb1b2d', 'label' => '6', 'value' => '6'],
+        ['name' => '8f14e45fceea167a5a36dedd4bea254', 'label' => '7', 'value' => '7'],
+        ['name' => 'c9f0f895fb98ab9159f51fd0297e236', 'label' => '8', 'value' => '8'],
+        ['name' => '45c48cce2e2d7fbdea1afc51c7c6ad2', 'label' => '9', 'value' => '9'],
+        ['name' => '10', 'label' => '10', 'value' => '10'],
       ],
     ],
     'Prospect_Insight' => [
@@ -1109,10 +1109,10 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'help_pre' => 'iWave determined prospect insight',
       'column_name' => 'prospect_insight_280',
       'option_values' => [
-        '1' => 'Hidden Gem',
-        '2' => 'Your Champion',
-        'Distinguished Philanthropist' => 'Distinguished Philanthropist',
-        'Not Now Prospect' => 'Not Now Prospect',
+        ['name' => 'Hidden_Gem', 'label' => 'Hidden Gem', 'value' => '1'],
+        ['name' => 'Your_Champion', 'label' => 'Your Champion', 'value' => '2'],
+        ['name' => 'Distinguished_Philanthropist', 'label' => 'Distinguished Philanthropist', 'value' => 'Distinguished Philanthropist'],
+        ['name' => 'Not_Now_Prospect', 'label' => 'Not Now Prospect', 'value' => 'Not Now Prospect'],
       ],
     ],
     'Estimated_Capacity' => [
@@ -1142,10 +1142,10 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'note_rows' => 4,
       'column_name' => 'planned_giving_score_282',
       'option_values' => [
-        '1' => '1',
-        '2' => '2',
-        '3' => '3',
-        '4' => '4',
+        ['name' => 'c4ca4238a0b923820dcc509a6f75849', 'label' => '1', 'value' => '1'],
+        ['name' => 'c81e728d9d4c2f636f067f89cc14862', 'label' => '2', 'value' => '2'],
+        ['name' => 'eccbc87e4b5ce2fe28308fd9f2a7baf', 'label' => '3', 'value' => '3'],
+        ['name' => 'a87ff679a2f3e71d9181a67b7542122', 'label' => '4', 'value' => '4'],
       ],
     ],
     'Planned_Giving_Segment' => [
@@ -1162,10 +1162,10 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'note_rows' => 4,
       'column_name' => 'planned_giving_segment_283',
       'option_values' => [
-        '1' => 'Potential Planned Giver',
-        '2' => 'Ideal Planned Giver',
-        'Not a Planned Giver' => 'Not a Planned Giver',
-        'Strong Planned Giving Prospect' => 'Strong Planned Giving Prospect',
+        ['name' => 'Potential_Planned_Giver', 'label' => 'Potential Planned Giver', 'value' => '1'],
+        ['name' => 'Ideal_Planned_Giver', 'label' => 'Ideal Planned Giver', 'value' => '2'],
+        ['name' => 'Not_a_Planned_Giver', 'label' => 'Not a Planned Giver', 'value' => 'Not a Planned Giver'],
+        ['name' => 'Strong_Planned_Giving_Prospect', 'label' => 'Strong Planned Giving Prospect', 'value' => 'Strong Planned Giving Prospect'],
       ],
     ],
   ];
@@ -1798,7 +1798,7 @@ function _wmf_civicrm_get_communication_fields(): array {
  */
 function _wmf_civicrm_get_stock_fields(): array {
   return [
-    'stock_qty' => [
+    'Stock Quantity' => [
       'name' => 'Stock Quantity',
       'column_name' => 'stock_qty',
       'label' => ts('Stock Quantity'),
@@ -1808,7 +1808,7 @@ function _wmf_civicrm_get_stock_fields(): array {
       'is_searchable' => 1,
       'is_view' => 0,
     ],
-    'stock_ticker' => [
+    'Stock Ticker' => [
       'name' => 'Stock Ticker',
       'column_name' => 'stock_ticker',
       'label' => ts('Stock Ticker'),
@@ -1818,7 +1818,7 @@ function _wmf_civicrm_get_stock_fields(): array {
       'is_searchable' => 1,
       'is_view' => 0,
     ],
-    'description_of_stock' => [
+    'Description_of_Stock' => [
       'name' => 'Description_of_Stock',
       'column_name' => 'description_of_stock',
       'label' => ts('Description of Stock'),
@@ -1828,7 +1828,7 @@ function _wmf_civicrm_get_stock_fields(): array {
       'is_searchable' => 1,
       'is_view' => 0,
     ],
-    'stock_value' => [
+    'Stock Value' => [
       'name' => 'Stock Value',
       'column_name' => 'stock_value',
       'label' => ts('Stock Value'),
@@ -1909,9 +1909,9 @@ function _wmf_civicrm_get_benefactor_fields(): array {
       'note_columns' => 60,
       'note_rows' => 4,
       'option_values' => [
-        'anonymous' => 'Anonymous',
-        'not_replied' => 'Not replied',
-        'public' => 'Public',
+        ['name' => 'Anonymous', 'label' => 'Anonymous', 'value' => 'anonymous'],
+        ['name' => 'Not_replied', 'label' => 'Not replied', 'value' => 'not_replied'],
+        ['name' => 'Public', 'label' => 'Public', 'value' => 'public'],
       ],
     ],
     'Listed_on_Benefactor_Page_as' => [
@@ -1964,7 +1964,7 @@ function _wmf_civicrm_get_benefactor_fields(): array {
       'text_length' => 255,
       'date_format' => 'mm/dd/yy',
     ],
-    'WLS_Listing_Last_Updated' => [
+    'wls_listing_last_updated' => [
       'name' => 'wls_listing_last_updated',
       'column_name' => 'wls_listing_last_updated',
       'label' => 'WLS Listing Last Updated',
@@ -1973,7 +1973,7 @@ function _wmf_civicrm_get_benefactor_fields(): array {
       'text_length' => 255,
       'date_format' => 'mm/dd/yy',
     ],
-    'Endowment_Listing_Last_Updated' => [
+    'endowment_listing_last_updated' => [
       'name' => 'endowment_listing_last_updated',
       'column_name' => 'endowment_listing_last_updated',
       'label' => 'Endowment Listing Last Updated',
@@ -2010,10 +2010,10 @@ function _wmf_civicrm_get_benefactor_fields(): array {
       'note_columns' => 60,
       'note_rows' => 4,
       'option_values' => [
-        "1" => "Major Benefactor ($50k+)",
-        "2" => "Patron Donors ($15k-49,999)",
-        "3" => "Leading Donors ($5k-$14,999)",
-        "4" => "Sustaining Donor ($1k-$4,999)",
+        ['name' => 'Major_Benefactor_50k_', 'label' => 'Major Benefactor ($50k+)', 'value' => '1'],
+        ['name' => 'Patron_Donors_15k_49_999_', 'label' => 'Patron Donors ($15k-49,999)', 'value' => '2'],
+        ['name' => 'Leading_Donors_5k_14_999_', 'label' => 'Leading Donors ($5k-$14,999)', 'value' => '3'],
+        ['name' => 'Sustaining_Donor_1k_4_999', 'label' => 'Sustaining Donor ($1k-$4,999)', 'value' => '4'],
       ],
     ],
   ];
@@ -2021,7 +2021,7 @@ function _wmf_civicrm_get_benefactor_fields(): array {
 
 function _wmf_civicrm_get_relationship_metadata_fields(): array {
   return [
-    'Provided_By_Donor' => [
+    'provided_by_donor' => [
       'name' => 'provided_by_donor',
       'column_name' => 'provided_by_donor',
       'label' => 'Provided by donor',
@@ -2121,7 +2121,7 @@ function _wmf_civicrm_get_mg_year_end_appeal_fields(): array {
 
 function _wmf_civicrm_get_endowment_year_end_appeal_fields(): array {
   return [
-    [
+    'Appeal_Ask_Amount' => [
       'name' => 'Appeal_Ask_Amount',
       'label' => 'Appeal Ask Amount',
       'data_type' => 'Money',
@@ -2133,7 +2133,7 @@ function _wmf_civicrm_get_endowment_year_end_appeal_fields(): array {
       'text_length' => 255,
       'column_name' => 'appeal_ask_amount_304',
     ],
-    [
+    'Solicitor' => [
       'name' => 'Solicitor',
       'label' => 'Relationship Manager',
       'data_type' => 'String',
@@ -2144,7 +2144,7 @@ function _wmf_civicrm_get_endowment_year_end_appeal_fields(): array {
       'column_name' => 'solicitor_306',
       'option_values' => _wmf_civicrm_get_solicitor_values(),
     ],
-    [
+    'Appeal_Type' => [
       'name' => 'Appeal_Type',
       'label' => 'Appeal Type',
       'data_type' => 'String',
@@ -2228,12 +2228,12 @@ function _wmf_civicrm_get_phone_data_fields(): array {
       'text_length' => 255,
       'column_name' => 'source',
       'option_values' => [
-        'Acoustic' => 'Acoustic',
-        'Staff' => 'Staff Supplied',
-        'Donor' => 'Donor Supplied',
-        'Paypal' => 'PayPal Account',
-        'FundraiseUp' => 'Fundraise Up',
-        'Venmo' => 'Venmo',
+        ['name' => 'Acoustic', 'label' => 'Acoustic', 'value' => 'Acoustic'],
+        ['name' => 'Staff_Supplied', 'label' => 'Staff Supplied', 'value' => 'Staff'],
+        ['name' => 'Donor_Supplied', 'label' => 'Donor Supplied', 'value' => 'Donor'],
+        ['name' => 'PayPal_Account', 'label' => 'PayPal Account', 'value' => 'Paypal'],
+        ['name' => 'Fundraise_Up', 'label' => 'Fundraise Up', 'value' => 'FundraiseUp'],
+        ['name' => 'Venmo', 'label' => 'Venmo', 'value' => 'Venmo'],
       ],
     ],
     'recipient_id' => [
@@ -2268,12 +2268,13 @@ function _wmf_civicrm_get_address_data_fields(): array {
       'text_length' => 255,
       'column_name' => 'source',
       'option_values' => [
-        'ncoa' => 'NCOA update',
-        'staff' => 'Staff Supplied',
-        'iwave' => 'iWave',
-        'donor' => 'Donor Supplied',
-        'paypal' => 'PayPal Account',
-        'fundraiseup' => 'Fundraise Up',
+        ['name' => 'NCOA_update', 'label' => 'NCOA Update', 'value' => 'ncoa', 'description' => 'National change of address through USPS'],
+        ['name' => 'Staff_Supplied', 'label' => 'Staff Supplied', 'value' => 'staff'],
+        ['name' => 'iWave', 'label' => 'iWave', 'value' => 'iwave'],
+        ['name' => 'Donor_Supplied', 'label' => 'Donor Supplied', 'value' => 'donor'],
+        ['name' => 'USPS_returned_mail', 'label' => 'USPS returned mail', 'value' => 'USPS returned mail', 'description' => 'Address information was updated based on information provided on a returned envelope from USPS'],
+        ['name' => 'paypal', 'label' => 'PayPal', 'value' => 'paypal'],
+        ['name' => 'fundraiseup', 'label' => 'Fundraise Up', 'value' => 'fundraiseup'],
       ],
     ],
     'address_update_date' => [
