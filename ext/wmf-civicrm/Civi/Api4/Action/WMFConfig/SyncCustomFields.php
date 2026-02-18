@@ -6,6 +6,7 @@ use Civi\Api4\CustomGroup;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\CustomField;
+use Civi\Api4\OptionValue;
 use Civi\Core\Exception\DBQueryException;
 
 /**
@@ -47,22 +48,25 @@ class SyncCustomFields extends AbstractAction {
         foreach ($customGroupSpec['fields'] as $customFieldName => $field) {
           $existingField = $existingFields[$customFieldName] ?? NULL;
           if ($existingField) {
-            if ($env === 'Development' && isset($field['option_values']) && empty($existingField['option_group_id'])) {
+            if ($env === 'Development' && isset($field['option_values'])) {
               // If we are on a developer site then sync up the option values. Don't do this on live
               // because we could get into trouble if we are not up-to-date with the options - which
               // we don't really aspire to be - or not enough to let this code run on prod.
-
-              $field['id'] = $existingField['id'];
-              // This is a hack because they made a change to the BAO to restrict editing
-              // custom field options based on a form value - when they probably should
-              // have made the change in the form. Without this existing fields don't
-              // get option group updates. See https://issues.civicrm.org/jira/browse/CRM-16659 for
-              // original sin.
-              $field['option_type'] = 1;
-              // The reasons for not using the apiv4 save function lower down are now resolved
-              // from a technical pov so switching over here is now a @todo
-              // Also this shouldn't really ever affect prod fields - or not at the moment.
-              civicrm_api3('CustomField', 'create', $field);
+              $existingOptions = OptionValue::get(FALSE)
+                ->addWhere('option_group_id', '=', $existingField['option_group_id'])
+                ->execute()->indexBy('name');
+              foreach ($field['option_values'] as $index => $optionValue) {
+                if (isset($optionValue['name'])) {
+                  if (!isset($existingOptions[$optionValue['name']])) {
+                    OptionValue::create(FALSE)
+                      ->setValues($optionValue + ['option_group_id' => $existingField['option_group_id']])->execute();
+                  }
+                }
+                elseif (!isset($existingOptions[$index])) {
+                  OptionValue::create(FALSE)
+                    ->setValues(['name' => $index, 'value' => $optionValue, 'label' => $index, 'option_group_id' => $existingField['option_group_id']])->execute();
+                }
+              }
             }
             unset($customGroupSpec['fields'][$customFieldName]);
           }
