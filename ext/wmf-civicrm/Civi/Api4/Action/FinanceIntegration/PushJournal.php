@@ -17,6 +17,7 @@ use League\Csv\Reader;
 /**
  * @method $this setJournalFile(string $fileName)
  * @method $this setIsDryRun(bool $isDryRun)
+ * @method $this setBatchDescriptionPrefix(string $batchDescriptionPrefix)
  */
 class PushJournal extends AbstractAction {
 
@@ -49,6 +50,17 @@ class PushJournal extends AbstractAction {
   protected string $journalFile;
   private array $log = [];
   private array $detailedData;
+
+  /**
+   * Gateway - if passed in this becomes the description prefix.
+   *
+   * @var string|null
+   */
+  protected ?string $batchDescriptionPrefix;
+
+  public function getBatchDescriptionPrefix(): ?string {
+    return $this->batchDescriptionPrefix;
+  }
 
   public function _run(Result $result) {
     if (!$this->tokenClient) {
@@ -233,7 +245,7 @@ class PushJournal extends AbstractAction {
       $entry = [
         'glJournal' => ['id' => $first['JOURNAL']],
         'postingDate' => $postingDate->format('Y-m-d'),
-        'description' => ((string) $this->batches[$batchName]['csvTotals']['settled']). ' ' . $first['DESCRIPTION'] ?: null,
+        'description' => $this->batchDescriptionPrefix . ' ' . $this->batches[$batchName]['currency'] . ' ' . $first['DESCRIPTION'] ?: null,
         'state'       => 'draft',
         'referenceNumber' => $first['DOCUMENT'],
         'lines' => [],
