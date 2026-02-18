@@ -106,7 +106,6 @@ class GenerateBatch extends AbstractAction {
   private array $log = [];
 
   private array $batchSummary = [];
-  private string $startDate = '';
   private string $endDate = '';
 
   private array $batches;
@@ -146,7 +145,6 @@ class GenerateBatch extends AbstractAction {
         $finalFileName = str_replace('-draft', '-final', $draftFileName);
         rename($draftFileName, $finalFileName);
         $this->log('final file name ' . $finalFileName);
-        $this->log('attach file for finance using alias ' . $this->getUploadFileName());
       }
       else {
         $this->log('no file generated due to input parameters');
@@ -204,7 +202,7 @@ class GenerateBatch extends AbstractAction {
       }
     }
     $this->log('Account code logic ' . nl2br($this->getAccountClause()));
-    $this->sendSummary($result, $finalFileName ?? NULL, !$isUploadSuccess);
+    $this->sendSummary($result, !$isUploadSuccess);
   }
 
   public static function fields(): array {
@@ -482,13 +480,12 @@ END";
 
   /**
    * @param Result $result
-   * @param string|null $fileName
    * @param bool $hasUploadErrors
    * @return void
    * @throws \CRM_Core_Exception
 
    */
-  public function sendSummary(Result $result, ?string $fileName, bool $hasUploadErrors): void {
+  public function sendSummary(Result $result, bool $hasUploadErrors): void {
     if (count($result)) {
       if ($this->emailSummaryAddress) {
         $params = [
@@ -504,20 +501,14 @@ END";
         $html = '<html> <h3>The following batches have been generated</h3>';
         if (empty($this->getInvalidBatches()) && empty($this->incompleteRows)) {
           if (!$hasUploadErrors) {
-            $html .= '<p>All batches have validated and the batches have been closed. The journal file is attached</p>';
+            $html .= '<p>All batches have validated and the batches have been closed.</p>';
           }
           else {
-            $html .= '<p>All batches have validated and the batches have been closed but upload was unsuccesful. The journal file is attached</p>';
+            $html .= '<p>All batches have validated and the batches have been closed but upload was unsuccesful.</p>';
           }
-          $uploadFileName = $this->getUploadFileName();
-          $params['attachments'] = [[
-            'fullPath' => $fileName,
-            'cleanName' => $uploadFileName,
-            'mime_type' => 'text/plain',
-          ]];
         }
         else {
-          $html .= "<p>One of more errors have prevented the batch from being closed (hence no file is attached).</p>";
+          $html .= "<p>One of more errors have prevented the batch from being closed.</p>";
         }
         $includeRemoteURL = FALSE;
         foreach ($result as $batch) {
@@ -760,10 +751,6 @@ END";
         }
       }
 
-      $this->startDate = Contribution::get(FALSE)
-        ->addWhere('contribution_settlement.settlement_batch_reference', 'IN', array_keys($this->batches))
-        ->addSelect('MIN(contribution_settlement.settlement_date) AS start_date')
-        ->execute()->first()['start_date'] ?? $this->endDate;
       foreach ($this->batches as $index => $batch) {
         // Get the settlement date range - this would be when it was settled to, e.g. our adyen account.
         // Fallback is required as we don't have a field for reversal settlement date so if it were only reversals...
@@ -780,15 +767,6 @@ END";
       }
     }
     return $this->batches;
-  }
-
-  /**
-   * @return string
-   */
-  private function getUploadFileName(): string {
-    $minDate = date('Y-m-d', strtotime($this->startDate));
-    $maxDate = date('Y-m-d', strtotime($this->endDate));
-    return "{$minDate} to {$maxDate} Wikimedia Foundation Online Contribution Revenue.csv";
   }
 
   /**

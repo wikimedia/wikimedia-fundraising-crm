@@ -2416,5 +2416,42 @@ function _wmf_civicrm_get_batch_data_fields(): array {
       'is_active' => 1,
       'weight' => 7,
     ],
+    'issue_tracker_reference' => [
+      'name' => 'issue_tracker_reference',
+      'column_name' => 'issue_tracker_reference',
+      'label' => 'Phab',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'text_length' => 32,
+      'weight' => 8,
+    ],
+    'issue_category' => [
+      'name' => 'issue_category',
+      'column_name' => 'issue_category',
+      'label' => 'Issue Category',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'weight' => 9,
+      'option_values' => [
+        'every.org' => 'Every.org',
+        'paypal_grants' => 'PayPal Grants',
+      ],
+    ],
+    'issue_notes' => [
+      'name' => 'issue_notes',
+      'column_name' => 'issue_notes',
+      'label' => 'Issue Notes',
+      'data_type' => 'Memo',
+      'html_type' => 'TextArea',
+      'weight' => 10,
+    ],
+    'last_successful_validation_date' => [
+      'name' => 'last_successful_validation_date',
+      'column_name' => 'last_successful_validation_date',
+      'label' => 'Last successfully verified at',
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'weight' => 11,
+    ],
   ];
 }
