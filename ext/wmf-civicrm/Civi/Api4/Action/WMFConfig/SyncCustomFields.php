@@ -2,6 +2,7 @@
 namespace Civi\Api4\Action\WMFConfig;
 
 
+use Civi\Api4\CustomGroup;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\CustomField;
@@ -29,9 +30,9 @@ class SyncCustomFields extends AbstractAction {
     try {
       $customGroupSpecs = require __DIR__ . '/../../../../managed/CustomGroups.php';
       foreach ($customGroupSpecs as $groupName => $customGroupSpec) {
-        $customGroup = civicrm_api3('CustomGroup', 'get', ['name' => $groupName]);
-        if (!$customGroup['count']) {
-          $customGroup = civicrm_api3('CustomGroup', 'create', $customGroupSpec['group']);
+        $customGroup = CustomGroup::get(FALSE)->addWhere('name', '=',$groupName)->execute()->first();
+        if (!$customGroup) {
+          $customGroup = CustomGroup::create(FALSE)->setValues($customGroupSpec['group'])->execute()->first();
         }
         // We mostly are trying to ensure a unique weight since weighting can be re-ordered in the UI but it gets messy
         // if they are all set to 1.
@@ -50,7 +51,7 @@ class SyncCustomFields extends AbstractAction {
               // If we are on a developer site then sync up the option values. Don't do this on live
               // because we could get into trouble if we are not up-to-date with the options - which
               // we don't really aspire to be - or not enough to let this code run on prod.
-              $env = civicrm_api3('Setting', 'getvalue', ['name' => 'environment']);
+              $env = \Civi::settings()->get('environment');
               if ($env === 'Development' && empty($existingField['option_group_id'])) {
                 $field['id'] = $existingField['id'];
                 // This is a hack because they made a change to the BAO to restrict editing
