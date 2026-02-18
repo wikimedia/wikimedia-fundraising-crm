@@ -2,9 +2,11 @@
 namespace Civi\Api4\Action\WMFConfig;
 
 
+use Civi\Api4\CustomGroup;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\CustomField;
+use Civi\Api4\OptionValue;
 use Civi\Core\Exception\DBQueryException;
 
 /**
@@ -27,60 +29,61 @@ class SyncCustomFields extends AbstractAction {
    */
   public function _run(Result $result): void {
     try {
+      $env = \Civi::settings()->get('environment');
       $customGroupSpecs = require __DIR__ . '/../../../../managed/CustomGroups.php';
       foreach ($customGroupSpecs as $groupName => $customGroupSpec) {
-        $customGroup = civicrm_api3('CustomGroup', 'get', ['name' => $groupName]);
-        if (!$customGroup['count']) {
-          $customGroup = civicrm_api3('CustomGroup', 'create', $customGroupSpec['group']);
+        $customGroup = CustomGroup::get(FALSE)->addWhere('name', '=',$groupName)->execute()->first();
+        if (!$customGroup) {
+          $customGroup = CustomGroup::create(FALSE)->setValues($customGroupSpec['group'])->execute()->first();
         }
         // We mostly are trying to ensure a unique weight since weighting can be re-ordered in the UI but it gets messy
         // if they are all set to 1.
         $weight = \CRM_Core_DAO::singleValueQuery('SELECT MAX(weight) FROM civicrm_custom_field WHERE custom_group_id = %1',
           [1 => [$customGroup['id'], 'Integer']]
         );
+        $existingFields = CustomField::get(FALSE)
+          ->addWhere('custom_group_id', '=', $customGroup['id'])
+          ->execute()->indexBy('name');
 
-        foreach ($customGroupSpec['fields'] as $index => $field) {
-          $existingField = civicrm_api3('CustomField', 'get', [
-            'custom_group_id' => $customGroup['id'],
-            'name' => $field['name'],
-          ]);
-
-          if ($existingField['count']) {
-            if (isset($field['option_values'])) {
+        foreach ($customGroupSpec['fields'] as $customFieldName => $field) {
+          $existingField = $existingFields[$customFieldName] ?? NULL;
+          if ($existingField) {
+            if ($env === 'Development' && isset($field['option_values'])) {
               // If we are on a developer site then sync up the option values. Don't do this on live
               // because we could get into trouble if we are not up-to-date with the options - which
               // we don't really aspire to be - or not enough to let this code run on prod.
-              $env = civicrm_api3('Setting', 'getvalue', ['name' => 'environment']);
-              if ($env === 'Development' && empty($existingField['option_group_id'])) {
-                $field['id'] = $existingField['id'];
-                // This is a hack because they made a change to the BAO to restrict editing
-                // custom field options based on a form value - when they probably should
-                // have made the change in the form. Without this existing fields don't
-                // get option group updates. See https://issues.civicrm.org/jira/browse/CRM-16659 for
-                // original sin.
-                $field['option_type'] = 1;
-                // The reasons for not using the apiv4 save function lower down are now resolved
-                // from a technical pov so switching over here is now a @todo
-                // Also this shouldn't really ever affect prod fields - or not at the moment.
-                civicrm_api3('CustomField', 'create', $field);
+              $existingOptions = OptionValue::get(FALSE)
+                ->addWhere('option_group_id', '=', $existingField['option_group_id'])
+                ->execute()->indexBy('name');
+              foreach ($field['option_values'] as $index => $optionValue) {
+                if (isset($optionValue['name'])) {
+                  if (!isset($existingOptions[$optionValue['name']])) {
+                    OptionValue::create(FALSE)
+                      ->setValues($optionValue + ['option_group_id' => $existingField['option_group_id']])->execute();
+                  }
+                }
+                elseif (!isset($existingOptions[$index])) {
+                  OptionValue::create(FALSE)
+                    ->setValues(['name' => $index, 'value' => $optionValue, 'label' => $index, 'option_group_id' => $existingField['option_group_id']])->execute();
+                }
               }
             }
-            unset($customGroupSpec['fields'][$index]);
+            unset($customGroupSpec['fields'][$customFieldName]);
           }
           else {
             $weight++;
-            $customGroupSpec['fields'][$index]['weight'] = $weight;
+            $customGroupSpec['fields'][$customFieldName]['weight'] = $weight;
             // Hopefully this is only required temporarily
             // see https://github.com/civicrm/civicrm-core/pull/20743
             // it will be ignored if 'option_values' is empty.
-            $customGroupSpec['fields'][$index]['option_type'] = (int) !empty($field['option_values']);
+            $customGroupSpec['fields'][$customFieldName]['option_type'] = (int) !empty($field['option_values']);
             foreach ($field['option_values'] ?? [] as $key => $value) {
               if (is_array($value) && empty($value['id'])) {
                 // The name in the option_value table is value - but Coleman has mapped to id.
                 // https://github.com/civicrm/civicrm-core/pull/17167
                 // The option values are handled in
                 // https://github.com/civicrm/civicrm-core/blob/ed3f5877550c524765812d86c2feff0c4363484e/Civi/Api4/Action/CustomField/CustomFieldSaveTrait.php#L37
-                $customGroupSpec['fields'][$index]['option_values'][$key]['id'] = $value['value'];
+                $customGroupSpec['fields'][$customFieldName]['option_values'][$key]['id'] = $value['value'];
               }
             }
           }

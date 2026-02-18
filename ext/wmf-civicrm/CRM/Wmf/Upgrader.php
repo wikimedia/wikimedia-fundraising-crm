@@ -3943,6 +3943,42 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Use api-valid option value names.
+   *
+   * Per https://lab.civicrm.org/dev/core/-/issues/6342 we have some option_value names
+   * that cannot easily be reproduced on staging using the api.
+   *
+   * I don't believe changing them on prod would cause any problems as it
+   * is the value that is saved in the DB and don't interact with these ones via code.
+   *
+   * @return bool
+   */
+  public function upgrade_4860(): bool {
+    $pairs = [
+      '>$5B' => 'gt_5b',
+      '>$1B' => 'gt_1b',
+      '>$10B' => 'gt_10b',
+      '$100 Million +' => '_100_Million_plus',
+    ];
+    foreach ($pairs as $old => $new) {
+      CRM_Core_DAO::executeQuery(
+        "UPDATE civicrm_option_value SET name = '{$new}'
+        WHERE name = '{$old}' AND option_group_id = 130"
+      );
+    }
+    $pairs = [
+      '$250-999' => '250_999',
+      'Under $250' => 'Under_250',
+    ];
+    foreach ($pairs as $old => $new) {
+      CRM_Core_DAO::executeQuery(
+        "UPDATE civicrm_option_value SET name = '{$new}'
+        WHERE name = '{$old}' AND option_group_id = 34"
+      );
+    }
+    return TRUE;
+  }
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity

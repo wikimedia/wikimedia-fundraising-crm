@@ -8,8 +8,9 @@ class TrustlyAuditProcessor extends BaseAuditProcessor {
 
   protected $name = 'trustly';
   /**
-   * There are two different files we use for the audit SettlementDetailReport is weekly
-   * and PaymentsAccountingReport is nightly
+   * There are two different files we get from Trustly.
+   *
+   * The P11KFUN one holds settlement information.
    */
   protected function get_audit_parser() {
     return new TrustlyAudit();
