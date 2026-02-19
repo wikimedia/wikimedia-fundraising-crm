@@ -22,6 +22,36 @@ class TrustlyAuditTest extends BaseAuditTestCase {
   static protected $loglines;
 
   public function testFUNFile(): void {
+    // Create donation affected by chargeback.
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->createIndividual(),
+      'total_amount' => 26,
+      'receive_date' => 'December 27th, 2025 1:44 PM',
+      'contribution_extra.gateway' => 'gravy',
+      'financial_type_id:name' => 'Cash',
+      'contribution_extra.gateway_txn_id' => '1a16a190-a70b-44ab-9858-76ae7b7a6642',
+      'contribution_extra.backend_processor' => 'trustly',
+      'contribution_extra.backend_processor_txn_id' => '8063154000',
+      'contribution_extra.payment_orchestrator_reconciliation_id' => 'nE8rUqc0xFSXUPDJQY654',
+      'invoice_number' => '12345.1',
+    ]);
+
+    // Create donation affected by refund.
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->createIndividual(),
+      'total_amount' => 3.10,
+      'receive_date' => 'February 7th, 2026 10:33 AM',
+      'contribution_extra.gateway' => 'gravy',
+      'financial_type_id:name' => 'Cash',
+      'contribution_extra.gateway_txn_id' => ' 	070c47b8-3b8e-48dc-8585-10c4a4020728 ',
+      'contribution_extra.backend_processor' => 'trustly',
+      'contribution_extra.backend_processor_txn_id' => '8090501261',
+      'contribution_extra.payment_orchestrator_reconciliation_id' => 'DIYcExJDXRRFjjf4NLhEG',
+      'invoice_number' => '12346.1',
+    ]);
+
+    // Run it twice so the one that is refunded gets a chance to 'take'
+    $this->runAuditBatch('fun_file', 'P11KFUN-3618-20260201120000-20260202120000-0001of0001.csv');
     $this->runAuditBatch('fun_file', 'P11KFUN-3618-20260201120000-20260202120000-0001of0001.csv', '999');
     $contribution = Contribution::get(FALSE)
       ->addSelect('contribution_extra.*')

@@ -1329,6 +1329,10 @@ class Message {
     return $this->message['backend_processor_txn_id'] ?? NULL;
   }
 
+  protected function getBackendProcessorParentTxnID(): ?string {
+    return $this->message['backend_processor_parent_id'] ?? NULL;
+  }
+
   /**
    * Get the currency remitted by the donor.
    *

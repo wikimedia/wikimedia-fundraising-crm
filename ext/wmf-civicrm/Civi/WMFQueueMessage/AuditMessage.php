@@ -392,7 +392,8 @@ class AuditMessage extends DonationMessage {
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
             ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
-            ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorTxnID())
+            // Try the parent ID, if provided (e.g. refund) or the backend processor txn ID.
+            ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorParentTxnID() ?: $this->getBackendProcessorTxnID())
             ->addWhere('financial_type_id:name', '!=', 'Chargeback Reversal')
             ->execute()->first() ?? [];
         }
@@ -578,15 +579,20 @@ class AuditMessage extends DonationMessage {
    * @throws \CRM_Core_Exception
    */
   public function isSettled(): bool {
-      $settledField = $this->isNegative() ? 'settlement_batch_reversal_reference' : 'settlement_batch_reference';
+      $settledField = $this->isNegative() ? 'contribution_settlement.settlement_batch_reversal_reference' : 'contribution_settlement.settlement_batch_reference';
       return (bool) ($this->getExistingContribution()[$settledField] ?? FALSE);
   }
 
   public function getGateway(): string {
     $gateway = $this->getParentTransactionGateway();
-    if ($gateway === 'gravy' && $this->isChargeback() && $this->message['backend_processor'] === 'adyen') {
-      // For chargebacks we need to use the backend processor details.
-      // This scenario only occurs with Gravy + adyen.
+
+    if ($gateway === 'gravy' && ($this->isChargeback() && $this->getBackendProcessor() === 'adyen')
+      || (
+        $this->getBackendProcessor() === 'trustly' && !empty($this->message['backend_processor_parent_id']) && empty($this->message['payment_orchestrator_reconciliation_id'])
+      )
+    ) {
+      // For some chargebacks and refunds we need to use the backend processor details.
+      // This scenario only occurs with Gravy + adyen, except when it happens for Gravy + trustly refunds.
       return $this->message['backend_processor'];
     }
 
