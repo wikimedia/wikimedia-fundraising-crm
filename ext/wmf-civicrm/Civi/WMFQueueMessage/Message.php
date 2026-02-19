@@ -999,6 +999,10 @@ class Message {
     return $this->isGateway('gravy') && $this->message['payment_method'] === 'paypal';
   }
 
+  public function isGravyTrustly(): bool {
+    return $this->message['gateway'] === 'gravy' && $this->getBackendProcessor() === 'trustly';
+  }
+
   public function isBraintreeVenmo(): bool {
     return $this->isGateway('braintree') || $this->message['payment_method'] === 'venmo';
   }

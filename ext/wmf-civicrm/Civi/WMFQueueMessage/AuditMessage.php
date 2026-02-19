@@ -184,6 +184,10 @@ class AuditMessage extends DonationMessage {
    */
   public function normalize(): array {
     $message = $this->message;
+    $recurID = $this->getContributionRecurID();
+    if ($recurID) {
+      $message['contribution_recur_id'] = $recurID;
+    }
     $message['contribution_id'] = $this->getExistingContributionID();
     $message['parent_contribution_id'] = $this->getParentContributionID();
     // Do not populate this unless we know it is settled.
@@ -748,6 +752,24 @@ class AuditMessage extends DonationMessage {
   }
 
   /**
+   * Get the recurring contribution ID if it already exists.
+   *
+   * @return int|null
+   */
+  public function getContributionRecurID(): ?int {
+    if (isset($this->contributionRecurID)) {
+      return $this->contributionRecurID ?: NULL;
+    }
+    if ($this->isGravyTrustly()) {
+      $this->getTrustlyRecurringContribution();
+      return $this->contributionRecurID ?: NULL;
+    }
+    else {
+      return parent::getContributionRecurID();
+    }
+  }
+
+  /**
    * @return string[]
    */
   private function getContributionSelectFields(): array {
@@ -760,6 +782,49 @@ class AuditMessage extends DonationMessage {
       'contribution_extra.gateway',
       'contribution_recur_id',
     ];
+  }
+
+  /**
+   * Get the recurring contribution record for a trustly contribution.
+   *
+   * With Trustly Audit messages for subsequent recurrings we get
+   * - the gravy ID that relates to the FIRST contribution. This is also
+   * the trxn_id on the contribution recur
+   * - Trustly IDs.
+   *
+   * We need to treat to unset any references to the original gravy ID in this case.
+   * On the off chance they do not exist in Civi we can either
+   * 1) create as a trustly transaction or
+   * 2) require divine or fr-tech intervention to create as a gravy transaction.
+   *
+   * But, we do need to be able to match for settlement.
+   *
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   */
+  private function getTrustlyRecurringContribution(): ?array {
+    $recurring = Contribution::get(FALSE)
+      ->setSelect([
+          'contribution_extra.gateway_txn_id',
+          'contribution_extra.backend_processor_txn_id',
+          'contribution_recur_id.*'
+        ] + $this->getContributionSelectFields())
+      ->addWhere('contribution_recur_id.trxn_id', '=', $this->message['gateway_txn_id'])
+      ->addOrderBy('id')
+      ->execute()->first();
+    $this->contributionRecurID = $recurring['id'] ?? FALSE;
+    if ($recurring) {
+      // Since we have loaded this we should register it, so we can lazy access it.
+      $this->define('ContributionRecur', 'ContributionRecur', \CRM_Utils_Array::filterByPrefix($recurring, 'contribution_recur_id'));
+      if ($this->message['backend_processor_txn_id'] === $recurring['contribution_extra.backend_processor_txn_id']) {
+        $this->existingContribution = $recurring;
+      }
+      else {
+        $this->firstRecurringContribution = $recurring;
+      }
+
+    }
+    return $recurring;
   }
 
 }
