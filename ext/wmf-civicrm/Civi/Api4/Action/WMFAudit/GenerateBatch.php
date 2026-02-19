@@ -1059,6 +1059,7 @@ GROUP BY s.settlement_batch_reference
     if ($isValid) {
       Batch::update(FALSE)
         ->addValue('status_id:name', 'validated')
+        ->addValue('batch_data.last_successful_validation_date',  gmdate('Y-m-d H:i:s'))
         ->addWhere('id', '=', $batch['id'])
         ->execute();
       $this->log('The following batches have been validated ' . implode(',', array_keys($this->batchSummary)));
