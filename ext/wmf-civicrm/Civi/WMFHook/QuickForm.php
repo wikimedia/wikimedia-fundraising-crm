@@ -55,6 +55,7 @@ class QuickForm {
         $template = CRM_Core_Form::getTemplate();
         $groupId = CalculatedData::getCalculatedCustomFieldGroupID();
         $rows = $template->getTemplateVars('rows');
+        $summaryRows = $form->getTemplateVars('summary_rows');
         if (isset($rows["custom_group_$groupId"])) {
           unset($rows["custom_group_$groupId"]);
           $form->assign('rows', $rows);
@@ -68,23 +69,45 @@ class QuickForm {
             // top of the merge screen - this makes it easier for Donor relations.
             // See https://phabricator.wikimedia.org/T256314#8385450
             $lastDonationValues = $rows[$elementName];
-            $summaryRows = $form->getTemplateVars('summary_rows');
             $summaryRows[] = [
               'name' => 'all_funds_last_donation_date',
               'label' => $field['label'],
               'main_contact_value' => $lastDonationValues['main'] ?? '',
               'other_contact_value' => $lastDonationValues['other'] ?? '',
             ];
-            $form->assign('summary_rows', $summaryRows);
           }
           if ($form->elementExists($elementName)) {
             $form->removeElement($elementName);
           }
           if ($rowExists) {
             unset($rows[$elementName]);
-            $form->assign('rows', $rows);
           }
         }
+        $mainCid = $form->getTemplateVars('main_cid');
+        $otherCid = $form->getTemplateVars('other_cid');
+        $doubleOptInActivities = \Civi\Api4\Activity::get(FALSE)
+          ->addWhere('target_contact_id', 'IN', [$mainCid, $otherCid])
+          ->addWhere('activity_type_id:name', '=', 'Double Opt-In')
+          ->addWhere('status_id:name', '=', 'Completed')
+          ->addSelect('subject', 'target_contact_id')
+          ->execute();
+        if ($doubleOptInActivities->count() > 0) {
+          $optInSummaryRow = [
+            'name' => 'double_opt_in_email',
+            'label' => 'Double Opt-In Email'
+          ];
+          foreach($doubleOptInActivities as $activity) {
+            if (in_array($mainCid, $activity['target_contact_id'])) {
+              $optInSummaryRow['main_contact_value'] = $activity['subject'];
+            }
+            if (in_array($otherCid, $activity['target_contact_id'])) {
+              $optInSummaryRow['other_contact_value'] = $activity['subject'];
+            }
+          }
+          $summaryRows[] = $optInSummaryRow;
+        }
+        $form->assign('rows', $rows);
+        $form->assign('summary_rows', $summaryRows);
         break;
     }
   }
