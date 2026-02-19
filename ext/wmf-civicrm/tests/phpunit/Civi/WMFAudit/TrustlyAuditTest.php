@@ -24,7 +24,7 @@ class TrustlyAuditTest extends BaseAuditTestCase {
   public function testFUNFile(): void {
     // Create donation affected by chargeback.
     $this->createTestEntity('Contribution', [
-      'contact_id' => $this->createIndividual(),
+      'contact_id' => $this->createIndividual([], 'chargeback'),
       'total_amount' => 26,
       'receive_date' => 'December 27th, 2025 1:44 PM',
       'contribution_extra.gateway' => 'gravy',
@@ -38,20 +38,59 @@ class TrustlyAuditTest extends BaseAuditTestCase {
 
     // Create donation affected by refund.
     $this->createTestEntity('Contribution', [
-      'contact_id' => $this->createIndividual(),
+      'contact_id' => $this->createIndividual([], 'refund'),
       'total_amount' => 3.10,
       'receive_date' => 'February 7th, 2026 10:33 AM',
       'contribution_extra.gateway' => 'gravy',
       'financial_type_id:name' => 'Cash',
-      'contribution_extra.gateway_txn_id' => ' 	070c47b8-3b8e-48dc-8585-10c4a4020728 ',
+      'contribution_extra.gateway_txn_id' => '070c47b8-3b8e-48dc-8585-10c4a4020728',
       'contribution_extra.backend_processor' => 'trustly',
       'contribution_extra.backend_processor_txn_id' => '8090501261',
       'contribution_extra.payment_orchestrator_reconciliation_id' => 'DIYcExJDXRRFjjf4NLhEG',
       'invoice_number' => '12346.1',
     ]);
 
+    // And this one is a bit nasty - create the original contribution in a recurring series.
+    // The details we get 'look like' this one ... but they are not...
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->createIndividual([], 'recur'),
+      'amount' => 5,
+      'receive_date' => '	September 6th, 2025 2:34 AM',
+      'payment_processor_id:name' => 'gravy',
+      'financial_type_id:name' => 'Cash',
+      'processor_id' => 'c05d965a-6209-4137-86e7-deafb53d76a9',
+      'trxn_id' => 'c05d965a-6209-4137-86e7-deafb53d76a9',
+    ], 'recur');
+    $this->createTestEntity('Contribution', [
+      'contribution_recur_id' => $this->ids['ContributionRecur']['recur'],
+      'contact_id' => $this->ids['Contact']['recur'],
+      'total_amount' => 5,
+      'receive_date' => 'September 6th, 2025 2:34 AM',
+      'contribution_extra.gateway' => 'gravy',
+      'financial_type_id:name' => 'Cash',
+      'contribution_extra.gateway_txn_id' => 'c05d965a-6209-4137-86e7-deafb53d76a9',
+      'contribution_extra.backend_processor' => 'trustly',
+      'contribution_extra.backend_processor_txn_id' => '7987701532',
+      'invoice_number' => '12347.2',
+    ]);
+
     // Run it twice so the one that is refunded gets a chance to 'take'
     $this->runAuditBatch('fun_file', 'P11KFUN-3618-20260201120000-20260202120000-0001of0001.csv');
+
+    // Also create the one in the file. We know it won't create well but let's at least make it settle.
+    $this->createTestEntity('Contribution', [
+      'contribution_recur_id' => $this->ids['ContributionRecur']['recur'],
+      'contact_id' => $this->ids['Contact']['recur'],
+      'total_amount' => 5,
+      'receive_date' => '2026-02-06T17:10:34.857Z',
+      'contribution_extra.gateway' => 'gravy',
+      'financial_type_id:name' => 'Cash',
+      'contribution_extra.gateway_txn_id' => 'something random',
+      'contribution_extra.backend_processor' => 'trustly',
+      'contribution_extra.backend_processor_txn_id' => '8090016929',
+      'invoice_number' => '12347.1',
+    ]);
+
     $this->runAuditBatch('fun_file', 'P11KFUN-3618-20260201120000-20260202120000-0001of0001.csv', '999');
     $contribution = Contribution::get(FALSE)
       ->addSelect('contribution_extra.*')
@@ -59,6 +98,22 @@ class TrustlyAuditTest extends BaseAuditTestCase {
       ->addWhere('contribution_extra.gateway_txn_id', '=', '0e5d047c-e2ed-4bec-a3fc-156fccf64e13')
       ->execute()->single();
     $this->assertEquals('USD', $contribution['contribution_extra.original_currency']);
+
+    // Make sure the original recurring contribution was not added to the batch.
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('contribution_extra.*', 'contribution_settlement.*')
+      ->addWhere('contribution_extra.gateway', '=', 'gravy')
+      ->addWhere('contribution_extra.gateway_txn_id', '=', 'c05d965a-6209-4137-86e7-deafb53d76a9')
+      ->execute()->single();
+    $this->assertEmpty($contribution['contribution_settlement.settlement_batch_reference']);
+
+    // Make sure a new recurring was.
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('contribution_extra.*', 'contribution_settlement.*')
+      ->addWhere('contribution_extra.backend_processor', '=', 'trustly')
+      ->addWhere('contribution_extra.backend_processor_txn_id', '=', '8090016929')
+      ->execute()->single();
+    $this->assertEquals('trustly_999_USD', $contribution['contribution_settlement.settlement_batch_reference']);
   }
 
   public function createTransactionLog(array $row): void {

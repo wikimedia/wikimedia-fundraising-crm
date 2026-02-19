@@ -195,6 +195,15 @@ class AuditMessage extends DonationMessage {
     $message['settled_date'] = $this->getSettlementTimeStamp();
     $message['gateway'] = $this->getGateway();
     $message['gateway_txn_id'] = $this->getGatewayTxnId();
+    if ($this->isGravyTrustly() && $this->isSubsequentTrustlyRecurring()) {
+      // Determining that the gateway should be treated as trustly means that the
+      // gravy reference relates to the first contribution not this one. We need to unset that
+      // information. If it is missing then it will fail to create without gateway_txn_id
+      // which should cause noise (good because we expect this to be there for
+      // other reasons) but settle should work.
+      unset($message['gateway_txn_id']);
+      unset($message['payment_orchestrator_reconciliation_id']);
+    }
     $message['backend_processor'] = $this->getBackendProcessor();
     $message['backend_processor_txn_id'] = $this->getBackendProcessorTxnID();
     $message['payment_method'] = $this->getPaymentMethod();
@@ -347,6 +356,13 @@ class AuditMessage extends DonationMessage {
     if (!isset($this->existingContribution)) {
       $this->existingContribution = [];
 
+      // See first if it is a recurring as the gravy gateway_txn_id will be for the first in the series.
+      $isAvoidGravyLookups = $this->isGravyTrustly() && $this->getContributionRecurID();
+      if ($this->existingContribution) {
+        // This could have been set during the trustly contribution recur lookup.
+        return $this->existingContribution;
+      }
+
       $selectFields = $this->getContributionSelectFields();
       if ($this->isRefund() || $this->isChargeback()) {
         // Check whether a standalone refund or chargeback has been created - this occurs when
@@ -383,7 +399,7 @@ class AuditMessage extends DonationMessage {
         }
       }
       else {
-        if (empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
+        if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
             ->addWhere('contribution_extra.payment_orchestrator_reconciliation_id', '=', $this->getPaymentOrchestratorReconciliationReference())
@@ -392,8 +408,7 @@ class AuditMessage extends DonationMessage {
             ->execute()->first() ?? [];
         }
         if (empty($this->existingContribution) && $this->getBackendProcessorTxnID() && $this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
-          $debugInformation['is_gravy'] = TRUE;
-          // Looking at a gravy transaction in the Adyen file?
+          // Looking at a gravy transaction in the Adyen file or a recurring in the trustly file.
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
             ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
@@ -402,7 +417,7 @@ class AuditMessage extends DonationMessage {
             ->addWhere('financial_type_id:name', '!=', 'Chargeback Reversal')
             ->execute()->first() ?? [];
         }
-        if (empty($this->existingContribution) && $this->getGatewayParentTxnID()) {
+        if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getGatewayParentTxnID()) {
           $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
           $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
           $this->existingContribution = Contribution::get(FALSE)
@@ -432,14 +447,29 @@ class AuditMessage extends DonationMessage {
   }
 
   public function isSubsequentRecurring(): bool {
+    if ($this->isGravyTrustly()) {
+      return $this->isSubsequentTrustlyRecurring();
+    }
     if ($this->getContributionRecurID()) {
       return TRUE;
     }
     $orderParts = explode('.', (string) $this->getOrderID());
-    if ((int) ($orderParts[1] ?? 0) <= 1) {
+    if (!$this->isGravyTrustly() && (int) ($orderParts[1] ?? 0) <= 1) {
       return FALSE;
     }
     return !empty($this->getFirstRecurringContribution());
+  }
+
+  public function isSubsequentTrustlyRecurring(): bool {
+    if ($this->contributionRecurID !== FALSE) {
+      $recurring = $this->getTrustlyRecurringContribution();
+      if ($recurring) {
+
+        $this->contributionRecurID = FALSE;
+        return FALSE;
+      }
+    }
+    return FALSE;
   }
 
   /**
@@ -591,10 +621,10 @@ class AuditMessage extends DonationMessage {
   public function getGateway(): string {
     $gateway = $this->getParentTransactionGateway();
 
-    if ($gateway === 'gravy' && ($this->isChargeback() && $this->getBackendProcessor() === 'adyen')
-      || (
-        $this->getBackendProcessor() === 'trustly' && !empty($this->message['backend_processor_parent_id']) && empty($this->message['payment_orchestrator_reconciliation_id'])
-      )
+    if ($gateway === 'gravy' &&
+      ($this->isChargeback() && $this->getBackendProcessor() === 'adyen')
+      ||
+      ($this->getBackendProcessor() === 'trustly' && !empty($this->message['backend_processor_parent_id']) && empty($this->message['payment_orchestrator_reconciliation_id']))
     ) {
       // For some chargebacks and refunds we need to use the backend processor details.
       // This scenario only occurs with Gravy + adyen, except when it happens for Gravy + trustly refunds.
