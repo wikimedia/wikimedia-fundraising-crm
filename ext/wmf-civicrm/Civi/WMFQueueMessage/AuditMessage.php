@@ -342,7 +342,8 @@ class AuditMessage extends DonationMessage {
     $debugInformation = [];
     if (!isset($this->existingContribution)) {
       $this->existingContribution = [];
-      $selectFields = ['id', 'contribution_status_id:name', 'fee_amount', 'contribution_settlement.settlement_batch_reference', 'contribution_settlement.settlement_batch_reversal_reference', 'contribution_extra.gateway'];
+
+      $selectFields = $this->getContributionSelectFields();
       if ($this->isRefund() || $this->isChargeback()) {
         // Check whether a standalone refund or chargeback has been created - this occurs when
         // we get a chargeback on one we have already refunded.
@@ -744,6 +745,21 @@ class AuditMessage extends DonationMessage {
 
   public function getGrantProvider(): ?string {
     return ($this->message['grant_provider'] ?? NULL);
+  }
+
+  /**
+   * @return string[]
+   */
+  private function getContributionSelectFields(): array {
+    return [
+      'id',
+      'contribution_status_id:name',
+      'fee_amount',
+      'contribution_settlement.settlement_batch_reference',
+      'contribution_settlement.settlement_batch_reversal_reference',
+      'contribution_extra.gateway',
+      'contribution_recur_id',
+    ];
   }
 
 }
