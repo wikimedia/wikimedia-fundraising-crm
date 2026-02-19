@@ -126,12 +126,16 @@ class BaseAuditTestCase extends TestCase {
    */
   protected function runAuditor($fileName = NULL): Result {
     try {
-      return WMFAudit::parse()
+      $result = WMFAudit::parse()
         ->setGateway($this->gateway)
         ->setFile((string) $fileName)
         ->setSettleMode('queue')
         ->setIsMoveCompletedFile(FALSE)
         ->execute();
+      foreach ($result as $item) {
+        $this->ids['Batch'][$item['settlement_batch_reference']] = $item['id'];
+      }
+      return $result;
     }
     catch (\CRM_Core_Exception $e) {
       $this->fail($e->getMessage());

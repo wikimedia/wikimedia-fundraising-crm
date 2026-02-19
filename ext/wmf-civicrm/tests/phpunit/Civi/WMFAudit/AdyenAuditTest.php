@@ -859,6 +859,8 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->assertEquals(1, $refundContribution['total_amount']);
 
     // Batch contains one refund and one donation.
+    $batch = $result['batch']->first();
+    unset($batch['id']);
     $this->assertEquals([
       'transaction_count' => 3,
       'settled_total_amount' => 19.2,
@@ -871,7 +873,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
       'settlement_batch_reference' => 'adyen_1120_USD',
       'settlement_gateway' => 'adyen',
       'status_id:name' => 'total_verified',
-    ], $result['batch']->first());
+    ], $batch);
     $this->assertMessages($expectedMessages);
 
     // Run the batch again to confirm it doesn't fail on the second go at the fees
