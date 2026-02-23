@@ -62,9 +62,11 @@ class Message {
    * or set from external code rather than passed in. We keep the original $message array unchanged but
    * track the value here to avoid duplicate lookups.
    *
-   * @var int|null
+   * False denotes a look-up has determined there is none (so no further look-ups should be done).
+   *
+   * @var int|null|false
    */
-  protected ?int $contributionRecurID;
+  protected null|int|false $contributionRecurID = NULL;
 
   /**
    * Constructor.
@@ -845,9 +847,9 @@ class Message {
    */
   public function getContributionRecurID(): ?int {
     if (isset($this->contributionRecurID)) {
-      return $this->contributionRecurID;
+      return $this->contributionRecurID ?: NULL;
     }
-    $this->contributionRecurID = !empty($this->message['contribution_recur_id']) ? (int) $this->message['contribution_recur_id'] : NULL;
+    $this->contributionRecurID = !empty($this->message['contribution_recur_id']) ? (int) $this->message['contribution_recur_id'] : FALSE;
 
     if (!$this->contributionRecurID && !empty($this->message['subscr_id'])) {
       $recurRecord = RecurHelper::getByGatewaySubscriptionId($this->getGateway(), $this->message['subscr_id']);
@@ -856,10 +858,10 @@ class Message {
         // Since we have loaded this we should register it so we can lazy access it.
         $this->define('ContributionRecur', 'ContributionRecur', $recurRecord);
         $this->contributionRecurID = $recurRecord['id'];
-        return $this->contributionRecurID;
+        return $this->contributionRecurID ?: NULL;
       }
     }
-    return $this->contributionRecurID;
+    return $this->contributionRecurID ?: NULL;
   }
 
   /**
@@ -1327,6 +1329,10 @@ class Message {
 
   public function getBackendProcessorTxnID(): ?string {
     return $this->message['backend_processor_txn_id'] ?? NULL;
+  }
+
+  protected function getBackendProcessorParentTxnID(): ?string {
+    return $this->message['backend_processor_parent_id'] ?? NULL;
   }
 
   /**

@@ -525,36 +525,14 @@ EOT;
       return;
     }
 
-    $message = WorkflowMessage::render(FALSE)
-      ->setLanguage($mailingData['preferred_language'] ?: 'en_US')
-      ->setValues(['contactID' => $mailingData['contact_id']])
-      ->setWorkflow('double_opt_in')->execute()->first();
-
-    $email = [
-      'from_name' => From::getFromName('double_opt_in'),
-      'from_address' => From::getFromAddress('double_opt_in'),
-      'to_name' => $mailingData['display_name'],
-      'to_address' => $mailingData['email'],
-      'locale' => $mailingData['preferred_language'] ?: 'en_US',
-      'html' => $message['html'],
-      'subject' => $message['subject'],
-    ];
-
-    \Civi::log('wmf')->info(
-      'thank_you: Sending double opt-in email to: {to_address}',
-      ['to_address' => $email['to_address']]
-    );
-    if (MailFactory::singleton()->send($email, [])) {
-      Activity::create(FALSE)->setValues([
-        'source_contact_id' => $mailingData['contact_id'],
-        'target_contact_id' => $mailingData['contact_id'],
-        'activity_type_id:name' => 'Email',
-        'activity_date_time' => 'now',
-        'subject' => $message['subject'],
-        'details' => $message['html'],
-        'status_id:name' => 'Completed',
-      ])->execute();
+    $action = Civi\Api4\DoubleOptIn::send(FALSE)
+      ->setDisplayName($mailingData['display_name'])
+      ->setContactId($mailingData['contact_id'])
+      ->setEmail($mailingData['email']);
+    if (!empty($mailingData['preferred_language'])) {
+      $action->setPreferredLanguage($mailingData['preferred_language']);
     }
+    $action->execute();
   }
 
 }

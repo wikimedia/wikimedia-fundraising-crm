@@ -187,14 +187,14 @@ class Parse extends AbstractAction {
       $batch['settled_fee_amount'] = (string) $batch['settled_fee_amount']->getAmount();
       $batch['settled_reversal_amount'] = (string) $batch['settled_reversal_amount']->getAmount();
       $batch['settled_donation_amount'] = (string) $batch['settled_donation_amount']->getAmount();
-      $result[] = $batch;
       if (!empty($existing['status_id:name']) && !in_array($existing['status_id:name'], ['Reopened', 'Open'], TRUE)) {
+        $result[] = ['id' => $existing['id']] + $batch;
         // Once it is verified or exported we don't overwrite it.
         continue;
       }
       // In time we should only overwrite open batches but for now we just update to what we find
       // as this is experimental.
-      Batch::save(FALSE)
+      $updatedBatch = Batch::save(FALSE)
         ->addRecord([
           'name' => $batch['settlement_batch_reference'],
           'status_id:name' => $batch['status_id:name'],
@@ -211,7 +211,8 @@ class Parse extends AbstractAction {
           'batch_data.settlement_gateway' => $batch['settlement_gateway'],
         ] + $existing)
         ->setMatch(['name', 'type_id'])
-        ->execute();
+        ->execute()->first();
+      $result[] = ['id' => $updatedBatch['id']] + $batch;;
     }
   }
 

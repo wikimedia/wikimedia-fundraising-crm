@@ -2445,7 +2445,7 @@ function _wmf_civicrm_get_batch_data_fields(): array {
     'last_successful_validation_date' => [
       'name' => 'last_successful_validation_date',
       'column_name' => 'last_successful_validation_date',
-      'label' => 'Last successfully verified at',
+      'label' => 'Last successfully validated at',
       'data_type' => 'Date',
       'html_type' => 'Select Date',
       'weight' => 11,
