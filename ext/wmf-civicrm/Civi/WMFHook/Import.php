@@ -168,7 +168,8 @@ class Import {
                 $softCreditContact['email_primary.email'] ?? NULL,
                 $softCreditContact['first_name'] ?? NULL,
                 $softCreditContact['last_name'] ?? NULL,
-                $organizationName
+                $softCreditContact['address_primary.postal_code'] ?? NULL,
+                $organizationName,
               );
             }
           }
@@ -191,6 +192,7 @@ class Import {
               $this->mappedRow['Contact']['email_primary.email'] ?? NULL,
               $this->mappedRow['Contact']['first_name'] ?? NULL,
               $this->mappedRow['Contact']['last_name'] ?? NULL,
+              $this->mappedRow['Contact']['address_primary.postal_code'] ?? NULL,
               $organizationName,
               $organizationID
             );

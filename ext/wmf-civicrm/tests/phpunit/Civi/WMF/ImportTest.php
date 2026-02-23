@@ -364,15 +364,20 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $data = $this->setupImport(['SoftCreditContact.id' => '']);
     $this->fillImportRow($data);
     $this->runImport($data);
-    $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
-    $this->assertEquals('ERROR', $import[0]['_status']);
-    $this->assertStringContainsString('Multiple contact matches with employer connection: ', $import[0]['_status_message']);
+    $import = (array) Import::get($this->userJobID)->setSelect(['_status'])->execute();
+    // Soft credit will be for lower contact id
+    $this->assertEquals('soft_credit_imported', $import[0]['_status']);
+    $softCredits = ContributionSoft::get(FALSE)->addWhere('contact_id', '=', $this->ids['Contact']['individual_1'])->execute()->count();
+    $this->assertEquals(2, $softCredits);
 
     // Re-run with the contact ID specified
-    Import::update($this->userJobID)->setValues(['softcreditcontact__id' => $this->ids['Contact']['individual_2']])->addWhere('_id', '=', 1)->execute();
+    $data = $this->setupImport(['SoftCreditContact.id' => $this->ids['Contact']['individual_2']]);
+    $this->fillImportRow($data);
     $this->runImport($data);
     $import = (array) Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute();
     $this->assertEquals('soft_credit_imported', $import[0]['_status'], $import[0]['_status_message']);
+    $softCredits = ContributionSoft::get(FALSE)->addWhere('contact_id', '=', $this->ids['Contact']['individual_2'])->execute()->count();
+    $this->assertEquals(2, $softCredits);
   }
 
   /**
@@ -602,11 +607,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * Test when there are multiple individual matches.
    *
    * If there are 2 employed individuals with the same name then
-   * they need merging so throw an error.
-   *
-   * There is some small chance they are legit - but more likely
-   * this requires a merge, so it's probably ok to err on the side of
-   * requiring user resolution.
+   * we should match on zip code if available.
    *
    * @throws \CRM_Core_Exception
    */
@@ -615,40 +616,51 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       'contact_type' => 'Organization',
       'organization_name' => 'The Firm',
     ])['id'];
-    $this->setupImport(['organization_id' => $organizationID]);
-    $this->callAPISuccess('Contact', 'create', [
+    $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Jane',
       'last_name' => 'Doe',
       'employer_id' => $organizationID,
+    ], 'individual_1');
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'employer_id' => $organizationID,
+    ], 'individual_2');
+
+    $this->callAPISuccess('Address', 'create', [
+      'contact_id' => $this->ids['Contact']['individual_2'],
+      'location_type_id' => 'Home',
+      'is_primary' => 1,
+      'postal_code' => '12345-1234',
     ]);
-    $individualID2 = $this->callAPISuccess('Contact', 'create', [
-      'contact_type' => 'Individual',
-      'first_name' => 'Jane',
-      'last_name' => 'Doe',
-      'employer_id' => $organizationID,
-    ])['id'];
-    $this->createSoftCreditLink($organizationID, $individualID2);
-    $importFields = array_fill_keys([
-      'Contribution.financial_type_id',
-      'Contribution.total_amount',
-      '',
-      'Contact.first_name',
-      'Contact.last_name',
-      'Contact.source',
-      'organization_id',
-    ], TRUE);
-    $this->runImport($importFields, 'Individual');
+
+    $this->createSoftCreditLink($organizationID, $this->ids['Contact']['individual_2']);
+    $data = $this->setupImport([
+      'organization_id' => $organizationID,
+      'Contact.address_primary.postal_code' => '12345',
+      'Contact.email_primary.email' => '',
+    ]);
+    $this->runImport($data, 'Individual');
     $import = Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute()->first();
-    $this->assertEquals('ERROR', $import['_status']);
-    $this->assertStringContainsString('Multiple contact matches', $import['_status_message']);
+    $this->assertEquals('soft_credit_imported', $import['_status'], $import['_status_message']);
+    $contributions = Contribution::get(FALSE)->addWhere('contact_id', '=', $this->ids['Contact']['individual_2'])->execute()->count();
+    $this->assertEquals(1, $contributions);
 
     // Let's now check that if we change individual2's relationship to be disabled
     // then it will select contact 1.
-    Relationship::update()->setValues(['is_active' => FALSE])->addWhere('contact_id_a', '=', $individualID2)->execute();
-    $this->runImport($importFields, 'Individual');
+    $data = $this->setupImport([
+      'organization_id' => $organizationID,
+      'Contact.address_primary.postal_code' => '12345',
+      'Contact.email_primary.email' => '',
+    ]);
+    Relationship::update()->setValues(['is_active' => FALSE])->addWhere('contact_id_a', '=', $this->ids['Contact']['individual_2'])->execute();
+    $this->runImport($data, 'Individual');
     $import = Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute()->first();
     $this->assertEquals('soft_credit_imported', $import['_status'], $import['_status_message']);
+    $contributions = Contribution::get(FALSE)->addWhere('contact_id', '=', $this->ids['Contact']['individual_1'])->execute()->count();
+    $this->assertEquals(1, $contributions);
   }
 
   /**
@@ -698,6 +710,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     foreach (array_keys($columns) as $column) {
       $fieldSql[] = '`' . str_replace('.', '__', strtolower($column)) . '` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL';
     }
+    \CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS civicrm_tmp_d_abc');
     \CRM_Core_DAO::executeQuery('CREATE TABLE civicrm_tmp_d_abc (
   ' . implode(',', $fieldSql) . ",
   `_entity_id` INT(11) DEFAULT NULL,
