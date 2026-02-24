@@ -159,6 +159,33 @@ class PaypalAuditTest extends BaseAuditTestCase {
     $this->assertEquals('PAYPAL 1VR655', $contributions['Chargeback']['trxn_id']);
   }
 
+  /**
+   * In this situation we have been charged a chargeback for a non-captured
+   * donation. The chargeback was reversed but there was a fee difference left.
+   *
+   * At this point we are testing the reversal is brought in - but have not quite
+   * figured out how to tell the difference between a chargeback that is waiting
+   * for the original donation to be created vs one where it never will - do we
+   * need to manually intervene? Do we create them if x time has passed?
+   *
+   * Bug: T417347
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function testSTLFileOrphanChargebacks(): void {
+    $this->runAuditBatch('stl_chargeback_orphan', 'STL-20260106.01.009.csv');
+    $contributions = Contribution::get(FALSE)
+      ->addWhere('finance_batch', '=', 'paypal_20251009_GBP')
+      ->addSelect('*', 'contribution_settlement.*', 'contribution_extra.*', 'contribution_status_id:name')
+      ->execute()->indexBy('contribution_status_id:name');
+    // We really should have 2 here but we haven't solved the chargeback challenge yet.
+    // The issue there is that the original transaction is not coming (never captured).
+    // This is an anomaly so it's hard to draw conclusions about how we might identify
+    // this if it happens again.
+    $this->assertCount(1, $contributions);
+  }
+
   public function testPaypalGrants() {
     $this->createTestEntity('Contribution', [
       'contact_id' => $this->createIndividual(),
