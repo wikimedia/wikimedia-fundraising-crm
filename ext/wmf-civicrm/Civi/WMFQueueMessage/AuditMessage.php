@@ -109,6 +109,7 @@ class AuditMessage extends DonationMessage {
   public function isNegative(): bool {
     return $this->isRefund() ||
     $this->isChargeback() ||
+    $this->isReversal() ||
     $this->isCancel();
   }
 
@@ -128,6 +129,22 @@ class AuditMessage extends DonationMessage {
    */
   public function isChargeback(): bool {
     return $this->getType() === 'chargeback';
+  }
+
+  /**
+   * Is the message advising a reversal.
+   *
+   * Generally these are more obscure than the general refund or chargebacks.
+   *
+   * e.g. PayPal can issue 2 chargeback-like transactions, one is a hold and
+   * we call that a reversal.
+   *
+   * https://phabricator.wikimedia.org/T418191
+   *
+   * @return boolean
+   */
+  public function isReversal(): bool {
+    return $this->getType() === 'reversal';
   }
 
   /**
@@ -222,7 +239,7 @@ class AuditMessage extends DonationMessage {
     else {
       $message['order_id'] = $this->getOrderID();
     }
-    if ($this->isChargebackReversal() || $this->isRefundReversal()) {
+    if ($this->isReversingPriorReversal()) {
       // Maybe always but definitely here.
       $message['invoice_id'] = $this->getOrderID();
       // These are such oddities we should keep them simple.
@@ -315,6 +332,7 @@ class AuditMessage extends DonationMessage {
             'existing_status' => $existingContribution['contribution_status_id:name'],
             'is_chargeback' => $this->isChargeback(),
             'is_refund' => $this->isRefund(),
+            'is_reversal' => $this->isReversal(),
           ] + $this->message
         );
         $isFirstNegative = FALSE;
@@ -344,6 +362,9 @@ class AuditMessage extends DonationMessage {
      if ($this->isChargeback()) {
        return 'Chargeback';
      }
+    if ($this->isReversal()) {
+      return 'reversal';
+    }
      return 'Completed';
   }
 
@@ -364,7 +385,7 @@ class AuditMessage extends DonationMessage {
       }
 
       $selectFields = $this->getContributionSelectFields();
-      if ($this->isRefund() || $this->isChargeback()) {
+      if ($this->isRefund() || $this->isChargeback() || $this->isReversal()) {
         // Check whether a standalone refund or chargeback has been created - this occurs when
         // we get a chargeback on one we have already refunded.
         $transaction = WMFTransaction::from_message($this->message);
@@ -383,15 +404,14 @@ class AuditMessage extends DonationMessage {
           ->addClause('OR', ['trxn_id', '=', $trxn_id], ['trxn_id', '=', $trxn_id_recur])
           ->execute()->first() ?? [];
       }
-      if ($this->isChargebackReversal() || $this->isRefundReversal()) {
+      if ($this->isReversingPriorReversal()) {
         // Reversals would result in a discreet contribution with a trxn_id
         // like CHARGEBACK_REVERSAL GRAVY e6d5ed2f-00cc-4e1f-a840-09dbc4a28df9
         // or REFUND_REVERSAL GRAVY e6d5ed2f-00cc-4e1f-a840-09dbc4a28df9
         // That is the only contribution that would be a 'match' for an incoming chargeback reversal
         if (empty($this->existingContribution)) {
           $trxn_id = WMFTransaction::from_message($this->message)->get_unique_id();
-          $key = $this->isChargebackReversal() ? 'chargeback_reversal_trxn_id' : 'refund_reversal_trxn_id';
-          $debugInformation[$key] = $trxn_id;
+          $debugInformation[$this->getType() . 'reversal_trxn_id'] = $trxn_id;
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
             ->addWhere('trxn_id', '=', $trxn_id)
@@ -404,7 +424,7 @@ class AuditMessage extends DonationMessage {
             ->setSelect($selectFields)
             ->addWhere('contribution_extra.payment_orchestrator_reconciliation_id', '=', $this->getPaymentOrchestratorReconciliationReference())
             ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
-            ->addWhere('financial_type_id:name', '!=', 'Chargeback Reversal')
+            ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
             ->execute()->first() ?? [];
         }
         if (empty($this->existingContribution) && $this->getBackendProcessorTxnID() && $this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
@@ -414,7 +434,7 @@ class AuditMessage extends DonationMessage {
             ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
             // Try the parent ID, if provided (e.g. refund) or the backend processor txn ID.
             ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorParentTxnID() ?: $this->getBackendProcessorTxnID())
-            ->addWhere('financial_type_id:name', '!=', 'Chargeback Reversal')
+            ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
             ->execute()->first() ?? [];
         }
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getGatewayParentTxnID()) {
@@ -473,13 +493,22 @@ class AuditMessage extends DonationMessage {
   }
 
   /**
+   * Is this transaction reversing a prior refund, chargeback or generic reversal.
+   *
+   * @return bool
+   */
+  public function isReversingPriorReversal(): bool {
+    return $this->isChargebackReversal() || $this->isRefundReversal() || $this->isReversalReversal();
+  }
+
+  /**
    * @throws \CRM_Core_Exception
    */
   public function getGatewayParentTxnID(): ?string {
     if (!empty($this->message['gateway_parent_id'])) {
       return $this->message['gateway_parent_id'];
     }
-    if ($this->isChargebackReversal() || $this->isRefundReversal()) {
+    if ($this->isReversingPriorReversal()) {
       // We treat these as a new contribution on their own
       // and ignore the parent.
       return NULL;
@@ -550,6 +579,9 @@ class AuditMessage extends DonationMessage {
     }
     if ($this->isRefundReversal() && !empty($value)) {
       $value .= '-rr';
+    }
+    if ($this->isReversalReversal() && !empty($value)) {
+      $value .= '-rvr';
     }
     return $value;
   }
@@ -699,7 +731,7 @@ class AuditMessage extends DonationMessage {
         else {
           $contributionTrackingID = explode('.', (string) $this->getOrderID())[0];
           if (is_numeric($contributionTrackingID)) {
-            if ($this->isChargebackReversal() || $this->isRefund() || $this->isRefundReversal() || $this->isChargeback()) {
+            if ($this->isReversingPriorReversal() || $this->isRefund() || $this->isReversal() || $this->isChargeback()) {
               // If we are dealing with a chargeback or refund or reversal of one of them
               // then we probably only really need the contact ID to go ahead. If the transaction details
               // are missing them let's use what we have.
@@ -837,7 +869,7 @@ class AuditMessage extends DonationMessage {
       ->setSelect([
           'contribution_extra.gateway_txn_id',
           'contribution_extra.backend_processor_txn_id',
-          'contribution_recur_id.*'
+          'contribution_recur_id.*',
         ] + $this->getContributionSelectFields())
       ->addWhere('contribution_recur_id.trxn_id', '=', $this->message['gateway_txn_id'])
       ->addOrderBy('id')

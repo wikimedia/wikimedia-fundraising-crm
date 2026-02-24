@@ -112,6 +112,13 @@ class DonationMessage extends Message {
     return $this->message['type'] === 'refund_reversed';
   }
 
+  public function isReversalReversal() : bool {
+    if (empty($this->message['type'])) {
+      return FALSE;
+    }
+    return $this->message['type'] === 'reversal_reversed';
+  }
+
   /**
    * @param array $message
    *
@@ -391,6 +398,9 @@ class DonationMessage extends Message {
     if ($this->isRefundReversal()) {
       return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'refund_reversal');
     }
+    if ($this->isReversalReversal()) {
+      return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'reversal_reversal');
+    }
     return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
   }
 
@@ -414,6 +424,9 @@ class DonationMessage extends Message {
     }
     if ($this->isRefundReversal()) {
       return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Refund Reversal');
+    }
+    if ($this->isReversalReversal()) {
+      return (int) \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Reversal Reversal');
     }
     if ($this->isSubsequentRecurring()) {
       return ContributionRecur::getFinancialType($this->getContributionRecurID());

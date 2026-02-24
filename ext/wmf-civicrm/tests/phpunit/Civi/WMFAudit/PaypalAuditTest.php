@@ -131,6 +131,34 @@ class PaypalAuditTest extends BaseAuditTestCase {
     $this->assertEquals('BRL', $contribution['contribution_extra.original_currency']);
   }
 
+  /**
+   * In this situation we are testing our handling of being charged a chargeback
+   * hold which was later reversed and settled as a chargeback.
+   *
+   * In the real-world scenario these were in different settlements
+   *
+   * Bug: T418191
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function testSTLFileOddChargebacks(): void {
+    // Run three times to pick up chargeback variants.
+    $this->runAuditBatch('stl_chargeback_variants', 'STL-20260106.01.009.csv');
+    $this->runAuditBatch('stl_chargeback_variants', 'STL-20260106.01.009.csv');
+    $this->runAuditBatch('stl_chargeback_variants', 'STL-20260106.01.009.csv', 'paypal_20260221_EUR');
+    $contributions = Contribution::get(FALSE)
+      ->addWhere('finance_batch', '=', 'paypal_20260221_EUR')
+      ->addSelect('*', 'contribution_settlement.*', 'contribution_extra.*', 'contribution_status_id:name')
+      ->execute()->indexBy('contribution_status_id:name');
+    // Expect 1 completed donation, 1 charged back donation and 2 orphans (reversed, reversed_reversed)
+    $this->assertCount(4, $contributions);
+    $this->assertEquals('PAYPAL ABCD', $contributions['Completed']['trxn_id']);
+    $this->assertEquals('RFD REVERSAL PAYPAL 9TA257', $contributions['Reversal']['trxn_id']);
+    $this->assertEquals('REVERSAL_REVERSAL PAYPAL 9TA257', $contributions['reversal_reversal']['trxn_id']);
+    $this->assertEquals('PAYPAL 1VR655', $contributions['Chargeback']['trxn_id']);
+  }
+
   public function testPaypalGrants() {
     $this->createTestEntity('Contribution', [
       'contact_id' => $this->createIndividual(),
@@ -232,7 +260,7 @@ class PaypalAuditTest extends BaseAuditTestCase {
         "response" => FALSE,
         "gateway_account" => "WikimediaDonations",
         "fee" => 0,
-        "gross" => $row['Gross Transaction Amount'],
+        "gross" => $row['Gross Transaction Amount'] / 100,
         "backend_processor" => $isGravy ? $this->gateway : NULL,
         "backend_processor_txn_id" => $isGravy ? $row['Transaction ID'] : NULL,
         "contribution_tracking_id" => $trackingID,
