@@ -3,6 +3,7 @@
 namespace Civi\WMFQueueMessage;
 
 use Civi\Api4\Contribution;
+use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\TransactionLog;
 use Civi\WMFTransaction;
@@ -212,9 +213,10 @@ class AuditMessage extends DonationMessage {
     $message['settled_date'] = $this->getSettlementTimeStamp();
     $message['gateway'] = $this->getGateway();
     $message['gateway_txn_id'] = $this->getGatewayTxnId();
-    if ($this->isGravyTrustly() && $this->isSubsequentTrustlyRecurring()) {
+    if ($this->isGravyTrustly() && $this->getContributionRecurID()) {
       // Determining that the gateway should be treated as trustly means that the
-      // gravy reference relates to the first contribution not this one. We need to unset that
+      // gravy reference might relate to the first contribution (which might or might not be linked
+      // via recurring contribution record) not this one. We need to unset that
       // information. If it is missing then it will fail to create without gateway_txn_id
       // which should cause noise (good because we expect this to be there for
       // other reasons) but settle should work.
@@ -377,7 +379,10 @@ class AuditMessage extends DonationMessage {
     if (!isset($this->existingContribution)) {
       $this->existingContribution = [];
 
-      // See first if it is a recurring as the gravy gateway_txn_id will be for the first in the series.
+      // See first if it is gravy trustly as the trustly ID is reliable here but the
+      // gravy ID might refer to a different contribution. We can probably do some more here but
+      // failing to link up is less evil than linking to the wrong one & we will be warning if that
+      // happens as the batch will not close.
       $isAvoidGravyLookups = $this->isGravyTrustly() && $this->getContributionRecurID();
       if ($this->existingContribution) {
         // This could have been set during the trustly contribution recur lookup.
@@ -467,9 +472,6 @@ class AuditMessage extends DonationMessage {
   }
 
   public function isSubsequentRecurring(): bool {
-    if ($this->isGravyTrustly()) {
-      return $this->isSubsequentTrustlyRecurring();
-    }
     if ($this->getContributionRecurID()) {
       return TRUE;
     }
@@ -478,18 +480,6 @@ class AuditMessage extends DonationMessage {
       return FALSE;
     }
     return !empty($this->getFirstRecurringContribution());
-  }
-
-  public function isSubsequentTrustlyRecurring(): bool {
-    if ($this->contributionRecurID !== FALSE) {
-      $recurring = $this->getTrustlyRecurringContribution();
-      if ($recurring) {
-
-        $this->contributionRecurID = FALSE;
-        return FALSE;
-      }
-    }
-    return FALSE;
   }
 
   /**
@@ -884,7 +874,15 @@ class AuditMessage extends DonationMessage {
       else {
         $this->firstRecurringContribution = $recurring;
       }
-
+    }
+    else {
+      // Even if there is no linked contribution the presence of a contribution_recur_id
+      // linked by trxn_id is significant in the Trustly context
+      $recurring = ContributionRecur::get(FALSE)
+        ->addClause('OR', ['trxn_id', '=', $this->message['gateway_txn_id']], ['trxn_id', '=', 'RECURRING GRAVY ' . $this->message['gateway_txn_id']])
+        ->addOrderBy('id')
+        ->execute()->first();
+      $this->contributionRecurID = $recurring['id'] ?? FALSE;
     }
     return $recurring;
   }

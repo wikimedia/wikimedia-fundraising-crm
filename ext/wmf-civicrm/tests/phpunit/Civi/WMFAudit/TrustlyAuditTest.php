@@ -74,10 +74,35 @@ class TrustlyAuditTest extends BaseAuditTestCase {
       'invoice_number' => '12347.2',
     ]);
 
+    // Also create one where the first contribution is NOT linked to the contribution_recur_id other
+    // than by trxn_id. Use the 'other' pattern for trxn_id.
+    // Since we can't create this one we just need to make sure it doesn't get 'confused' with the first
+    // one.
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->createIndividual([], 'recur'),
+      'amount' => 50,
+      'receive_date' => '	September 6th, 2025 2:34 AM',
+      'payment_processor_id:name' => 'gravy',
+      'financial_type_id:name' => 'Cash',
+      'processor_id' => '2992e0ce-6b1d-447a-80d1-2a4d11bbcb0f',
+      'trxn_id' => 'RECURRING GRAVY 2992e0ce-6b1d-447a-80d1-2a4d11bbcb0f',
+    ], 'recur2');
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['recur'],
+      'total_amount' => 50,
+      'receive_date' => 'September 6th, 2025 2:34 AM',
+      'contribution_extra.gateway' => 'gravy',
+      'financial_type_id:name' => 'Cash',
+      'contribution_extra.gateway_txn_id' => '2992e0ce-6b1d-447a-80d1-2a4d11bbcb0f',
+      'contribution_extra.backend_processor' => 'trustly',
+      'contribution_extra.backend_processor_txn_id' => '798770000',
+      'invoice_number' => '12348.2',
+    ]);
+
     // Run it twice so the one that is refunded gets a chance to 'take'
     $this->runAuditBatch('fun_file', 'P11KFUN-3618-20260201120000-20260202120000-0001of0001.csv');
 
-    // Also create the one in the file. We know it won't create well but let's at least make it settle.
+    // Also create the two in the file. We know it can't create them but let's at least make sure they settle.
     $this->createTestEntity('Contribution', [
       'contribution_recur_id' => $this->ids['ContributionRecur']['recur'],
       'contact_id' => $this->ids['Contact']['recur'],
@@ -88,7 +113,16 @@ class TrustlyAuditTest extends BaseAuditTestCase {
       'contribution_extra.gateway_txn_id' => 'something random',
       'contribution_extra.backend_processor' => 'trustly',
       'contribution_extra.backend_processor_txn_id' => '8090016929',
-      'invoice_number' => '12347.1',
+    ]);
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['recur'],
+      'total_amount' => 5,
+      'receive_date' => 'September 6th, 2025 2:34 AM',
+      'contribution_extra.gateway' => 'gravy',
+      'financial_type_id:name' => 'Cash',
+      'contribution_extra.gateway_txn_id' => 'acd093cb-a454-4708-aeb1-f25702516dd0',
+      'contribution_extra.backend_processor' => 'trustly',
+      'contribution_extra.backend_processor_txn_id' => '8090016000',
     ]);
 
     $this->runAuditBatch('fun_file', 'P11KFUN-3618-20260201120000-20260202120000-0001of0001.csv', '999');
@@ -113,6 +147,25 @@ class TrustlyAuditTest extends BaseAuditTestCase {
       ->addWhere('contribution_extra.backend_processor', '=', 'trustly')
       ->addWhere('contribution_extra.backend_processor_txn_id', '=', '8090016929')
       ->execute()->single();
+    $this->assertEquals('trustly_999_USD', $contribution['contribution_settlement.settlement_batch_reference']);
+
+    // now check the second type of cross referenced ones - where the first contribution is
+    // not directly tied to the recurring series but we are still getting the gravy ID for it rather than the new one.
+    // Make sure the original recurring contribution was not added to the batch.
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('contribution_extra.*', 'contribution_settlement.*', 'total_amount')
+      ->addWhere('contribution_extra.gateway', '=', 'gravy')
+      ->addWhere('contribution_extra.gateway_txn_id', '=', '2992e0ce-6b1d-447a-80d1-2a4d11bbcb0f')
+      ->execute()->single();
+    $this->assertEmpty($contribution['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals(50, $contribution['total_amount']);
+
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('contribution_extra.*', 'contribution_settlement.*', 'total_amount')
+      ->addWhere('contribution_extra.gateway', '=', 'gravy')
+      ->addWhere('contribution_extra.gateway_txn_id', '=', 'acd093cb-a454-4708-aeb1-f25702516dd0')
+      ->execute()->single();
+    $this->assertEquals(5, $contribution['total_amount']);
     $this->assertEquals('trustly_999_USD', $contribution['contribution_settlement.settlement_batch_reference']);
   }
 
