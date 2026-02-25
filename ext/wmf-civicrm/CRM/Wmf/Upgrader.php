@@ -2620,10 +2620,12 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
    * The ones with activity_type_id = 80 started in October last year after
    * 35b0ba5ddd29879a730d4b3d6b8003f18b675c92 was deployed. That commit mistakenly mapped
    * the transaction id value to source_record_id instead of the contribution_id (fixed in prior patch).
-   * In most cases the transaction ID was not also a valid contribution ID - however as of writing there are 4 instances
+   * In most cases the transaction ID was not also a valid contribution ID - however as of writing there are 4
+   * instances
    * where it is - ie - the 2141 above is 2155 below.
    *
-   * select count(*),max(activity_date_time), MIN(activity_date_time), MAX(source_record_id), MIN(source_record_id) FROM civicrm_activity WHERE subject = 'refund reason';
+   * select count(*),max(activity_date_time), MIN(activity_date_time), MAX(source_record_id), MIN(source_record_id)
+   * FROM civicrm_activity WHERE subject = 'refund reason';
    * +----------+-------------------------+-------------------------+-----------------------+-----------------------+
    * | count(*) | max(activity_date_time) | MIN(activity_date_time) | MAX(source_record_id) | MIN(source_record_id) |
    * +----------+-------------------------+-------------------------+-----------------------+-----------------------+
@@ -2901,7 +2903,7 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
         201,
         220,
         $recurringCancelActivityId,
-        $recurringModifyActivityId
+        $recurringModifyActivityId,
       ])
       ->execute();
     return TRUE;
@@ -3621,7 +3623,8 @@ AND channel <> 'Chapter Gifts'";
   /**
    * Bug: T408141
    *
-   * Backfill missing all_funds_last_donation_date and all_funds_first_donation_date (about 650k rows, missing for older endowment donors).
+   * Backfill missing all_funds_last_donation_date and all_funds_first_donation_date (about 650k rows, missing for
+   * older endowment donors).
    * *
    * @return bool
    */
@@ -3802,8 +3805,8 @@ AND channel <> 'Chapter Gifts'";
    * Bug: T415642
    *
    * Delete all the snooze activities that are repeats.
-   * Find the lowest id activity when grouping by contact_id and activity subject (which contains the snooze until date),
-   * then delete all the activities with higher ids.
+   * Find the lowest id activity when grouping by contact_id and activity subject (which contains the snooze until
+   * date), then delete all the activities with higher ids.
    *
    * @return bool
    */
@@ -3978,6 +3981,14 @@ AND channel <> 'Chapter Gifts'";
     }
     return TRUE;
   }
+
+  public function upgrade_4870(): bool {
+    CRM_Core_DAO::executeQuery("
+      ALTER TABLE civicrm_phone_consent
+      MODIFY COLUMN master_recipient_id bigint(20) unsigned DEFAULT NULL COMMENT 'ID of the recipient that contains consent history'");
+    return TRUE;
+  }
+
   /**
    * Queue up an API4 update.
    *

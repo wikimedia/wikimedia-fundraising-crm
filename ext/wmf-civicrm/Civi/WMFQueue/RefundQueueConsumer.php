@@ -194,10 +194,13 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       }
     }
 
-    if (in_array($contribution['contribution_status_id:name'], ['Cancelled', 'Chargeback', 'Refunded'], TRUE)
+    if (in_array($contribution['contribution_status_id:name'], ['Cancelled', 'Chargeback', 'Refunded', 'Reversal'], TRUE)
+      || $messageObject->getContributionStatus() === 'Reversal'
     ) {
-      if (($messageObject->getContributionStatus() === 'Chargeback' && $contribution['contribution_status_id:name'] === 'Refunded')
-        || ($messageObject->getContributionStatus() === 'Refunded' && $contribution['contribution_status_id:name'] === 'Chargeback')
+      if (($messageObject->getContributionStatus() === 'Chargeback' && in_array($contribution['contribution_status_id:name'], ['Refunded', 'Reversal'], TRUE))
+        || ($messageObject->getContributionStatus() === 'Refunded' && in_array($contribution['contribution_status_id:name'], ['Chargeback', 'Reversal'], TRUE))
+        // Always treat reversals as a bit of an anomaly & create a new transaction.
+        || ($messageObject->getContributionStatus() === 'Reversal' && $contribution['contribution_status_id:name'] !== 'Reversal')
       ) {
         $reversalTrxnId = $this->getRefundUniqueID($contribution['trxn_id'], $refund_gateway_txn_id, $messageObject->getContributionStatus());
         $reversedContribution = Contribution::get(FALSE)
@@ -215,7 +218,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           'contribution_status_id:name' => $messageObject->getContributionStatus(),
           'total_amount' => $messageObject->getReportingAmountRounded(),
           'fee_amount' => $messageObject->getReportingFeeAmountRounded(),
-          'financial_type_id:name' => 'Chargeback',
+          'financial_type_id:name' => $messageObject->getFinancialType(),
           'contact_id' => $contribution['contact_id'],
           'trxn_id' => $reversalTrxnId,
           'receive_date' => $messageObject->getDate(),
@@ -401,6 +404,9 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
 
     if ($contributionStatus === 'Chargeback') {
       $transaction->is_chargeback = TRUE;
+    }
+    elseif ($contributionStatus === 'Reversal') {
+      $transaction->is_reversal = TRUE;
     }
     return $transaction->get_unique_id();
   }

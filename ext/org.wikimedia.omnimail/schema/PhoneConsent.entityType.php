@@ -46,7 +46,6 @@ return [
       'title' => E::ts('Master recipient ID'),
       'sql_type' => 'bigint unsigned',
       'input_type' => 'Number',
-      'default' => 1,
       'description' => E::ts('ID of the recipient that contains consent history'),
     ],
     'consent_date' => [

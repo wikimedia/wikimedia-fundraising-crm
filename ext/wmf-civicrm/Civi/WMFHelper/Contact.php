@@ -143,20 +143,15 @@ class Contact {
    * @param string|null $email
    * @param string|null $firstName
    * @param string|null $lastName
+   * @param string|null $postalCode
    * @param string|null $organizationName
    * @param int|null $organizationID Organization ID if known (organizationName not used if so)
-   * @param bool $strictGiftMode Require the user to resolve gift duplicates
-   *   A gift duplicate is where more than one person with the same name details has either
-   *   an employer relationship with the organization or prior matched gifts. In strict mode
-   *   an exception will be thrown in this case, requiring the user to merge. Otherwise
-   *   one is chosen. For Benevity imports we do not use strict mode but for the new imports
-   *   the volume is such that users can reasonably clean this up at this stage.
    *
    * @return false|int
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
-  public static function getIndividualID(?string $email, ?string $firstName, ?string $lastName, ?string $organizationName, ?int $organizationID = NULL, $strictGiftMode = TRUE) {
+  public static function getIndividualID(?string $email, ?string $firstName, ?string $lastName, ?string $postalCode, ?string $organizationName, ?int $organizationID = NULL) {
     if (!$email && (!$firstName || $firstName === 'Anonymous') && (!$lastName|| $lastName === 'Anonymous')) {
       // We do not have an email or a name, match to our anonymous contact (
       // note address details are discarded in this case).
@@ -170,7 +165,7 @@ class Contact {
       ->addWhere('is_deleted', '=', 0)
       ->addWhere('contact_type', '=', 'Individual')
       ->addOrderBy('organization_name', 'DESC')
-      ->addSelect('employer_id', 'organization_name', 'email_primary.email');
+      ->addSelect('employer_id', 'organization_name', 'email_primary.email', 'address_primary.postal_code');
 
     foreach (['last_name' => $lastName, 'first_name' => $firstName, 'email_primary.email' => $email] as $fieldName => $fieldValue) {
       if ($fieldValue) {
@@ -200,40 +195,22 @@ class Contact {
         foreach ($possibleContacts as $index => $possibleContactID) {
           $employerID = $contacts->indexBy('id')[$possibleContactID]['employer_id'];
           // If they are employed by someone else then they have possibly moved on.
-          if (
-            ($employerID && $employerID !== $organizationID)
-            // If strict gift mode is FALSE then we de-prioritise those without relationships.
-            || (!$strictGiftMode && !$employerID)
-          ) {
+          if (($employerID && $employerID !== $organizationID) || !$employerID) {
             unset($possibleContacts[$index]);
-          }
-          if (!$employerID && $strictGiftMode) {
-            // In strict mode we decide that a duplicate involving a contact with no
-            // employer, linked by prior soft credits, and a contact with a relationship
-            // still needs the user to resolve (as the obvious solution is to merge them).
-            // However, if the user really thinks they should not be merged
-            // then having a disabled or ended relationship will denote their connection is over.
-            // I can't see this arising but without this there would be no way to 'force'
-            // the import to ignore the no-longer-employed-duplicate-name donor.
-            $priorRelationships = RelationshipCache::get(FALSE)
-              ->addWhere('near_relation', '=', 'Employee of')
-              ->addWhere('is_current', '=', FALSE)
-              ->addWhere('near_contact_id', '=', $possibleContactID)
-              ->addWhere('far_contact_id', '=', $organizationID)
-              ->selectRowCount()
-              ->execute()->rowCount;
-            if ($priorRelationships) {
-              unset($possibleContacts[$index]);
-            }
-
           }
         }
       }
-      if (!$strictGiftMode || count($possibleContacts) === 1) {
-        return reset($possibleContacts);
+      // If we still have 2+ matches, try zip code and return the first match if we find one.
+      if ((count($possibleContacts) > 1) && $postalCode) {
+        foreach ($possibleContacts as $possibleContactID) {
+          $zipCode = $contacts->indexBy('id')[$possibleContactID]['address_primary.postal_code'];
+          if (mb_substr($zipCode, 0, 5) === mb_substr($postalCode, 0, 5)) {
+            return $possibleContactID;
+          }
+        }
       }
-      if (count($possibleContacts) > 1) {
-        throw new \CRM_Core_Exception('Multiple contact matches with employer connection: ' . implode(',' , $possibleContacts));
+      if (count($possibleContacts) >= 1) {
+        return reset($possibleContacts);
       }
     }
     return FALSE;

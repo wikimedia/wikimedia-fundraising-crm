@@ -2,11 +2,13 @@
 
 namespace Civi\Api4\Action\WMFContact;
 
+use Civi\Api4\Activity;
 use Civi\Api4\Address;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Phone;
+use Civi\Api4\PhoneConsent;
 use Civi\Api4\Relationship;
 use Civi\WMFException\WMFException;
 use Civi\Api4\Email;
@@ -143,6 +145,7 @@ class Save extends AbstractAction {
       $this->stopTimer('create_contact_civi_api');
       \Civi::log('wmf')->debug('wmf_civicrm: Successfully created contact: {id}', ['id' => $contact_result['id']]);
       $this->createEmployerRelationshipIfSpecified($contact_result['id'], $msg);
+      $this->createPhoneConsent($contact_result['id']);
       if (Database::isNativeTxnRolledBack()) {
         throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting contact");
       }
@@ -545,6 +548,9 @@ class Save extends AbstractAction {
         ->addRecord($phoneFields)
         ->setMatch(['contact_id', 'location_type_id:name', 'phone_type_id:name'])
         ->execute();
+
+      // If there is a consent from the front end, save it
+        $this->createPhoneConsent($existingContact['id']);
     }
   }
 
@@ -987,6 +993,59 @@ WHERE
       }
     }
     return $contact;
+  }
+
+  /**
+   * Save a phone consent from the front end
+   * and create an activity
+   *
+   * @param string $contact_id
+   *
+   */
+  private function createPhoneConsent($contact_id) {
+    if (isset($this->message['sms_opt_in']) && (bool)$this->message['sms_opt_in'] === TRUE) {
+      $date = (new \DateTime('@' . $this->message['date']))->format('Y-m-d H:i:s');
+      // Right now they are US only and may or may not start with 1
+      // No US area codes start with 0 or 1
+      // TODO: Normalize this in the form with better UI and only pass over numbers
+
+      // Get only the numbers
+      $phoneNumber = preg_replace('/[^\d]/', '', $this->message['phone']);
+
+      if (str_starts_with($phoneNumber, '1')) {
+        $countryCode = substr($phoneNumber, 0, 1);
+        $phoneNumber = substr($phoneNumber, 1);
+      } else {
+        $countryCode = 1;
+      }
+
+      $record = [
+        'country_code' => $countryCode,
+        'phone_number' => $phoneNumber,
+        'consent_date' => $date,
+        'consent_source' => 'Payments Form',
+        'opted_in' => 1,
+      ];
+
+      // This is duplicated in the omnimail extension
+      PhoneConsent::save(FALSE)
+        ->setMatch(['phone_number'])
+        ->addRecord($record)
+        ->execute();
+
+    Activity::create(FALSE)
+      ->setValues([
+        'activity_type_id:name' => 'sms_consent_given',
+        'activity_date_time' => $date,
+        'status_id:name' => 'Completed',
+        'source_contact_id' =>  $contact_id,
+        'subject' => 'SMS consent given for ' . $phoneNumber,
+        'details' => 'Opted in from payments form',
+        // These fields are kinda legacy but since they exist I guess we stick data in them.
+        'phone_number' => $phoneNumber
+      ])
+      ->execute();
+    }
   }
 
 }

@@ -676,7 +676,7 @@ END";
           ->addSelect('batch_data.*', '*', 'status_id:name')
           ->execute()->indexBy('name');
         $batch = reset($this->batches);
-        if (!in_array($batch['status_id:name'], ['validated', 'total_verified'])) {
+        if (!$this->isDryRun && !in_array($batch['status_id:name'], ['validated', 'total_verified'])) {
           // They have selected a specific batch, but it is not exportable, throw an exception.
           throw new \CRM_Core_Exception('batch status of ' . $batch['status_id:name'] . ' is not valid for export');
         }
@@ -1057,11 +1057,22 @@ GROUP BY s.settlement_batch_reference
     $this->batches[$batch['name']]['is_valid'] = $isValid;
     $this->log($batch['name'] . ' ' . ($isValid ? 'has valid totals' : ' has a discrepancy '));
     if ($isValid) {
-      Batch::update(FALSE)
-        ->addValue('status_id:name', 'validated')
+      $update = Batch::update(FALSE)
         ->addValue('batch_data.last_successful_validation_date',  gmdate('Y-m-d H:i:s'))
-        ->addWhere('id', '=', $batch['id'])
-        ->execute();
+        ->addWhere('id', '=', $batch['id']);
+      if (in_array($batch['status_id:name'], ['total_verified'], TRUE)) {
+        // Only update status if it was already verified
+        // @todo - consider adding a verified date, allowing status move from needs_attention
+        // to validated
+        $update->addValue('status_id:name', 'validated');
+        $this->batches[$batch['name']]['status_id:name'] = 'validated';
+      }
+      if (in_array($batch['status_id:name'], ['needs_attention'], TRUE)) {
+        // If valid can move back to open - perhaps it could go to validated.
+        $update->addValue('status_id:name', 'Open');
+        $this->batches[$batch['name']]['status_id:name'] = 'Open';
+      }
+      $update->execute();
       $this->log('The following batches have been validated ' . implode(',', array_keys($this->batchSummary)));
     }
     else {
@@ -1070,6 +1081,7 @@ GROUP BY s.settlement_batch_reference
           $value = \Civi::format()->money($value, $this->batchSummary[$batch['name']]['currency']);
         }
         $this->log($key . " has discrepancy of $value (expected {$result['expected'][$key]}, actual {$result['totals'][$key]} ). Batch needs attention");
+        $this->batches[$batch['name']]['status_id:name'] = 'needs_attention';
         Batch::update(FALSE)
           ->addValue('status_id:name', 'needs_attention')
           ->addWhere('id', '=', $batch['id'])

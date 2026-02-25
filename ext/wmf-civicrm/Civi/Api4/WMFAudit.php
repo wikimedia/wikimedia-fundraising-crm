@@ -6,6 +6,7 @@ use Civi\Api4\Action\WMFAudit\Parse;
 use Civi\Api4\Action\WMFAudit\Audit;
 use Civi\Api4\Action\WMFAudit\Settle;
 use Civi\Api4\Action\WMFAudit\GenerateBatch;
+use Civi\Api4\Action\WMFAudit\ValidateBatch;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
 class WMFAudit extends Generic\AbstractEntity {
@@ -46,6 +47,19 @@ class WMFAudit extends Generic\AbstractEntity {
    */
   public static function generateBatch(bool $checkPermissions = TRUE): GenerateBatch {
     return (new GenerateBatch(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Check if a batch is valid.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return validateBatch
+   *
+   */
+  public static function validateBatch(bool $checkPermissions = TRUE): validateBatch {
+    return (new validateBatch(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 

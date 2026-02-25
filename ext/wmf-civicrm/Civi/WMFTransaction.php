@@ -62,6 +62,10 @@ class WMFTransaction {
    */
   public $unique_id;
 
+  public bool $is_reversal = FALSE;
+
+  public bool $is_reversal_reversal = FALSE;
+
   /**
    * @return string
    * @throws \Civi\WMFException\WMFException
@@ -77,12 +81,20 @@ class WMFTransaction {
       $parts[] = "CHARGEBACK";
     }
 
+    if ($this->is_reversal) {
+      $parts[] = "REVERSAL";
+    }
+
     if ($this->is_chargeback_reversal) {
       $parts[] = "CHARGEBACK_REVERSAL";
     }
 
     if ($this->is_refund_reversal) {
       $parts[] = "REFUND_REVERSAL";
+    }
+
+    if ($this->is_reversal_reversal) {
+      $parts[] = "REVERSAL_REVERSAL";
     }
 
     if ($this->is_recurring) {
@@ -120,7 +132,9 @@ class WMFTransaction {
     $transaction->is_chargeback_reversal = ($messageType === 'chargeback_reversed');
     $transaction->is_refund_reversal = ($messageType === 'refund_reversed');
     $transaction->is_chargeback = ($messageType === 'chargeback');
-    $transaction->is_refund = in_array($messageType, ['chargeback', 'refund'], TRUE);
+    $transaction->is_refund = in_array($messageType, ['chargeback', 'refund', 'reversal'], TRUE);
+    $transaction->is_reversal = $messageType === 'reversal';
+    $transaction->is_reversal_reversal = $messageType === 'reversal_reversed';
     return $transaction;
   }
 

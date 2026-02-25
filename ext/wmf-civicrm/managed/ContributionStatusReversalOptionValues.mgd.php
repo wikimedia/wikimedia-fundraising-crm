@@ -42,4 +42,44 @@ return [
       ],
     ],
   ],
+  [
+    'name' => 'OptionValue_reversal',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'contribution_status',
+        'label' => E::ts('Reversal'),
+        'description' => E::ts('Reversal transaction initiated by gateway'),
+        'name' => 'Reversal',
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+        'value',
+      ],
+    ],
+  ],
+  [
+    'name' => 'OptionValue_reversal_reversal',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'contribution_status',
+        'label' => E::ts('Reversal Reversal'),
+        'description' => E::ts('Reversal has been reversed by gateway'),
+        'name' => 'reversal_reversal',
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+        'value',
+      ],
+    ],
+  ],
 ];

@@ -31,6 +31,8 @@ $financialTypes = [
   'Chargeback',
   'Chargeback Reversal',
   'Refund Reversal',
+  'Reversal',
+  'Reversal Reversal',
   'Endowment Gift',
   'Stock',
   // Recurring Gift is used for the first in the series, Recurring Gift - Cash thereafter.

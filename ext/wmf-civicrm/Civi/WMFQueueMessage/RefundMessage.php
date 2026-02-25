@@ -44,7 +44,27 @@ class RefundMessage extends Message {
       'chargeback' => 'Chargeback',
       'cancel' => 'Cancelled',
       // from the audit processor
-      'reversal' => 'Chargeback',
+      'reversal' => 'Reversal',
+      // raw IPN code
+      'admin_fraud_reversal' => 'Chargeback',
+    ];
+
+    if (!array_key_exists($this->message['type'], $validTypes)) {
+      throw new WMFException(WMFException::IMPORT_CONTRIB, "Unknown refund type '{$this->message['type']}'");
+    }
+    return $validTypes[$this->message['type']];
+  }
+
+  /**
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function getFinancialType(): string {
+    $validTypes = [
+      'refund' => 'Refund',
+      'chargeback' => 'Chargeback',
+      'cancel' => 'Cancelled',
+      // from the audit processor
+      'reversal' => 'Reversal',
       // raw IPN code
       'admin_fraud_reversal' => 'Chargeback',
     ];
@@ -86,6 +106,7 @@ class RefundMessage extends Message {
     if (!empty($this->message['parent_contribution_id'])) {
       return Contribution::get(FALSE)
         ->addWhere('id', '=', $this->message['parent_contribution_id'])
+        ->addSelect('*', 'contribution_status_id:name')
         ->execute()->single();
     }
     // @todo add functions ->getOriginalContributionID() and `->getOriginalContributionValue()`
