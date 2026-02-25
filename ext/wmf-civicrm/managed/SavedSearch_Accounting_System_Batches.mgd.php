@@ -28,6 +28,8 @@ return [
             'item_count',
             'status_id:label',
             'name',
+            'batch_data.issue_tracker_reference',
+            'batch_data.last_successful_validation_date',
           ],
           'orderBy' => [],
           'where' => [
@@ -93,31 +95,31 @@ return [
             [
               'type' => 'field',
               'key' => 'batch_data.settled_net_amount',
-              'label' => E::ts('Batch Data: Settled Net Amount'),
+              'label' => E::ts('Settled Net Amount'),
               'sortable' => TRUE,
             ],
             [
               'type' => 'field',
               'key' => 'created_date',
-              'label' => E::ts('Batch Created Date'),
+              'label' => E::ts('Created Date'),
               'sortable' => TRUE,
             ],
             [
               'type' => 'field',
               'key' => 'batch_data.settlement_date',
-              'label' => E::ts('Batch Data: Settlement Date'),
+              'label' => E::ts('Settlement Date'),
               'sortable' => TRUE,
             ],
             [
               'type' => 'field',
               'key' => 'batch_data.settlement_currency',
-              'label' => E::ts('Batch Data: Settlement Currency'),
+              'label' => E::ts('Settlement Currency'),
               'sortable' => TRUE,
             ],
             [
               'type' => 'field',
               'key' => 'batch_data.settled_donation_amount',
-              'label' => E::ts('Batch Data: Settled Donation Amount'),
+              'label' => E::ts('Settled Donation Amount'),
               'sortable' => TRUE,
             ],
             [
@@ -142,6 +144,18 @@ return [
               'type' => 'field',
               'key' => 'status_id:label',
               'label' => E::ts('Batch Status'),
+              'sortable' => TRUE,
+            ],
+            [
+              'type' => 'field',
+              'key' => 'batch_data.issue_tracker_reference',
+              'label' => E::ts('Phab'),
+              'sortable' => TRUE,
+            ],
+            [
+              'type' => 'field',
+              'key' => 'batch_data.last_successful_validation_date',
+              'label' => E::ts('Last successfully validated'),
               'sortable' => TRUE,
             ],
             [
@@ -184,7 +198,7 @@ return [
                   'target' => '',
                 ],
                 [
-                  'path' => 'civicrm/contribution/settled#?contribution_settlement.settlement_batch_reference,contribution_settlement.settlement_batch_reversal_reference=[name]',
+                  'path' => 'civicrm/contribution/settled#?finance_batch=[name]',
                   'icon' => 'fa-external-link',
                   'text' => E::ts('Search Transactions'),
                   'style' => 'default',
@@ -202,8 +216,46 @@ return [
             ],
           ],
           'actions' => TRUE,
-          'classes' => ['table', 'table-striped'],
+          'classes' => [
+            'table',
+            'table-striped',
+          ],
           'actions_display_mode' => 'menu',
+          'columnMode' => 'custom',
+          'cssRules' => [
+            [
+              'bg-warning',
+              'status_id:name',
+              '=',
+              'needs_attention',
+            ],
+            [
+              'bg-success',
+              'status_id:name',
+              'IN',
+              [
+                'total_verified',
+                'validated',
+              ],
+            ],
+            [
+              'bg-info',
+              'status_id:name',
+              'IN',
+              [
+                'Open',
+              ],
+            ],
+            [
+              'disabled',
+              'status_id:name',
+              'IN',
+              [
+                'Closed',
+                'Exported',
+              ],
+            ],
+          ],
         ],
       ],
       'match' => [
