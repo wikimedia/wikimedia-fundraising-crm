@@ -1,5 +1,6 @@
 <?php /** @noinspection PhpUnused */
 
+use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\CustomField;
 use Civi\Api4\CustomGroup;
@@ -3977,17 +3978,62 @@ AND channel <> 'Chapter Gifts'";
     CustomGroup::update(FALSE)
       ->addWhere('name', '=', 'activity_tracking')
       ->addValue('extends_entity_column_value', [
-          165, // Recurring Upgrade
-          166, // Recurring Upgrade Decline
-          168, // Recurring Downgrade
-          201, // Recurring Paused
-          220, // Double Opt-In
-          230, // Recurring Annual Conversion
+        165, // Recurring Upgrade
+        166, // Recurring Upgrade Decline
+        168, // Recurring Downgrade
+        201, // Recurring Paused
+        220, // Double Opt-In
+        230, // Recurring Annual Conversion
         $recurringCancelActivityId,
         $recurringModifyActivityId,
       ])
       ->execute();
     return TRUE;
+  }
+
+  /**
+   * The Trustly settlement process incorrectly picked up some original transactions
+   * rather than the newer ones because the gravy ID related to the original.
+   *
+   * I originally thought they were only when they were subsequent recurrings but
+   * in some cases the original has the same trxn_id as the recurring but is not linked to it.
+   *
+   * Since these are all ones where
+   * 1) they are USD
+   * 2) there is no reason for them to have changed
+   * 3) we have no legit fee or settlement info
+   *
+   * I think we can just update them back to the original amount - I find 284.
+   *
+   * Note that this leaves some odd financial_trxn records. Since I ALSO fixed a handful
+   * manually, leaving the same odd records I think getting this out quickly and then a slower
+   * clean up on them makes sense. It's kinda optional to fix them.
+   *
+   * Bug: T418332
+   *
+   * @return bool
+   */
+  public function upgrade_4885(): bool {
+    $badTrustlyBadBadTrustly = CRM_Core_DAO::executeQuery(
+      "select c.id, c.contact_id, c.receive_date, c.total_amount, original_amount, r.trxn_id, MAX(log_date) as ld FROM wmf_contribution_extra x INNER JOIN civicrm_contribution c ON c.id =x.entity_id AND x.backend_processor= 'trustly' LEFT  JOIN civicrm_contribution_recur r ON r.id = c.contribution_recur_id LEFT JOIN log_civicrm_contribution l ON l.id=c.id AND log_action = 'update' WHERE c.total_amount != original_amount AND original_currency = 'USD' GROUP BY c.id HAVING ld > '2026-02-16'"
+    );
+    while ($badTrustlyBadBadTrustly->fetch()) {
+      Contribution::update(FALSE)
+        ->addWhere('id', '=', $badTrustlyBadBadTrustly->id)
+        ->setValues([
+          'total_amount' => $badTrustlyBadBadTrustly->original_amount,
+          'fee_amount' => 0,
+          'contribution_settlement.settlement_batch_reference' => '',
+          'contribution_settlement.settlement_batch_reversal_reference' => '',
+          'contribution_settlement.settled_donation_amount' => '',
+          'contribution_settlement.settled_fee_amount' => '',
+          'contribution_settlement.settled_fee_reversal_amount' => '',
+          'contribution_settlement.settlement_date' => '',
+          'contribution_settlement.settlement_currency' => '',
+        ])
+        ->execute();
+      return TRUE;
+    }
   }
 
   /**
