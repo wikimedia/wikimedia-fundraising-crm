@@ -99,8 +99,6 @@ class Audit extends AbstractAction {
       ) {
         $contribution = $message->getExistingContribution();
         $values = [
-          'gateway' => $record['gateway'],
-          'gateway_txn_id' => $record['gateway_txn_id'],
           'contribution_id' => $message->getExistingContributionID(),
           'settled_date' => $record['settled_date'],
           'settled_currency' => $record['settled_currency'],

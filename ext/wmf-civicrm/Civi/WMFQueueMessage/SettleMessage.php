@@ -8,8 +8,6 @@ class SettleMessage extends DonationMessage {
    * WMF Settlement message.
    *
    * @var array{
-   *    gateway: string,
-   *    gateway_txn_id: string,
    *    contribution_id: int,
    *    settled_date: string,
    *    settled_currency: string,
