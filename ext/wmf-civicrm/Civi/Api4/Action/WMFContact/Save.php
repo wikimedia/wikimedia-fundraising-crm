@@ -443,7 +443,7 @@ class Save extends AbstractAction {
       // when the new case is better than the old case
       foreach(['first_name', 'last_name'] as $field) {
         if (!empty($this->message[$field])) {
-          $sameExceptForCase = (strcasecmp($existingContact[$field], $this->message[$field]) === 0);
+          $sameExceptForCase = (strcasecmp($existingContact[$field] ?? '', $this->message[$field]) === 0);
           if ($sameExceptForCase) {
             if (\Civi\WMFHelper\Name::isBetterCapitalization(
               $existingContact[$field], $this->message[$field]
