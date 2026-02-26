@@ -163,6 +163,24 @@ CRM_Core_BAO_OptionValue::ensureOptionValueExists([
   'icon' => 'fa-pause',
   'color' => NULL,
 ]);
+CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+  'option_group_id' => 'activity_type',
+  'label' => 'Recurring Annual Conversion',
+  'value' => 230,
+  'name' => 'Recurring Annual Conversion',
+  'grouping' => NULL,
+  'filter' => 0,
+  'is_default' => FALSE,
+  'description' => 'Donor converted monthly recurring to annual and may have changed the amount',
+  'is_optgroup' => FALSE,
+  'is_reserved' => FALSE,
+  'is_active' => TRUE,
+  'component_id' => NULL,
+  'domain_id' => NULL,
+  'visibility_id' => NULL,
+  'icon' => 'fa-money-bill-transfer',
+  'color' => NULL,
+]);
 $recurringCancelActivityId = OptionValue::get(FALSE)
   ->addWhere('name', '=', 'Cancel Recurring Contribution')
   ->execute()
@@ -359,13 +377,14 @@ return [
       'extends' => 'Activity',
       // Values hardcoded above and in ActivityType.mgd.php
       'extends_entity_column_value' => [
-        165,
-        166,
-        168,
-        201,
-        220,
-        $recurringCancelActivityId,
-        $recurringModifyActivityId
+        165, // Recurring Upgrade
+        166, // Recurring Upgrade Decline
+        168, // Recurring Downgrade
+        201, // Recurring Paused
+        220, // Double Opt-In
+        230, // Recurring Annual Conversion
+        $recurringCancelActivityId, // Cancel Recurring Contribution
+        $recurringModifyActivityId // Update Recurring Contribution
       ],
       'style' => 'Inline',
       'is_active' => TRUE,
