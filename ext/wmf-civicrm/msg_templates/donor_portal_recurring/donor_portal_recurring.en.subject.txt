@@ -1,0 +1,1 @@
+{contact.first_name}, you {if $action == 'Recurring Paused'}paused{elseif $action == 'Cancel Recurring Contribution'}canceled{else}modified{/if} your recurring donation to Wikipedia

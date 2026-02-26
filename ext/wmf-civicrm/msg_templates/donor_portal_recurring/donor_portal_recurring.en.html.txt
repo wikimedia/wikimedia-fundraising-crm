@@ -1,0 +1,13 @@
+<p>Hi {contact.first_name},</p>
+
+<p><strong>Old recurring donation:</strong></p>
+Amount: {$contribution_recur_old.amount} {$contribution_recur_old.currency}<br>
+Next charge date: {$contribution_recur_old.next_sched_contribution_date}
+
+<p><strong>New recurring donation:</strong></p>
+Amount: {$contribution_recur_new.amount} {$contribution_recur_new.currency}<br>
+Next charge date: {$contribution_recur_new.next_sched_contribution_date}
+<br />
+<br />
+Ta,<br />
+Your friends at WMF
