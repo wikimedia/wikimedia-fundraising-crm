@@ -18,7 +18,7 @@
   <version>1.1</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.79</ver>
+    <ver>6.12</ver>
   </compatibility>
   <comments>This is a intended as something of a catchall for wmf functionality.
     It is intended to replace the wmf_civicrm module over time

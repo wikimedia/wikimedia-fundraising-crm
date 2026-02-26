@@ -89,7 +89,6 @@ class CRM_Wmf_ExtensionUtil {
 
 use CRM_Wmf_ExtensionUtil as E;
 
-pathload()->addSearchDir(__DIR__ . '/mixin/lib');
 spl_autoload_register('_wmf_civicrm_civix_class_loader', TRUE, TRUE);
 
 function _wmf_civicrm_civix_class_loader($class) {
