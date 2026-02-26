@@ -2881,35 +2881,6 @@ SELECT contribution_id FROM T365519 t WHERE t.id BETWEEN %1 AND %2)';
   }
 
   /**
-   * Make activity tracking extend more subtypes
-   */
-  public function upgrade_4685(): bool {
-    $this->addCustomFields();
-    $recurringCancelActivityId = OptionValue::get(FALSE)
-      ->addWhere('name', '=', 'Cancel Recurring Contribution')
-      ->execute()
-      ->first()['value'];
-    $recurringModifyActivityId = OptionValue::get(FALSE)
-      ->addWhere('name', '=', 'Update Recurring Contribution')
-      ->execute()
-      ->first()['value'];
-
-    CustomGroup::update(FALSE)
-      ->addWhere('name', '=', 'activity_tracking')
-      ->addValue('extends_entity_column_value', [
-        165,
-        166,
-        168,
-        201,
-        220,
-        $recurringCancelActivityId,
-        $recurringModifyActivityId,
-      ])
-      ->execute();
-    return TRUE;
-  }
-
-  /**
    * Update channel to email where the mailing_identifier is set.
    *
    * I did some checks and these are all currently empty - ie
@@ -3986,6 +3957,36 @@ AND channel <> 'Chapter Gifts'";
     CRM_Core_DAO::executeQuery("
       ALTER TABLE civicrm_phone_consent
       MODIFY COLUMN master_recipient_id bigint(20) unsigned DEFAULT NULL COMMENT 'ID of the recipient that contains consent history'");
+    return TRUE;
+  }
+
+  /**
+   * Make activity tracking extend more subtypes
+   */
+  public function upgrade_4880(): bool {
+    $this->addCustomFields();
+    $recurringCancelActivityId = OptionValue::get(FALSE)
+      ->addWhere('name', '=', 'Cancel Recurring Contribution')
+      ->execute()
+      ->first()['value'];
+    $recurringModifyActivityId = OptionValue::get(FALSE)
+      ->addWhere('name', '=', 'Update Recurring Contribution')
+      ->execute()
+      ->first()['value'];
+
+    CustomGroup::update(FALSE)
+      ->addWhere('name', '=', 'activity_tracking')
+      ->addValue('extends_entity_column_value', [
+          165, // Recurring Upgrade
+          166, // Recurring Upgrade Decline
+          168, // Recurring Downgrade
+          201, // Recurring Paused
+          220, // Double Opt-In
+          230, // Recurring Annual Conversion
+        $recurringCancelActivityId,
+        $recurringModifyActivityId,
+      ])
+      ->execute();
     return TRUE;
   }
 
