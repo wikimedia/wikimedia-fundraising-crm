@@ -874,7 +874,7 @@ class AuditMessage extends DonationMessage {
       ->addWhere('contribution_recur_id.trxn_id', '=', $this->message['gateway_txn_id'])
       ->addOrderBy('id')
       ->execute()->first();
-    $this->contributionRecurID = $recurring['id'] ?? FALSE;
+    $this->contributionRecurID = $recurring['contribution_recur_id'] ?? FALSE;
     if ($recurring) {
       // Since we have loaded this we should register it, so we can lazy access it.
       $this->define('ContributionRecur', 'ContributionRecur', \CRM_Utils_Array::filterByPrefix($recurring, 'contribution_recur_id'));
