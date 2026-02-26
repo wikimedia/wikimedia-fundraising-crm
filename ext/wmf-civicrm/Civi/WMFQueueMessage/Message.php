@@ -854,7 +854,6 @@ class Message {
     if (!$this->contributionRecurID && !empty($this->message['subscr_id'])) {
       $recurRecord = RecurHelper::getByGatewaySubscriptionId($this->getGateway(), $this->message['subscr_id']);
       if ($recurRecord) {
-        \Civi::log('wmf')->info('recur_donation_import: Found matching recurring record for subscr_id: {subscriber_id}', ['subscriber_id' => $this->getSubscriptionID()]);
         // Since we have loaded this we should register it so we can lazy access it.
         $this->define('ContributionRecur', 'ContributionRecur', $recurRecord);
         $this->contributionRecurID = $recurRecord['id'];
