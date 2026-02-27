@@ -121,7 +121,11 @@ class ContributionRecur {
     $allContactIds = Contact::duplicateContactIds($contact_id);
     \Civi::log('wmf')->debug("Check if donor " . json_encode($allContactIds) . " upgradable");
     $contribution_recurs = \Civi\Api4\ContributionRecur::get(FALSE)
-      ->addSelect('id', 'currency', 'amount', 'next_sched_contribution_date', 'contact.first_name', 'contact.last_name', 'contact.display_name', 'country.iso_code')
+      ->addSelect(
+        'id', 'currency', 'amount', 'next_sched_contribution_date',
+        'contact.first_name', 'contact.last_name', 'contact.display_name',
+        'contact.preferred_language', 'country.iso_code'
+      )
       ->addJoin('Contact AS contact', 'LEFT', ['contact.id', '=', $contact_id])
       ->addJoin('Address AS address', 'LEFT', ['address.contact_id', '=', $contact_id], ['address.is_primary', '=', 1])
       ->addJoin('Country AS country', 'LEFT', ['country.id', '=', 'address.country_id'])
@@ -145,6 +149,7 @@ class ContributionRecur {
         'donor_name' => $recur['contact.first_name'] ?? $recur['contact.display_name'],
         'first_name' => $recur['contact.first_name'] ?? $recur['contact.display_name'],
         'last_name' => $recur['contact.last_name'] ?? $recur['contact.display_name'],
+        'preferred_language' => $recur['contact.preferred_language'],
         'country' => $recur['country.iso_code'],
         'next_sched_contribution_date' => $recur['next_sched_contribution_date'],
       ];
