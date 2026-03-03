@@ -1,0 +1,44 @@
+flowchart LR
+  A[Start<br>processing audit<br>file] --> B[Load row<br>from file]
+
+  B --> C{Already in<br>CiviCRM?}
+
+%% Branch: Not in CiviCRM
+  C -- No --> D[Lookup in<br>Smashpig/logs]
+  D --> E{Lookup<br>successful?}
+  E -- No --> G1[Skip row<br>no log]
+  E -- Yes --> H[Transaction<br>type]
+  H -- Positive --> I[Queue donation<br>creation]
+  H -- Negative --> J[Queue refund<br>creation]
+  H -- Fee --> K[Create fee<br>contribution]
+
+%% Branch: Already in CiviCRM
+  C -- Yes --> L{Settlement batch<br>assigned?}
+  L -- Yes --> G2[Skip row<br>already settled]
+  L -- No --> M[Queue settlement<br>update]
+
+%% Merge processing
+  G1 --> N[Row<br>processed]
+  G2 --> N
+  I --> N
+  J --> N
+  K --> N
+  M --> N
+
+%% File-level logic
+  N --> O{More rows<br>in file?}
+  O -- Yes --> B
+  O -- No --> P{All rows<br>already in<br>CiviCRM?}
+
+  P -- Yes --> Q[Move file<br>to Completed]
+  P -- No --> S[Payout info exists<br>for batch + currency?]
+  Q --> S
+
+%% Batch-level logic
+  S -- No --> T[Set batch<br>status Open]
+  S -- Yes --> U{Row sums<br>equal payout?}
+  U -- No --> V[Set status Open<br>and alert fr-tech]
+  U -- Yes --> W[Set status total<br>verified and lock]
+
+  V --> X[End]
+  W --> X
