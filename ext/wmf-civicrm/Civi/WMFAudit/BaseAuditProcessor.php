@@ -95,7 +95,7 @@ abstract class BaseAuditProcessor {
    *
    * @return true
    */
-  protected function moveFile(string $file, string $directory): bool {
+  protected function moveFile(string $file, string $directory, $gzip = FALSE): bool {
     if (!is_dir($directory)) {
       if (!mkdir($directory, 0770)) {
         $message = "Could not make $directory";
@@ -106,7 +106,39 @@ abstract class BaseAuditProcessor {
 
     $filename = basename($file);
     $newFile = $directory . '/' . $filename;
+    if ($gzip === TRUE) {
 
+      $gzFile   = $newFile . '.gz';
+      $tempFile = $gzFile . '.tmp';
+
+      $command = sprintf(
+        'gzip -9 -c %s > %s',
+        escapeshellarg($file),
+        escapeshellarg($tempFile)
+      );
+
+      exec($command, $output, $returnCode);
+
+      if ($returnCode !== 0 || !file_exists($tempFile)) {
+        @unlink($tempFile);
+        $message = "Unable to gzip $file to $gzFile";
+        $this->logError($message, 'FILE_GZIP');
+        return FALSE;
+      }
+
+      // Atomic move into final filename
+      rename($tempFile, $gzFile);
+
+      // Remove original only after success
+      if (!unlink($file)) {
+        $message = "Gzip succeeded but failed to delete original $file";
+        $this->logError($message, 'FILE_DELETE');
+        return FALSE;
+      }
+
+      $this->echo("Gzipped and moved $file to $gzFile");
+      return TRUE;
+    }
     if (!rename($file, $newFile)) {
       $message = "Unable to move $file to $newFile";
 
@@ -748,7 +780,7 @@ abstract class BaseAuditProcessor {
           $files_by_sort_key[$sort_key][] = $files_directory . '/' . $file;
         }
         elseif ($this->regexForFilesToIgnore() && preg_match($this->regexForFilesToIgnore(), $file)) {
-          $this->moveFile($files_directory . '/' . $file, $this->getIgnoredFilesDirectory());
+          $this->moveFile($files_directory . '/' . $file, $this->getIgnoredFilesDirectory(), TRUE);
         }
       }
       closedir($handle);
