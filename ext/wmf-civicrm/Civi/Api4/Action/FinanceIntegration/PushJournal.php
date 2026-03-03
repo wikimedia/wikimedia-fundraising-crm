@@ -8,9 +8,9 @@ use Brick\Money\Money;
 use Brick\Math\RoundingMode;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\FinanceIntegration\Connection;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Exception\RequestException;
 use League\Csv\Exception;
 use League\Csv\Reader;
 
@@ -29,10 +29,9 @@ class PushJournal extends AbstractAction {
   protected ?Client $apiClient = NULL;
 
   protected $tokenURL = 'https://api.intacct.com/ia/api/v1/oauth2/token';
-
-  private ?string $accessToken = NULL;
-  private ?int $tokenExpiry = NULL;
   private array $batches = [];
+
+  private Connection $connection;
   /**
    * Is this a dry run (if so do not push to the api).
    *
@@ -102,86 +101,15 @@ class PushJournal extends AbstractAction {
   }
 
   /**
-   * @return string
-   * @throws GuzzleException
-   * @throws \CRM_Core_Exception
-   */
-  public function getBearerToken(): string {
-    if ($this->accessToken && $this->tokenExpiry && time() < $this->tokenExpiry) {
-      return $this->accessToken;
-    }
-
-    $credentials = \CRM_Utils_Constant::value('FINANCE_OAUTH');
-    if (!$credentials) {
-      throw new \CRM_Core_Exception('No FINANCE_OAUTH credentials provided');
-    }
-
-    $payload = [
-      'grant_type' => 'client_credentials',
-      'client_id' => $credentials['client_id'],
-      'client_secret' => $credentials['secret'],
-      'username' => $credentials['username'] . '@' . $credentials['company_id'],
-    ];
-
-    try {
-      $this->tokenClient = new Client();
-      $response = $this->tokenClient->post($this->tokenURL, [
-        'form_params' => $payload,
-        'headers' => [
-          'Accept' => 'application/json',
-        ],
-      ]);
-
-      $body = (string) $response->getBody();
-      $data = json_decode($body, TRUE);
-
-      if (json_last_error() !== JSON_ERROR_NONE) {
-        throw new \CRM_Core_Exception('Token response was not valid JSON: ' . json_last_error_msg());
-      }
-
-      $this->accessToken = (string) ($data['access_token'] ?? '');
-      $expiresIn = (int) ($data['expires_in'] ?? 0);
-
-      if (!$this->accessToken || !$expiresIn) {
-        throw new \CRM_Core_Exception('Token response missing access_token and/or expires_in');
-      }
-
-      // Refresh 60s early.
-      $this->tokenExpiry = time() + ($expiresIn - 60);
-      $this->apiClient = NULL;
-    }
-    catch (RequestException $e) {
-      $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
-      $errorBody = $e->hasResponse() ? (string) $e->getResponse()->getBody() : $e->getMessage();
-
-      throw new \CRM_Core_Exception(
-        'Token request failed' . ($status ? " (HTTP $status)" : '') . ': ' . $errorBody
-      );
-    }
-
-    return $this->accessToken;
-  }
-
-  /**
    * @return Client
    * @throws GuzzleException
    * @throws \CRM_Core_Exception
    */
   public function getApiClient(): Client {
-    $accessToken = $this->getBearerToken();
-
-    if (!isset($this->apiClient)) {
-      $this->apiClient = new Client([
-        'base_uri' => 'https://api.intacct.com/ia/api/v1/',
-        'headers' => [
-          'Authorization' => 'Bearer ' . $accessToken,
-          'Accept' => 'application/json',
-          'Content-Type' => 'application/json',
-        ],
-      ]);
+    if (!isset($this->connection)) {
+      $this->connection = new Connection();
     }
-
-    return $this->apiClient;
+    return $this->connection->getApiClient();
   }
 
   /**

@@ -2,10 +2,24 @@
 
 namespace Civi\Api4;
 
+use Civi\Api4\Action\FinanceIntegration\Ping;
 use Civi\Api4\Action\FinanceIntegration\PushJournal;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
 class FinanceIntegration extends Generic\AbstractEntity {
+
+  /**
+   * Parse api audit files.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\FinanceIntegration\Ping
+   *
+   */
+  public static function ping(bool $checkPermissions = FALSE): Ping {
+    return (new Ping(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
 
   /**
    * Parse api audit files.
