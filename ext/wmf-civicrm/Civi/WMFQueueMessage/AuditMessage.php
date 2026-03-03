@@ -833,6 +833,7 @@ class AuditMessage extends DonationMessage {
       'contribution_settlement.settlement_batch_reversal_reference',
       'contribution_extra.gateway',
       'contribution_recur_id',
+      'contact_id',
     ];
   }
 
