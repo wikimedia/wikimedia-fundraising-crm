@@ -30,7 +30,7 @@ class Ping extends AbstractAction {
   protected bool $isStaging = TRUE;
   public function _run(Result $result) {
     $connection = new Connection($this->isEndowment ? 'endowment': 'wmf', $this->isStaging);
-    $outcome = $connection->getApiClient();
-    $result[] = $outcome['headers'];
+    $connection->getApiClient();
+    $result[] = ['success' => TRUE];
   }
 }
