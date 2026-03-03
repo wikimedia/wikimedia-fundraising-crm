@@ -4013,7 +4013,7 @@ AND channel <> 'Chapter Gifts'";
    *
    * @return bool
    */
-  public function upgrade_4885(): bool {
+  public function upgrade_4890(): bool {
     $badTrustlyBadBadTrustly = CRM_Core_DAO::executeQuery(
       "select c.id, c.contact_id, c.receive_date, c.total_amount, original_amount, r.trxn_id, MAX(log_date) as ld FROM wmf_contribution_extra x INNER JOIN civicrm_contribution c ON c.id =x.entity_id AND x.backend_processor= 'trustly' LEFT  JOIN civicrm_contribution_recur r ON r.id = c.contribution_recur_id LEFT JOIN log_civicrm_contribution l ON l.id=c.id AND log_action = 'update' WHERE c.total_amount != original_amount AND original_currency = 'USD' GROUP BY c.id HAVING ld > '2026-02-16'"
     );
@@ -4032,8 +4032,8 @@ AND channel <> 'Chapter Gifts'";
           'contribution_settlement.settlement_currency' => '',
         ])
         ->execute();
-      return TRUE;
     }
+    return TRUE;
   }
 
   /**
