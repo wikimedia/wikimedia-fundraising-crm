@@ -83,8 +83,12 @@ class Push extends AbstractAction {
   public function _run(Result $result) {
     $queue = \Civi::queue('omni-sync-group-' . $this->getGroupID(), [
       'type' => 'Sql',
+      'runner' => 'task',
       'retry_limit' => 3,
       'retry_interval' => 20,
+      // Emails with some prefixes will fail (e.g. info@example.org).
+      // Do not crash on these.
+      'error' => 'delete',
     ]);
     $queue->createItem(new \CRM_Queue_Task('civicrm_api4_queue',
       [
@@ -118,13 +122,6 @@ class Push extends AbstractAction {
           ]
         ], 'Push contact to Acoustic: ' . $groupMember['email.email']), ['weight' => 1]);
     }
-    $runner = new \CRM_Queue_Runner([
-      'title' => ts('Sync to Acoustic'),
-      'queue' => $queue,
-      'errorMode' => \CRM_Queue_Runner::ERROR_ABORT,
-      'onEndUrl' => \CRM_Utils_System::url('civicrm/group', ['reset=1', 'action=update', 'id=' . $this->getGroupID()]),
-    ]);
-    $runner->runAllViaWeb();
   }
 
   public function fields() {
