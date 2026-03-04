@@ -169,6 +169,21 @@ class DlocalAuditTest extends BaseAuditTestCase {
   /**
    */
   public function testProcessRefundSettlement() {
+    // Create an invoice to be refunded - note this is in the contribution tracking sequence.
+    // The only thing the audit code has to go on here is the invoice_id because there is no
+    // parent gateway ID and the TransactionLog would find a different one in the series.
+    $this->createTestEntity('ContributionRecur', ['contact_id' => $this->createIndividual(), 'amount' => 2.4]);
+    $this->createTestEntity('Contribution', [
+      'total_amount' => 2.4,
+      'contribution_extra.gateway' => 'dlocal',
+      'contribution_extra.gateway_txn_id' => '33333',
+      'contribution_extra.original_currency' => 'BRL',
+      'contribution_extra.original_amount' => '124.8',
+      'contact_id' => $this->ids['Contact']['danger_mouse'],
+      'invoice_id' => 2293.9,
+      'financial_type_id:name' => 'Cash',
+      'contribution_recur_id' => $this->ids['ContributionRecur']['default'],
+    ]);
     $this->runAuditBatch('settlement_refund', 'Wikimedia_cross_border_report_20260207_083659.csv');
     // The refund won't get picked up until the second run.
     $this->runAuditBatch('settlement_refund', 'Wikimedia_cross_border_report_20260207_083659.csv');
@@ -183,6 +198,16 @@ class DlocalAuditTest extends BaseAuditTestCase {
     $this->assertEquals('dlocal', $contribution['contribution_extra.gateway']);
     $this->assertEquals('Refunded', $contribution['contribution_status_id:name']);
     $this->assertEquals('dlocal_20260206_USD', $contribution['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals('dlocal_20260206_USD', $contribution['contribution_settlement.settlement_batch_reversal_reference']);
+
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('invoice_id', '=', 2293.9)
+      ->addSelect('contribution_status_id:name')
+      ->addSelect('contribution_settlement.*')
+      ->addSelect('contribution_extra.*')
+      ->execute()->single();
+    $this->assertEquals('dlocal', $contribution['contribution_extra.gateway']);
+    $this->assertEquals('Refunded', $contribution['contribution_status_id:name']);
     $this->assertEquals('dlocal_20260206_USD', $contribution['contribution_settlement.settlement_batch_reversal_reference']);
   }
 
@@ -223,7 +248,8 @@ class DlocalAuditTest extends BaseAuditTestCase {
       return;
     }
     $orderID = $row['TRANSACTION_ID'];
-    $trackingID = explode('.', $orderID)[0];
+    $orderParts = explode('.', $orderID);
+    $trackingID = $orderParts[0];
     $isGravy = !is_numeric($trackingID);
     if ($isGravy) {
       $trackingID = 1 + ((int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution_tracking'));
