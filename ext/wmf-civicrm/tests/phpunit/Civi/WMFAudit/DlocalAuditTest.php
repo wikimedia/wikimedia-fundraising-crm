@@ -24,18 +24,6 @@ class DlocalAuditTest extends BaseAuditTestCase {
     // First we need to set an exchange rate for a sickeningly specific time
     $this->setExchangeRates(1434488406, ['BRL' => 3.24]);
     $this->setExchangeRates(1434488406, ['USD' => 1]);
-    $msg = [
-      'contribution_tracking_id' => 24761,
-      'currency' => 'BRL',
-      'date' => 1434488406,
-      'email' => 'mouse@wikimedia.org',
-      'gateway' => 'DLOCAL',
-      'gateway_txn_id' => '5138333',
-      'gross' => 5.00,
-      'payment_method' => 'cc',
-      'payment_submethod' => 'mc',
-    ];
-    $this->processMessage($msg, 'Donation', 'test');
   }
 
   public function auditTestProvider(): array {
@@ -156,6 +144,20 @@ class DlocalAuditTest extends BaseAuditTestCase {
    * @dataProvider auditTestProvider
    */
   public function testParseFiles($path, $expectedMessages, $expectedLoglines) {
+    if (array_key_exists('refund', $expectedMessages)) {
+      $msg = [
+        'contribution_tracking_id' => 24761,
+        'currency' => 'BRL',
+        'date' => 1434488406,
+        'email' => 'mouse@wikimedia.org',
+        'gateway' => 'DLOCAL',
+        'gateway_txn_id' => '5138333',
+        'gross' => 5.00,
+        'payment_method' => 'cc',
+        'payment_submethod' => 'mc',
+      ];
+      $this->processMessage($msg, 'Donation', 'test');
+    }
     $this->setSetting('wmf_audit_directory_audit', $path);
 
     $this->runAuditor();
