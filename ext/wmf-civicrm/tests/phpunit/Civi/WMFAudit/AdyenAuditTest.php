@@ -416,7 +416,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $maxContributionTrackingID = (int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution_tracking');
     $trackingID = $this->ids['ContributionTracking'][] = ContributionTracking::save(FALSE)
       ->addRecord([
-        'id' => $maxContributionTrackingID + 1,
+        'id' => 12345,
       ])
       ->execute()->first()['id'];
     $this->setSetting('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/donation_gravy/');

@@ -225,7 +225,14 @@ abstract class BaseAuditProcessor {
   }
 
   /**
-   * A slight twist on array_merge - don't overwrite non-blank data with blank strings.
+   * Merge the data loaded from the TransactionLog into the incoming audit data.
+   *
+   * We
+   * 1) fill in any missing keys or ones where the value is NULL or ''
+   * 2) take some fields from the log data that are either perceived as likely
+   * more accurate from the log data (email, first_name, last_name, payment method & submethod)
+   * or are locked in by tests (looking at you gateway_account)
+   * 3) some historical things we haven't had the courage to touch.
    *
    * @param array $log_data
    * @param array $audit_file_data
@@ -233,21 +240,36 @@ abstract class BaseAuditProcessor {
    * @return array
    */
   protected function merge_data($log_data, $audit_file_data) {
-    $merged = $audit_file_data;
+    // Using + fills in any missing keys - so now we only need to worry about ensuring that
+    // any that are NULL or '' are filled in.
+    // Historically this function has preserved values from `log_data` by preference.
+    // However, it's hard to make the case to prefer log data over incoming data in most cases.
+    // Possible exceptions are personal details the contact might have filled in.
+    $merged = $audit_file_data + $log_data;
+    $fieldsToPreferFromLog = [
+      'email',
+      'first_name',
+      'last_name',
+      'phone',
+      'payment_submethod',
+      'payment_method',
+      // Probably not but ... tests.
+      'gateway_account',
+    ];
     foreach ($log_data as $key => $value) {
       if (in_array($key, ['invoice_id', 'date', 'recurring'], TRUE) && in_array($audit_file_data['type'] ?? NULL, ['chargeback_reversed', 'refund_reversed', 'reversal_reversed'], TRUE)) {
         // Don't overwrite invoice_id, date for reversals... ever? Well not for now at least, as we add a
         // '-cr' suffix to the $audit_file_data['invoice_id']. Always leave recurring as false.
         continue;
       }
-      $absentFromMerged = !array_key_exists($key, $merged);
       $logDataNotBlank = ($value !== '');
       if ($value === FALSE && $key === 'gateway_txn_id') {
         // Unclear whether we should apply this to other keys as well but in gateway_txn_id
         // we definitely have cases of it being false in the json rather than an empty string
         $logDataNotBlank = FALSE;
       }
-      if ($absentFromMerged || $logDataNotBlank || $merged[$key] === '') {
+      $isPreferLog = $logDataNotBlank && (in_array($key, $fieldsToPreferFromLog) || in_array($merged[$key], [NULL, '']));
+      if ($isPreferLog) {
         $merged[$key] = $value;
       }
     }

@@ -600,7 +600,7 @@ class AuditMessage extends DonationMessage {
     if ($this->isPaypalGrant()) {
       return 'Paypal Grants';
     }
-    return $this->message['payment_method'] ?? 'unknown';
+    return $this->message['payment_method'] ?? '';
   }
 
   public function getTransactionType(): string {

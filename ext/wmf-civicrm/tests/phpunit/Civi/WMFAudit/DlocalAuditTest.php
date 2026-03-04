@@ -174,7 +174,7 @@ class DlocalAuditTest extends BaseAuditTestCase {
     $this->runAuditBatch('settlement_refund', 'Wikimedia_cross_border_report_20260207_083659.csv');
 
     $contribution = Contribution::get(FALSE)
-      ->addWhere('invoice_id', '=', 2293.1)
+      ->addWhere('invoice_id', '=', '2293.11')
       ->addSelect('contribution_status_id:name')
       ->addSelect('contribution_settlement.*')
       ->addSelect('contribution_extra.*')
