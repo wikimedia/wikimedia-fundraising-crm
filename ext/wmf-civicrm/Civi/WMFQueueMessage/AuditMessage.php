@@ -424,7 +424,17 @@ class AuditMessage extends DonationMessage {
         }
       }
       else {
-        // Perhaps we should try invoice_id look up FIRST here...
+        $orderID = $this->getOrderID();
+        $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
+        $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
+        if (!$this->existingContribution && $orderID && str_contains($orderID, '.')) {
+          $this->existingContribution = Contribution::get(FALSE)
+            ->setSelect($selectFields)
+            ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
+            ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
+            ->addWhere('invoice_id', '=', $orderID)
+            ->execute()->first() ?? [];
+        }
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
@@ -441,17 +451,6 @@ class AuditMessage extends DonationMessage {
             // Try the parent ID, if provided (e.g. refund) or the backend processor txn ID.
             ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorParentTxnID() ?: $this->getBackendProcessorTxnID())
             ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
-            ->execute()->first() ?? [];
-        }
-        $orderID = $this->getOrderID();
-        $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
-        $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
-        if (!$this->existingContribution && $orderID && str_contains($orderID, '.')) {
-          $this->existingContribution = Contribution::get(FALSE)
-            ->setSelect($selectFields)
-            ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
-            ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
-            ->addWhere('invoice_id', '=', $orderID)
             ->execute()->first() ?? [];
         }
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getGatewayParentTxnID()) {
