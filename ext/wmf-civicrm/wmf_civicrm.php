@@ -133,6 +133,7 @@ function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermission
             'contribution_settlement.settlement_batch_reference' => '',
             'contribution_settlement.settlement_batch_reversal_reference' => '',
             'contribution_settlement.settled_donation_amount' => '',
+            'contribution_settlement.settled_reversal_amount' => '',
             'contribution_settlement.settled_fee_amount' => '',
             'contribution_settlement.settled_fee_reversal_amount' => '',
             'contribution_settlement.settlement_date' => '',

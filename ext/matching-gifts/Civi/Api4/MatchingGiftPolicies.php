@@ -3,6 +3,8 @@
 namespace Civi\Api4;
 
 use Civi\Api4\Action\MatchingGiftPolicies\Export;
+use Civi\Api4\Action\MatchingGiftPolicies\Fetch;
+use Civi\Api4\Action\MatchingGiftPolicies\Sync;
 use Civi\Api4\Action\MatchingGiftPolicies\VerifyEmployerFile;
 use Civi\Api4\Generic\AbstractEntity;
 use Civi\Api4\Generic\BasicGetFieldsAction;
@@ -16,6 +18,16 @@ class MatchingGiftPolicies extends AbstractEntity {
 
   public static function export($checkPermissions = TRUE): Export {
     return (new Export(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  public static function fetch($checkPermissions = TRUE): Fetch {
+    return (new Fetch(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  public static function sync($checkPermissions = TRUE): Sync {
+    return (new Sync(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
