@@ -710,10 +710,20 @@ END";
         // Note in most cases settlement is daily so the date from the batch is expected to become the primary
         // way of doing this rather than just a fall-back.
         $result = CRM_Core_DAO::executeQuery(
-          'SELECT MIN(DATE(settlement_date)) as from_date, MAX(DATE(settlement_date)) as to_date
+          'SELECT MIN(DATE(settlement_date)) as from_date,
+           MAX(DATE(settlement_date)) as to_date,
+           TIMESTAMPDIFF(HOUR, MIN(settlement_date), MAX(settlement_date)) AS diff_hours
            FROM civicrm_value_contribution_settlement
            WHERE settlement_batch_reference = %1', [1 => [$batch['name'], 'String']]
-         )->fetchAll()[0] ?? ['from_date' => $batch['batch_data.settlement_date'], 'to_date' => $batch['batch_data.settlement_date']];
+         )->fetchAll()[0];
+
+        if (empty($result['diff_hours']) || $result['diff_hours'] < 25) {
+          // If we are looking at chargebacks only then the date range above will not find anything
+          // or if we are looking at transactions that span 2 days but are only 24-ish hours then
+          // let's just use the batch date settlement date.
+          $result['from_date'] = $batch['batch_data.settlement_date'];
+          $result['to_date'] = $batch['batch_data.settlement_date'];
+        }
 
         $this->batches[$index] += $result;
         $this->batches[$index]['date_description'] = $result['from_date'] === $result['to_date'] ? gmdate('m/d/Y', strtotime($result['from_date'])) : gmdate('m/d/Y', strtotime($result['from_date'])) . ' - ' . gmdate('m/d/Y', strtotime($result['to_date']));
