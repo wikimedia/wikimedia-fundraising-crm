@@ -116,4 +116,11 @@ class Send extends AbstractAction {
     $result[$this->contactID]['send_successful'] = $success;
   }
 
+  /**
+   * @return array
+   */
+  public function getPermissions(): array {
+    return ['access CiviCRM'];
+  }
+
 }
