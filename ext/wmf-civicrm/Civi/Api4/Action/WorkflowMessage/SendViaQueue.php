@@ -96,4 +96,11 @@ class SendViaQueue extends AbstractAction {
     ), ['weight' => 100]);
   }
 
+  /**
+   * @return array
+   */
+  public function getPermissions(): array {
+    return ['access CiviCRM'];
+  }
+
 }

@@ -5,6 +5,7 @@ namespace Civi\WMFHelper;
 use Civi;
 use Civi\Api4\Contribution;
 use Civi\Api4\ThankYou;
+use CRM_Core_Exception;
 use CRM_Core_PseudoConstant;
 use SmashPig\Core\Context;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
@@ -271,12 +272,20 @@ class ContributionRecur {
       'contribution_id' => $contributionId,
     ];
 
-    $sendResult = ThankYou::send(FALSE)
-      ->setTemplateName('monthly_convert')
-      ->setContributionID($contributionId)
-      ->setParameters($params)
-      ->setActivityType('Recurring convert email')
-      ->execute()->first();
+    try {
+      $sendResult = ThankYou::send(FALSE)
+        ->setTemplateName('monthly_convert')
+        ->setContributionID($contributionId)
+        ->setParameters($params)
+        ->setActivityType('Recurring convert email')
+        ->execute()->first();
+      }
+    catch (CRM_Core_Exception $e) {
+      Civi::log('wmf')->error(
+        'monthly_convert: Monthly convert mail failed for recurring contribution id: {contribution_recur_id} due to no valid email address',
+        ['contribution_recur_id' => $contributionRecur['id']]
+      );
+    }
 
     $context = [
       'contribution_recur_id' => $contributionRecur['id'],

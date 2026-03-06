@@ -432,7 +432,10 @@ class AuditMessage extends DonationMessage {
             ->setSelect($selectFields)
             ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
             ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
-            ->addWhere('invoice_id', '=', $orderID)
+            ->addClause('OR',
+              ['invoice_id', '=', $orderID],
+              ['invoice_id', 'LIKE', $orderID . '|%']
+            )
             ->execute()->first() ?? [];
         }
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
