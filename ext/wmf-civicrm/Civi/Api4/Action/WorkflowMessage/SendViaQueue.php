@@ -82,6 +82,7 @@ class SendViaQueue extends AbstractAction {
       'contactID' => $this->contactID,
       'templateParameters' => $this->templateParameters,
       'workflow' => $this->workflow,
+      'checkPermissions' => $this->checkPermissions,
     ];
     if ($this->activitySourceRecordID) {
       $sendParameters['activitySourceRecordID'] = $this->activitySourceRecordID;
