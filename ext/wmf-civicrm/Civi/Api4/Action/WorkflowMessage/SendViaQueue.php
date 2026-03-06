@@ -91,7 +91,7 @@ class SendViaQueue extends AbstractAction {
     }
     $queue->createItem(new \CRM_Queue_Task(
       'civicrm_api4_queue',
-      ['WorkflowEmail', 'send', $sendParameters],
+      ['WorkflowMessage', 'send', $sendParameters],
       'Send email for workflow ' . $this->workflow,
     ), ['weight' => 100]);
   }

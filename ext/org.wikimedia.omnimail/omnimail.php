@@ -200,3 +200,21 @@ function civicrm_api4_queue($ctx, $entity, $action, $params): bool {
   }
   return TRUE;
 }
+
+function omnimail_civicrm_searchKitTasks(array &$tasks, bool $checkPermissions, ?int $userID): void {
+  // Make this task available on Contribution-based SearchKit searches.
+  if (CRM_Core_Permission::check('administer CiviCRM data')) {
+    $tasks['Group']['remote_push'] = [
+      'title' => E::ts('Push group to Acoustic'),
+      'icon' => 'fa-share',
+      'apiBatch' => [
+        'action' => 'remotePush',
+        'mailProvider' => 'acoustic',
+        'confirmMsg' => E::ts('Push group to Acoustic for %1 %2?'),
+        'runMsg' => E::ts('Queueing group to Acoustic for %1 %2...'),
+        'successMsg' => E::ts('Group queued to Acoustic for %1 %2.'),
+        'errorMsg' => E::ts('An error occurred while attempting to queue to Acoustic %1 %2.'),
+      ],
+    ];
+  }
+}
