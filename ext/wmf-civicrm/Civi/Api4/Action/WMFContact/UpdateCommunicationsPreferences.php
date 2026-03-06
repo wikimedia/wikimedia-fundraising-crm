@@ -239,22 +239,15 @@ class UpdateCommunicationsPreferences extends AbstractAction {
         $emailResult = Email::update(FALSE)->setValues($snoozeValues)
           ->addWhere('id', '=', $email->first()['id'])
           ->execute()->first();
+        $outcome = array_merge($outcome, $emailResult);
       }
-      else {
-        $emailResult = [];
-      }
-      // log activity for snooze date update
-      $this->logActivity("Email Preference Center",
-        "Email Preference Center update snooze date from {$oldSnoozeDateValue}
-          to {$snoozeValues['email_settings.snooze_date']}", $this->contactID);
-      $outcome = array_merge($outcome, $emailResult);
     }
 
     // only log when epc have the info update
     if ($outcome !== []) {
       $message = "Email Preference Center update - civicrm_contact id: $this->contactID " . $message . '.';
       \Civi::log('wmf')->info($message);
-      $this->logActivity('Email Preference Center', "$message.", $this->contactID);
+      $this->logActivity('Email Preference Center', $message, $this->contactID);
     }
 
     $result[] = $outcome;
