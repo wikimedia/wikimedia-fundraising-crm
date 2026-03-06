@@ -7,6 +7,7 @@ use Civi\Api4\Activity;
 use Civi\Api4\Contact;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\RecurUpgradeEmail;
+use Civi\Api4\WorkflowMessage;
 use Civi\ExchangeRates\ExchangeRatesException;
 use Civi\WMFException\WMFException;
 use Civi\WMFQueueMessage\RecurringModifyMessage;
@@ -135,15 +136,14 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
         'activity_type_id:name' => self::RECURRING_ANNUAL_CONVERSION_ACTIVITY_TYPE_NAME,
       ] + $message->getActivityTracking();
 
-    ContributionRecur::update(FALSE)
-      ->addValue('next_sched_contribution_date', $amountDetails['next_sched_contribution_date'])
-      ->addValue('amount', $amountDetails['new_annual_amount'])
-      ->addValue('frequency_unit', 'year')
-      ->addWhere(
-      'id',
-      '=',
-      $activityParams['contribution_recur_id']
-    )->execute();
+    $values = [
+      'next_sched_contribution_date' => $amountDetails['next_sched_contribution_date'],
+      'amount' => $amountDetails['new_annual_amount'],
+      'frequency_unit' => 'year'
+    ];
+    $this->updateContributionRecurAndSendEmail(
+      $activityParams['contribution_recur_id'], $values, self::RECURRING_ANNUAL_CONVERSION_ACTIVITY_TYPE_NAME
+    );
 
     $this->createRecurringActivity(json_encode($amountDetails), $activityParams);
   }
@@ -172,11 +172,13 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       'contribution_recur_id' => $message->getContributionRecurID(),
       'activity_type_id:name' => self::RECURRING_PAUSED_ACTIVITY_TYPE_NAME,
     ] + $message->getActivityTracking();
-    ContributionRecur::update(FALSE)->addValue('next_sched_contribution_date', $pauseScheduledParams['next_sched_contribution_date'])->addWhere(
-      'id',
-      '=',
-      $activityParams['contribution_recur_id']
-    )->execute();
+
+    $values = [
+      'next_sched_contribution_date' => $pauseScheduledParams['next_sched_contribution_date']
+    ];
+    $this->updateContributionRecurAndSendEmail(
+      $activityParams['contribution_recur_id'], $values, self::RECURRING_PAUSED_ACTIVITY_TYPE_NAME
+    );
 
     $this->createRecurringActivity(json_encode($pauseScheduledParams), $activityParams);
   }
@@ -204,17 +206,12 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       'contribution_recur_id' => $message->getContributionRecurID(),
       'activity_type_id:name' => self::RECURRING_CANCELLED_ACTIVITY_TYPE_NAME,
     ] + $message->getActivityTracking();
-    ContributionRecur::update(FALSE)
-      ->addValue('contribution_status_id:name', 'Cancelled')
-      ->addValue('cancel_date', $update_params['cancel_date'])
-      ->addValue('end_date',$update_params['end_date'])
-      ->addValue('cancel_reason',$update_params['cancel_reason'])
-      ->addWhere(
-      'id',
-      '=',
-      $message->getContributionRecurID()
-    )->execute();
 
+    $this->updateContributionRecurAndSendEmail(
+      $message->getContributionRecurID(),
+      $update_params + ['contribution_status_id:name' => 'Cancelled'],
+      self::RECURRING_CANCELLED_ACTIVITY_TYPE_NAME
+    );
     $this->createRecurringActivity(json_encode($update_params), $activityParams);
   }
 
@@ -246,6 +243,12 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       Civi::log('wmf')->info('Discarding (probable duplicate) recurring upgrade message with zero amount');
       return;
     }
+
+    ContributionRecur::update(FALSE)
+      ->addValue('amount', $message->getModifiedAmountRounded())
+      ->addWhere('id', '=', $message->getContributionRecurID())
+      ->execute();
+
     $amountDetails = [
       'native_currency' => $message->getModifiedCurrency(),
       'native_original_amount' => $message->getOriginalExistingAmountRounded(),
@@ -263,7 +266,10 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
     }
 
     $activityParams['activity_type_id:name'] = self::RECURRING_UPGRADE_ACCEPT_ACTIVITY_TYPE_NAME;
-    $this->updateContributionRecurAmountAndRecurringActivity($amountDetails, $activityParams);
+
+    $this->createRecurringActivity(json_encode($amountDetails), $activityParams);
+
+    // TODO: use generic WorkflowMessage sendViaQueue
     RecurUpgradeEmail::send()
       ->setCheckPermissions(FALSE)
       ->setContactID($message->getExistingContributionRecurValue('contact_id'))
@@ -310,12 +316,11 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
    * @throws \CRM_Core_Exception
    */
   protected function updateContributionRecurAmountAndRecurringActivity(array $amountDetails, array $activityParams): void {
-    ContributionRecur::update(FALSE)->addValue('amount', $activityParams['amount'])->addWhere(
-      'id',
-      '=',
-      $activityParams['contribution_recur_id']
-    )->execute();
-
+    $this->updateContributionRecurAndSendEmail(
+      $activityParams['contribution_recur_id'],
+      ['amount' => $activityParams['amount']],
+      $activityParams['activity_type_id:name']
+    );
     $this->createRecurringActivity(json_encode($amountDetails), $activityParams);
   }
 
@@ -382,6 +387,32 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       }
       $this->updateContributionRecurAmountAndRecurringActivity($amountDetails, $activityParams);
     }
+  }
+
+  protected function updateContributionRecurAndSendEmail(int $id, array $fieldValues, string $activityType) {
+    $oldContributionRecur = ContributionRecur::get(FALSE)
+      ->addSelect('*', 'payment_instrument_id:label', 'contribution_status_id:name', 'financial_type_id:label')
+      ->addWhere('id', '=', $id)
+      ->execute()->first();
+    $newContributionRecur = $oldContributionRecur;
+    foreach ($fieldValues as $field => $value) {
+      $newContributionRecur[$field] = $value;
+    }
+
+    ContributionRecur::update(FALSE)
+      ->setValues($fieldValues)
+      ->addWhere('id', '=', $id)
+      ->execute();
+
+    WorkflowMessage::sendViaQueue(FALSE)
+      ->setWorkflow('donor_portal_recurring')
+      ->setContactID($oldContributionRecur['contact_id'])
+      ->setActivitySourceRecordID($id)
+      ->setTemplateParameters([
+        'newContributionRecur' => $newContributionRecur,
+        'oldContributionRecur' => $oldContributionRecur,
+        'action' => $activityType,
+      ])->execute();
   }
 
 }
