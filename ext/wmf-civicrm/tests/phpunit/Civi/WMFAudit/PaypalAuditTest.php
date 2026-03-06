@@ -160,6 +160,25 @@ class PaypalAuditTest extends BaseAuditTestCase {
   }
 
   /**
+   * Test batch of BRL transactions converted to USD creates a BRL not USD batch.
+   *
+   * https://phabricator.wikimedia.org/T418556#11683676
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function testSTLBatchForBRLTransaction(): void {
+    $this->runAuditBatch('stl_file', 'STL-BRL-convert.csv', 'paypal_20260305');
+    // Only BRL batch created.
+    $batch = Batch::get(FALSE)
+      ->addWhere('name', 'LIKE', 'paypal_20260304%')
+      ->addSelect('*', 'batch_data.*')
+      ->execute()->single();
+    $this->assertEquals('BRL', $batch['batch_data.settlement_currency']);
+    $this->assertEquals(60, $batch['batch_data.settled_donation_amount']);
+  }
+
+  /**
    * In this situation we have been charged a chargeback for a non-captured
    * donation. The chargeback was reversed but there was a fee difference left.
    *
