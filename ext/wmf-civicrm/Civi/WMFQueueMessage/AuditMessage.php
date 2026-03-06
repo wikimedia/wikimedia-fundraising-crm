@@ -424,6 +424,17 @@ class AuditMessage extends DonationMessage {
         }
       }
       else {
+        $orderID = $this->getOrderID();
+        $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
+        $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
+        if (!$this->existingContribution && $orderID && str_contains($orderID, '.')) {
+          $this->existingContribution = Contribution::get(FALSE)
+            ->setSelect($selectFields)
+            ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
+            ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
+            ->addWhere('invoice_id', '=', $orderID)
+            ->execute()->first() ?? [];
+        }
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
@@ -443,11 +454,9 @@ class AuditMessage extends DonationMessage {
             ->execute()->first() ?? [];
         }
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getGatewayParentTxnID()) {
-          $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
-          $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
-            ->addWhere('financial_type_id:name', '!=', 'Chargeback Reversal')
+            ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
             ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
             ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
             ->execute()->first() ?? [];
@@ -509,8 +518,11 @@ class AuditMessage extends DonationMessage {
     // Try to reconstruct missing/false-y gateway_parent_id from ct_id.
     // This logic was in the Ingenico Audit processor but functionality-wise
     // it is generic based on the Message fields (even if it arises with Ingenico).
+    // @todo - I have some real doubts about this code. It seems better to use
+    // the order ID to look up the contribution - like we now do in getExistingContribution()
+    // I've mitigated with the str_ends_with check...
     if (
-      $this->getContributionTrackingID()
+      $this->getContributionTrackingID() && $this->getOrderID() && str_ends_with($this->getOrderID(), '.1')
     ) {
       return ContributionTracking::get(FALSE)
         ->addWhere('id', '=', $this->getContributionTrackingID())
