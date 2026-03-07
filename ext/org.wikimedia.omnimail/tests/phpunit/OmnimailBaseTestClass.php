@@ -218,7 +218,7 @@ class OmnimailBaseTestClass extends TestCase {
       civicrm_api3('OmnimailJobProgress', 'create', $values);
     }
     catch (CRM_Core_Exception $e) {
-      $this->fail(print_r($values, 1), $e->getMessage() . $e->getTraceAsString() . print_r($e->getExtraParams(), TRUE));
+      $this->fail(print_r($values, 1), $e->getMessage() . $e->getTraceAsString() . print_r($e->getErrorData(), TRUE));
     }
   }
 

@@ -280,7 +280,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       throw new WMFException(
         WMFException::IMPORT_CONTRIB,
         "Cannot mark original contribution as refunded:
-                $contribution_id, " . $e->getMessage() . print_r($e->getExtraParams(), TRUE)
+                $contribution_id, " . $e->getMessage() . print_r($e->getErrorData(), TRUE)
       );
     }
 
@@ -315,7 +315,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           throw new WMFException(
             WMFException::IMPORT_CONTRIB,
             "Cannot create new contribution for the refund difference:
-                $contribution_id, " . $e->getMessage() . print_r($e->getExtraParams(), TRUE)
+                $contribution_id, " . $e->getMessage() . print_r($e->getErrorData(), TRUE)
           );
         }
       }
