@@ -133,7 +133,7 @@ class Send extends AbstractAction {
       }
       catch (NoEmailException | NoContributionException $e) {
         // Invalid email address or something
-        $this->markFailed($e->getExtraParams()['email'], 'wmf_eoy_receipt send error', $e->getMessage());
+        $this->markFailed($e->getErrorData()['email'], 'wmf_eoy_receipt send error', $e->getMessage());
         $failed++;
         $attempted++;
         continue;

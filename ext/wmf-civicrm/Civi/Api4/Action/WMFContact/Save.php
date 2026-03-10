@@ -183,7 +183,7 @@ class Save extends AbstractAction {
         throw new WmfException(
           WmfException::DATABASE_CONTENTION,
           'Contact could not be added due to database contention',
-          $ex->getExtraParams()
+          $ex->getErrorData()
         );
       }
       else {
@@ -596,7 +596,7 @@ class Save extends AbstractAction {
     catch (\CRM_Core_Exception $e) {
       // Constraint violations occur when data is rolled back to resolve a deadlock.
       $code = $e->getErrorCode() === 'constraint violation' ? WMFException::DATABASE_CONTENTION : WMFException::IMPORT_CONTACT;
-      throw new WMFException($code, "Couldn't store address for the contact.", $e->getExtraParams());
+      throw new WMFException($code, "Couldn't store address for the contact.", $e->getErrorData());
     }
   }
 
@@ -724,7 +724,7 @@ WHERE
     catch (\CRM_Core_Exception $e) {
       // Constraint violations occur when data is rolled back to resolve a deadlock.
       $code = (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'])) ? WMFException::DATABASE_CONTENTION : WMFException::IMPORT_CONTACT;
-      throw new WMFException($code, "Couldn't store email for the contact.", $e->getExtraParams());
+      throw new WMFException($code, "Couldn't store email for the contact.", $e->getErrorData());
     }
   }
 
