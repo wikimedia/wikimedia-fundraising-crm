@@ -4,7 +4,7 @@ namespace Civi\Api4\Action\System;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 
-class getCiviCRMStatus extends AbstractAction
+class GetCiviCRMStatus extends AbstractAction
 {
     /**
      * This action is only run to check Civi's online status
@@ -15,4 +15,11 @@ class getCiviCRMStatus extends AbstractAction
             'success' => True,
         ];
     }
+
+  /**
+   * @return array
+   */
+  public function getPermissions(): array {
+    return ["*always allow*"];
+  }
 }
