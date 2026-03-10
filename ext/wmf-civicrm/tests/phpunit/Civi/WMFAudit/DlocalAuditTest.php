@@ -2,6 +2,7 @@
 
 namespace Civi\WMFAudit;
 
+use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use League\Csv\Exception;
@@ -24,6 +25,19 @@ class DlocalAuditTest extends BaseAuditTestCase {
     // First we need to set an exchange rate for a sickeningly specific time
     $this->setExchangeRates(1434488406, ['BRL' => 3.24]);
     $this->setExchangeRates(1434488406, ['USD' => 1]);
+  }
+
+  public function tearDown(): void {
+    Contribution::delete(FALSE)
+      ->addWhere('trxn_id', 'LIKE', 'DLOCAL 827317666%')
+      ->execute();
+    Contribution::delete(FALSE)
+      ->addWhere('contribution_settlement.settlement_batch_reference', 'LIKE', 'dlocal_20260227_USD')
+      ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'dlocal_20260227_USD')
+      ->execute();
+    parent::tearDown();
   }
 
   public function auditTestProvider(): array {
@@ -104,7 +118,7 @@ class DlocalAuditTest extends BaseAuditTestCase {
               'settled_net_amount' => 1.17,
               'original_total_amount' => '4.00',
               'exchange_rate' => 0.3,
-              'tracking_date' => '2015-06-17 01:59:30'
+              'tracking_date' => '2015-06-17 01:59:30',
             ],
           ],
         ],
@@ -211,6 +225,12 @@ class DlocalAuditTest extends BaseAuditTestCase {
     $this->assertEquals('dlocal_20260206_USD', $contribution['contribution_settlement.settlement_batch_reversal_reference']);
   }
 
+  public function testProcessSettlementBatch(): void {
+    $auditResult = $this->runAuditBatch('cross_border_report', 'Wikimedia_cross_border_report_20260207_083659.csv', 'dlocal_20260207')['validate']->first();
+    // Expecting 7 means we include the rounding fee.
+    $this->assertEquals(7, $auditResult['expected']['count']);
+  }
+
   /**
    * @param string $directory
    * @param string $fileName
@@ -244,7 +264,7 @@ class DlocalAuditTest extends BaseAuditTestCase {
   }
 
   public function createTransactionLog(array $row): void {
-    if (in_array($row['ROW_TYPE'], ['ADJUSTMENT', 'HEADER', 'ROW_TYPE'], TRUE)) {
+    if (in_array($row['ROW_TYPE'], ['ADJUSTMENT', 'HEADER', 'ROW_TYPE', 'SETTLEMENT_FEE'], TRUE)) {
       return;
     }
     $orderID = $row['TRANSACTION_ID'];
@@ -296,7 +316,7 @@ class DlocalAuditTest extends BaseAuditTestCase {
         "utm_medium" => "sitenotice",
         "utm_source" => $utmSource,
         "date" => strtotime($row['CREATION_DATE']),
-      ]
+      ],
     ], $gatewayTxnID);
   }
 
