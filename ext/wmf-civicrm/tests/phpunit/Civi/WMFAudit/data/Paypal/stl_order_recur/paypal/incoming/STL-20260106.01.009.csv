@@ -1,0 +1,8 @@
+﻿SH,2026/01/06 00:00:00 -0800,2026/01/06 23:59:59 -0800,EZ782AXEUJUW8
+CH,Transaction ID,Invoice ID,PayPal Reference ID,PayPal Reference ID Type,Transaction Event Code,Transaction Initiation Date,Transaction Completion Date,Transaction Debit or Credit,Gross Transaction Amount,Gross Transaction Currency,Fee Debit or Credit,Fee Amount,Fee Currency,Custom Field,Consumer ID,Payment Tracking ID,Store ID,Bank Reference ID,Credit Transactional Fee,Credit Promotional Fee,Credit Term
+SB,8MV64,2335.1,0GS22,TXN,T0003,2026/01/06 03:57:02 -0800,2026/01/06 03:57:02 -0800,CR,1700,USD,DR,0,USD,JUUsv,9XPD,,,,,,
+SF,USD,1700,0,0,52,CR,1000000,CR,1001749,CR,1000000,CR,1001749,CR,0,CR,0,4,,,
+SC,5,,,,,,,,,,,,,,,,,,,,
+RF,USD,1700,0,0,52,CR,1000000,CR,1001749,CR,1000000,CR,1001749,CR,0,CR,0,4,,,
+RC,5,,,,,,,,,,,,,,,,,,,,
+FF,5,,,,,,,,,,,,,,,,,,,,

@@ -132,6 +132,60 @@ class PaypalAuditTest extends BaseAuditTestCase {
   }
 
   /**
+   * We cannot rely on order ID for PayPal because it does not increment the order ID.
+   *
+   * Check it does not increment the value.
+   *
+   * @return void
+   */
+  public function testOrderIdIgnored(): void {
+    $contactID = $this->createIndividual();
+    $this->createTestEntity('ContributionRecur', [
+      'processor_id' => 'I-CRT',
+      'trxn_id' => 'I-CRT',
+      'amount' => 10,
+      'contact_id' => $contactID,
+    ], 'recur');
+
+    // Create donation with different gateway_txn_id but with the same order_id.
+    // (the incoming one *should* be 2335.7)
+    $this->createTestEntity('Contribution', [
+      'contribution_extra.gateway' => 'paypal',
+      'contribution_extra.gateway_txn_id' => 'ABCD',
+      'invoice_id' => '2335.1',
+      'total_amount' => 17,
+      'contact_id' => $contactID,
+      'financial_type_id:name' => 'Cash',
+      'contribution_recur_id' => $this->ids['ContributionRecur']['recur'],
+    ], 'recur');
+
+    // Create actual match.
+    $this->createTestEntity('Contribution', [
+      'contribution_extra.gateway' => 'paypal',
+      'contribution_extra.gateway_txn_id' => '8MV64',
+      'invoice_id' => '2335.7',
+      'total_amount' => 17,
+      'contact_id' => $contactID,
+      'financial_type_id:name' => 'Cash',
+      'contribution_recur_id' => $this->ids['ContributionRecur']['recur'],
+    ], 'actual');
+    $this->runAuditBatch('stl_order_recur', 'STL-20260106.01.009.csv');
+    $originalContribution = Contribution::get(FALSE)
+      ->addSelect('contribution_settlement.*', 'invoice_id')
+      ->addWhere('id', '=', $this->ids['Contribution']['recur'])
+      ->execute()->single();
+    $this->assertEquals('2335.1', $originalContribution['invoice_id']);
+    $this->assertEmpty($originalContribution['contribution_settlement.settlement_batch_reference']);
+
+    $actualContribution = Contribution::get(FALSE)
+      ->addSelect('contribution_settlement.*', 'invoice_id')
+      ->addWhere('id', '=', $this->ids['Contribution']['actual'])
+      ->execute()->single();
+    $this->assertEquals('paypal_20260106_USD', $actualContribution['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals('2335.7', $actualContribution['invoice_id']);
+  }
+
+  /**
    * In this situation we are testing our handling of being charged a chargeback
    * hold which was later reversed and settled as a chargeback.
    *
