@@ -424,20 +424,6 @@ class AuditMessage extends DonationMessage {
         }
       }
       else {
-        $orderID = $this->getOrderID();
-        $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
-        $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
-        if (!$this->existingContribution && $orderID && str_contains($orderID, '.')) {
-          $this->existingContribution = Contribution::get(FALSE)
-            ->setSelect($selectFields)
-            ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
-            ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
-            ->addClause('OR',
-              ['invoice_id', '=', $orderID],
-              ['invoice_id', 'LIKE', $orderID . '|%']
-            )
-            ->execute()->first() ?? [];
-        }
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
@@ -456,12 +442,26 @@ class AuditMessage extends DonationMessage {
             ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
             ->execute()->first() ?? [];
         }
+        $orderID = $this->getOrderID();
+        $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
+        $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getGatewayParentTxnID()) {
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
             ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
             ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
             ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
+            ->execute()->first() ?? [];
+        }
+        if (!$this->existingContribution && $orderID && str_contains($orderID, '.')) {
+          $this->existingContribution = Contribution::get(FALSE)
+            ->setSelect($selectFields)
+            ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
+            ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
+            ->addClause('OR',
+              ['invoice_id', '=', $orderID],
+              ['invoice_id', 'LIKE', $orderID . '|%']
+            )
             ->execute()->first() ?? [];
         }
       }
