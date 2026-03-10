@@ -235,7 +235,7 @@ class AuditMessage extends DonationMessage {
       return $message;
     }
     if ($this->isNegative()) {
-      $message['gateway_parent_id'] = $this->getGatewayParentTxnID();
+      $message['gateway_parent_id'] = $this->getGatewayOriginalTxnID();
       $message['gateway_refund_id'] = $this->getGatewayRefundID();
     }
     else {
@@ -327,7 +327,7 @@ class AuditMessage extends DonationMessage {
         \Civi::log('wmf')->info("contribution status not per the update\n", [
             'gateway' => $this->getGateway(),
             'trxn_id' => WMFTransaction::from_message($this->message)->get_unique_id(),
-            'gateway_txn_id' => $this->getGatewayParentTxnID(),
+            'gateway_txn_id' => $this->getGatewayOriginalTxnID(),
             'backend_processor' => $this->getBackEndProcessor(),
             'backend_txn_id' => $this->getBackendProcessorTxnID(),
             'existing_contribution_id' => $existingContribution['id'],
@@ -424,20 +424,6 @@ class AuditMessage extends DonationMessage {
         }
       }
       else {
-        $orderID = $this->getOrderID();
-        $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
-        $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
-        if (!$this->existingContribution && $orderID && str_contains($orderID, '.')) {
-          $this->existingContribution = Contribution::get(FALSE)
-            ->setSelect($selectFields)
-            ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
-            ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
-            ->addClause('OR',
-              ['invoice_id', '=', $orderID],
-              ['invoice_id', 'LIKE', $orderID . '|%']
-            )
-            ->execute()->first() ?? [];
-        }
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
@@ -456,13 +442,24 @@ class AuditMessage extends DonationMessage {
             ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
             ->execute()->first() ?? [];
         }
-        if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getGatewayParentTxnID()) {
+        $orderID = $this->getOrderID();
+        $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
+        $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
+        if ($this->isDlocal()) {
+          // Try order ID lookup first for dlocal - this will only take place if there is one - in which
+          // case it is more reliable.
+          $this->lookupByOrderId();
+        }
+        if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getGatewayOriginalTxnID()) {
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
             ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
             ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
-            ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayParentTxnID())
+            ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayOriginalTxnID())
             ->execute()->first() ?? [];
+        }
+        if (!$this->existingContribution) {
+          $this->lookupByOrderId();
         }
       }
     }
@@ -471,7 +468,7 @@ class AuditMessage extends DonationMessage {
       if ($isFirst) {
         \Civi::log('wmf')->info("contribution not found using contribution_extra.gateway {gateway} and gateway_txn_id {gateway_txn_id}\n", $debugInformation + [
             'gateway' => $this->getGateway(),
-            'gateway_txn_id' => $this->getGatewayParentTxnID(),
+            'gateway_txn_id' => $this->getGatewayOriginalTxnID(),
             'backend_processor' => $this->getBackEndProcessor(),
             'backend_txn_id' => $this->getBackendProcessorTxnID(),
           ] + $this->message
@@ -504,9 +501,11 @@ class AuditMessage extends DonationMessage {
   }
 
   /**
+   * Get the original transaction ID - for refunds etc this is the original donation.
+   *
    * @throws \CRM_Core_Exception
    */
-  public function getGatewayParentTxnID(): ?string {
+  public function getGatewayOriginalTxnID(): ?string {
     if (!empty($this->message['gateway_parent_id'])) {
       return $this->message['gateway_parent_id'];
     }
@@ -601,7 +600,7 @@ class AuditMessage extends DonationMessage {
     // Handling for when it is not provided (notably Ingenico doesn't give refunds their own ID,
     // and sometimes even sends '0')
     // We'll prepend an 'RFD' in the trxn_id column later.
-    return $this->getGatewayParentTxnID();
+    return $this->getGatewayOriginalTxnID();
   }
 
   /**
@@ -901,6 +900,30 @@ class AuditMessage extends DonationMessage {
       $this->contributionRecurID = $recurring['id'] ?? FALSE;
     }
     return $recurring;
+  }
+
+  /**
+   * Lookup contribution by Order ID.
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  protected function lookupByOrderId(): void {
+    $orderID = $this->getOrderID();
+    if (!$orderID || !str_contains($orderID, '.')) {
+      return;
+    }
+    $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
+    $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
+    $this->existingContribution = Contribution::get(FALSE)
+      ->setSelect($this->getContributionSelectFields())
+      ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
+      ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
+      ->addClause('OR',
+        ['invoice_id', '=', $orderID],
+        ['invoice_id', 'LIKE', $orderID . '|%']
+      )
+      ->execute()->first() ?? [];
   }
 
 }

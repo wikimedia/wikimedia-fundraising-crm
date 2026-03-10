@@ -994,6 +994,10 @@ class Message {
     return $this->isGateway('paypal') || $this->isGateway('paypal_ec');
   }
 
+  public function isDlocal(): bool {
+    return $this->isGateway('dlocal');
+  }
+
   public function isGravyPaypal(): bool {
     return $this->isGateway('gravy') && $this->message['payment_method'] === 'paypal';
   }
