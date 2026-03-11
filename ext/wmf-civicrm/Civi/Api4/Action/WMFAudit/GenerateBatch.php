@@ -216,7 +216,7 @@ class GenerateBatch extends AbstractAction {
           if ($this->isFee($row)) {
             $fee = $this->batchSummary[$batchName][$fund . '_fees'];
             $fee = $fee->plus($row['settled_fee_amount'] ?: 0);
-            $fee = $fee->plus($row['settled_reversal_fee_amount'] ?: 0);
+            $fee = $fee->plus($row['settled_fee_reversal_amount'] ?: 0);
             $this->batchSummary[$batchName][$fund . '_fees'] = $fee;
           }
           else {
@@ -361,8 +361,8 @@ END";
         x.original_currency,
         settled_donation_amount,
         settled_fee_amount,
-        settled_reversal_amount
-        settled_reversal_fee_amount ',
+        settled_reversal_amount,
+        settled_fee_reversal_amount ',
       $detailSQL
     );
     $detailSQL = str_replace(
