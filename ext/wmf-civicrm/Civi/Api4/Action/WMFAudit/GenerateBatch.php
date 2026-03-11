@@ -199,7 +199,7 @@ class GenerateBatch extends AbstractAction {
     if ($this->isOutputCsv) {
       $batchJournalWriter = $this->getBatchJournalWriter($batchName);
       $batchJournalWriter->insertAll($csv_rows);
-      $detailedData = $this->getDetailData($renderedSql);
+      $detailedData = $this->getDetailData($renderedSql, $batchName);
       foreach ($detailedData as $row) {
         if (empty($row['ACCT_NO'])) {
           $this->incompleteRows[] = $row;
@@ -225,10 +225,13 @@ class GenerateBatch extends AbstractAction {
             $this->batchSummary[$batchName]['accounts'][$row['ACCT_NO']][$fund] = $amount;
           }
         }
+        $formattedRow = $this->reOrderFields($row);
+        if (!isset($detailWriter)) {
+          $detailWriter = $this->getDetailsWriter(array_keys($formattedRow), $batchName);
+        }
+        $detailWriter->insertOne($formattedRow);
       }
-      $detailWriter = $this->getDetailsWriter(array_keys($detailedData[0] ?? []), $batchName);
-      $detailWriter->insertAll($detailedData);
-      return ['journal_file' => $batchJournalWriter->getPathname(), 'detail_file' => $detailWriter->getPathname()];
+      return ['journal_file' => $batchJournalWriter->getPathname(), 'detail_file' => $detailWriter ? $detailWriter->getPathname() : NULL];
     }
     return [];
   }
@@ -347,15 +350,22 @@ END";
    * @return array
    * @throws \Civi\Core\Exception\DBQueryException
    */
-  public function getDetailData(string $renderedSql): array {
+  public function getDetailData(string $renderedSql, $batchName): array {
     $detailSQL = str_replace('GROUP BY ', 'GROUP BY c.id, ', $renderedSql);
     $detailSQL = str_replace('GLDIMFUNDING', 'GLDIMFUNDING,
-        c.id as contribution_id, gift.channel, gift.fund, gift.is_major_gift,
+        "' . $this->getVendorCode($batchName) . '" as GL_VENDOR,
+        IF(s.settlement_batch_reference = "' . $batchName . '", s.settlement_date, "' . $this->batches[$batchName]['batch_data.settlement_date'] . ' 00:00:00") as settlement_date,
+        c.id as contribution_id,
+        c.invoice_id as order_id,
+        t.id as contribution_tracking_id,
+        gift.channel,
+        gift.fund,
+        gift.is_major_gift,
         IF(c.financial_type_id = 26, 1, 0) as is_endowment,
-        x.gateway,
-        x.gateway_txn_id,
-        x.backend_processor,
-        x.backend_processor_txn_id,
+        "' . $this->getGateway($batchName) . '" as gateway,
+        COALESCE(x.backend_processor, x.gateway) as backend_processor,
+        COALESCE(x.backend_processor_txn_id, x.gateway_txn_id) as backend_processor_txn_id,
+        IF(x.gateway = "gravy", "gravy", "") as payment_orchestrator,
         x.payment_orchestrator_reconciliation_id,
         x.original_amount,
         x.original_currency,
@@ -368,10 +378,13 @@ END";
     $detailSQL = str_replace(
       ' LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id',
       ' LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
-        LEFT JOIN wmf_contribution_extra x ON c.id = x.entity_id',
+        LEFT JOIN wmf_contribution_extra x ON c.id = x.entity_id
+        LEFT JOIN civicrm_contribution_tracking t ON t.contribution_id = c.id
+        ',
       $detailSQL
     );
-    return CRM_Core_DAO::executeQuery($detailSQL)->fetchAll();
+    $details = CRM_Core_DAO::executeQuery($detailSQL)->fetchAll();
+    return $details;
   }
 
   /**
@@ -1142,6 +1155,30 @@ GROUP BY s.settlement_batch_reference
   public function getGatewayLevelTrxnIncludeClause($batchName): string|array|null {
     $gatewayLevelTrxnIncludeClause = str_replace('NOT LIKE', 'LIKE', $this->getGatewayLevelTransactionExcludeClause($batchName));
     return str_replace(' AND ', ' OR ', $gatewayLevelTrxnIncludeClause);
+  }
+
+  /**
+   * @param mixed $row
+   *
+   * @return mixed
+   */
+  public function reOrderFields(array $row) {
+    $reordered = [
+      'gateway' => $row['gateway'],
+      'settlement_date' => $row['settlement_date'],
+      'type' => trim(substr(strrchr($row['MEMO'], '|'), 1)),
+      'DEBIT' => $row['DEBIT'],
+      'CREDIT' => $row['CREDIT'],
+    ];
+    unset($row['type'], $row['gateway'], $row['settlement_date'], $row['DESCRIPTION'], $row['MEMO'], $row['DEBIT'], $row['CREDIT']);
+
+    $glFields = ['ACCT_NO', 'LOCATION_ID', 'DEPT_ID', 'CURRENCY', 'GLDIMFUNDING', 'GL_VENDOR'];
+    foreach ($glFields as $field) {
+      $reordered['journal:' . $field] = $row[$field];
+      unset($row[$field]);
+    }
+    $reordered += $row;
+    return $reordered;
   }
 
 }

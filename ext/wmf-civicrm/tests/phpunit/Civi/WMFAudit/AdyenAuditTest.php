@@ -10,6 +10,7 @@ use Civi\Api4\TransactionLog;
 use Civi\Api4\WMFAudit;
 use League\Csv\Exception;
 use League\Csv\Reader;
+use League\Csv\Writer;
 use SmashPig\Core\Helpers\Base62Helper;
 
 /**
@@ -462,8 +463,8 @@ class AdyenAuditTest extends BaseAuditTestCase {
         "source_host" => "payments1007",
         "source_run_id" => 1219008,
         "source_version" => "973d0a66742ab85eeac413c4f7470fb208e33d29",
-        "source_enqueued_time" => 1756767840
-      ]
+        "source_enqueued_time" => 1756767840,
+      ],
     ], 'auth');
     $this->createTestEntity('TransactionLog', [
       'date' => '2025-09-01 23:04:00',
@@ -507,8 +508,8 @@ class AdyenAuditTest extends BaseAuditTestCase {
         "source_host" => "payments1007",
         "source_run_id" => 1219008,
         "source_version" => "973d0a66742ab85eeac413c4f7470fb208e33d29",
-        "source_enqueued_time" => 1756767840
-      ]
+        "source_enqueued_time" => 1756767840,
+      ],
     ], 'capture');
     $this->runAuditor();
     $this->processQueue('donations', 'Donation');
@@ -571,9 +572,9 @@ class AdyenAuditTest extends BaseAuditTestCase {
    * The end goal is 2 donations - the original one is charged back and a new one is created
    * for the reversal.
    *
-   *         Total Amount | Net Amount | Fee Amount | s*_donation_amount | s*_fee_amount | s*_reversal_amount | s*_reversal_fee_amount
-   * Donation         5   | 4.89       | .11        | 5                  | -.11          | -5                 | -10.65
-   * ChargeReversal   5   | 4.89       | .11        | 5                  | -.11          |
+   *         Total Amount | Net Amount | Fee Amount | s*_donation_amount | s*_fee_amount | s*_reversal_amount |
+   * s*_reversal_fee_amount Donation         5   | 4.89       | .11        | 5                  | -.11          | -5
+   *              | -10.65 ChargeReversal   5   | 4.89       | .11        | 5                  | -.11          |
    *
    * @throws \CRM_Core_Exception
    */
@@ -616,9 +617,9 @@ class AdyenAuditTest extends BaseAuditTestCase {
    * The end goal is 2 donations - the original one is refunded  and a new one is created
    * for the reversal.
    *
-   *         Total Amount | Net Amount | Fee Amount | s*_donation_amount | s*_fee_amount | s*_reversal_amount | s*_reversal_fee_amount
-   * Donation         5   | 4.89       | .11        | 5                  | -.11          | -5                 |
-   * RefundReversal   5   | 4.89       | .11        | 5                  | -.11          |
+   *         Total Amount | Net Amount | Fee Amount | s*_donation_amount | s*_fee_amount | s*_reversal_amount |
+   * s*_reversal_fee_amount Donation         5   | 4.89       | .11        | 5                  | -.11          | -5
+   *              | RefundReversal   5   | 4.89       | .11        | 5                  | -.11          |
    *
    * @throws \CRM_Core_Exception|\League\Csv\Exception
    */
@@ -771,6 +772,51 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->assertEquals('en', $tracking['language']);
     $this->assertEquals('US', $tracking['country']);
     $this->assertEquals('2017-02-19 06:10:51', $tracking['tracking_date']);
+  }
+
+  /**
+   * Test the detailed csv output format.
+   */
+  public function testSettlementDetailCsv() {
+    $this->runAuditBatch('batch_1', 'settlement_detail_report_batch_1128.csv');
+    $this->runAuditBatch('batch_1', 'settlement_detail_report_batch_1128.csv', 'adyen_1128');
+    $path = \Civi::settings()->get('wmf_audit_intact_files') . '/adyen_1128_USD_details.csv';
+    $reader = Reader::from($path);
+    $reader->setHeaderOffset(0);
+    $line = $reader->first();
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('contribution_extra.gateway_txn_id', '=', '1ABCD12345678910')
+      ->execute()->single();
+    $this->assertEquals([
+        'gateway' => 'adyen',
+        'settlement_date' => '2025-09-22 14:59:59',
+        'type' => 'Donations',
+        'DEBIT' => '0.00',
+        'CREDIT' => '25.10',
+        'journal:ACCT_NO' => '43481',
+        'journal:LOCATION_ID' => '100-WMF',
+        'journal:DEPT_ID' => 'CC-1005',
+        'journal:CURRENCY' => 'USD',
+        'journal:GLDIMFUNDING' => 'Unrestricted',
+        'journal:GL_VENDOR' => 'V01670',
+        'contribution_id' => $contribution['id'],
+        'order_id' => '662715.1',
+        'contribution_tracking_id' => '662715',
+        'backend_processor' => 'adyen',
+        'payment_orchestrator' => '',
+        'backend_processor_txn_id' => '1ABCD12345678910',
+        'payment_orchestrator_reconciliation_id' => '',
+        'channel' => 'Mobile Banner',
+        'fund' => 'Unrestricted - General',
+        'is_major_gift' => '0',
+        'is_endowment' => '0',
+        'original_amount' => '25.00',
+        'original_currency' => 'USD',
+        'settled_donation_amount' => '25.10',
+        'settled_reversal_amount' => '',
+        'settled_fee_amount' => '-0.18',
+        'settled_fee_reversal_amount' => '',
+    ], $line, 'incorrect value from file ' . $path);
   }
 
   /**
@@ -957,7 +1003,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
         "utm_medium" => "sitenotice",
         "utm_source" => $utmSource,
         "date" => strtotime($row['Creation Date']),
-      ]
+      ],
     ], $gatewayTxnID);
   }
 
