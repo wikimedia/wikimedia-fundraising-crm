@@ -192,6 +192,10 @@ class Parse extends AbstractAction {
         // Once it is verified or exported we don't overwrite it.
         continue;
       }
+      $lastDateFields = [];
+      if (!empty($batch['last_successful_total_verification_date'])) {
+        $lastDateFields = ['batch_data.last_successful_total_verification_date' => $batch['last_successful_total_verification_date']];
+      }
       // In time we should only overwrite open batches but for now we just update to what we find
       // as this is experimental.
       $updatedBatch = Batch::save(FALSE)
@@ -209,7 +213,7 @@ class Parse extends AbstractAction {
           'batch_data.settlement_currency' => $batch['settlement_currency'],
           'batch_data.settlement_date' => $batch['settlement_date'],
           'batch_data.settlement_gateway' => $batch['settlement_gateway'],
-        ] + $existing)
+        ] + $lastDateFields + $existing)
         ->setMatch(['name', 'type_id'])
         ->execute()->first();
       $result[] = ['id' => $updatedBatch['id']] + $batch;;
