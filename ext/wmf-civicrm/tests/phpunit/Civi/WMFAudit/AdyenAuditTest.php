@@ -860,7 +860,9 @@ class AdyenAuditTest extends BaseAuditTestCase {
 
     // Batch contains one refund and one donation.
     $batch = $result['batch']->first();
-    unset($batch['id']);
+    $verifiedAt = strtotime($batch['last_successful_total_verification_date']);
+    $this->assertGreaterThan(strtotime('yesterday'), $verifiedAt);
+    unset($batch['id'], $batch['last_successful_total_verification_date']);
     $this->assertEquals([
       'transaction_count' => 3,
       'settled_total_amount' => 19.2,

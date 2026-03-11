@@ -1949,6 +1949,7 @@ abstract class BaseAuditProcessor {
             $batch['settlement_date'] = $this->moveToNextFriday($batch['settlement_date']);
           }
           $batch['status_id:name'] = 'total_verified';
+          $batch['last_successful_total_verification_date'] = date('Y-m-d H:i:s');
           $validBatches[$batchName] = $batch;
         }
         else {
