@@ -90,6 +90,9 @@ class Import {
 
     // Tweaks to apply during import only.
     if ($this->context === 'import' && $this->importType === 'contribution_import') {
+      // If we have imported a contribution ID, we are updating an existing contribution
+      // and we need to not overwrite existing data.
+      $createMode = empty($this->mappedRow['Contribution']['id']);
       if (!empty($this->mappedRow['SoftCreditContact'])) {
         // Upstream this got converted from an array of arrays to just a single array.
         // The thinking being that another one would be added more like $this->mappedRow['SoftCreditContact2']
@@ -97,21 +100,23 @@ class Import {
         // and all our code is written for that...
         $this->mappedRow['SoftCreditContact'] = [$this->mappedRow['SoftCreditContact']];
       }
-      // Provide a default, allowing the import to be configured to override.
-      $isMatchingGift = $this->isMatchingGift();
-      // Now ensure converted total_amount is set.
-      // We haven't really done any updates so far but possibly it we do we would
-      // want to extend the if to check the provided values. But safer not to touch on update if we don't have to.
-      if (!isset($this->mappedRow['Contribution']['total_amount']) && empty($this->mappedRow['Contribution']['id'])) {
-        $this->mappedRow['Contribution']['total_amount'] = ContributionHelper::getConvertedTotalAmount($this->mappedRow['Contribution']);
-      }
+      if ($createMode) {
+        // Provide a default, allowing the import to be configured to override.
+        $isMatchingGift = $this->isMatchingGift();
+        // Now ensure converted total_amount is set.
+        // We haven't really done any updates so far but possibly it we do we would
+        // want to extend the if to check the provided values. But safer not to touch on update if we don't have to.
+        if (!isset($this->mappedRow['Contribution']['total_amount'])) {
+          $this->mappedRow['Contribution']['total_amount'] = ContributionHelper::getConvertedTotalAmount($this->mappedRow['Contribution']);
+        }
 
-      if ($isMatchingGift && !array_key_exists('contribution_extra.no_thank_you', $this->mappedRow['Contribution'])) {
-        $this->mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal (matching gift/ workplace giving)';
-      }
-      // Assume matching gifts if there is a soft credit involved...
-      if (empty($this->mappedRow['Contribution']['contribution_extra.gateway'])) {
-        $this->mappedRow['Contribution']['contribution_extra.gateway'] = $isMatchingGift ? 'Matching Gifts' : 'CiviCRM Import';
+        if ($isMatchingGift && !array_key_exists('contribution_extra.no_thank_you', $this->mappedRow['Contribution'])) {
+          $this->mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal (matching gift/ workplace giving)';
+        }
+        // Assume matching gifts if there is a soft credit involved...
+        if (empty($this->mappedRow['Contribution']['contribution_extra.gateway'])) {
+          $this->mappedRow['Contribution']['contribution_extra.gateway'] = $isMatchingGift ? 'Matching Gifts' : 'CiviCRM Import';
+        }
       }
 
       // If we have only a contact ID we can use that to determine the contact type
@@ -134,7 +139,7 @@ class Import {
         $this->mappedRow['Contact']['contact_type'] = $organizationName ? 'Organization' : 'Individual';
       }
 
-      if (empty($this->mappedRow['Contribution']['id'])) {
+      if ($createMode) {
         if (empty($this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'])) {
           // Generate a transaction ID so that we don't import the same rows multiple times
           $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] = ContributionHelper::generateTransactionReference(
@@ -200,7 +205,7 @@ class Import {
         }
       }
 
-      if ($this->isMainContactAnonymous()) {
+      if ($this->isMainContactAnonymous() && $createMode) {
         $this->mappedRow['Contact']['id'] = Contact::getAnonymousContactID();
       }
 
@@ -213,7 +218,9 @@ class Import {
           $this->mappedRow['Contact'] = ['id' => $this->mappedRow['Contribution']['contact_id']];
         }
       }
-      $this->ensureTrxnIdentifiersSet();
+      if ($createMode) {
+        $this->ensureTrxnIdentifiersSet();
+      }
       $this->setTimeOfDayIfStockDonation();
     }
     if ($this->mappedRow !== $this->event->mappedRow) {
@@ -566,10 +573,8 @@ class Import {
    * @throws \CRM_Core_Exception
    */
   private function ensureTrxnIdentifiersSet(): void {
-    if (empty($this->mappedRow['Contribution']['id'])) {
-      if (empty($this->mappedRow['Contribution']['trxn_id'])) {
-        $this->mappedRow['Contribution']['trxn_id'] = $this->getGateway() . ' ' . $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'];
-      }
+    if (empty($this->mappedRow['Contribution']['trxn_id'])) {
+      $this->mappedRow['Contribution']['trxn_id'] = $this->getGateway() . ' ' . $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'];
     }
   }
 
