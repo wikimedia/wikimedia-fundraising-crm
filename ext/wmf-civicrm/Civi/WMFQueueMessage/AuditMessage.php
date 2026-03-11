@@ -571,8 +571,13 @@ class AuditMessage extends DonationMessage {
       return NULL;
     }
     $check = explode('.', $value);
+    if ($this->isPaypal() && empty($this->message['type'])) {
+      // The PayPal order IDs are not reliable.
+      // A lot of them end in .1 when they are not the original.
+      return NULL;
+    }
     if (!is_numeric($check[0])) {
-      // Might be a Gravy reference - do a look up.
+      // Might be a Gravy reference - do a look-up.
       $transaction = $this->getTransactionDetails();
       if (!empty($transaction['order_id'])) {
         $value = $transaction['order_id'];
@@ -848,6 +853,7 @@ class AuditMessage extends DonationMessage {
       'contribution_extra.gateway',
       'contribution_recur_id',
       'contact_id',
+      'invoice_id',
     ];
   }
 

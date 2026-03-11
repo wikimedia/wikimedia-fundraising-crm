@@ -147,7 +147,7 @@ class GenerateBatch extends AbstractAction {
                   'txn_number' => $apiBatch['txn_number'],
                   'usd_journal_total' => $apiBatch['usd_journal_total'] ?? '',
                   'usd_credit' => $apiBatch['usd_credit'] ?? '',
-                  'usd_debit' => $apiBatch['usd_debit'] ?? ''
+                  'usd_debit' => $apiBatch['usd_debit'] ?? '',
                 ];
                 $record['remote'] = $remote;
                 Batch::update(FALSE)
@@ -337,9 +337,9 @@ END";
    * @return string
    */
   public function getVendorCode($batchName): string {
-    $parts = explode('_', $batchName);
+    $gateway = $this->getGateway($batchName);
     $codes = $this->getVendorCodesForGateways();
-    return $codes[$parts[0]];
+    return $codes[$gateway];
   }
 
   /**
@@ -788,6 +788,8 @@ END";
     $deptIDClause = $this->getDeptIDClause();
     $restrictionsClause = $this->getRestrictionsClause();
     $dateDescription = $this->getBatches()[$batchName]['date_description'];
+    $gatewayLevelTrxnExcludeClause = ' AND ' . $this->getGatewayLevelTransactionExcludeClause($batchName);
+    $gatewayLevelTrxnIncludeClause = ' AND ' . $this->getGatewayLevelTrxnIncludeClause($batchName);
 
     return "SELECT
     CONCAT('Contribution Revenue ', '{$dateDescription}') as DESCRIPTION,
@@ -852,8 +854,7 @@ FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
 WHERE (%1 = settlement_batch_reference)
   AND ( settled_fee_amount <> 0)
-  AND trxn_id NOT LIKE 'adyen transaction%'
-  AND trxn_id NOT LIKE 'adyen invoice%'
+  $gatewayLevelTrxnExcludeClause
   AND is_template = 0
 GROUP BY s.settlement_batch_reference
 
@@ -880,7 +881,7 @@ FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
 WHERE (%1 = settlement_batch_reversal_reference)
   AND ( settled_fee_reversal_amount <> 0)
-  AND (trxn_id NOT LIKE 'adyen transaction%' AND trxn_id NOT LIKE 'adyen invoice %')
+  $gatewayLevelTrxnExcludeClause
   AND is_template = 0
 GROUP BY s.settlement_batch_reversal_reference
 
@@ -906,10 +907,27 @@ FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
 WHERE (%1 = settlement_batch_reference)
   AND ( settled_fee_amount <> 0)
-  AND (trxn_id LIKE 'adyen transaction%' OR trxn_id LIKE 'adyen invoice %')
+  $gatewayLevelTrxnIncludeClause
   AND is_template = 0
 GROUP BY s.settlement_batch_reference
 ";
+  }
+
+  /**
+   * Get the relevant clause to separate gateway level transactions into separate rows.
+   *
+   * Get the clause that finds the fees imposed that are not tied to transactions, rounding
+   * or adjustments that are not tied to transactions.
+   *
+   * We exclude them from the main select & add them in by union to give the right memo details.
+   * @return void
+   */
+  private function getGatewayLevelTransactionExcludeClause($batchName): string {
+    $gateway = $this->getGateway($batchName);
+    return "(trxn_id NOT LIKE '{$gateway} transaction%'
+      AND trxn_id NOT LIKE '{$gateway} invoice %'
+      AND trxn_id NOT LIKE '{$gateway} rounding %'
+    )";
   }
 
   /**
@@ -921,7 +939,7 @@ GROUP BY s.settlement_batch_reference
   private function getRenderedSql(array $batch): string {
     $sql = $this->getBatchSql($batch['name']);
     $renderedSql = CRM_Core_DAO::composeQuery($sql, [
-        1 => [$batch['name'], 'String']
+        1 => [$batch['name'], 'String'],
       ]
     );
     $this->batches[$batch['name']]['sql'] = $renderedSql;
@@ -1099,6 +1117,27 @@ GROUP BY s.settlement_batch_reference
       }
     }
     return $result;
+  }
+
+  /**
+   * @param $batchName
+   *
+   * @return string
+   */
+  public function getGateway($batchName): string {
+    $parts = explode('_', $batchName);
+    $gateway = $parts[0];
+    return $gateway;
+  }
+
+  /**
+   * @param $batchName
+   *
+   * @return array|string|string[]|null
+   */
+  public function getGatewayLevelTrxnIncludeClause($batchName): string|array|null {
+    $gatewayLevelTrxnIncludeClause = str_replace('NOT LIKE', 'LIKE', $this->getGatewayLevelTransactionExcludeClause($batchName));
+    return str_replace(' AND ', ' OR ', $gatewayLevelTrxnIncludeClause);
   }
 
 }
