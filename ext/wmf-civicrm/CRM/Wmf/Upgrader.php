@@ -4037,6 +4037,46 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Importing contributions by id resulted in 1185 contributions having their contact_id
+   * changed to 72/anonymous. Reset them to the original contact_id.
+   *
+   * Bug: T419299
+   *
+   * @return bool
+   */
+  public function upgrade_4900(): bool {
+    $sql = '
+        CREATE TEMPORARY TABLE contact_reset AS
+        SELECT lc.contact_id as contact_id, lc.id as id
+        FROM log_civicrm_contribution lc
+        INNER JOIN (
+            SELECT id, log_date
+            FROM log_civicrm_contribution
+            WHERE log_user_id = 47095239
+                AND log_date BETWEEN "2026-03-06 21:24:00" AND "2026-03-06 21:49:00"
+        ) AS last_log
+        ON lc.id = last_log.id
+        WHERE lc.log_date = (
+            SELECT MAX(lc2.log_date)
+            FROM log_civicrm_contribution lc2
+            WHERE lc2.id = lc.id
+                AND lc2.log_date < last_log.log_date
+        )
+    ';
+    CRM_Core_DAO::executeQuery($sql);
+    $sql = '
+        UPDATE civicrm_contribution c
+            INNER JOIN contact_reset
+            ON c.id = contact_reset.id
+        SET c.contact_id = contact_reset.contact_id
+        WHERE c.contact_id = 72
+    ';
+    CRM_Core_DAO::executeQuery($sql);
+    CRM_Core_DAO::executeQuery('DROP TEMPORARY TABLE contact_reset');
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
