@@ -1126,8 +1126,8 @@ GROUP BY s.settlement_batch_reference
         $this->log($key . " has discrepancy of $value (expected {$result['expected'][$key]}, actual {$result['totals'][$key]} ). Batch needs attention");
         $this->batches[$batch['name']]['status_id:name'] = 'needs_attention';
         Batch::update(FALSE)
-          ->addValue('last_attempted_validation_date', gmdate('Y-m-d H:i:s'))
-          ->addValue('last_discrepancy', $result['validation']['settled'])
+          ->addValue('batch_data.last_attempted_validation_date', gmdate('Y-m-d H:i:s'))
+          ->addValue('batch_data.last_discrepancy', $result['validation']['settled'])
           ->addValue('status_id:name', 'needs_attention')
           ->addWhere('id', '=', $batch['id'])
           ->execute();
