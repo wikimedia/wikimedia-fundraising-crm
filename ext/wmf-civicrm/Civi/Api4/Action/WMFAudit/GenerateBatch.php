@@ -528,9 +528,7 @@ END";
           $discrepancy = \Civi::format()->money($discrepancy, $currency);
 
           $batchName = htmlspecialchars($batch['batch']['name'], ENT_QUOTES, 'UTF-8');
-          // This url will probably iterate - I have some ideas - but for now...
-          $filerName = 'contribution_settlement.settlement_batch_reference,contribution_settlement.settlement_batch_reversal_reference';
-          $batchUrl = (string) \Civi::url('backend://civicrm/contribution/settled#?' . $filerName . '=' . $batch['batch']['name'], 'a');
+          $batchUrl = (string) \Civi::url('backend://civicrm/contribution/settled#?finance_batch=' . $batch['batch']['name'], 'a');
 
           $settled   = \Civi::format()->money(htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8'), $currency);
           $journalTotal = \Civi::format()->money(htmlspecialchars($batch['totals']['debit'] + $batch['totals']['credit'] + $batch['totals']['fee'], ENT_QUOTES, 'UTF-8'), $currency);
