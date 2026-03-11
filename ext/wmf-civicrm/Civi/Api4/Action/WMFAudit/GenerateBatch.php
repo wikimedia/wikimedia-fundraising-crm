@@ -1086,8 +1086,8 @@ GROUP BY s.settlement_batch_reference
     $this->log($batch['name'] . ' ' . ($isValid ? 'has valid totals' : ' has a discrepancy '));
     if ($isValid) {
       $update = Batch::update(FALSE)
-        ->addValue('last_attempted_validation_date', gmdate('Y-m-d H:i:s'))
-        ->addValue('last_discrepancy', 0)
+        ->addValue('batch_data.last_attempted_validation_date', gmdate('Y-m-d H:i:s'))
+        ->addValue('batch_data.last_discrepancy', 0)
         ->addValue('batch_data.last_successful_validation_date',  gmdate('Y-m-d H:i:s'))
         ->addWhere('id', '=', $batch['id']);
       if (in_array($batch['status_id:name'], ['total_verified'], TRUE)) {
