@@ -777,28 +777,41 @@ WHERE
     }
 
     if (!empty($msg['email'])) {
-      // Check for existing....
-      $email = Email::get(FALSE)
+      // Build a query that returns candidate(s) and their email location type,
+      // then prioritise matches:
+      // 1) email + name (case-insensitive)
+      // 2) email where location type indicates a low-confidence source
+      // Within a priority pick the lowest CID (results already ordered by contact_id ASC).
+      $matches = Email::get(FALSE)
         ->addWhere('contact_id.is_deleted', '=', 0)
         ->addWhere('contact_id.is_deceased', '=', 0)
         ->addWhere('email', '=', $msg['email'])
-        ->addWhere('is_primary', '=', TRUE);
-
-      // Skip name matching for low confidence contact name sources
-      if ($this->getIsLowConfidenceNameSource() === FALSE) {
-        $email->addWhere('contact_id.first_name', '=', $msg['first_name'])
-          ->addWhere('contact_id.last_name', '=', $msg['last_name']);
-      }
-
-      $matches = $email->setSelect(['contact_id', 'contact_id.first_name', 'contact_id.last_name'])
-        ->setLimit(1)
-        ->setOrderBy(['contact_id' => 'ASC']) // in case of duplicates, get the oldest cid
+        ->addWhere('is_primary', '=', TRUE)
+        ->setSelect(['contact_id', 'contact_id.first_name', 'contact_id.last_name', 'location_type_id:name'])
+        ->setOrderBy(['contact_id' => 'ASC'])
         ->execute();
 
-      if (count($matches) === 1) {
-        return $this->keyAsContact($matches->first());
+      $lowConfidence = [];
+      if (count($matches) > 0) {
+        foreach ($matches as $candidate) {
+          if (
+            strcasecmp($candidate['contact_id.first_name'] ?? '', $msg['first_name']) === 0
+            && strcasecmp($candidate['contact_id.last_name'] ?? '', $msg['last_name']) === 0
+          ) {
+            // if exact match, return
+            return $this->keyAsContact($candidate);
+          } else {
+            if ($this->getIsLowConfidenceNameSource($candidate['location_type_id:name']) === TRUE) {
+              // if not exact match, check if low confidence, save for later in case exact match, keep loop
+              $lowConfidence[] = $candidate;
+            }
+          }
+        }
+        if (!empty($lowConfidence)) {
+          return $this->keyAsContact($lowConfidence[0]);
+        }
+        return NULL;
       }
-      return NULL;
     }
     // If we have sufficient address data we will look up from the database.
     // original discussion at https://phabricator.wikimedia.org/T283104#7171271
@@ -898,21 +911,28 @@ WHERE
    * Pay. Knowing this allows us to give less weight to data from unreliable
    * sources during the dedupe processes.
    *
+   * @param null $primaryEmailType
    * @return bool
    */
-  protected function getIsLowConfidenceNameSource(): bool {
-    if (
-      $this->isLowConfidenceNameSource === NULL &&
-      !empty($this->getMessage()['payment_method'])
-    ) {
-      // those 3rd party contact might have their own name, opt out name check for dedupe if external identifier matched
-      $paymentMethodsReturnLowConfidenceName = ['apple', 'google', 'amazon', 'venmo', 'paypal'];
-      $this->isLowConfidenceNameSource = in_array(strtolower($this->getMessage()['payment_method']), $paymentMethodsReturnLowConfidenceName);
-    }
-    else {
-      // If contribution recur ID is populated we are not dealing with something they just entered on
-      // our form. Their details may not be more up-to-date than what we have.
-      $this->isLowConfidenceNameSource = !empty($this->message['contribution_recur_id']);
+  protected function getIsLowConfidenceNameSource($primaryEmailType = NULL): bool {
+    $paymentMethodsReturnLowConfidenceName = ['apple', 'google', 'venmo', 'paypal', 'ach'];
+    // todo: T418790 will use name type to define if IsLowConfidenceNameSource other than check email type
+    // check if currency primary not trusted source, then no need to check first name and last name, otherwise check incoming payment_method.
+    if (!empty($primaryEmailType) && in_array(strtolower($primaryEmailType), $paymentMethodsReturnLowConfidenceName)) {
+      $this->isLowConfidenceNameSource = true;
+    } else {
+      if (
+        $this->isLowConfidenceNameSource === NULL &&
+        !empty($this->getMessage()['payment_method'])
+      ) {
+        // those 3rd party contact might have their own name, opt out name check for dedupe if external identifier matched
+        $this->isLowConfidenceNameSource = in_array(strtolower($this->getMessage()['payment_method']), $paymentMethodsReturnLowConfidenceName);
+      }
+      else {
+        // If contribution recur ID is populated we are not dealing with something they just entered on
+        // our form. Their details may not be more up-to-date than what we have.
+        $this->isLowConfidenceNameSource = !empty($this->message['contribution_recur_id']);
+      }
     }
     return $this->isLowConfidenceNameSource;
   }

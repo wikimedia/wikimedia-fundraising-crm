@@ -324,7 +324,7 @@ class AuditMessage extends DonationMessage {
     ) {
       static $isFirstNegative = TRUE;
       if ($isFirstNegative) {
-        \Civi::log('wmf')->info("contribution status not per the update\n", [
+        \Civi::log('wmf')->info("contribution status difference \n existing status: {$existingContribution['contribution_status_id:name']}\n incoming status : " . $this->getMappedStatus(), [
             'gateway' => $this->getGateway(),
             'trxn_id' => WMFTransaction::from_message($this->message)->get_unique_id(),
             'gateway_txn_id' => $this->getGatewayOriginalTxnID(),
@@ -365,7 +365,7 @@ class AuditMessage extends DonationMessage {
        return 'Chargeback';
      }
     if ($this->isReversal()) {
-      return 'reversal';
+      return 'Reversal';
     }
      return 'Completed';
   }
