@@ -222,4 +222,98 @@ class SaveTest extends TestCase {
     $this->assertEquals('@venmojoe123', $afterContacts[0]['External_Identifiers.venmo_user_name']);
     $this->assertEquals($contacts[0]['id'], $afterContacts[0]['id']);
   }
+
+  function testMatchExactEmailWithSameNameWhileLowConfidence(): void
+  {
+    // Create a contact with email with untrusted method like google
+    $googleDonationMessage = new RecurDonationMessage([
+      'first_name' => 'Google',
+      'last_name' => 'Mouse',
+      'email' => 'namenotmatch@test.com',
+      'gateway' => 'gravy',
+      'payment_method' => 'google',
+      'country' => 'US'
+    ]);
+    WMFContact::save(FALSE)->setMessage($googleDonationMessage->normalize())->execute();
+
+    // Verify this contact is unique
+    $contactGoogle = Contact::get(FALSE)
+      ->addWhere('email_primary.email', '=', 'namenotmatch@test.com')
+      ->addSelect('id')
+      ->execute();
+    $this->assertCount(1, $contactGoogle);
+    $this->ids['Contact'][] = $contactGoogle[0]['id'];
+    // assign google as location type, this is not longer needed after we assign location type, but need now
+    \Civi\Api4\Email::update(FALSE)
+      ->addWhere('contact_id', '=', $contactGoogle[0]['id'])
+      ->setValues(['location_type_id:name' => 'google'] )
+      ->execute();
+    // Consume a new donation message with diff email also untrusted name source
+    $appleDonationMessage = new RecurDonationMessage([
+      'first_name' => 'Apple',
+      'last_name' => 'Mouse',
+      'email' => 'newEmail@test.com',
+      'gateway' => 'gravy',
+      'payment_method' => 'apple',
+      'country' => 'US'
+    ]);
+    WMFContact::save(FALSE)->setMessage($appleDonationMessage->normalize())->execute();
+    // Verify this contact is unique
+    $contactApple = Contact::get(FALSE)
+      ->addWhere('email_primary.email', '=', 'newEmail@test.com')
+      ->addSelect('id')
+      ->execute();
+    $this->assertCount(1, $contactApple);
+    $this->ids['Contact'][] = $contactApple[0]['id'];
+    // assign apple as location type, this is not longer needed after we assign location type, but need now
+    \Civi\Api4\Email::update(FALSE)
+      ->addWhere('contact_id', '=', $contactApple[0]['id'])
+      ->setValues(['location_type_id:name' => 'apple'] )
+      ->execute();
+    // google created earlier, so cid smaller/older than apple
+    $this->assertTrue($contactGoogle[0]['id'] < $contactApple[0]['id']);
+    // when new donation comes with same email as google, should match even no name match since the google is untrusted source
+    $matchGoogleDonation = new RecurDonationMessage([
+      'first_name' => 'diff-firstname',
+      'last_name' => 'Mouse',
+      'email' => 'namenotmatch@test.com',
+      'gateway' => 'gravy',
+      'payment_method' => 'cc',
+      'country' => 'US'
+    ]);
+    WMFContact::save(FALSE)->setMessage($matchGoogleDonation->normalize())->execute();
+    // the above should match google since same email, when no name match
+    $afterMatchGoogle = Contact::get(FALSE)
+      ->addWhere('email_primary.email', '=', 'namenotmatch@test.com')
+      ->addSelect('id', 'first_name')
+      ->execute();
+    $this->assertCount(1, $afterMatchGoogle);
+    $this->assertEquals($contactGoogle[0]['id'], $afterMatchGoogle[0]['id']);
+    $this->assertEquals('diff-firstname', $afterMatchGoogle[0]['first_name']); // updated first name to trusted source's
+    // now google contact cid has firstname diff-firstname and email namenotmatch@test.com
+    // let's update the apple contact with the same email as google for future match pair
+    Contact::update(FALSE)
+      ->addWhere('id', '=', $contactApple[0]['id'])
+      ->setValues(['email_primary.email' => 'namenotmatch@test.com'] )
+      ->execute();
+    // Consume a donation message with the same email and same name as apple even the google one has older cid, but diff name is lower priority for all match
+    $paypalDonation = new RecurDonationMessage([
+      'first_name' => 'Apple',
+      'last_name' => 'Mouse',
+      'email' => 'namenotmatch@test.com',
+      'gateway' => 'gravy',
+      'payment_method' => 'paypal',
+      'country' => 'US'
+    ]);
+    WMFContact::save(FALSE)->setMessage($paypalDonation->normalize())->execute();
+    // the above should match apple since same email and same name even the apple is newer than google but google has diff name
+    $afterMatchPaypal = Contact::get(FALSE)
+      ->addWhere('email_primary.email', '=', 'namenotmatch@test.com')
+      ->addSelect('id', 'first_name')
+      ->setOrderBy(['id' => 'ASC'])
+      ->execute();
+    $this->assertCount(2, $afterMatchPaypal);
+    $this->assertEquals($contactApple[0]['id'], $afterMatchPaypal[1]['id']); // later one have the cid matched for this new paypal donation
+    $this->assertEquals('diff-firstname', $afterMatchPaypal[0]['first_name']);
+  }
 }
