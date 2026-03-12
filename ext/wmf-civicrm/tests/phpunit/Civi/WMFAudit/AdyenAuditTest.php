@@ -950,6 +950,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
         'contact_id' => $this->createIndividual(),
         'financial_type_id:name' => 'Cash',
         'trxn_id' => 'ADYEN 1234893193133131',
+        'gift_data.channel' => 'Email',
       ])->execute();
     $this->runAuditBatch($directory, $file, 'adyen_1120');
   }

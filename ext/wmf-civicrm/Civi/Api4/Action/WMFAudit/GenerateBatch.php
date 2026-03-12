@@ -126,8 +126,11 @@ class GenerateBatch extends AbstractAction {
 
       $record += $this->validateBatch($batch, $batchedData);
       if ($this->getBatchValue($batch['name'], 'is_valid')) {
-        $record['csv'] = $this->writeJournalToCsv($this->getRowsWithReversals($batchedData), $batch['name']);
-        if ($this->outputMethod === 'api') {
+        [$record['csv'], $isComplete] = $this->writeJournalToCsv($this->getRowsWithReversals($batchedData), $batch['name']);
+        if (!$isComplete) {
+          $this->log('Batch has missing GL data & hence not closed ' . $batch['name']);
+        }
+        elseif ($this->outputMethod === 'api') {
           try {
             $this->log('Journal being pushed to the staging version of Intacct via the api: ' . $batch['name']);
             $apiOutcome = FinanceIntegration::pushJournal(FALSE)
@@ -202,7 +205,7 @@ class GenerateBatch extends AbstractAction {
       $detailedData = $this->getDetailData($renderedSql, $batchName);
       foreach ($detailedData as $row) {
         if (empty($row['ACCT_NO'])) {
-          $this->incompleteRows[] = $row;
+          $this->incompleteRows[$batchName][] = $row;
           $this->log("Account number not found for id {$row['contribution_id']} in channel . {$row['channel']}");
         }
         else {
@@ -225,15 +228,16 @@ class GenerateBatch extends AbstractAction {
             $this->batchSummary[$batchName]['accounts'][$row['ACCT_NO']][$fund] = $amount;
           }
         }
+
         $formattedRow = $this->reOrderFields($row);
         if (!isset($detailWriter)) {
           $detailWriter = $this->getDetailsWriter(array_keys($formattedRow), $batchName);
         }
         $detailWriter->insertOne($formattedRow);
       }
-      return ['journal_file' => $batchJournalWriter->getPathname(), 'detail_file' => $detailWriter ? $detailWriter->getPathname() : NULL];
+      return [['journal_file' => $batchJournalWriter->getPathname(), 'detail_file' => $detailWriter ? $detailWriter->getPathname() : NULL], empty($this->incompleteRows[$batchName])];
     }
-    return [];
+    return [[], FALSE];
   }
 
   /**
@@ -565,18 +569,20 @@ END";
             </tr>
           </thead>
           <tbody>';
-          foreach ($this->incompleteRows as $row) {
-            $contributionURL = \CRM_Utils_System::url('civicrm/contact/view/contribution',[
-              'id' => $row['contribution_id'],
-              'reset' => 1,
-              'action' => 'view',
-            ], TRUE);
-            $html .= "
+          foreach ($this->incompleteRows as $batchName => $rows) {
+            foreach ($rows as $row) {
+              $contributionURL = \CRM_Utils_System::url('civicrm/contact/view/contribution', [
+                'id' => $row['contribution_id'],
+                'reset' => 1,
+                'action' => 'view',
+              ], TRUE);
+              $html .= "
           <tr>
-            <td style=\"$cell\"><a href='{$contributionURL}'>{$row['contribution_id']}</a></td>
+            <td style=\"$cell\">{$batchName} <a href='{$contributionURL}'>{$row['contribution_id']}</a></td>
             <td style=\"$cell\">{$row['channel']}</td>
           </tr>
         ";
+            }
           }
           $html .= " </tbody> </table>";
         }
@@ -635,7 +641,11 @@ END";
           $params['subject'] .= " {$invalidBatches} need attention";
         }
         if ($this->incompleteRows) {
-          $params['subject'] .= " " . count($this->incompleteRows) . " contributions need attention";
+          $incompleteCount = 0;
+          foreach ($this->incompleteRows as $batch) {
+            $incompleteCount += count($batch);
+          }
+          $params['subject'] .= " $incompleteCount contributions need attention";
         }
 
         $params['html'] = $html;
