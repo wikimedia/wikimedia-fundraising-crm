@@ -799,6 +799,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
         'journal:CURRENCY' => 'USD',
         'journal:GLDIMFUNDING' => 'Unrestricted',
         'journal:GL_VENDOR' => 'V01670',
+        'journal:GLENTRY_PROJECTID' => '',
         'contribution_id' => $contribution['id'],
         'order_id' => '662715.1',
         'contribution_tracking_id' => '662715',
@@ -817,6 +818,71 @@ class AdyenAuditTest extends BaseAuditTestCase {
         'settled_fee_amount' => '-0.18',
         'settled_fee_reversal_amount' => '',
     ], $line, 'incorrect value from file ' . $path);
+  }
+
+  public function testEndowmentJournalsCsv(): void {
+    $this->createTestEntity('Contribution', [
+      'total_amount' => 25.10,
+      'contribution_extra.gateway' => 'adyen',
+      'trxn_id' => 'adyen 1ABCD12345678910',
+      'contribution_extra.gateway_txn_id' => '1ABCD12345678910',
+      'contact_id' => $this->createIndividual(),
+      'financial_type_id:name' => 'Endowment Gift',
+      'invoice_id' => 662715.1,
+      'Gift_Data.Channel' => 'Email',
+    ], 'endowment_1');
+    $this->createTestEntity('Contribution', [
+      'total_amount' => 2.02,
+      'contribution_extra.gateway' => 'adyen',
+      'trxn_id' => 'adyen 2ABCD12345678910',
+      'contribution_extra.gateway_txn_id' => '2ABCD12345678910',
+      'contact_id' => $this->createIndividual(),
+      'financial_type_id:name' => 'Endowment Gift',
+      'invoice_id' => 662716.1,
+      'Gift_Data.Channel' => 'Email',
+    ], 'endowment_1');
+    $this->createTestEntity('Contribution', [
+      'total_amount' => 25.10,
+      'contribution_extra.gateway' => 'adyen',
+      'contact_id' => $this->createIndividual(),
+      'financial_type_id:name' => 'Endowment Gift',
+      'trxn_id' => 'adyen 3ABCD12345678910',
+      'contribution_extra.gateway_txn_id' => '3ABCD12345678910',
+      'invoice_id' => 662717.1,
+      'Gift_Data.Channel' => 'Mobile Banner',
+    ], 'endowment_2');
+
+    $this->runAuditBatch('batch_1', 'settlement_detail_report_batch_1128.csv');
+    $this->runAuditBatch('batch_1', 'settlement_detail_report_batch_1128.csv', 'adyen_1128');
+    $path = \Civi::settings()->get('wmf_audit_intact_files') . '/adyen_1128_USD';
+    $rows = iterator_to_array(
+      Reader::from($path . '_wmf_to_endowment.csv')
+        ->setHeaderOffset(0)
+        ->getRecords(),
+      false
+    );
+    $this->assertCount(4, $rows);
+    $row1 = $rows[0];
+    $row2 = $rows[1];
+    [$row3, $row4] = iterator_to_array(
+      Reader::from($path . '_endowment_from_wmf.csv')
+        ->setHeaderOffset(0)
+        ->getRecords(),
+      false
+    );
+
+    $this->assertEquals(5.35, $row1['DEBIT']);
+    $this->assertEquals(5.35, $row2['CREDIT']);
+    $this->assertEquals(5.35, $row3['CREDIT']);
+    $this->assertEquals(5.35, $row4['DEBIT']);
+    $this->assertEquals(43481, $row1['ACCT_NO']);
+    $this->assertEquals(27375, $row2['ACCT_NO']);
+    $this->assertEquals(43481, $row3['ACCT_NO']);
+    $this->assertEquals(11110, $row4['ACCT_NO']);
+    $this->assertEquals(0, $row1['CREDIT']);
+    $this->assertEquals(0, $row2['DEBIT']);
+    $this->assertEquals(0, $row3['DEBIT']);
+    $this->assertEquals(0, $row4['CREDIT']);
   }
 
   /**

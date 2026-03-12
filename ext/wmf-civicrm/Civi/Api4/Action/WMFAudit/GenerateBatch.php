@@ -27,6 +27,9 @@ use League\Csv\Writer;
  */
 class GenerateBatch extends AbstractAction {
 
+  const GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE = 11110;
+  const GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT = 27375;
+
   /**
    * Is this a dry run (if so do not close batches or push to the api).
    *
@@ -235,7 +238,42 @@ class GenerateBatch extends AbstractAction {
         }
         $detailWriter->insertOne($formattedRow);
       }
-      return [['journal_file' => $batchJournalWriter->getPathname(), 'detail_file' => $detailWriter ? $detailWriter->getPathname() : NULL], empty($this->incompleteRows[$batchName])];
+      $csvFiles = [
+        'journal_file' => ['file' => $batchJournalWriter->getPathname(), 'is_journal' => TRUE, 'instance' => 'wmf', 'suffix' => '', 'remote_descriptor' => 'main'],
+        'detail_file' => ['file' => $detailWriter ? $detailWriter->getPathname() : NULL, 'is_journal' => FALSE, 'instance' => 'wmf', 'suffix' => ''],
+      ];
+      if (empty($this->incompleteRows[$batchName])) {
+        foreach ($csv_rows as $row) {
+          if ($row['is_endowment'] && !str_ends_with(trim($row['MEMO']), 'Fees') && ($row['ACCT_NO'] != $this->getReversalAccountCode($row['CURRENCY'], $row['GLENTRY_VENDORID']))) {
+            if (!isset($endowmentWriterFrom) || !isset($endowmentWriterTo)) {
+              $endowmentWriterFrom = $this->getEndowmentWriter(array_keys($row), $batchName, 'wmf');
+              $csvFiles['journal_endowment_from_wmf'] = ['file' => $endowmentWriterFrom->getPathname(), 'is_journal' => TRUE, 'instance' => 'wmf', 'suffix' => 'e', 'remote_descriptor' => 'to_endowment'];
+              $endowmentWriterTo = $this->getEndowmentWriter(array_keys($row), $batchName, 'endowment');
+              $csvFiles['journal_wmf_to_endowment'] = ['file' => $endowmentWriterTo->getPathname(), 'is_journal' => TRUE, 'instance' => 'endowment', 'suffix' => 'e',  'remote_descriptor' => 'endowment_instance'];
+            }
+
+            $fromRow = $fromBalancingRow = $row;
+            $endowmentValues = [
+              'JOURNAL' => 'GJ',
+              'LOCATION_ID' => '300-END',
+              'DEPT_ID' => '',
+              'GLENTRY_VENDORID' => 'V04981',
+            ];
+            $toBalancingRow = $toRow = array_merge($row, $endowmentValues);
+
+            $fromRow['DEBIT'] = $toBalancingRow['DEBIT'] = $row['CREDIT'];
+            $fromRow['CREDIT'] = $toBalancingRow['CREDIT'] = $row['DEBIT'];
+            $fromBalancingRow['ACCT_NO'] = self::GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT;
+            $toBalancingRow['ACCT_NO'] = self::GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE;
+
+            $endowmentWriterFrom->insertOne($fromRow);
+            $endowmentWriterFrom->insertOne($fromBalancingRow);
+            $endowmentWriterTo->insertOne($toRow);
+            $endowmentWriterTo->insertOne($toBalancingRow);
+          }
+        }
+      }
+      return [$csvFiles, empty($this->incompleteRows[$batchName])];
     }
     return [[], FALSE];
   }
@@ -245,6 +283,17 @@ class GenerateBatch extends AbstractAction {
    */
   public function getDetailsWriter(array $headers, $batchName): Writer {
     $detailWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_details.csv', 'w');
+    $detailWriter->insertOne($headers);
+    return $detailWriter;
+  }
+
+  /**
+   * @return Writer
+   */
+  public function getEndowmentWriter(array $headers, string $batchName, string $instance): Writer {
+    $fromTo = $instance === 'endowment' ? '_endowment_from_wmf' : '_wmf_to_endowment';
+    $fileName = $batchName . $fromTo . '.csv';
+    $detailWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $fileName, 'w');
     $detailWriter->insertOne($headers);
     return $detailWriter;
   }
@@ -356,6 +405,7 @@ END";
    */
   public function getDetailData(string $renderedSql, $batchName): array {
     $detailSQL = str_replace('GROUP BY ', 'GROUP BY c.id, ', $renderedSql);
+    $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
     $detailSQL = str_replace('GLDIMFUNDING', 'GLDIMFUNDING,
         "' . $this->getVendorCode($batchName) . '" as GL_VENDOR,
         IF(s.settlement_batch_reference = "' . $batchName . '", s.settlement_date, "' . $this->batches[$batchName]['batch_data.settlement_date'] . ' 00:00:00") as settlement_date,
@@ -365,7 +415,7 @@ END";
         gift.channel,
         gift.fund,
         gift.is_major_gift,
-        IF(c.financial_type_id = 26, 1, 0) as is_endowment,
+        IF(c.financial_type_id = ' . $endowmentFinancialType . ', 1, 0) as is_endowment,
         "' . $this->getGateway($batchName) . '" as gateway,
         COALESCE(x.backend_processor, x.gateway) as backend_processor,
         COALESCE(x.backend_processor_txn_id, x.gateway_txn_id) as backend_processor_txn_id,
@@ -811,6 +861,7 @@ END";
     $dateDescription = $this->getBatches()[$batchName]['date_description'];
     $gatewayLevelTrxnExcludeClause = ' AND ' . $this->getGatewayLevelTransactionExcludeClause($batchName);
     $gatewayLevelTrxnIncludeClause = ' AND ' . $this->getGatewayLevelTrxnIncludeClause($batchName);
+    $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
 
     return "SELECT
     CONCAT('Contribution Revenue ', '{$dateDescription}') as DESCRIPTION,
@@ -822,6 +873,8 @@ END";
     IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, 0, -SUM(COALESCE(settled_donation_amount, 0)))  as DEBIT,
     IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, SUM(COALESCE(settled_donation_amount, 0)), 0) as CREDIT,
     s.settlement_currency as CURRENCY,
+    '' as GLENTRY_PROJECTID,
+    IF(c.financial_type_id = $endowmentFinancialType , 1, 0) as is_endowment,
     $restrictionsClause as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -829,7 +882,7 @@ FROM civicrm_value_contribution_settlement s
 WHERE (%1 = s.settlement_batch_reference)
   AND (COALESCE(settled_donation_amount, 0) <> 0)
   AND is_template = 0
-GROUP BY Fund, $accountCodeClause, is_major_gift
+GROUP BY Fund, $accountCodeClause, is_major_gift, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
 
 UNION ALL
   SELECT
@@ -843,6 +896,8 @@ UNION ALL
     IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, SUM(-COALESCE(settled_reversal_amount, 0)),0) as DEBIT,
     IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, 0, SUM(-COALESCE(settled_reversal_amount, 0)))  as CREDIT,
     s.settlement_currency as CURRENCY,
+    '' as GLENTRY_PROJECTID,
+    IF(c.financial_type_id = $endowmentFinancialType , 1, 0) as is_endowment,
     $restrictionsClause as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -850,7 +905,7 @@ FROM civicrm_value_contribution_settlement s
 WHERE (%1 = s.settlement_batch_reversal_reference)
   AND (COALESCE(settled_reversal_amount, 0) <> 0)
   AND is_template = 0
-GROUP BY Fund, $accountCodeClause, is_major_gift
+GROUP BY Fund, $accountCodeClause, is_major_gift, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
 
 UNION ALL
 
@@ -869,6 +924,8 @@ SELECT
     IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_amount, 0)), 0) as DEBIT,
     IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0))) as CREDIT,
     s.settlement_currency as CURRENCY,
+    IF(c.financial_type_id =  $endowmentFinancialType , 'FR-EI-EN', '') as GLENTRY_PROJECTID,
+    IF(c.financial_type_id =  $endowmentFinancialType , 1, 0) as is_endowment,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -877,7 +934,7 @@ WHERE (%1 = settlement_batch_reference)
   AND ( settled_fee_amount <> 0)
   $gatewayLevelTrxnExcludeClause
   AND is_template = 0
-GROUP BY s.settlement_batch_reference
+GROUP BY s.settlement_batch_reference, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
 
 UNION ALL
 
@@ -896,6 +953,8 @@ SELECT
     IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_reversal_amount, 0)), 0) as DEBIT,
     IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_reversal_amount, 0)))  as CREDIT,
     s.settlement_currency as CURRENCY,
+    IF(c.financial_type_id =  $endowmentFinancialType , 'FR-EI-EN', '') as GLENTRY_PROJECTID,
+    IF(c.financial_type_id =  $endowmentFinancialType , 1, 0) as is_endowment,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -904,7 +963,7 @@ WHERE (%1 = settlement_batch_reversal_reference)
   AND ( settled_fee_reversal_amount <> 0)
   $gatewayLevelTrxnExcludeClause
   AND is_template = 0
-GROUP BY s.settlement_batch_reversal_reference
+GROUP BY s.settlement_batch_reversal_reference, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
 
 UNION ALL
 -- Fee transactions part.
@@ -922,6 +981,8 @@ SELECT
     IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, SUM(COALESCE(-settled_fee_amount, 0)),0) as DEBIT,
     IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0)))  as CREDIT,
     s.settlement_currency as CURRENCY,
+    '' as GLENTRY_PROJECTID,
+    0 as is_endowment,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -976,6 +1037,9 @@ GROUP BY s.settlement_batch_reference
    * @throws \Civi\Core\Exception\DBQueryException
    */
   private function getJournalRows(array $batch): array {
+    // Note that not all of these fields are used. They are part of the finance spec but
+    // when we push journals to Accounts we only use a subset. We could probably stop populating them.
+    // Just a bit nervous to alter at this point.
     $defaults = [
       'DONOTIMPORT' => '',
       'JOURNAL' => 'CREV',
@@ -1180,7 +1244,7 @@ GROUP BY s.settlement_batch_reference
     ];
     unset($row['type'], $row['gateway'], $row['settlement_date'], $row['DESCRIPTION'], $row['MEMO'], $row['DEBIT'], $row['CREDIT']);
 
-    $glFields = ['ACCT_NO', 'LOCATION_ID', 'DEPT_ID', 'CURRENCY', 'GLDIMFUNDING', 'GL_VENDOR'];
+    $glFields = ['ACCT_NO', 'LOCATION_ID', 'DEPT_ID', 'CURRENCY', 'GLDIMFUNDING', 'GL_VENDOR', 'GLENTRY_PROJECTID'];
     foreach ($glFields as $field) {
       $reordered['journal:' . $field] = $row[$field];
       unset($row[$field]);
