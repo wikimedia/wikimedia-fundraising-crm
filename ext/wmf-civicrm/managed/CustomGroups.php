@@ -2506,7 +2506,7 @@ function _wmf_civicrm_get_batch_data_fields(): array {
       'name' => 'exchange_rate_source',
       'column_name' => 'exchange_rate_source',
       'label' => 'Where did the exchange rate come from',
-      'data_type' => 'Float',
+      'data_type' => 'String',
       'html_type' => 'Text',
       'weight' => 16,
     ],

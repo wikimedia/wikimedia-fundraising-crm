@@ -4076,6 +4076,13 @@ AND channel <> 'Chapter Gifts'";
     return TRUE;
   }
 
+  public function upgrade_4905(): bool {
+    CRM_Core_DAO::executeQuery('ALTER TABLE civicrm_batch_data MODIFY exchange_rate_source varchar(32)');
+    CRM_Core_DAO::executeQuery('ALTER TABLE log_civicrm_batch_data MODIFY exchange_rate_source varchar(32)');
+    CRM_Core_DAO::executeQuery('UPDATE civicrm_custom_field SET data_type = "String" WHERE name = "exchange_rate_source"');
+    return TRUE;
+  }
+
   /**
    * Queue up an API4 update.
    *
