@@ -189,6 +189,7 @@ class GenerateBatch extends AbstractAction {
           Batch::update(FALSE)
             ->addWhere('name', '=', $batch['name'])
             ->addValue('status_id:name', 'Exported')
+            ->addValue('batch_data.amount_journaled_to_endowment', (string) $this->batchSummary[$batch['name']]['endowment_transfer']->getAmount())
             ->execute();
         }
       }
@@ -222,10 +223,13 @@ class GenerateBatch extends AbstractAction {
    */
   private function writeJournalToCsv(array $csv_rows, string $batchName): array {
     $renderedSql = $this->getBatchValue($batchName, 'sql');
+    $this->batchSummary[$batchName]['endowment_transfer'] = Money::of(0, $this->batchSummary[$batchName]['currency']);
+
     if ($this->isOutputCsv) {
       $batchJournalWriter = $this->getBatchJournalWriter($batchName);
       $batchJournalWriter->insertAll($csv_rows);
       $detailedData = $this->getDetailData($renderedSql, $batchName);
+
       foreach ($detailedData as $row) {
         if (empty($row['ACCT_NO'])) {
           $this->incompleteRows[$batchName][] = $row;
@@ -288,6 +292,8 @@ class GenerateBatch extends AbstractAction {
             $fromRow['CREDIT'] = $toBalancingRow['CREDIT'] = $row['DEBIT'];
             $fromBalancingRow['ACCT_NO'] = self::GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT;
             $toBalancingRow['ACCT_NO'] = self::GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE;
+            $transfer = $row['CREDIT'] - $row['DEBIT'];
+            $this->batchSummary[$batchName]['endowment_transfer'] = $this->batchSummary[$batchName]['endowment_transfer']->plus($transfer);
             $endowmentWriterFrom->insertOne($fromRow);
             $endowmentWriterFrom->insertOne($fromBalancingRow);
             $endowmentWriterTo->insertOne($toRow);
