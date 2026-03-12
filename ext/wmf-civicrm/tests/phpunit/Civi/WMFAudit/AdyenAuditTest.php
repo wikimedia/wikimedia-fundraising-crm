@@ -877,7 +877,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->assertEquals(5.35, $row4['DEBIT']);
     $this->assertEquals(43481, $row1['ACCT_NO']);
     $this->assertEquals(27375, $row2['ACCT_NO']);
-    $this->assertEquals(43481, $row3['ACCT_NO']);
+    $this->assertEquals(43428, $row3['ACCT_NO']);
     $this->assertEquals(11110, $row4['ACCT_NO']);
     $this->assertEquals(0, $row1['CREDIT']);
     $this->assertEquals(0, $row2['DEBIT']);

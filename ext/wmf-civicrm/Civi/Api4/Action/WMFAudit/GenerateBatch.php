@@ -134,42 +134,62 @@ class GenerateBatch extends AbstractAction {
           $this->log('Batch has missing GL data & hence not closed ' . $batch['name']);
         }
         elseif ($this->outputMethod === 'api') {
+          $errors = [];
           try {
-            $this->log('Journal being pushed to the staging version of Intacct via the api: ' . $batch['name']);
-            $apiOutcome = FinanceIntegration::pushJournal(FALSE)
-              ->setJournalFile($record['csv']['journal_file'])
-              ->setIsDryRun($this->isDryRun)
-              ->setBatchDescriptionPrefix($batch['batch_data.settlement_gateway'])
-              ->execute();
-            $record['is_uploaded'] = TRUE;
-            $this->log('Journal successfully pushed to Intacct with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
-            foreach ($apiOutcome as $apiBatch) {
-              if ($apiBatch['status'] === 'Valid Remotely') {
-                $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct and is now being closed (status set to Exported)');
-                $remote = [
-                  'url' => $apiBatch['url'],
-                  'id' => $apiBatch['remote_journal_id'],
-                  'exchange_rate' => $apiBatch['exchange_rate'] ?? 1,
-                  'txn_number' => $apiBatch['txn_number'],
-                  'usd_journal_total' => $apiBatch['usd_journal_total'] ?? '',
-                  'usd_credit' => $apiBatch['usd_credit'] ?? '',
-                  'usd_debit' => $apiBatch['usd_debit'] ?? '',
-                ];
-                $record['remote'] = $remote;
-                Batch::update(FALSE)
-                  ->addWhere('name', '=', $apiBatch['name'])
-                  ->addValue('status_id:name', 'Exported')
-                  ->execute();
+            foreach ($record['csv'] as $journal) {
+              if (!$journal['is_journal'] || !empty($errors)) {
+                continue;
               }
-              $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['txn_number'] . '</a>');
+              $this->log('Journal being pushed to the staging ' . $journal['instance'] . 'version of Intacct via the api : ' . $batch['name'] . $journal['suffix']);
+              $apiOutcome = FinanceIntegration::pushJournal(FALSE)
+                ->setJournalFile($journal['file'])
+                ->setIsDryRun($this->isDryRun)
+                ->setInstance($journal['instance'])
+                ->setBatchName('test' . $batch['name'] . $journal['suffix'])
+                ->setBatchDescriptionPrefix($batch['batch_data.settlement_gateway'])
+                ->execute();
+              $record['is_uploaded'] = TRUE;
+              $this->log('Journal successfully pushed to Intacct with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
+              foreach ($apiOutcome as $apiBatch) {
+                if ($apiBatch['status'] === 'Valid Remotely') {
+                  $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct and is now being closed (status set to Exported)');
+                  $remote = [
+                    'url' => $apiBatch['url'],
+                    'id' => $apiBatch['remote_journal_id'],
+                    'exchange_rate' => $apiBatch['exchange_rate'] ?? 1,
+                    'txn_number' => $apiBatch['txn_number'],
+                    'usd_journal_total' => $apiBatch['usd_journal_total'] ?? '',
+                    'usd_credit' => $apiBatch['usd_credit'] ?? '',
+                    'usd_debit' => $apiBatch['usd_debit'] ?? '',
+                  ];
+                  $record['remote'] = $remote;
+                  Batch::update(FALSE)
+                    ->addWhere('name', '=', $batch['name'])
+                    ->setValues([
+                      'batch_data.exchange_rate' => $remote['exchange_rate'],
+                      'batch_data.exchange_rate_source' => 'Intacct',
+                      'batch_data.remote_url_' . $journal['remote_descriptor'] => $remote['url'],
+                      'batch_data.remote_identifier_' . $journal['remote_descriptor'] => $remote['txn_number'],
+                    ])
+                    ->execute();
+                }
+                $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['txn_number'] . '</a>');
+              }
             }
           }
           catch (\Exception $e) {
             $this->log('failed to upload to Intacct with error ' . $e->getMessage());
-            foreach ($result as $index => $row) {
+            $errors[] = $e->getMessage();
+              foreach ($result as $index => $row) {
               $result[$index]['upload_errors'] = 'journal upload failed';
             }
           }
+        }
+        if (empty($errors)) {
+          Batch::update(FALSE)
+            ->addWhere('name', '=', $batch['name'])
+            ->addValue('status_id:name', 'Exported')
+            ->execute();
         }
       }
       else {
@@ -260,12 +280,14 @@ class GenerateBatch extends AbstractAction {
               'GLENTRY_VENDORID' => 'V04981',
             ];
             $toBalancingRow = $toRow = array_merge($row, $endowmentValues);
+            // Not the right code per https://docs.google.com/spreadsheets/d/1FFIhblreQKSiPBxfatc5XhDdjqoaR7R280r9TTOlQcw/edit?gid=1867490184#gid=1867490184
+            // but in the interim the others are not on endowment staging.
+            $toRow['ACCT_NO'] = 43428;
 
             $fromRow['DEBIT'] = $toBalancingRow['DEBIT'] = $row['CREDIT'];
             $fromRow['CREDIT'] = $toBalancingRow['CREDIT'] = $row['DEBIT'];
             $fromBalancingRow['ACCT_NO'] = self::GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT;
             $toBalancingRow['ACCT_NO'] = self::GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE;
-
             $endowmentWriterFrom->insertOne($fromRow);
             $endowmentWriterFrom->insertOne($fromBalancingRow);
             $endowmentWriterTo->insertOne($toRow);

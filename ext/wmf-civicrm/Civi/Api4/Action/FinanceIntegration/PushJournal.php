@@ -18,6 +18,8 @@ use League\Csv\Reader;
  * @method $this setJournalFile(string $fileName)
  * @method $this setIsDryRun(bool $isDryRun)
  * @method $this setBatchDescriptionPrefix(string $batchDescriptionPrefix)
+ * @method $this setInstance(string $instance)
+ * @method $this setBatchName(string $instance)
  */
 class PushJournal extends AbstractAction {
 
@@ -47,6 +49,24 @@ class PushJournal extends AbstractAction {
    * @var string $journalFile
    */
   protected string $journalFile;
+
+  /**
+   * Instance of Intacct to use.
+   *
+   * wmf or endowment
+   *
+   * @var string
+   */
+  protected string $instance = 'wmf';
+
+  /**
+   * Batch name.
+   *
+   * The name for the batch in Intacct - may have a suffix to differentiate - e.g endowment.
+   *
+   * @var string
+   */
+  protected string $batchName;
   private array $log = [];
   private array $detailedData;
 
@@ -72,7 +92,7 @@ class PushJournal extends AbstractAction {
       $this->buildJournalEntries();
       foreach ($this->batches as $batchName => $batch) {
         $record = [
-          'name' => $batchName,
+          'name' => $this->batchName,
         ];
         if (!$this->isDryRun && !empty($batch['journal_entry'])) {
           $response = $this->getApiClient()->post('objects/general-ledger/journal-entry', [
@@ -81,8 +101,8 @@ class PushJournal extends AbstractAction {
           $remoteResponse = json_decode((string) $response->getBody(), TRUE);
           $record['remote_journal_id'] = $remoteResponse['ia::result']['id'];
           // Do an extra journal fetch to populate the Web Url.
-          $this->getExistingJournal($batchName);
-          $this->validateExistingBatch($record['remote_journal_id'], $batchName);
+          $this->getExistingJournal($this->batchName);
+          $this->validateExistingBatch($record['remote_journal_id'], $this->batchName);
         }
         $record += $this->batches[$batchName];
         $record['log'] = $this->log[$batchName] ?? [];
@@ -107,7 +127,7 @@ class PushJournal extends AbstractAction {
    */
   public function getApiClient(): Client {
     if (!isset($this->connection)) {
-      $this->connection = new Connection();
+      $this->connection = new Connection($this->instance);
     }
     return $this->connection->getApiClient();
   }
@@ -137,12 +157,14 @@ class PushJournal extends AbstractAction {
       throw new \CRM_Core_Exception("Unable to open CSV: $csvPath");
     }
 
-    $this->batches = [];
+    // Note batches is really a single now not an array - the original spec had multiple
+    // batches in one file.
+    $this->batches = [$this->batchName => []];
     foreach ($csv->getRecords() as $row) {
       if (!empty($row['DONOTIMPORT'])) {
         continue;
       }
-      $this->batches[$row['DOCUMENT']]['rows'][] = $row;
+      $this->batches[$this->batchName]['rows'][] = $row;
     }
 
     foreach ($this->batches as $batchName => $batch) {
@@ -156,10 +178,10 @@ class PushJournal extends AbstractAction {
       $this->batches[$batchName]['csvTotals'] = $this->validateCsvBatch($batchName, $rows, $currency);
 
       // If it already exists in Intacct, then check the totals match so it can be closed.
-      $exists = $this->getExistingJournal($batchName);
+      $exists = $this->getExistingJournal($this->batchName);
       if ($exists) {
         $existingId = (string) ($exists['ia::result'][0]['id'] ?? '');
-        $this->validateExistingBatch($existingId, $batchName);
+        $this->validateExistingBatch($existingId, $this->batchName);
         continue;
       }
 
@@ -175,7 +197,7 @@ class PushJournal extends AbstractAction {
         'postingDate' => $postingDate->format('Y-m-d'),
         'description' => $this->batchDescriptionPrefix . ' ' . $this->batches[$batchName]['currency'] . ' ' . $first['DESCRIPTION'] ?: null,
         'state'       => 'draft',
-        'referenceNumber' => $first['DOCUMENT'],
+        'referenceNumber' => $batchName,
         'lines' => [],
       ];
 
@@ -299,7 +321,7 @@ class PushJournal extends AbstractAction {
    * @return array|false
    * @throws GuzzleException
    */
-  protected function getExistingJournal(string $batchName): array|false {
+  protected function getExistingJournal($batchName): array|false {
     $resp = $this->getApiClient()->post('services/core/query', [
       'json' => [
         'object' => 'general-ledger/journal-entry',
