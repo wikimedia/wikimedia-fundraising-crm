@@ -37,7 +37,9 @@ class Settle extends AbstractAction {
   public function _run(Result $result): void {
     $message = new SettleMessage($this->values);
     $values = [
-      'contribution_settlement.settlement_date' => $message->getSettledDate(),
+      // We only have a date field for the initial transaction - maybe an over-sight.
+      // Perhaps we should add a reversal date
+      'contribution_settlement.settlement_date' => $message->isReversal() ? NULL : $message->getSettledDate(),
       'contribution_settlement.settlement_batch_reference' => $message->isReversal() ? NULL : $message->getSettlementBatchReference(),
       'contribution_settlement.settlement_batch_reversal_reference' => $message->isReversal() ? $message->getSettlementBatchReference() : NULL,
       'contribution_settlement.settlement_currency' => $message->getSettlementCurrency(),

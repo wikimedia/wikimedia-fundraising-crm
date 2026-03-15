@@ -49,4 +49,23 @@ class Activity {
     }
     return $alterInfo;
   }
+
+  /**
+   * Implements hook_civicrm_post
+   */
+  public static function post($action, $id, $activity) {
+    // When creating a double opt-in activity, update contact modified date so it is included in Acoustic export
+    if ($action === 'create' &&
+      $activity->activity_type_id === CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Double Opt-In')) {
+      \Civi\Api4\ActivityContact::get(FALSE)
+        ->addSelect('contact_id')
+        ->addWhere('activity_id', '=', $id)
+        ->addWhere('record_type_id:name', '=', 'Activity Targets')
+        ->addChain('update_contact',
+          \Civi\Api4\Contact::update(FALSE)
+            ->addWhere('id', '=', '$contact_id')
+            ->addValue('modified_date', 'now')
+        )->execute();
+    }
+  }
 }

@@ -440,13 +440,14 @@ function wmf_civicrm_civicrm_customPre(string $op, int $groupID, int $entityID, 
 /**
  * Implementation of hook_civicrm_post, used to update contribution_extra fields
  * and wmf_donor rollup fields as well as send large donation notifications
+ * and to set modified date for contacts when they add a double opt in activity.
  *
  * @implements hook_civicrm_post
  *
  * @param string $op
  * @param string $type
  * @param int $id
- * @param \CRM_Contribute_BAO_Contribution $entity
+ * @param \CRM_Core_DAO $entity
  *
  * @throws \Civi\WMFException\WMFException
  * @throws \CRM_Core_Exception
@@ -459,6 +460,9 @@ function wmf_civicrm_civicrm_post($op, $type, $id, &$entity) {
       break;
     case 'ContributionRecur':
       \Civi\WMFHelper\ContributionRecur::cancelRecurAutoRescue($op, $id, $entity);
+      break;
+    case 'Activity':
+      \Civi\WMFHook\Activity::post($op, $id, $entity);
       break;
   }
 }

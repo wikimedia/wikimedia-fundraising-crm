@@ -2506,7 +2506,7 @@ function _wmf_civicrm_get_batch_data_fields(): array {
       'name' => 'exchange_rate_source',
       'column_name' => 'exchange_rate_source',
       'label' => 'Where did the exchange rate come from',
-      'data_type' => 'Float',
+      'data_type' => 'String',
       'html_type' => 'Text',
       'weight' => 16,
     ],
@@ -2557,6 +2557,14 @@ function _wmf_civicrm_get_batch_data_fields(): array {
       'data_type' => 'String',
       'html_type' => 'Text',
       'weight' => 19,
+    ],
+    'amount_journaled_to_endowment' => [
+      'name' => 'amount_journaled_to_endowment',
+      'column_name' => 'amount_journaled_to_endowment',
+      'label' => 'Amount journaled to Intacct to USD',
+      'data_type' => 'Float',
+      'html_type' => 'Text',
+      'weight' => 15,
     ],
   ];
 }

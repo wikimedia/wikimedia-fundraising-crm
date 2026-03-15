@@ -27,6 +27,9 @@ use League\Csv\Writer;
  */
 class GenerateBatch extends AbstractAction {
 
+  const GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE = 11110;
+  const GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT = 27375;
+
   /**
    * Is this a dry run (if so do not close batches or push to the api).
    *
@@ -126,44 +129,68 @@ class GenerateBatch extends AbstractAction {
 
       $record += $this->validateBatch($batch, $batchedData);
       if ($this->getBatchValue($batch['name'], 'is_valid')) {
-        $record['csv'] = $this->writeJournalToCsv($this->getRowsWithReversals($batchedData), $batch['name']);
-        if ($this->outputMethod === 'api') {
+        [$record['csv'], $isComplete] = $this->writeJournalToCsv($this->getRowsWithReversals($batchedData), $batch['name']);
+        if (!$isComplete) {
+          $this->log('Batch has missing GL data & hence not closed ' . $batch['name']);
+        }
+        elseif ($this->outputMethod === 'api') {
+          $errors = [];
           try {
-            $this->log('Journal being pushed to the staging version of Intacct via the api: ' . $batch['name']);
-            $apiOutcome = FinanceIntegration::pushJournal(FALSE)
-              ->setJournalFile($record['csv']['journal_file'])
-              ->setIsDryRun($this->isDryRun)
-              ->setBatchDescriptionPrefix($batch['batch_data.settlement_gateway'])
-              ->execute();
-            $record['is_uploaded'] = TRUE;
-            $this->log('Journal successfully pushed to Intacct with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
-            foreach ($apiOutcome as $apiBatch) {
-              if ($apiBatch['status'] === 'Valid Remotely') {
-                $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct and is now being closed (status set to Exported)');
-                $remote = [
-                  'url' => $apiBatch['url'],
-                  'id' => $apiBatch['remote_journal_id'],
-                  'exchange_rate' => $apiBatch['exchange_rate'] ?? 1,
-                  'txn_number' => $apiBatch['txn_number'],
-                  'usd_journal_total' => $apiBatch['usd_journal_total'] ?? '',
-                  'usd_credit' => $apiBatch['usd_credit'] ?? '',
-                  'usd_debit' => $apiBatch['usd_debit'] ?? '',
-                ];
-                $record['remote'] = $remote;
-                Batch::update(FALSE)
-                  ->addWhere('name', '=', $apiBatch['name'])
-                  ->addValue('status_id:name', 'Exported')
-                  ->execute();
+            foreach ($record['csv'] as $journal) {
+              if (!$journal['is_journal'] || !empty($errors)) {
+                continue;
               }
-              $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['txn_number'] . '</a>');
+              $this->log('Journal being pushed to the staging ' . $journal['instance'] . 'version of Intacct via the api : ' . $batch['name'] . $journal['suffix']);
+              $apiOutcome = FinanceIntegration::pushJournal(FALSE)
+                ->setJournalFile($journal['file'])
+                ->setIsDryRun($this->isDryRun)
+                ->setInstance($journal['instance'])
+                ->setBatchName('test' . $batch['name'] . $journal['suffix'])
+                ->setBatchDescriptionPrefix($batch['batch_data.settlement_gateway'])
+                ->execute();
+              $record['is_uploaded'] = TRUE;
+              $this->log('Journal successfully pushed to Intacct with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
+              foreach ($apiOutcome as $apiBatch) {
+                if ($apiBatch['status'] === 'Valid Remotely') {
+                  $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct and is now being closed (status set to Exported)');
+                  $remote = [
+                    'url' => $apiBatch['url'],
+                    'id' => $apiBatch['remote_journal_id'],
+                    'exchange_rate' => $apiBatch['exchange_rate'] ?? 1,
+                    'txn_number' => $apiBatch['txn_number'],
+                    'usd_journal_total' => $apiBatch['usd_journal_total'] ?? '',
+                    'usd_credit' => $apiBatch['usd_credit'] ?? '',
+                    'usd_debit' => $apiBatch['usd_debit'] ?? '',
+                  ];
+                  $record['remote'] = $remote;
+                  Batch::update(FALSE)
+                    ->addWhere('name', '=', $batch['name'])
+                    ->setValues([
+                      'batch_data.exchange_rate' => $remote['exchange_rate'],
+                      'batch_data.exchange_rate_source' => 'Intacct',
+                      'batch_data.remote_url_' . $journal['remote_descriptor'] => $remote['url'],
+                      'batch_data.remote_identifier_' . $journal['remote_descriptor'] => $remote['txn_number'],
+                    ])
+                    ->execute();
+                }
+                $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['txn_number'] . '</a>');
+              }
             }
           }
           catch (\Exception $e) {
             $this->log('failed to upload to Intacct with error ' . $e->getMessage());
-            foreach ($result as $index => $row) {
+            $errors[] = $e->getMessage();
+              foreach ($result as $index => $row) {
               $result[$index]['upload_errors'] = 'journal upload failed';
             }
           }
+        }
+        if (empty($errors)) {
+          Batch::update(FALSE)
+            ->addWhere('name', '=', $batch['name'])
+            ->addValue('status_id:name', 'Exported')
+            ->addValue('batch_data.amount_journaled_to_endowment', (string) $this->batchSummary[$batch['name']]['endowment_transfer']->getAmount())
+            ->execute();
         }
       }
       else {
@@ -196,13 +223,16 @@ class GenerateBatch extends AbstractAction {
    */
   private function writeJournalToCsv(array $csv_rows, string $batchName): array {
     $renderedSql = $this->getBatchValue($batchName, 'sql');
+    $this->batchSummary[$batchName]['endowment_transfer'] = Money::of(0, $this->batchSummary[$batchName]['currency']);
+
     if ($this->isOutputCsv) {
       $batchJournalWriter = $this->getBatchJournalWriter($batchName);
       $batchJournalWriter->insertAll($csv_rows);
       $detailedData = $this->getDetailData($renderedSql, $batchName);
+
       foreach ($detailedData as $row) {
         if (empty($row['ACCT_NO'])) {
-          $this->incompleteRows[] = $row;
+          $this->incompleteRows[$batchName][] = $row;
           $this->log("Account number not found for id {$row['contribution_id']} in channel . {$row['channel']}");
         }
         else {
@@ -225,15 +255,55 @@ class GenerateBatch extends AbstractAction {
             $this->batchSummary[$batchName]['accounts'][$row['ACCT_NO']][$fund] = $amount;
           }
         }
+
         $formattedRow = $this->reOrderFields($row);
         if (!isset($detailWriter)) {
           $detailWriter = $this->getDetailsWriter(array_keys($formattedRow), $batchName);
         }
         $detailWriter->insertOne($formattedRow);
       }
-      return ['journal_file' => $batchJournalWriter->getPathname(), 'detail_file' => $detailWriter ? $detailWriter->getPathname() : NULL];
+      $csvFiles = [
+        'journal_file' => ['file' => $batchJournalWriter->getPathname(), 'is_journal' => TRUE, 'instance' => 'wmf', 'suffix' => '', 'remote_descriptor' => 'main'],
+        'detail_file' => ['file' => $detailWriter ? $detailWriter->getPathname() : NULL, 'is_journal' => FALSE, 'instance' => 'wmf', 'suffix' => ''],
+      ];
+      if (empty($this->incompleteRows[$batchName])) {
+        foreach ($csv_rows as $row) {
+          if ($row['is_endowment'] && !str_ends_with(trim($row['MEMO']), 'Fees') && ($row['ACCT_NO'] != $this->getReversalAccountCode($row['CURRENCY'], $row['GLENTRY_VENDORID']))) {
+            if (!isset($endowmentWriterFrom) || !isset($endowmentWriterTo)) {
+              $endowmentWriterFrom = $this->getEndowmentWriter(array_keys($row), $batchName, 'wmf');
+              $csvFiles['journal_endowment_from_wmf'] = ['file' => $endowmentWriterFrom->getPathname(), 'is_journal' => TRUE, 'instance' => 'wmf', 'suffix' => 'e', 'remote_descriptor' => 'to_endowment'];
+              $endowmentWriterTo = $this->getEndowmentWriter(array_keys($row), $batchName, 'endowment');
+              $csvFiles['journal_wmf_to_endowment'] = ['file' => $endowmentWriterTo->getPathname(), 'is_journal' => TRUE, 'instance' => 'endowment', 'suffix' => 'e',  'remote_descriptor' => 'endowment_instance'];
+            }
+
+            $fromRow = $fromBalancingRow = $row;
+            $endowmentValues = [
+              'JOURNAL' => 'GJ',
+              'LOCATION_ID' => '300-END',
+              'DEPT_ID' => '',
+              'GLENTRY_VENDORID' => 'V04981',
+            ];
+            $toBalancingRow = $toRow = array_merge($row, $endowmentValues);
+            // Not the right code per https://docs.google.com/spreadsheets/d/1FFIhblreQKSiPBxfatc5XhDdjqoaR7R280r9TTOlQcw/edit?gid=1867490184#gid=1867490184
+            // but in the interim the others are not on endowment staging.
+            $toRow['ACCT_NO'] = 43428;
+
+            $fromRow['DEBIT'] = $toBalancingRow['DEBIT'] = $row['CREDIT'];
+            $fromRow['CREDIT'] = $toBalancingRow['CREDIT'] = $row['DEBIT'];
+            $fromBalancingRow['ACCT_NO'] = self::GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT;
+            $toBalancingRow['ACCT_NO'] = self::GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE;
+            $transfer = $row['CREDIT'] - $row['DEBIT'];
+            $this->batchSummary[$batchName]['endowment_transfer'] = $this->batchSummary[$batchName]['endowment_transfer']->plus($transfer);
+            $endowmentWriterFrom->insertOne($fromRow);
+            $endowmentWriterFrom->insertOne($fromBalancingRow);
+            $endowmentWriterTo->insertOne($toRow);
+            $endowmentWriterTo->insertOne($toBalancingRow);
+          }
+        }
+      }
+      return [$csvFiles, empty($this->incompleteRows[$batchName])];
     }
-    return [];
+    return [[], FALSE];
   }
 
   /**
@@ -241,6 +311,17 @@ class GenerateBatch extends AbstractAction {
    */
   public function getDetailsWriter(array $headers, $batchName): Writer {
     $detailWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_details.csv', 'w');
+    $detailWriter->insertOne($headers);
+    return $detailWriter;
+  }
+
+  /**
+   * @return Writer
+   */
+  public function getEndowmentWriter(array $headers, string $batchName, string $instance): Writer {
+    $fromTo = $instance === 'endowment' ? '_endowment_from_wmf' : '_wmf_to_endowment';
+    $fileName = $batchName . $fromTo . '.csv';
+    $detailWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $fileName, 'w');
     $detailWriter->insertOne($headers);
     return $detailWriter;
   }
@@ -352,6 +433,7 @@ END";
    */
   public function getDetailData(string $renderedSql, $batchName): array {
     $detailSQL = str_replace('GROUP BY ', 'GROUP BY c.id, ', $renderedSql);
+    $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
     $detailSQL = str_replace('GLDIMFUNDING', 'GLDIMFUNDING,
         "' . $this->getVendorCode($batchName) . '" as GL_VENDOR,
         IF(s.settlement_batch_reference = "' . $batchName . '", s.settlement_date, "' . $this->batches[$batchName]['batch_data.settlement_date'] . ' 00:00:00") as settlement_date,
@@ -361,7 +443,7 @@ END";
         gift.channel,
         gift.fund,
         gift.is_major_gift,
-        IF(c.financial_type_id = 26, 1, 0) as is_endowment,
+        IF(c.financial_type_id = ' . $endowmentFinancialType . ', 1, 0) as is_endowment,
         "' . $this->getGateway($batchName) . '" as gateway,
         COALESCE(x.backend_processor, x.gateway) as backend_processor,
         COALESCE(x.backend_processor_txn_id, x.gateway_txn_id) as backend_processor_txn_id,
@@ -565,18 +647,20 @@ END";
             </tr>
           </thead>
           <tbody>';
-          foreach ($this->incompleteRows as $row) {
-            $contributionURL = \CRM_Utils_System::url('civicrm/contact/view/contribution',[
-              'id' => $row['contribution_id'],
-              'reset' => 1,
-              'action' => 'view',
-            ], TRUE);
-            $html .= "
+          foreach ($this->incompleteRows as $batchName => $rows) {
+            foreach ($rows as $row) {
+              $contributionURL = \CRM_Utils_System::url('civicrm/contact/view/contribution', [
+                'id' => $row['contribution_id'],
+                'reset' => 1,
+                'action' => 'view',
+              ], TRUE);
+              $html .= "
           <tr>
-            <td style=\"$cell\"><a href='{$contributionURL}'>{$row['contribution_id']}</a></td>
+            <td style=\"$cell\">{$batchName} <a href='{$contributionURL}'>{$row['contribution_id']}</a></td>
             <td style=\"$cell\">{$row['channel']}</td>
           </tr>
         ";
+            }
           }
           $html .= " </tbody> </table>";
         }
@@ -635,7 +719,11 @@ END";
           $params['subject'] .= " {$invalidBatches} need attention";
         }
         if ($this->incompleteRows) {
-          $params['subject'] .= " " . count($this->incompleteRows) . " contributions need attention";
+          $incompleteCount = 0;
+          foreach ($this->incompleteRows as $batch) {
+            $incompleteCount += count($batch);
+          }
+          $params['subject'] .= " $incompleteCount contributions need attention";
         }
 
         $params['html'] = $html;
@@ -801,6 +889,7 @@ END";
     $dateDescription = $this->getBatches()[$batchName]['date_description'];
     $gatewayLevelTrxnExcludeClause = ' AND ' . $this->getGatewayLevelTransactionExcludeClause($batchName);
     $gatewayLevelTrxnIncludeClause = ' AND ' . $this->getGatewayLevelTrxnIncludeClause($batchName);
+    $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
 
     return "SELECT
     CONCAT('Contribution Revenue ', '{$dateDescription}') as DESCRIPTION,
@@ -812,6 +901,8 @@ END";
     IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, 0, -SUM(COALESCE(settled_donation_amount, 0)))  as DEBIT,
     IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, SUM(COALESCE(settled_donation_amount, 0)), 0) as CREDIT,
     s.settlement_currency as CURRENCY,
+    '' as GLENTRY_PROJECTID,
+    IF(c.financial_type_id = $endowmentFinancialType , 1, 0) as is_endowment,
     $restrictionsClause as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -819,7 +910,7 @@ FROM civicrm_value_contribution_settlement s
 WHERE (%1 = s.settlement_batch_reference)
   AND (COALESCE(settled_donation_amount, 0) <> 0)
   AND is_template = 0
-GROUP BY Fund, $accountCodeClause, is_major_gift
+GROUP BY Fund, $accountCodeClause, is_major_gift, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
 
 UNION ALL
   SELECT
@@ -833,6 +924,8 @@ UNION ALL
     IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, SUM(-COALESCE(settled_reversal_amount, 0)),0) as DEBIT,
     IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, 0, SUM(-COALESCE(settled_reversal_amount, 0)))  as CREDIT,
     s.settlement_currency as CURRENCY,
+    '' as GLENTRY_PROJECTID,
+    IF(c.financial_type_id = $endowmentFinancialType , 1, 0) as is_endowment,
     $restrictionsClause as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -840,7 +933,7 @@ FROM civicrm_value_contribution_settlement s
 WHERE (%1 = s.settlement_batch_reversal_reference)
   AND (COALESCE(settled_reversal_amount, 0) <> 0)
   AND is_template = 0
-GROUP BY Fund, $accountCodeClause, is_major_gift
+GROUP BY Fund, $accountCodeClause, is_major_gift, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
 
 UNION ALL
 
@@ -859,6 +952,8 @@ SELECT
     IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_amount, 0)), 0) as DEBIT,
     IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0))) as CREDIT,
     s.settlement_currency as CURRENCY,
+    IF(c.financial_type_id =  $endowmentFinancialType , 'FR-EI-EN', '') as GLENTRY_PROJECTID,
+    IF(c.financial_type_id =  $endowmentFinancialType , 1, 0) as is_endowment,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -867,7 +962,7 @@ WHERE (%1 = settlement_batch_reference)
   AND ( settled_fee_amount <> 0)
   $gatewayLevelTrxnExcludeClause
   AND is_template = 0
-GROUP BY s.settlement_batch_reference
+GROUP BY s.settlement_batch_reference, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
 
 UNION ALL
 
@@ -886,6 +981,8 @@ SELECT
     IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_reversal_amount, 0)), 0) as DEBIT,
     IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_reversal_amount, 0)))  as CREDIT,
     s.settlement_currency as CURRENCY,
+    IF(c.financial_type_id =  $endowmentFinancialType , 'FR-EI-EN', '') as GLENTRY_PROJECTID,
+    IF(c.financial_type_id =  $endowmentFinancialType , 1, 0) as is_endowment,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -894,7 +991,7 @@ WHERE (%1 = settlement_batch_reversal_reference)
   AND ( settled_fee_reversal_amount <> 0)
   $gatewayLevelTrxnExcludeClause
   AND is_template = 0
-GROUP BY s.settlement_batch_reversal_reference
+GROUP BY s.settlement_batch_reversal_reference, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
 
 UNION ALL
 -- Fee transactions part.
@@ -912,6 +1009,8 @@ SELECT
     IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, SUM(COALESCE(-settled_fee_amount, 0)),0) as DEBIT,
     IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0)))  as CREDIT,
     s.settlement_currency as CURRENCY,
+    '' as GLENTRY_PROJECTID,
+    0 as is_endowment,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -966,6 +1065,9 @@ GROUP BY s.settlement_batch_reference
    * @throws \Civi\Core\Exception\DBQueryException
    */
   private function getJournalRows(array $batch): array {
+    // Note that not all of these fields are used. They are part of the finance spec but
+    // when we push journals to Accounts we only use a subset. We could probably stop populating them.
+    // Just a bit nervous to alter at this point.
     $defaults = [
       'DONOTIMPORT' => '',
       'JOURNAL' => 'CREV',
@@ -1170,7 +1272,7 @@ GROUP BY s.settlement_batch_reference
     ];
     unset($row['type'], $row['gateway'], $row['settlement_date'], $row['DESCRIPTION'], $row['MEMO'], $row['DEBIT'], $row['CREDIT']);
 
-    $glFields = ['ACCT_NO', 'LOCATION_ID', 'DEPT_ID', 'CURRENCY', 'GLDIMFUNDING', 'GL_VENDOR'];
+    $glFields = ['ACCT_NO', 'LOCATION_ID', 'DEPT_ID', 'CURRENCY', 'GLDIMFUNDING', 'GL_VENDOR', 'GLENTRY_PROJECTID'];
     foreach ($glFields as $field) {
       $reordered['journal:' . $field] = $row[$field];
       unset($row[$field]);
