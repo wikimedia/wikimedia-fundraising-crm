@@ -241,6 +241,14 @@ class AuditMessage extends DonationMessage {
     if ($this->isNegative()) {
       $message['gateway_parent_id'] = $this->getGatewayOriginalTxnID();
       $message['gateway_refund_id'] = $this->getGatewayRefundID();
+      if (!isset($message['gross']) && $this->getParentContributionID()) {
+        // If we have a refund with only settled currency information we can reasonably
+        // assume the amount from the contribution is what is being refunded.
+        // This occurs with Stripe - there are extra steps could take to retrieve this data from
+        // Stripe but the assumption feels solid enough not to do it.
+        $message['gross'] = $message['contribution_extra.original_amount'] = $this->getExistingContribution()['contribution_extra.original_amount'];
+        $message['currency'] = $message['contribution_extra.original_currency'] = $this->getExistingContribution()['contribution_extra.original_currency'];
+      }
     }
     else {
       $message['order_id'] = $this->getOrderID();
@@ -885,6 +893,8 @@ class AuditMessage extends DonationMessage {
       'contribution_settlement.settlement_batch_reference',
       'contribution_settlement.settlement_batch_reversal_reference',
       'contribution_extra.gateway',
+      'contribution_extra.original_amount',
+      'contribution_extra.original_currency',
       'contribution_recur_id',
       'contact_id',
       'invoice_id',
