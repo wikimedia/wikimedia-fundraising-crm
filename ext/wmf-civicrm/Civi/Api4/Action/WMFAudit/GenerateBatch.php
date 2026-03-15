@@ -145,7 +145,7 @@ class GenerateBatch extends AbstractAction {
                 ->setJournalFile($journal['file'])
                 ->setIsDryRun($this->isDryRun)
                 ->setInstance($journal['instance'])
-                ->setBatchName('test' . $batch['name'] . $journal['suffix'])
+                ->setBatchName($batch['name'] . $journal['suffix'])
                 ->setBatchDescriptionPrefix($batch['batch_data.settlement_gateway'])
                 ->execute();
               $record['is_uploaded'] = TRUE;
