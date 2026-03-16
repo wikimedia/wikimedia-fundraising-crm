@@ -4098,6 +4098,21 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Add utm_source index to contribution tracking.
+   * Bug: T420289
+   *
+   * @return true
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4915(): true {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfIndexExists('civicrm_contribution_tracking', 'utm_source')) {
+      CRM_Core_DAO::executeQuery('CREATE INDEX utm_source
+      ON civicrm_contribution_tracking (utm_source)');
+    }
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
