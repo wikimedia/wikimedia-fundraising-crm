@@ -352,27 +352,36 @@ class AuditMessage extends DonationMessage {
    * Get the CiviCRM status that maps to the audit status.
    *
    * @return string
-   * @throws \CRM_Core_Exception
    */
   protected function getMappedStatus(): string {
-     if ($this->isCancel()) {
-       return 'Cancelled';
-     }
-     if ($this->isRefund()) {
-       return 'Refunded';
-     }
-     if ($this->isChargeback()) {
-       return 'Chargeback';
-     }
+    if ($this->isCancel()) {
+      return 'Cancelled';
+    }
+    if ($this->isRefund()) {
+      return 'Refunded';
+    }
+    if ($this->isChargeback()) {
+      return 'Chargeback';
+    }
     if ($this->isReversal()) {
       return 'Reversal';
     }
-     return 'Completed';
+    if ($this->isRefundReversal()) {
+      return 'refund_reversal';
+    }
+    if ($this->isChargebackReversal()) {
+      return 'chargeback_reversal';
+    }
+    if ($this->isReversalReversal()) {
+      return 'reversal_reversal';
+    }
+    return 'Completed';
   }
 
   /**
    * @return array|null
    * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
    */
   public function getExistingContribution(): ?array {
     $debugInformation = [];
@@ -390,40 +399,13 @@ class AuditMessage extends DonationMessage {
       }
 
       $selectFields = $this->getContributionSelectFields();
-      if ($this->isRefund() || $this->isChargeback() || $this->isReversal()) {
-        // Check whether a standalone refund or chargeback has been created - this occurs when
-        // we get a chargeback on one we have already refunded.
-        $transaction = WMFTransaction::from_message($this->message);
-        $trxn_id = $transaction->get_unique_id();
-        $transaction->is_recurring = TRUE;
-        $trxn_id_recur = $transaction->get_unique_id();
-        $this->existingContribution = Contribution::get(FALSE)
-          ->setSelect($selectFields)
-          // Include status as otherwise we might pick up a balance transaction
-          // which would have a status of completed, rather than falling through
-          // to look at the main contribution record.
-          // @see RefundQueueConsumer->markRefund
-          // @todo - maybe give balance transactions an extra twiddle int
-          // their trxn_id - if we do that this will age out...
-          ->addWhere('contribution_status_id:name', '=', $this->getMappedStatus())
-          ->addClause('OR', ['trxn_id', '=', $trxn_id], ['trxn_id', '=', $trxn_id_recur])
-          ->execute()->first() ?? [];
+      if ($this->isRefund() || $this->isChargeback() || $this->isReversal()
+        || $this->isReversingPriorReversal()
+      ) {
+        // First check whether a standalone negative or reversal-reversing contribution already exists.
+        $this->existingContribution = $this->lookupByTrxnIdAndStatus() ?: [];
       }
-      if ($this->isReversingPriorReversal()) {
-        // Reversals would result in a discreet contribution with a trxn_id
-        // like CHARGEBACK_REVERSAL GRAVY e6d5ed2f-00cc-4e1f-a840-09dbc4a28df9
-        // or REFUND_REVERSAL GRAVY e6d5ed2f-00cc-4e1f-a840-09dbc4a28df9
-        // That is the only contribution that would be a 'match' for an incoming chargeback reversal
-        if (empty($this->existingContribution)) {
-          $trxn_id = WMFTransaction::from_message($this->message)->get_unique_id();
-          $debugInformation[$this->getType() . 'reversal_trxn_id'] = $trxn_id;
-          $this->existingContribution = Contribution::get(FALSE)
-            ->setSelect($selectFields)
-            ->addWhere('trxn_id', '=', $trxn_id)
-            ->execute()->first() ?? [];
-        }
-      }
-      else {
+      if (!$this->isReversingPriorReversal()) {
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
@@ -930,6 +912,38 @@ class AuditMessage extends DonationMessage {
         ['invoice_id', 'LIKE', $orderID . '|%']
       )
       ->execute()->first() ?? [];
+  }
+
+  /**
+   * Check whether a standalone contribution for the transaction has been created.
+   *
+   * These standalone transactions would occur when a contribution is charged back AND refunded.
+   * One of these would likely later be reversed - which would also be caught here.
+   *
+   * Trxn ID examples
+   * - CHARGEBACK_REVERSAL GRAVY e6d5ed2f-00cc-4e1f-a840-09dbc4a28df9
+   * - CHARGEBACK GRAVY e6d5ed2f-00cc-4e1f-a840-09dbc4a28df9
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+ */
+  private function lookupByTrxnIdAndStatus(): ?array {
+    $transaction = WMFTransaction::from_message($this->message);
+    $trxn_id = $transaction->get_unique_id();
+    $transaction->is_recurring = TRUE;
+    $trxn_id_recur = $transaction->get_unique_id();
+    return Contribution::get(FALSE)
+      ->setSelect($this->getContributionSelectFields())
+      // Include status as otherwise we might pick up a balance transaction
+      // which would have a status of completed, rather than falling through
+      // to look at the main contribution record.
+      // @see RefundQueueConsumer->markRefund
+      // @todo - maybe give balance transactions an extra twiddle in
+      // their trxn_id - if we do that this will age out...
+      ->addWhere('contribution_status_id:name', '=', $this->getMappedStatus())
+      ->addClause('OR', ['trxn_id', '=', $trxn_id], ['trxn_id', '=', $trxn_id_recur])
+      ->execute()->first();
   }
 
 }
