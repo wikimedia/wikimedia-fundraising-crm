@@ -901,8 +901,20 @@ class Save extends AbstractAction {
   protected function getExistingContact(array $msg): ?array {
     // Strategy 1: Direct ID lookup
     if (!empty($msg['contact_id'])) {
-      $contact = Contact::get(FALSE)->addWhere('id', '=', $msg['contact_id'])
+      $contact = Contact::get(FALSE)
+        ->addWhere('id', '=', $msg['contact_id'])
+        ->addWhere('is_deleted', '=', FALSE)
         ->addSelect('first_name', 'last_name')->execute()->first();
+      if (!$contact) {
+        $mergedTo = Contact::getMergedTo(FALSE)
+          ->setContactId($msg['contact_id'])->execute()->first();
+        if ($mergedTo) {
+          $contact = Contact::get(FALSE)
+            ->addWhere('id', '=', $mergedTo['id'])
+            ->addWhere('is_deleted', '=', FALSE)
+            ->addSelect('first_name', 'last_name')->execute()->first();
+        }
+      }
       if ($contact) {
         return $contact;
       }
