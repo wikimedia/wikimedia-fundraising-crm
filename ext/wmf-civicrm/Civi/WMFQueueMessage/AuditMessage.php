@@ -407,12 +407,7 @@ class AuditMessage extends DonationMessage {
       }
       if (!$this->isReversingPriorReversal()) {
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
-          $this->existingContribution = Contribution::get(FALSE)
-            ->setSelect($selectFields)
-            ->addWhere('contribution_extra.payment_orchestrator_reconciliation_id', '=', $this->getPaymentOrchestratorReconciliationReference())
-            ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
-            ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
-            ->execute()->first() ?? [];
+          $this->existingContribution = $this->lookupByPaymentOrchestratorReconciliationId() ?? [];
         }
         if (empty($this->existingContribution) && $this->getBackendProcessorTxnID() && $this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
           // Looking at a gravy transaction in the Adyen file or a recurring in the trustly file.
@@ -421,7 +416,7 @@ class AuditMessage extends DonationMessage {
             ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
             // Try the parent ID, if provided (e.g. refund) or the backend processor txn ID.
             ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorParentTxnID() ?: $this->getBackendProcessorTxnID())
-            ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
+            ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
             ->execute()->first() ?? [];
         }
         $orderID = $this->getOrderID();
@@ -435,7 +430,7 @@ class AuditMessage extends DonationMessage {
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getGatewayOriginalTxnID()) {
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
-            ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
+            ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
             ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
             ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayOriginalTxnID())
             ->execute()->first() ?? [];
@@ -905,7 +900,7 @@ class AuditMessage extends DonationMessage {
     $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
     $this->existingContribution = Contribution::get(FALSE)
       ->setSelect($this->getContributionSelectFields())
-      ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
+      ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
       ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
       ->addClause('OR',
         ['invoice_id', '=', $orderID],
@@ -944,6 +939,30 @@ class AuditMessage extends DonationMessage {
       ->addWhere('contribution_status_id:name', '=', $this->getMappedStatus())
       ->addClause('OR', ['trxn_id', '=', $trxn_id], ['trxn_id', '=', $trxn_id_recur])
       ->execute()->first();
+  }
+
+  /**
+   * Lookup using the payment orchestrator reconciliation ID.
+   *
+   * This is the Base62 version of the Gravy Gateway Txn ID.
+   *
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   */
+  private function lookupByPaymentOrchestratorReconciliationId(): ?array {
+    return Contribution::get(FALSE)
+      ->setSelect($this->getContributionSelectFields())
+      ->addWhere('contribution_extra.payment_orchestrator_reconciliation_id', '=', $this->getPaymentOrchestratorReconciliationReference())
+      // @todo - maybe remove the gateway check in favour of returning early if the
+      // payment_orchestrator_reconciliation_id is empty. Gateway hasn't turned out to be very reliable
+      // when dealing with refunds when Gr4vy involved.
+      ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
+      ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
+      ->execute()->first();
+  }
+
+  private function getReversalReversalFinancialTypeNames(): array {
+    return ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'];
   }
 
 }
