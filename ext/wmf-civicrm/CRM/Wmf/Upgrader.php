@@ -4084,6 +4084,20 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Add gl_code field.
+   *
+   * Bug: T420156
+   *
+   * @return bool
+  */
+  public function upgrade_4910(): bool {
+    CRM_Core_DAO::executeQuery('ALTER table civicrm_value_1_gift_data_7 ADD COLUMN gl_code VARCHAR(32) NULL,
+      ADD INDEX index_gl_code(gl_code)');
+    CRM_Core_DAO::executeQuery('ALTER table log_civicrm_value_1_gift_data_7 add gl_code VARCHAR(32) NULL');
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
