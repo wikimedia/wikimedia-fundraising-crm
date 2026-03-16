@@ -2561,7 +2561,7 @@ function _wmf_civicrm_get_batch_data_fields(): array {
     'amount_journaled_to_endowment' => [
       'name' => 'amount_journaled_to_endowment',
       'column_name' => 'amount_journaled_to_endowment',
-      'label' => 'Amount journaled to Intacct to USD',
+      'label' => 'Amount journaled to Endowment',
       'data_type' => 'Float',
       'html_type' => 'Text',
       'weight' => 15,
