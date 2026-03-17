@@ -4113,6 +4113,36 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Add new tracking columns to wmf_contribution_extra.
+   *
+   * Bug: T419649
+   *
+   * @return true
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4920(): true {
+    CRM_Core_DAO::executeQuery('
+      ALTER TABLE wmf_contribution_extra
+      ADD COLUMN backend_processor_reversal_id VARCHAR(255) NULL,
+      ADD COLUMN payment_orchestrator_reversal_id VARCHAR(255) NULL,
+      ADD COLUMN auth_id VARCHAR(255) NULL,
+      ADD COLUMN capture_id VARCHAR(255) NULL,
+      ADD INDEX index_backend_processor_reversal_id (backend_processor_reversal_id),
+      ADD INDEX index_payment_orchestrator_reversal_id (payment_orchestrator_reversal_id),
+      ADD INDEX index_auth_id (auth_id),
+      ADD INDEX index_capture_id (capture_id)
+    ');
+    CRM_Core_DAO::executeQuery('
+      ALTER TABLE log_wmf_contribution_extra
+      ADD COLUMN backend_processor_reversal_id VARCHAR(255) NULL,
+      ADD COLUMN payment_orchestrator_reversal_id VARCHAR(255) NULL,
+      ADD COLUMN auth_id VARCHAR(255) NULL,
+      ADD COLUMN capture_id VARCHAR(255) NULL;
+   ');
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
