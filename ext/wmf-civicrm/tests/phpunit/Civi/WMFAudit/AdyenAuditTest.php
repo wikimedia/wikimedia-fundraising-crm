@@ -983,7 +983,8 @@ class AdyenAuditTest extends BaseAuditTestCase {
       'settled_reversal_amount' => -1.0,
       'settled_donation_amount' => 20.20,
       'settlement_currency' => 'USD',
-      'settlement_date' => '20250912',
+      // Settlement date is Friday-ised version of the Payout row date.
+      'settlement_date' => '20250221',
       'settlement_batch_reference' => 'adyen_1120_USD',
       'settlement_gateway' => 'adyen',
       'status_id:name' => 'total_verified',

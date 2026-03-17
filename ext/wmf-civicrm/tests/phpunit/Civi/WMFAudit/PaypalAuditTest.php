@@ -249,7 +249,7 @@ class PaypalAuditTest extends BaseAuditTestCase {
   public function testSTLFileOrphanChargebacks(): void {
     $this->runAuditBatch('stl_chargeback_orphan', 'STL-20260106.01.009.csv');
     $contributions = Contribution::get(FALSE)
-      ->addWhere('finance_batch', '=', 'paypal_20251009_GBP')
+      ->addWhere('finance_batch', '=', 'paypal_20260221_GBP')
       ->addSelect('*', 'contribution_settlement.*', 'contribution_extra.*', 'contribution_status_id:name')
       ->execute()->indexBy('contribution_status_id:name');
     // We really should have 2 here but we haven't solved the chargeback challenge yet.

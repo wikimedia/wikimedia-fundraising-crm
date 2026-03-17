@@ -1468,6 +1468,7 @@ abstract class BaseAuditProcessor {
     if ($type === 'aggregate') {
       $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] ??= Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP);
       $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] = $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']]->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
+      $this->batches[$file][$transaction['settlement_batch_reference']]['settlement_date'] = date('Ymd', $transaction['settled_date']);
       return;
     }
     if (isset($transaction['audit_file_gateway']) && !empty($transaction['settlement_batch_reference'])) {
