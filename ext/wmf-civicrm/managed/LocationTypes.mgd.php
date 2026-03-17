@@ -69,4 +69,14 @@ return [
       'display_name' => 'Venmo',
     ],
   ],
+  'ach' => [
+    'name' => 'ach',
+    'entity' => 'LocationType',
+    'cleanup' => 'never',
+    'params' => [
+      'version' => 3,
+      'name' => 'ach',
+      'display_name' => 'ACH',
+    ],
+  ],
 ];

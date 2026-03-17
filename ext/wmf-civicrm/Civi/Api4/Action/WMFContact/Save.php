@@ -63,7 +63,6 @@ class Save extends AbstractAction {
    */
   public function _run(Result $result): void {
     $msg = $this->getMessage();
-
     $existingContact = $this->getExistingContact($msg);
     if ($existingContact) {
       $this->handleUpdate($existingContact);
@@ -94,12 +93,19 @@ class Save extends AbstractAction {
     if (!empty($msg['email'])) {
       // For updates we are still using our own process which may or may not confer benefits
       // For inserts however we can rely on the core api.
+      // for payment method from third party like apple venmo paypal assign different email type
+      if (isset($msg['payment_method']) && !$this->isEmailSourceTrusted($msg['payment_method']) && $msg['payment_method'] !== 'ach') {
+        // for ach, we have the ach email as $msg['billing_email']
+        $contact['email_primary.location_type_id:name'] = $msg['payment_method'];
+      }
+
       $contact['email_primary.email'] = $msg['email'];
     }
-    // for gravy ACH, assign email as billing email
+    // for gravy ACH, additional billing email might be provided here.
     if (!empty($msg['billing_email'])) {
-      \Civi::log('wmf')->info('add additional billing email');
-      $contact['email_billing.location_type_id:name'] = 'Billing';
+      \Civi::log('wmf')->info("Add additional ach email " . $msg["billing_email"]);
+      // email.email_billing here is only used as additional email other than primary. so here we save both primary and ach one as secondary for new contact
+      $contact['email_billing.location_type_id:name'] = 'ach';
       $contact['email_billing.email'] = $msg['billing_email'];
     }
     $preferredLanguage = $this->getPreferredLanguage($msg);
@@ -139,6 +145,7 @@ class Save extends AbstractAction {
     // Attempt to insert the contact
     try {
       $this->startTimer('create_contact_civi_api');
+
       $contact_result = Contact::create(FALSE)
         ->setValues($contact)
         ->execute()->single();
@@ -656,6 +663,11 @@ WHERE
 
   /**
    * Updates the email for a contact.
+   * The un-trust email location type is from third party (venmo/paypal/google/ach/apple),
+   * and we treat all others as trusted location_type.
+   * Note here, when payment_method is ach, we might have billing_email from bank but email still from donation form so email should treat as trust source.
+   *
+   * https://gitlab.wikimedia.org/repos/fundraising-tech/fr-tech-diagrams/-/raw/main/contact_save/email_update.png
    *
    * @param array $msg
    * @param int $contact_id
@@ -664,165 +676,409 @@ WHERE
    */
   private function emailUpdate($msg, $contact_id) {
     try {
-      $loc_type_id = isset($msg['email_location_type_id']) ? $msg['email_location_type_id'] : \CRM_Core_BAO_LocationType::getDefault()->id;
-      if (!is_numeric($loc_type_id)) {
-        $loc_type_id = \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Email', 'location_type_id', $loc_type_id);
-      }
-      $isPrimary = isset($msg['email_location_type_id']) ? 0 : 1;
+      $paymentMethod = isset($msg['payment_method']) ? strtolower($msg['payment_method']) : '';
+      $incomingTrusted = $this->isEmailSourceTrusted($paymentMethod);
 
-      $emailParams = [
-        'email' => $msg['email'],
-        'is_primary' => $isPrimary,
-        'is_billing' => $isPrimary,
-        'contact_id' => $contact_id,
-      ];
-
-      // Look up contact's existing email to get the id and to determine
-      // if the email has changed.
-      $existingEmails = Email::get(FALSE)
-        ->addWhere('contact_id', '=', $contact_id)
-        ->addOrderBy('is_primary')
-        ->addSelect('location_type_id', 'email', 'is_primary', 'on_hold', 'location_type_id:name')
-        ->execute();
-
-      if (!empty($existingEmails)) {
-        foreach ($existingEmails as $prospectiveEmail) {
-          // We will update an existing one if it has the same email or the same
-          // location type it, preferring same email+location type id over
-          // same email over same location type id.
-          if ($prospectiveEmail['email'] === $msg['email']) {
-            if (empty($existingEmail)
-              || $existingEmail['email'] !== $msg['email']
-              || $prospectiveEmail['location_type_id'] == $loc_type_id
-            ) {
-              $existingEmail = $prospectiveEmail;
-            }
-          }
-          elseif ($prospectiveEmail['location_type_id'] == $loc_type_id) {
-            if (empty($existingEmail)) {
-              $existingEmail = $prospectiveEmail;
-            }
-          }
-        }
-
-        if (!empty($existingEmail)) {
-          if (strtolower($existingEmail['email']) === strtolower($msg['email'])) {
-            // If we have the email already it still may make sense
-            // to update to primary if this is (implicitly) an update of
-            // primary email
-            if (!$isPrimary || $existingEmail['is_primary']) {
-              return;
-            }
-          }
-          $emailParams['id'] = $existingEmail['id'];
-          $emailParams['on_hold'] = 0;
-        }
+      if (!$incomingTrusted) {
+        $msg['email_location_type_id'] = strtolower($msg['payment_method']);
       }
 
-      Email::save(FALSE)->addRecord($emailParams)->execute();
+      $loc_type_id = $this->getEmailLocationTypeId($msg);
+      $newEmail = $msg['email'];
+      $existingEmails = $this->getContactEmails($contact_id);
+      $emailContext = $this->analyzeExistingEmails($existingEmails, $newEmail, $loc_type_id);
+      // 0️⃣ CHECK ACH EMAIL - if ach billing_address check diff for ach and update accordingly
+      $this->handleBillingEmailIfPresent($msg, $existingEmails, $contact_id);
+      // actual update based on priority: exact match primary > location type match > create new email
+      $this->updateEmailBasedOnContext($contact_id, $newEmail, $emailContext, $incomingTrusted, $loc_type_id);
     }
     catch (\CRM_Core_Exception $e) {
-      // Constraint violations occur when data is rolled back to resolve a deadlock.
       $code = (in_array($e->getErrorCode(), ['constraint violation', 'deadlock', 'database lock timeout'])) ? WMFException::DATABASE_CONTENTION : WMFException::IMPORT_CONTACT;
       throw new WMFException($code, "Couldn't store email for the contact.", $e->getErrorData());
     }
   }
 
   /**
+   * use Home as default otherwise get the location id if the email location type is provided and valid.
+   * if the location type is invalid, we will use default location type as well.
+   *
+   * @param $msg
+   * @return int
+   */
+  private function getEmailLocationTypeId($msg): int {
+    $loc_type_id = $msg['email_location_type_id'] ?? \CRM_Core_BAO_LocationType::getDefault()->id;
+    if (!is_numeric($loc_type_id)) {
+      $loc_type_id = \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Email', 'location_type_id', $loc_type_id);
+    }
+    return $loc_type_id;
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private function getContactEmails($contact_id): Result
+  {
+    return Email::get(FALSE)
+      ->addWhere('contact_id', '=', $contact_id)
+      ->addSelect('id', 'email', 'location_type_id', 'is_primary', 'on_hold', 'location_type_id:name')
+      ->addOrderBy('is_primary')
+      ->execute();
+  }
+
+  private function analyzeExistingEmails($existingEmails, $newEmail, $loc_type_id): array
+  {
+    $context = [
+      'exactMatchPrimary' => NULL,
+      'locationMatch' => NULL,
+      'currentPrimary' => NULL,
+      'primaryTrusted' => FALSE,
+    ];
+
+    foreach ($existingEmails as $email) {
+      if (!empty($email['is_primary'])) {
+        $context['currentPrimary'] = $email;
+      }
+      if (strcasecmp($email['email'], $newEmail) === 0) {
+        if ($email['is_primary']) {
+          $context['exactMatchPrimary'] = $email;
+        }
+      }
+      if ($email['location_type_id'] == $loc_type_id) {
+        $context['locationMatch'] = $email;
+      }
+    }
+
+    $context['primaryTrusted'] = $context['currentPrimary'] && $this->isEmailSourceTrusted($context['currentPrimary']['location_type_id:name']);
+
+    return $context;
+  }
+
+  /**
+   * we want to make sure the billing email is created/updated even if the primary email is exact match and trusted source,
+   * as long as the billing email is different from primary email.
+   *
+   * @param $msg
+   * @param $existingEmails
+   * @param $contact_id
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  private function handleBillingEmailIfPresent($msg, $existingEmails, $contact_id): void
+  {
+    if (empty($msg['billing_email'])) {
+      return;
+    }
+
+    $billingEmail = $this->findAchEmail($existingEmails);
+    $achLocationTypeId = \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Email', 'location_type_id', 'ach');
+
+    if (empty($billingEmail)) {
+      $this->createSecondaryEmailWithLocation($contact_id, $msg['billing_email'], $achLocationTypeId);
+    } elseif (strcasecmp($msg['billing_email'], $billingEmail['email']) !== 0) {
+      // replace to make sure only have one ach per contact
+      Email::save(FALSE)->addRecord([
+        'id' => $billingEmail['id'],
+        'email' => $msg['billing_email']
+      ])->execute();
+    }
+  }
+
+  private function findAchEmail($existingEmails)
+  {
+    return array_find((array)$existingEmails, fn($email) => ($email['location_type_id:name'] ?? '') === 'ach');
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private function updateEmailBasedOnContext($contact_id, $newEmail, $emailContext, $incomingTrusted, $loc_type_id): void
+  {
+    // 1️⃣ EXACT MATCH BRANCH - email matched primary
+    if ($emailContext['exactMatchPrimary']) {
+      $this->handleExactMatchPrimary($contact_id, $newEmail, $emailContext, $incomingTrusted, $loc_type_id);
+      return;
+    }
+    // 2️⃣ LOCATION MATCH BRANCH - location type match, update the same location to new email if different
+    if ($emailContext['locationMatch']) {
+      $this->handleLocationMatch($newEmail, $emailContext, $incomingTrusted);
+      return;
+    }
+    // 3️⃣ CREATE BRANCH - nothing matched and incoming email is trust or primary is not trusted
+    // incoming email should replace the current primary
+    if ($incomingTrusted || !$emailContext['primaryTrusted']) {
+      $this->createPrimaryEmail($contact_id, $newEmail, $loc_type_id);
+      return;
+    }
+
+    $this->createSecondaryEmailWithLocation($contact_id, $newEmail, $loc_type_id);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private function handleExactMatchPrimary($contact_id, $newEmail, $emailContext, $incomingTrusted, $loc_type_id): void
+  {
+    if ($incomingTrusted) {
+      if (!$emailContext['primaryTrusted']) {
+        $this->createPrimaryEmail($contact_id, $newEmail, $loc_type_id);
+      }
+    } else {
+      if (!($emailContext['locationMatch'] && strcasecmp($emailContext['locationMatch']['email'], $newEmail) === 0)) {
+        $this->createSecondaryEmailWithLocation($contact_id, $newEmail, $loc_type_id);
+      }
+    }
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private function handleLocationMatch($newEmail, $emailContext, $incomingTrusted): void
+  {
+    if (strcasecmp($emailContext['locationMatch']['email'], $newEmail) === 0) {
+      // nothing should change, do nothing
+      return;
+    }
+    Email::save(FALSE)->addRecord([
+      'id' => $emailContext['locationMatch']['id'],
+      'email' => $newEmail,
+      'is_primary' => ($incomingTrusted || !$emailContext['primaryTrusted']) ? 1 : 0,
+      'on_hold' => 0,
+    ])->execute();
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private function createPrimaryEmail($contact_id, $newEmail, $loc_type_id): void
+  {
+    Email::save(FALSE)->addRecord([
+      'email' => $newEmail,
+      'contact_id' => $contact_id,
+      'location_type_id' => $loc_type_id,
+      'is_primary' => 1,
+    ])->execute();
+  }
+
+  /**
+   * @param $contact_id
+   * @param $newEmail
+   * @param $loc_type_id
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  private function createSecondaryEmailWithLocation($contact_id, $newEmail, $loc_type_id): void
+  {
+    Email::save(FALSE)->addRecord([
+      'email' => $newEmail,
+      'contact_id' => $contact_id,
+      'location_type_id' => $loc_type_id,
+      'is_primary' => 0
+    ])->execute();
+  }
+
+  /**
    * Look for existing exact-match contact in the database.
    *
-   * Note if there is more than one possible match we treat it as
-   * 'no match'.
-   *
+   * Match strategy order of priority:
+   * 1: Direct ID lookup – If contact_id is provided, fetch that contact directly.
+   * 2: Name validation – If either first_name or last_name is missing and not from low confidence source, like ach might missing name, stop searching (return NULL).
+   * 3: External identifier match – Look up by custom external identifier fields (e.g., Venmo username, paypal payerid).
+   * -  Venmo-specific logic – For Venmo payments, prioritize matching by phone number or Venmo email, then update the username if needed.
+   * 4: ACH billing email match – For ACH payments, check if a contact exists with the provided billing email tagged as ach location type.
+   * 5: Primary email + name match – Search by primary email address:
+   * - First, try exact name match (case-insensitive)
+   * - If no exact match, accept low-confidence name sources (e.g., third-party payments)
+   * - Return the oldest contact ID (lowest ID) if multiple matches exist
+   * 6: Address match – As a fallback, search by street address, city, postal code, and name if all address fields meet minimum length requirements.
+   * No match – Return NULL if no contact is found through any method.
+   * The method returns the contact array with id, first_name, and last_name keys, or NULL if no match is found.
    * @param array $msg
-   *
    * @return array|null
-   *
    * @throws \CRM_Core_Exception
    */
   protected function getExistingContact(array $msg): ?array {
+    // Strategy 1: Direct ID lookup
     if (!empty($msg['contact_id'])) {
       $contact = Contact::get(FALSE)->addWhere('id', '=', $msg['contact_id'])
         ->addSelect('first_name', 'last_name')->execute()->first();
       if ($contact) {
         return $contact;
       }
-      // @todo - should we throw an exception here? Should no be reachable.
     }
-    // @todo - does this still make sense? Before or after Venmo?
-    if (empty($msg['first_name']) || empty($msg['last_name'])) {
+
+    // Strategy 2: Name validation if not low confidence name source - both names required for other lookups
+    if (empty($msg['first_name']) || empty($msg['last_name']) && !$this->getIsLowConfidenceNameSource()) {
       return NULL;
     }
+
+    // Strategy 3: External identifier match
     $externalIdentifiers = array_flip($this->getExternalIdentifierFields());
     if ($externalIdentifiers) {
-      $external_identifier_field = array_key_first($externalIdentifiers);
-      if ($this->message['payment_method'] === 'venmo' && !empty($this->message['phone'])) {
-        // venmo_user_name can be updated manually, so should use the only unique identifier - phone for venmo
-        // check if contact has primary phone with source venmo and the same phone number, if not,
-        // fallback to check with external identifier field
-        $matches = Contact::get(FALSE)
-        ->addWhere('phone_primary.phone_data.phone_source', '=', 'Venmo')
-        ->addWhere('phone_primary.phone', '=', $this->message['phone'])->execute()->first();
-        if (!empty($matches)) {
-          return $matches;
-        }
-      }
-      // fallback to check with external identifier field for venmo if no phone matched, and for other payment method
-      $matches = Contact::get(FALSE)
-        ->addWhere($external_identifier_field, '=', $this->message[$external_identifier_field])
-        ->execute()->first();
-      if (!empty($matches)) {
-        return $matches;
+      $contact = $this->matchByExternalIdentifier($msg, $externalIdentifiers);
+      if ($contact) {
+        return $contact;
       }
     }
 
+    // Strategy 4: ACH billing email match
+    if (!empty($msg['billing_email'])) {
+      $contact = $this->matchByBillingEmail($msg);
+      if ($contact) {
+        return $contact;
+      }
+    }
+
+    // Strategy 5: Primary email + name match
     if (!empty($msg['email'])) {
-      // Build a query that returns candidate(s) and their email location type,
-      // then prioritise matches:
-      // 1) email + name (case-insensitive)
-      // 2) email where location type indicates a low-confidence source
-      // Within a priority pick the lowest CID (results already ordered by contact_id ASC).
-      $matches = Email::get(FALSE)
-        ->addWhere('contact_id.is_deleted', '=', 0)
-        ->addWhere('contact_id.is_deceased', '=', 0)
-        ->addWhere('email', '=', $msg['email'])
-        ->addWhere('is_primary', '=', TRUE)
-        ->setSelect(['contact_id', 'contact_id.first_name', 'contact_id.last_name', 'location_type_id:name'])
-        ->setOrderBy(['contact_id' => 'ASC'])
-        ->execute();
-
-      $lowConfidence = [];
-      if (count($matches) > 0) {
-        foreach ($matches as $candidate) {
-          if (
-            strcasecmp($candidate['contact_id.first_name'] ?? '', $msg['first_name']) === 0
-            && strcasecmp($candidate['contact_id.last_name'] ?? '', $msg['last_name']) === 0
-          ) {
-            // if exact match, return
-            return $this->keyAsContact($candidate);
-          } else {
-            if ($this->getIsLowConfidenceNameSource($candidate['location_type_id:name']) === TRUE) {
-              // if not exact match, check if low confidence, save for later in case exact match, keep loop
-              $lowConfidence[] = $candidate;
-            }
-          }
-        }
-        if (!empty($lowConfidence)) {
-          return $this->keyAsContact($lowConfidence[0]);
-        }
-        return NULL;
+      $contact = $this->matchByPrimaryEmail($msg);
+      if ($contact) {
+        return $contact;
       }
     }
-    // If we have sufficient address data we will look up from the database.
-    // original discussion at https://phabricator.wikimedia.org/T283104#7171271
-    // We didn't talk about min_length for the other fields so I just went super
-    // conservative & picked 2
+
+    // Strategy 6: Address match (fallback)
+    $contact = $this->matchByAddress($msg);
+    if ($contact) {
+      return $contact;
+    }
+
+    return NULL;
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private function matchByExternalIdentifier(array $msg, array $externalIdentifiers): ?array {
+    $external_identifier_field = array_key_first($externalIdentifiers);
+
+    // Venmo-specific logic: try phone or email first cause username is changeable, we want to avoid false match
+    // if username is taken by another contact. where phone and email is also changeable but can not be taken by other user easily
+    if ($msg['payment_method'] === 'venmo' && !empty($msg['phone'])) {
+      $contact = $this->matchVenmoByPhone($msg);
+      if ($contact) {
+        return $contact;
+      }
+      $contact = $this->matchVenmoByEmail($msg, $externalIdentifiers);
+      if ($contact) {
+        return $contact;
+      }
+    }
+
+    // Fallback to external identifier field
+    $matches = Contact::get(FALSE)
+      ->addWhere($external_identifier_field, '=', $msg[$external_identifier_field])
+      ->execute()->first();
+
+    return !empty($matches) ? $matches : NULL;
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private function matchVenmoByPhone(array $msg): ?array {
+    $matches = Contact::get(FALSE)
+      ->addSelect('*', 'External_Identifiers.venmo_user_name')
+      ->addWhere('phone_primary.phone_data.phone_source', '=', 'Venmo')
+      ->addWhere('phone_primary.phone', '=', $msg['phone'])
+      ->addOrderBy('id')  // get the oldest contact if multiple matches exist
+      ->execute()->first();
+
+    if (!empty($matches)) {
+      $this->updateVenmoUsernameIfNeed($matches, array_flip($this->getExternalIdentifierFields()));
+    }
+
+    return !empty($matches) ? $matches : NULL;
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private function matchVenmoByEmail(array $msg, array $externalIdentifiers): ?array {
+    $matches = Contact::get(FALSE)
+      ->addSelect('*', 'External_Identifiers.venmo_user_name')
+      ->addJoin('Email AS email')
+      ->addWhere('is_deleted', '=', 0)
+      ->addWhere('is_deceased', '=', 0)
+      ->addWhere('email.email', '=', $msg['email'])
+      ->addWhere('email.location_type_id:name', '=', 'venmo')
+      ->addOrderBy('id') // get the oldest contact if multiple matches exist
+      ->execute()
+      ->first();
+
+    if (!empty($matches)) {
+      $this->updateVenmoUsernameIfNeed($matches, $externalIdentifiers);
+    }
+
+    return !empty($matches) ? $matches : NULL;
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private function matchByBillingEmail(array $msg): ?array {
+    $matches = Email::get(FALSE)
+      ->addWhere('contact_id.is_deleted', '=', 0)
+      ->addWhere('contact_id.is_deceased', '=', 0)
+      ->addWhere('email', '=', $msg['billing_email'])
+      ->addWhere('location_type_id:name', '=', 'ach')
+      ->setSelect(['contact_id', 'contact_id.first_name', 'contact_id.last_name'])
+      ->setOrderBy(['contact_id' => 'ASC'])
+      ->execute();
+
+    return (count($matches) === 1) ? $this->keyAsContact($matches->first()) : NULL;
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private function matchByPrimaryEmail(array $msg): ?array {
+    $matches = Email::get(FALSE)
+      ->addWhere('contact_id.is_deleted', '=', 0)
+      ->addWhere('contact_id.is_deceased', '=', 0)
+      ->addWhere('email', '=', $msg['email'])
+      ->addWhere('is_primary', '=', TRUE)
+      ->setSelect(['contact_id', 'contact_id.first_name', 'contact_id.last_name', 'location_type_id:name'])
+      ->setOrderBy(['contact_id' => 'ASC'])
+      ->execute();
+
+    if (count($matches) === 0) {
+      return NULL;
+    }
+
+    $lowConfidenceCandidates = [];
+
+    foreach ($matches as $candidate) {
+      // Exact name match (case-insensitive)
+      if ($this->isNameMatch($candidate, $msg)) {
+        return $this->keyAsContact($candidate);
+      }
+
+      // Save low-confidence matches for fallback
+      if ($this->getIsLowConfidenceNameSource($candidate['location_type_id:name'])) {
+        $lowConfidenceCandidates[] = $candidate;
+      }
+    }
+
+    return !empty($lowConfidenceCandidates) ? $this->keyAsContact($lowConfidenceCandidates[0]) : NULL;
+  }
+
+  private function isNameMatch(array $candidate, array $msg): bool {
+    return strcasecmp($candidate['contact_id.first_name'] ?? '', $msg['first_name']) === 0
+      && strcasecmp($candidate['contact_id.last_name'] ?? '', $msg['last_name']) === 0;
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private function matchByAddress(array $msg): ?array {
+    // Validate sufficient address data
     $addressCheckFields = ['street_address' => 5, 'city' => 2, 'postal_code' => 2];
     foreach ($addressCheckFields as $field => $minLength) {
       if (strlen($msg[$field] ?? '') < $minLength) {
         return NULL;
       }
     }
+
     $matches = Address::get(FALSE)
       ->addWhere('city', '=', $msg['city'])
       ->addWhere('postal_code', '=', $msg['postal_code'])
@@ -836,11 +1092,30 @@ WHERE
       ->setLimit(1)
       ->setOrderBy(['contact_id' => 'ASC'])
       ->execute();
-    if (count($matches) === 1) {
-      return $this->keyAsContact($matches->first());
-    }
 
-    return NULL;
+    return (count($matches) === 1) ? $this->keyAsContact($matches->first()) : NULL;
+  }
+
+  /**
+   * venmo username is not unique (phone is) identifier, but this is searchable in dashboard, and used in ty email
+   * so update is needed
+   *
+   * @param array $matches
+   * @param array $externalIdentifiers
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  protected function updateVenmoUsernameIfNeed(array $matches, array $externalIdentifiers ): void {
+    $matchVenmoUsername = $matches['External_Identifiers.venmo_user_name'];
+    if ($matchVenmoUsername !== $externalIdentifiers['External_Identifiers.venmo_user_name']) {
+      \Civi::log('wmf')->info("Updating venmo_user_name for contact ID {$matches['id']}
+            from {$externalIdentifiers['External_Identifiers.venmo_user_name']} to
+             $matchVenmoUsername");
+      Contact::update(FALSE)
+        ->addWhere('id', '=', (int)$matches['id'])
+        ->setValues(['External_Identifiers.venmo_user_name' => $matchVenmoUsername])
+        ->execute();
+    }
   }
 
   /**
@@ -851,8 +1126,10 @@ WHERE
    * @param int $contactId
    * @param array $msg
    * @throws WMFException
+   * @throws \CRM_Core_Exception
    */
-  protected function createEmployerRelationshipIfSpecified(int $contactId, array $msg) {
+  protected function createEmployerRelationshipIfSpecified(int $contactId, array $msg): void
+  {
     if (empty($msg['employer_id']) || $contactId == $msg['employer_id']) {
       // Do nothing if employer ID is unset or the same as the contact ID
       // The latter can happen when we're importing matching gifts
@@ -879,8 +1156,8 @@ WHERE
         // Found existing relationship with the same employer
         $needToAddNewRelationship = FALSE;
         if (
-          ($existingRelationship['is_active'] == FALSE) ||
-          ($isProvidedByDonor && $existingRelationship['Relationship_Metadata.provided_by_donor'] == FALSE)
+          !$existingRelationship['is_active'] ||
+          ($isProvidedByDonor && !$existingRelationship['Relationship_Metadata.provided_by_donor'])
         ) {
           // Set is_active and provided_by_donor flag
           $values = array_merge($relationshipParams, ['is_active' => 1]);
@@ -890,7 +1167,7 @@ WHERE
             ->execute();
         }
       }
-      elseif ($existingRelationship['is_active'] == TRUE) {
+      elseif ($existingRelationship['is_active']) {
         // Active relationship with different employer should be set to inactive
         Relationship::update(FALSE)
           ->addWhere('id', '=', $existingRelationship['id'])
@@ -905,11 +1182,11 @@ WHERE
   }
 
   /**
-   * Do we have low confidence in the name provided for the contact.
+   *  Do we have low confidence in the name provided for the contact.
    *
-   * Some donation data sources provide unreliable contact name data e.g. Apple
-   * Pay. Knowing this allows us to give less weight to data from unreliable
-   * sources during the dedupe processes.
+   *  Some donation data sources provide unreliable contact name data e.g. Apple
+   *  Pay. Knowing this allows us to give less weight to data from unreliable
+   *  sources during the dedupe processes.
    *
    * @param null $primaryEmailType
    * @return bool
@@ -919,10 +1196,9 @@ WHERE
     // todo: T418790 will use name type to define if IsLowConfidenceNameSource other than check email type
     // check if currency primary not trusted source, then no need to check first name and last name, otherwise check incoming payment_method.
     if (!empty($primaryEmailType) && in_array(strtolower($primaryEmailType), $paymentMethodsReturnLowConfidenceName)) {
-      $this->isLowConfidenceNameSource = true;
+      return true;
     } else {
       if (
-        $this->isLowConfidenceNameSource === NULL &&
         !empty($this->getMessage()['payment_method'])
       ) {
         // those 3rd party contact might have their own name, opt out name check for dedupe if external identifier matched
@@ -1013,6 +1289,24 @@ WHERE
       }
     }
     return $contact;
+  }
+
+  /**
+   * Consider trusted email sources: anything that is not a known 3rd-party/email-source
+   *
+   * @param string $paymentMethod
+   * @return bool
+   */
+  private function isEmailSourceTrusted(string $paymentMethod): bool {
+    $pm = strtolower($paymentMethod);
+    if ($pm === '') {
+      return TRUE; // no payment method implies our site/source -> trusted
+    }
+    // ach email is still from donation form, the billing_email for ach queue msg is the untrusted one,
+    // so do not mixed with below 3rd party email source list
+    // each entry in this array has a corresponding locationType in locationTypes.mgd.php
+    // treat these low confidence as untrusted
+    return !in_array($pm, ['google', 'apple', 'venmo', 'paypal']);
   }
 
   /**
