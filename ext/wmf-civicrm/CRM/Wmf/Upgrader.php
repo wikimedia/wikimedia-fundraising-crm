@@ -4091,6 +4091,7 @@ AND channel <> 'Chapter Gifts'";
    * @return bool
   */
   public function upgrade_4910(): bool {
+    return TRUE;
     CRM_Core_DAO::executeQuery('ALTER table civicrm_value_1_gift_data_7 ADD COLUMN gl_code VARCHAR(32) NULL,
       ADD INDEX index_gl_code(gl_code)');
     CRM_Core_DAO::executeQuery('ALTER table log_civicrm_value_1_gift_data_7 add gl_code VARCHAR(32) NULL');
