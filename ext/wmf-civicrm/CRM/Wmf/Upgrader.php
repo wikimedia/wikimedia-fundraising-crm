@@ -4143,6 +4143,28 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Add fields to the smashpig pending table.
+   * Bug: T420057
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4925(): bool {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_transaction_log', 'backend_processor')) {
+      CRM_Core_DAO::executeQuery('
+        ALTER TABLE smashpig.pending
+          ADD COLUMN backend_processor VARCHAR(255) NULL,
+          ADD COLUMN backend_processor_txn_id VARCHAR(255) NULL,
+          ADD COLUMN payment_orchestrator_reconciliation_id VARCHAR(255) NULL,
+          ADD INDEX index_backend_processor (backend_processor),
+          ADD INDEX index_backend_processor_txn_id (backend_processor_txn_id),
+          ADD INDEX index_payment_orchestrator_reconciliation_id (payment_orchestrator_reconciliation_id);
+      ');
+    }
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
