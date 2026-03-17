@@ -4084,6 +4084,87 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Add gl_code field.
+   *
+   * Bug: T420156
+   *
+   * @return bool
+  */
+  public function upgrade_4910(): bool {
+    CRM_Core_DAO::executeQuery('ALTER table civicrm_value_1_gift_data_7 ADD COLUMN gl_code VARCHAR(32) NULL,
+      ADD INDEX index_gl_code(gl_code)');
+    CRM_Core_DAO::executeQuery('ALTER table log_civicrm_value_1_gift_data_7 add gl_code VARCHAR(32) NULL');
+    return TRUE;
+  }
+
+  /**
+   * Add utm_source index to contribution tracking.
+   * Bug: T420289
+   *
+   * @return true
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4915(): true {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfIndexExists('civicrm_contribution_tracking', 'utm_source')) {
+      CRM_Core_DAO::executeQuery('CREATE INDEX utm_source
+      ON civicrm_contribution_tracking (utm_source)');
+    }
+    return TRUE;
+  }
+
+  /**
+   * Add new tracking columns to wmf_contribution_extra.
+   *
+   * Bug: T419649
+   *
+   * @return true
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4920(): true {
+    CRM_Core_DAO::executeQuery('
+      ALTER TABLE wmf_contribution_extra
+      ADD COLUMN backend_processor_reversal_id VARCHAR(255) NULL,
+      ADD COLUMN payment_orchestrator_reversal_id VARCHAR(255) NULL,
+      ADD COLUMN auth_id VARCHAR(255) NULL,
+      ADD COLUMN capture_id VARCHAR(255) NULL,
+      ADD INDEX index_backend_processor_reversal_id (backend_processor_reversal_id),
+      ADD INDEX index_payment_orchestrator_reversal_id (payment_orchestrator_reversal_id),
+      ADD INDEX index_auth_id (auth_id),
+      ADD INDEX index_capture_id (capture_id)
+    ');
+    CRM_Core_DAO::executeQuery('
+      ALTER TABLE log_wmf_contribution_extra
+      ADD COLUMN backend_processor_reversal_id VARCHAR(255) NULL,
+      ADD COLUMN payment_orchestrator_reversal_id VARCHAR(255) NULL,
+      ADD COLUMN auth_id VARCHAR(255) NULL,
+      ADD COLUMN capture_id VARCHAR(255) NULL;
+   ');
+    return TRUE;
+  }
+
+  /**
+   * Add fields to the smashpig pending table.
+   * Bug: T420057
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_4925(): bool {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_transaction_log', 'backend_processor')) {
+      CRM_Core_DAO::executeQuery('
+        ALTER TABLE smashpig.pending
+          ADD COLUMN backend_processor VARCHAR(255) NULL,
+          ADD COLUMN backend_processor_txn_id VARCHAR(255) NULL,
+          ADD COLUMN payment_orchestrator_reconciliation_id VARCHAR(255) NULL,
+          ADD INDEX index_backend_processor (backend_processor),
+          ADD INDEX index_backend_processor_txn_id (backend_processor_txn_id),
+          ADD INDEX index_payment_orchestrator_reconciliation_id (payment_orchestrator_reconciliation_id);
+      ');
+    }
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity

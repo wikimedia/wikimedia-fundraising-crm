@@ -278,7 +278,6 @@ class GenerateBatch extends AbstractAction {
 
             $fromRow = $fromBalancingRow = $row;
             $endowmentValues = [
-              'JOURNAL' => 'GJ',
               'LOCATION_ID' => '300-END',
               'DEPT_ID' => '',
               'GLENTRY_VENDORID' => 'V04981',
