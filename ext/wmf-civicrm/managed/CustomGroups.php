@@ -618,7 +618,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
       'html_type' => 'Select',
       'is_searchable' => TRUE,
       'weight' => 320,
-      'text_length' => 255,
+      'text_length' => 32,
       'note_columns' => 60,
       'note_rows' => 4,
       'is_view' => 0,
