@@ -76,7 +76,17 @@ return [
     'params' => [
       'version' => 3,
       'name' => 'ach',
-      'display_name' => 'ACH',
+      'display_name' => 'ACH-bank',
+    ],
+  ],
+  'achForm' => [
+    'name' => 'ach form',
+    'entity' => 'LocationType',
+    'cleanup' => 'never',
+    'params' => [
+      'version' => 3,
+      'name' => 'ach form',
+      'display_name' => 'ACH-form',
     ],
   ],
 ];
