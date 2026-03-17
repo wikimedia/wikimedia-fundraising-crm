@@ -30,6 +30,8 @@ class GenerateBatch extends AbstractAction {
   const GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE = 11110;
   const GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT = 27375;
 
+  const GL_ENDOWMENT_MEMO_SUFFIX = 'Earmarked for Endowment from WMF';
+
   /**
    * Is this a dry run (if so do not close batches or push to the api).
    *
@@ -893,7 +895,7 @@ END";
     -- @todo - not for endowment - need the number for that
     '100-WMF' as LOCATION_ID,
     $deptIDClause as DEPT_ID,
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Donations') as MEMO,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Donations', IF(c.financial_type_id = $endowmentFinancialType, ' " . self::GL_ENDOWMENT_MEMO_SUFFIX . "', '')) as MEMO,
     IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, 0, -SUM(COALESCE(settled_donation_amount, 0)))  as DEBIT,
     IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, SUM(COALESCE(settled_donation_amount, 0)), 0) as CREDIT,
     s.settlement_currency as CURRENCY,
@@ -915,7 +917,7 @@ UNION ALL
     -- @todo - not for endowment - need the number for that
     '100-WMF' as LOCATION_ID,
     $deptIDClause as DEPT_ID,
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Refunds') as MEMO,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Refunds', IF(c.financial_type_id = $endowmentFinancialType, '" . self::GL_ENDOWMENT_MEMO_SUFFIX . "', '')) as MEMO,
 
     IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, SUM(-COALESCE(settled_reversal_amount, 0)),0) as DEBIT,
     IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, 0, SUM(-COALESCE(settled_reversal_amount, 0)))  as CREDIT,
@@ -1262,7 +1264,7 @@ GROUP BY s.settlement_batch_reference
     $reordered = [
       'gateway' => $row['gateway'],
       'settlement_date' => $row['settlement_date'],
-      'type' => trim(substr(strrchr($row['MEMO'], '|'), 1)),
+      'type' => trim(str_replace(self::GL_ENDOWMENT_MEMO_SUFFIX, '', substr(strrchr($row['MEMO'], '|'), 1))),
       'DEBIT' => $row['DEBIT'],
       'CREDIT' => $row['CREDIT'],
     ];
