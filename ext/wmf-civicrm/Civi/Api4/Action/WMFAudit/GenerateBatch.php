@@ -283,9 +283,6 @@ class GenerateBatch extends AbstractAction {
               'GLENTRY_VENDORID' => 'V04981',
             ];
             $toBalancingRow = $toRow = array_merge($row, $endowmentValues);
-            // Not the right code per https://docs.google.com/spreadsheets/d/1FFIhblreQKSiPBxfatc5XhDdjqoaR7R280r9TTOlQcw/edit?gid=1867490184#gid=1867490184
-            // but in the interim the others are not on endowment staging.
-            $toRow['ACCT_NO'] = 43428;
 
             $fromRow['DEBIT'] = $toBalancingRow['DEBIT'] = $row['CREDIT'];
             $fromRow['CREDIT'] = $toBalancingRow['CREDIT'] = $row['DEBIT'];
