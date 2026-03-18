@@ -438,14 +438,15 @@ class SaveTest extends TestCase {
     ]);
     WMFContact::save(FALSE)->setMessage($trustDonateMessage->normalize())->execute();
     $afterContacts = Contact::get(FALSE)
-      ->addSelect('id', 'External_Identifiers.venmo_user_name', 'email_primary.email', 'email_primary.location_type_id:name')
-      ->addWhere('External_Identifiers.venmo_user_name', '=', '@venmojoe123')
+      ->addSelect('id', 'External_Identifiers.venmo_user_name', 'email_primary.email', 'email_primary.location_type_id:name', 'first_name')
+      ->addWhere('email_primary.email', '=', 'aaa@aa.com')
       ->execute();
     // Verify that no new contact was created since the email matches old one not trusted, and name updated to the trust one
     $this->assertCount(1, $afterContacts);
     $this->assertEquals('@venmojoe123', $afterContacts[0]['External_Identifiers.venmo_user_name']);
     $this->assertEquals('Home', $afterContacts[0]['email_primary.location_type_id:name']);
     $this->assertEquals($contacts[0]['id'], $afterContacts[0]['id']);
+    $this->assertEquals('diff-old-firstname', $afterContacts[0]['first_name']);
   }
 
   function testMatchExactEmailWithSameNameWhileLowConfidence(): void
@@ -938,5 +939,179 @@ class SaveTest extends TestCase {
     $this->assertEquals('UniqueLocationType', $contact['first_name']);
     $this->assertEquals('uniqueupdate@test.com', $contact['email_primary.email']);
     $this->assertEquals('Home', $contact['email_primary.location_type_id:name']);
+  }
+
+  // Priority #1 - Primary email + name
+  public function testMatchByPrimaryEmailAndName(): void {
+    $message = new RecurDonationMessage([
+      'first_name' => 'John',
+      'last_name' => 'Mouse',
+      'email' => 'john@test.org',
+      'gateway' => 'gravy',
+      'payment_method' => 'cc',
+      'country' => 'US',
+    ]);
+    WMFContact::save(FALSE)->setMessage($message->normalize())->execute();
+
+    // Same email + same name → should match immediately
+    $message2 = new RecurDonationMessage([
+      'first_name' => 'John',
+      'last_name' => 'Mouse',
+      'email' => 'john@test.org',
+      'gateway' => 'gravy',
+      'payment_method' => 'ach',
+      'country' => 'US',
+    ]);
+    WMFContact::save(FALSE)->setMessage($message2->normalize())->execute();
+
+    $emails = Email::get(FALSE)
+      ->addWhere('email', '=', 'john@test.org')
+      ->execute();
+
+    $this->assertCount(1, $emails);
+  }
+
+  // Priority #2 - Email + name (non-primary)
+  public function testMatchByEmailAndName(): void {
+    // Create contact
+    $msg1 = new RecurDonationMessage([
+      'first_name' => 'Jane',
+      'last_name' => 'Mouse',
+      'email' => 'primary@test.org',
+      'gateway' => 'gravy',
+      'payment_method' => 'cc',
+      'country' => 'US',
+    ]);
+    WMFContact::save(FALSE)->setMessage($msg1->normalize())->execute();
+
+    $contact = Contact::get(FALSE)
+      ->addWhere('email_primary.email', '=', 'primary@test.org')
+      ->addSelect('id')
+      ->execute()->first();
+    $this->ids['Contact'][] = $contact['id'];
+
+    // Add secondary email
+    Email::create(FALSE)
+      ->addValue('contact_id', $contact['id'])
+      ->addValue('email', 'secondary@test.org')
+      ->addValue('location_type_id:name', 'apple')
+      ->execute();
+
+    // Match attempt: Same Name + Secondary Email
+    $msg3 = new RecurDonationMessage([
+      'first_name' => 'Jane',
+      'last_name' => 'Mouse',
+      'email' => 'secondary@test.org',
+      'gateway' => 'gravy',
+      'payment_method' => 'google',
+      'country' => 'US',
+    ]);
+    WMFContact::save(FALSE)->setMessage($msg3->normalize())->execute();
+
+    $emails = Email::get(FALSE)
+      ->addWhere('email', '=', 'secondary@test.org')
+      ->addSelect('contact_id')
+      ->execute();
+
+    // msg3 should matched msg2 then only one contact
+    $this->assertCount(2, $emails);
+    $this->assertEquals($emails[0]['contact_id'], $emails[1]['contact_id']);
+  }
+
+  // Priority #3 — Primary + low-confidence
+  public function testMatchByPrimaryLowConfidence(): void {
+    $msg1 = new RecurDonationMessage([
+      'first_name' => 'Confidence',
+      'last_name' => 'Mouse',
+      'email' => 'low@test.org',
+      'gateway' => 'gravy',
+      'payment_method' => 'cc',
+      'country' => 'US',
+    ]);
+    WMFContact::save(FALSE)->setMessage($msg1->normalize())->execute();
+
+    // Name mismatch but primary + low-confidence location
+    $msg2 = new RecurDonationMessage([
+      'first_name' => 'LowConfidence',
+      'last_name' => 'Mouse',
+      'email' => 'low@test.org',
+      'gateway' => 'gravy',
+      'payment_method' => 'paypal',
+      'country' => 'US',
+    ]);
+    WMFContact::save(FALSE)->setMessage($msg2->normalize())->execute();
+
+    $emails = Email::get(FALSE)
+      ->addWhere('email', '=', 'low@test.org')
+      ->addSelect('location_type_id:name', 'contact_id')
+      ->execute();
+
+    $this->assertCount(2, $emails);
+    $this->assertEquals('Home', $emails[0]['location_type_id:name']);
+    $this->assertEquals('paypal', $emails[1]['location_type_id:name']);
+    $this->assertEquals($emails[0]['contact_id'], $emails[1]['contact_id']);
+  }
+
+  // Priority #4 — Email + location type
+  public function testMatchByEmailAndLocationType(): void {
+    // Attach apple email
+    $msg1 = new RecurDonationMessage([
+      'first_name' => 'Apple',
+      'last_name' => 'Mouse',
+      'email' => 'apple@test.org',
+      'gateway' => 'gravy',
+      'payment_method' => 'apple',
+      'country' => 'US'
+    ]);
+    WMFContact::save(FALSE)->setMessage($msg1->normalize())->execute();
+
+    // Should match via location type
+    $msg2 = new RecurDonationMessage([
+      'first_name' => 'Different',
+      'last_name' => 'Mouse',
+      'email' => 'apple@test.org',
+      'gateway' => 'gravy',
+      'payment_method' => 'apple',
+      'country' => 'US',
+    ]);
+    WMFContact::save(FALSE)->setMessage($msg2->normalize())->execute();
+
+    $emails = Email::get(FALSE)
+      ->addWhere('email', '=', 'apple@test.org')
+      ->execute();
+
+    $this->assertCount(1, $emails);
+  }
+
+  // Priority #5 — Low-confidence email match fallback
+  public function testMatchByLowConfidenceFallback(): void {
+    $msg1 = new RecurDonationMessage([
+      'first_name' => 'Fallback',
+      'last_name' => 'Mouse',
+      'email' => 'fallback@test.org',
+      'gateway' => 'gravy',
+      'payment_method' => 'paypal',
+      'country' => 'US',
+    ]);
+    WMFContact::save(FALSE)->setMessage($msg1->normalize())->execute();
+
+    // No name match, no location match → fallback
+    $msg2 = new RecurDonationMessage([
+      'first_name' => 'Another',
+      'last_name' => 'Mouse',
+      'email' => 'fallback@test.org',
+      'gateway' => 'gravy',
+      'payment_method' => 'google',
+      'country' => 'US',
+    ]);
+    WMFContact::save(FALSE)->setMessage($msg2->normalize())->execute();
+
+    $emails = Email::get(FALSE)
+      ->addWhere('email', '=', 'fallback@test.org')
+      ->addSelect('contact_id')
+      ->execute();
+
+    $this->assertCount(2, $emails);
+    $this->assertEquals($emails[0]['contact_id'], $emails[1]['contact_id']);
   }
 }
