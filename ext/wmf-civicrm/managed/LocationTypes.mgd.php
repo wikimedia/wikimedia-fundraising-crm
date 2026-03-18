@@ -80,12 +80,12 @@ return [
     ],
   ],
   'achForm' => [
-    'name' => 'ach form',
+    'name' => 'achForm',
     'entity' => 'LocationType',
     'cleanup' => 'never',
     'params' => [
       'version' => 3,
-      'name' => 'ach form',
+      'name' => 'achForm',
       'display_name' => 'ACH-form',
     ],
   ],

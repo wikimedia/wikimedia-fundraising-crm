@@ -786,7 +786,7 @@ class SaveTest extends TestCase {
       ->addWhere('email_primary.email', '=', 'default@test.org')
       ->addSelect('id')
       ->execute()->first();
-    // latest trust should replace the old trust, then since old one is also trust, not record it
+    // latest trust should replace the old trust, replace the old trust as this is newer
     $trusted = new DonationMessage([
       'first_name' => 'cc',
       'last_name' => 'Mouse',
@@ -803,7 +803,7 @@ class SaveTest extends TestCase {
       ->execute()
       ->indexBy('location_type_id:name');
 
-    // new trusted becomes primary and name should update
+    // new trusted becomes primary but still use Home to indicate name trust
     $this->assertEquals(1, $emails['Home']['is_primary']);
     $this->assertEquals('cc@test.org', $emails['Home']['email']);
     // ach name is not from donation form, so should get update when trust source name come
@@ -849,11 +849,12 @@ class SaveTest extends TestCase {
     WMFContact::save(FALSE)->setMessage($ach2Message->normalize())->execute();
     $emails3 = Email::get(FALSE)
       ->addWhere('contact_id', '=', $contact['id'])
-      ->addSelect('email', 'is_primary', 'location_type_id:name')
+      ->addSelect('email', 'is_primary', 'location_type_id:name', 'contact_id.first_name')
       ->execute()
       ->indexBy('location_type_id:name');
     $this->assertEquals(1, $emails3['Home']['is_primary']);
     $this->assertEquals('default@test.org', $emails3['Home']['email']);
+    $this->assertEquals('cc', $emails3['Home']['contact_id.first_name']);
 
     // ach new updated still as secondary
     $this->assertEquals(0, $emails3['ach']['is_primary']);
@@ -1113,5 +1114,59 @@ class SaveTest extends TestCase {
 
     $this->assertCount(2, $emails);
     $this->assertEquals($emails[0]['contact_id'], $emails[1]['contact_id']);
+  }
+
+  public function testMapContactWithAchFormEmail(): void
+  {
+    // make donation with ach email as primary
+    $achInitMessage = new RecurDonationMessage([
+      'first_name' => 'ACH',
+      'last_name' => 'Mouse',
+      'email' => 'init-ach@test.org',
+      'gateway' => 'gravy',
+      'payment_method' => 'ach',
+      'billing_email' => 'ach-from-bank@mouse.com',
+      'country' => 'US',
+    ]);
+    WMFContact::save(FALSE)->setMessage($achInitMessage->normalize())->execute();
+    $contact = Contact::get(FALSE)
+      ->addWhere('email_primary.email', '=', 'init-ach@test.org')
+      ->addSelect('id')
+      ->execute()->first();
+    $this->ids['Contact'][] = $contact['id'];
+    $emails = Email::get(FALSE)
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->addSelect('is_primary', 'location_type_id:name', 'email', 'contact_id.first_name')
+      ->setOrderBy(['id'=> 'ASC'])
+      ->execute();
+    $this->assertCount(2, $emails);
+    $this->assertEquals('init-ach@test.org', $emails[0]['email']);
+    $this->assertEquals('achForm', $emails[0]['location_type_id:name']); // update to Home, since trusted name source get replaced
+    $this->assertEquals('ach-from-bank@mouse.com', $emails[1]['email']);
+    $this->assertEquals('ach', $emails[1]['location_type_id:name']);
+    $this->assertEquals('ACH', $emails[0]['contact_id.first_name']);
+    // map cc with primary email but not match name since achForm is also untrusted name source as primary name
+    // make donation with ach email as primary, and since both achForm and Home is trusted email source, keep one achForm replaced to home
+    $ccMessage = new RecurDonationMessage([
+      'first_name' => 'CC',
+      'last_name' => 'Mouse',
+      'email' => 'init-ach@test.org',
+      'gateway' => 'gravy',
+      'payment_method' => 'cc',
+      'country' => 'US'
+    ]);
+    WMFContact::save(FALSE)->setMessage($ccMessage->normalize())->execute();
+    $emailUpdates = Email::get(FALSE)
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->addSelect('is_primary', 'location_type_id:name', 'email', 'contact_id.first_name')
+      ->setOrderBy(['id'=> 'ASC'])
+      ->execute();
+    $this->assertCount(2, $emailUpdates);
+    // since both cc and achForm is trusted email, the newer one replace the old one as primary, but name remain the old cc one
+    $this->assertEquals('init-ach@test.org', $emailUpdates[0]['email']);
+    $this->assertEquals('Home', $emailUpdates[0]['location_type_id:name']); // update to Home, since trusted name source get replaced
+    $this->assertEquals('ach-from-bank@mouse.com', $emailUpdates[1]['email']);
+    $this->assertEquals('ach', $emailUpdates[1]['location_type_id:name']);
+    $this->assertEquals('CC', $emailUpdates[0]['contact_id.first_name']);
   }
 }

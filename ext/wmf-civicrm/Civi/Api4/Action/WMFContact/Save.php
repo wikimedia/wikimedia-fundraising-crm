@@ -91,15 +91,13 @@ class Save extends AbstractAction {
     }
 
     if (!empty($msg['email'])) {
+      $contact['email_primary.email'] = $msg['email'];
       // For updates we are still using our own process which may or may not confer benefits
       // For inserts however we can rely on the core api.
       // for payment method from third party like apple venmo paypal assign different email type
-      if (isset($msg['payment_method']) && !$this->isEmailSourceTrusted($msg['payment_method']) && $msg['payment_method'] !== 'ach') {
-        // for ach, we have the ach email as $msg['billing_email']
-        $contact['email_primary.location_type_id:name'] = $msg['payment_method'];
+      if (isset($msg['payment_method']) && $this->getIsLowConfidenceNameSource()) {
+        $contact['email_primary.location_type_id:name'] = $msg['payment_method'] === 'ach' ? 'achForm' : $msg['payment_method'];
       }
-
-      $contact['email_primary.email'] = $msg['email'];
     }
     // for gravy ACH, additional billing email might be provided here.
     if (!empty($msg['billing_email'])) {
@@ -733,7 +731,6 @@ class Save extends AbstractAction {
       'exactMatchPrimary' => NULL,
       'locationMatch' => NULL,
       'currentPrimary' => NULL,
-      'primaryTrusted' => FALSE,
     ];
 
     foreach ($existingEmails as $email) {
@@ -824,11 +821,29 @@ class Save extends AbstractAction {
       if (!$emailContext['primaryTrusted']) {
         $this->createPrimaryEmail($contact_id, $newEmail, $loc_type_id);
       }
+      // if current primary match is ach still update to the latest location type id
+      // $loc_type_id might be home or billing since it's trusted email source
+      if ($emailContext['exactMatchPrimary']['location_type_id:name'] == 'achForm' && $this->getMessage()['payment_method'] ?? '' !== 'ach') {
+        $this->updatePrimaryEmailLocation($emailContext['exactMatchPrimary']['id']);
+      }
     } else {
       if (!($emailContext['locationMatch'] && strcasecmp($emailContext['locationMatch']['email'], $newEmail) === 0)) {
         $this->createSecondaryEmailWithLocation($contact_id, $newEmail, $loc_type_id);
       }
     }
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private function updatePrimaryEmailLocation($emailId): void
+  {
+    Email::save(FALSE)->addRecord([
+      'id' => $emailId,
+      'location_type_id' => \CRM_Core_BAO_LocationType::getDefault()->id,
+      'is_primary' => 1,
+      'on_hold' => 0,
+    ])->execute();
   }
 
   /**
@@ -1059,7 +1074,9 @@ class Save extends AbstractAction {
       $isNameMatch = $this->isNameMatch($candidate, $msg);
       $isPrimary = $candidate['is_primary'];
       $isLowConfidence = $this->getIsLowConfidenceNameSource($candidate['location_type_id:name']);
-      $isLocationMatch = strcasecmp($msg['payment_method'], $candidate['location_type_id:name']) === 0;
+      $isLocationMatch = strcasecmp(
+        $msg['payment_method'] == 'ach' ? 'achForm' : $msg['payment_method'],
+        $candidate['location_type_id:name']) === 0;
 
       // 1) primary email + name
       if ($isNameMatch && $isPrimary) {
@@ -1235,9 +1252,8 @@ class Save extends AbstractAction {
    */
   protected function getIsLowConfidenceNameSource($primaryEmailType = NULL): bool {
     $paymentMethodsReturnLowConfidenceName = ['apple', 'google', 'venmo', 'paypal', 'ach'];
-    // todo: T418790 will use name type to define if IsLowConfidenceNameSource other than check email type
     // check if currency primary not trusted source, then no need to check first name and last name, otherwise check incoming payment_method.
-    if (!empty($primaryEmailType) && in_array(strtolower($primaryEmailType), $paymentMethodsReturnLowConfidenceName)) {
+    if (!empty($primaryEmailType) && (in_array(strtolower($primaryEmailType), $paymentMethodsReturnLowConfidenceName) || $primaryEmailType === 'achForm')) {
       return true;
     } else {
       if (
