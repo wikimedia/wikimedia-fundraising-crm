@@ -411,13 +411,7 @@ class AuditMessage extends DonationMessage {
         }
         if (empty($this->existingContribution) && $this->getBackendProcessorTxnID() && $this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
           // Looking at a gravy transaction in the Adyen file or a recurring in the trustly file.
-          $this->existingContribution = Contribution::get(FALSE)
-            ->setSelect($selectFields)
-            ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
-            // Try the parent ID, if provided (e.g. refund) or the backend processor txn ID.
-            ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorParentTxnID() ?: $this->getBackendProcessorTxnID())
-            ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
-            ->execute()->first() ?? [];
+          $this->existingContribution = $this->lookupByBackendProcessorTrxnId() ?? [];
         }
         $orderID = $this->getOrderID();
         $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
@@ -963,6 +957,21 @@ class AuditMessage extends DonationMessage {
 
   private function getReversalReversalFinancialTypeNames(): array {
     return ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'];
+  }
+
+  /**
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  private function lookupByBackendProcessorTrxnId(): ?array {
+    return Contribution::get(FALSE)
+      ->setSelect($this->getContributionSelectFields())
+      ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
+      // Try the parent ID, if provided (e.g. refund) or the backend processor txn ID.
+      ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorParentTxnID() ?: $this->getBackendProcessorTxnID())
+      ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
+      ->execute()->first();
   }
 
 }
