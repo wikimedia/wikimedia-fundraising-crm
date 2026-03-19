@@ -825,6 +825,11 @@ class AuditMessage extends DonationMessage {
       'contribution_recur_id',
       'contact_id',
       'invoice_id',
+      'contribution_extra.backend_processor_txn_id',
+      'contribution_extra.backend_processor_gateway_txn_id',
+      'contribution_extra.backend_processor_reversal_id',
+      'contribution_extra.payment_orchestrator_reconciliation_id',
+      'contribution_extra.payment_orchestrator_reversal_id',
     ];
   }
 
