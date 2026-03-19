@@ -637,17 +637,18 @@ class Save extends AbstractAction {
    *
    * @param int $country_id
    * @param string $state
-   *
    * @return int|null
+   *
+   * @throws \CRM_Core_Exception
    */
-  private function getStateID($country_id, $state) {
+  private function getStateID(int $country_id, string $state): ?int {
     $stateID = \CRM_Core_DAO::singleValueQuery('
-  SELECT id
-FROM civicrm_state_province s
-WHERE
-    s.country_id = %1
+    SELECT id
+      FROM civicrm_state_province s
+    WHERE
+      s.country_id = %1
     AND ( s.abbreviation = %2 OR s.name = %3)
-  ', [
+    ', [
       1 => [$country_id, 'String'],
       2 => [$state, 'String'],
       3 => [$state, 'String'],
@@ -659,6 +660,7 @@ WHERE
     \Civi::log('wmf')->notice('wmf_civicrm: Cannot find state: {state} (country {country})',
       ['state' => $state, 'country' => $country_id]
     );
+    return null;
   }
 
   /**
