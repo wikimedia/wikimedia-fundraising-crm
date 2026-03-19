@@ -123,7 +123,7 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
    * @throws \CRM_Core_Exception
    */
   public function getSource(): string {
-    return ts('Online Contribution') . ': ' . (!empty($this->_pcpInfo['title']) ? $this->_pcpInfo['title'] : $this->getContributionValue('frontend_title'));
+    return ts('Online Contribution') . ': ' . (!empty($this->_pcpInfo['title']) ? $this->_pcpInfo['title'] : $this->getContributionPageValue('frontend_title'));
   }
 
   /**
@@ -211,6 +211,7 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
     $paymentParams['campaign_id'] = $this->getCampaignID();
     $paymentParams['currency'] = $this->getCurrency();
     $paymentParams['description'] = $this->getSource();
+    $paymentParams['contactID'] = $this->getContactID();
     return $paymentParams;
   }
 
@@ -1722,7 +1723,8 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
       // be performed yet, so do it now.
       if (!$this->isSeparatePaymentSelected()) {
         $paymentParams['amount'] = $this->getMainContributionAmount();
-        $paymentParams += $this->getBasePaymentParams();
+        $paymentParams['currency'] = $this->getCurrency();
+        $paymentParams = $this->getBasePaymentParams() + $paymentParams;
         $paymentActionResult = $payment->doPayment($paymentParams);
         $paymentResults[] = ['contribution_id' => $paymentResult['contribution']->id, 'result' => $paymentActionResult];
       }
@@ -2264,8 +2266,7 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
 
     // If onbehalf-of-organization contribution / signup, add organization
     // and it's location.
-    if (isset($this->_values['onbehalf_profile_id']) &&
-      isset($behalfOrganization['organization_name']) &&
+    if (isset($this->_values['onbehalf_profile_id'], $behalfOrganization['organization_name']) &&
       ($this->_values['is_for_organization'] == 2 ||
         !empty($this->_params['is_for_organization'])
       )

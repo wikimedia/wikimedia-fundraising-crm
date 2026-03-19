@@ -1569,7 +1569,7 @@ class CRM_Financial_BAO_Order {
 
     $contributionValues['total_amount'] = $this->getTotalAmount();
     $contributionValues['tax_amount'] = $this->getTotalTaxAmount();
-    $contributionValues['amount_level'] = $this->getAmountLevel();
+    $contributionValues['amount_level'] = $contributionValues['amount_level'] ?? $this->getAmountLevel();
     $contributionValues['contribution_status_id:name'] = 'Pending';
     $contributionValues['line_item'] = [$this->getLineItems()];
     if ($this->getExistingContributionRecurID()) {
@@ -1638,6 +1638,9 @@ class CRM_Financial_BAO_Order {
       // entity values if not present already in EntityFields.
       $fields = (array) civicrm_api4($entity, 'getfields')->indexBy('name');
       $carryOverFields = array_intersect_key($this->contributionValues, $fields);
+      if ($entity === 'Participant') {
+        $carryOverFields += array_filter(['fee_amount' => $lineItem['unit_price'], 'fee_level' => $lineItem['label']]);
+      }
       $entityValues += $carryOverFields;
 
       if ($entity === 'Membership') {

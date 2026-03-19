@@ -111,9 +111,7 @@ class CRM_Custom_Form_Field extends CRM_Core_Form {
     }
 
     if ($this->_gid) {
-      $url = CRM_Utils_System::url('civicrm/admin/custom/group/field',
-        "reset=1&gid={$this->_gid}"
-      );
+      $url = CRM_Utils_System::url("civicrm/admin/custom/group/fields#/?gid=$this->_gid");
 
       $session = CRM_Core_Session::singleton();
       $session->pushUserContext($url);
@@ -482,7 +480,7 @@ class CRM_Custom_Form_Field extends CRM_Core_Form {
     // if view mode pls freeze it with the done button.
     if ($this->_action & CRM_Core_Action::VIEW) {
       $this->freeze();
-      $url = CRM_Utils_System::url('civicrm/admin/custom/group/field', 'reset=1&gid=' . $this->_gid);
+      $url = CRM_Utils_System::url("civicrm/admin/custom/group/fields#/?gid=$this->_gid");
       $this->addElement('xbutton',
         'done',
         ts('Done'),
@@ -908,22 +906,18 @@ AND    option_group_id = %2";
     // reset the cache
     Civi::cache('fields')->flush();
 
-    $msg = '<p>' . ts("Custom field '%1' has been saved.", [1 => $customField->label]) . '</p>';
-
     $buttonName = $this->controller->getButtonName();
     $session = CRM_Core_Session::singleton();
     if ($buttonName == $this->getButtonName('next', 'new')) {
-      $msg .= '<p>' . ts("Ready to add another.") . '</p>';
       $session->replaceUserContext(CRM_Utils_System::url('civicrm/admin/custom/group/field/add',
         'reset=1&gid=' . $this->_gid
       ));
     }
     else {
-      $session->replaceUserContext(CRM_Utils_System::url('civicrm/admin/custom/group/field',
-        'reset=1&gid=' . $this->_gid
-      ));
+      $session->replaceUserContext(CRM_Utils_System::url("civicrm/admin/custom/group/fields#/?gid=$this->_gid"));
     }
-    $session->setStatus($msg, ts('Saved'), 'success');
+
+    CRM_Core_Session::setStatus(ts("Custom field '%1' has been saved.", [1 => $customField->label]), ts('Saved'), 'success');
 
     // Add data when in ajax contect
     $this->ajaxResponse['customField'] = $customField->toArray();

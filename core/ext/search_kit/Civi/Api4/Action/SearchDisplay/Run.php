@@ -6,6 +6,7 @@ use Civi\API\Request;
 use Civi\Api4\Query\Api4SelectQuery;
 use Civi\Api4\Query\SqlExpression;
 use Civi\Api4\Result\SearchDisplayRunResult;
+use Civi\Api4\SearchDisplay;
 use Civi\Api4\Utils\CoreUtil;
 use Civi\Api4\Utils\FormattingUtil;
 
@@ -112,13 +113,16 @@ class Run extends AbstractRunAction {
         if ($this->getActionName() === 'run' && $pagerMode === 'page') {
           $this->addEditableInfo($result);
         }
+        if ($this->getActionName() === 'run') {
+          $this->addSubsearchDisplaySettings($result);
+        }
     }
 
     try {
       $apiResult = civicrm_api4($entityName, 'get', $apiParams, $index);
     }
     catch (\Throwable $e) {
-      \Civi::log()->error("SearchDisplay.Run error: " . get_class($e) . ": {$entityName}.get: [display_id] " . $this->display['id'] . ' [saved_search_id] ' . $this->display['saved_search_id'] . ' [label] ' . $this->display['label'] . ' [error] ' . $e->getMessage());
+      \Civi::log()->error("SearchDisplay.Run error: " . get_class($e) . ": {$entityName}.get: [display_id] " . ($this->display['id'] ?? 'null') . ' [saved_search_id] ' . ($this->display['saved_search_id'] ?? 'null') . ' [label] ' . ($this->display['label'] ?? '') . ' [error] ' . $e->getMessage());
       throw $e;
     }
     // Copy over meta properties to this result
@@ -253,6 +257,28 @@ class Run extends AbstractRunAction {
       }
     }
     return $toolbar;
+  }
+
+  private function addSubsearchDisplaySettings(SearchDisplayRunResult $result): void {
+    foreach ($this->display['settings']['columns'] as $col) {
+      $searchName = $col['subsearch']['search'] ?? NULL;
+      $displayName = $col['subsearch']['display'] ?? NULL;
+      if ($searchName && $displayName) {
+        $searchDisplay = SearchDisplay::get(FALSE)
+          ->addSelect('settings', 'saved_search_id.api_entity', 'type')
+          ->addWhere('name', '=', $displayName)
+          ->addWhere('saved_search_id.name', '=', $searchName)
+          ->execute()->first();
+        if ($searchDisplay) {
+          $result->subsearch ??= [];
+          $result->subsearch["{$searchName}.{$displayName}"] = [
+            'type' => $searchDisplay['type'],
+            'api_entity' => $searchDisplay['saved_search_id.api_entity'],
+            'settings' => $searchDisplay['settings'],
+          ];
+        }
+      }
+    }
   }
 
 }

@@ -183,7 +183,7 @@
         const buttons = getDraftButtons();
         const autoSaveEnabled = ctrl.getFormMeta().autosave_draft;
 
-        if ((!autoSaveEnabled && !buttons.length) || !ctrl.showSubmitButton || !CRM.config.cid) {
+        if ((!autoSaveEnabled && !buttons.length) || !ctrl.showSubmitButton || (!CRM.config.cid && !token)) {
           // No watchers needed
           return;
         }
@@ -369,25 +369,44 @@
         $('af-form[ng-form="' + ctrl.getFormMeta().name + '"]')
           .addClass('disabled')
           .find('button[ng-click="afform.submit()"]').prop('disabled', true);
-        displayError(errorMsg, ts('Sorry'), 'error');
+        CRM.alert(errorMsg, ts('Sorry'), 'error');
       }
 
-     function displayError(errorMsg, title, type) {
-        if (typeof Swal === 'function') {
-          Swal.fire({
-            icon: type,
-            html: errorMsg.replace("\n", '<br>')
-          });
+      const handleError = (error) => {
+        // see: CRM/Api4/Page/AJAX.php
+        if (error && error.error_code !== '1') {
+          CRM.alert(error.error_message, ts('Please resolve these issues'), 'warning');
         }
         else {
-          CRM.alert(errorMsg, title, type);
+          const message = error?.error_message ? error.error_message : ts('Unknown error');
+          CRM.alert(message, ts('There is a problem'), 'error');
         }
-      }
+      };
 
       this.submit = function () {
         // validate required fields on the form
         if (!ctrl.ngForm.$valid || !validateFileFields()) {
-          CRM.alert(ts('Please fill all required fields.'), ts('Form Error'));
+          // at this point we want the user to know to check the invalid fields
+          //
+          // the complication is the browser will natively trigger notifications
+          // for invalid fields, and focus the first one of these
+          //
+          // on the backend CRM.alert complements this by adding a global popup
+          // that does not block the user flow
+          //
+          // however on the frontend CRM.alert will trigger a popup (either our
+          // homebrew or sweetalert) which *interrupts* the browser putting focus
+          // on the invalid fields. in this case we are better off doing nothing
+          // and just letting the browser alerts do their work
+          //
+          // NOTE: if you set sweetalert to Override Everywhere it will turn the
+          // below alert into a popup on the backend too, which isn't great
+          //
+          // TODO: in the long run we should provide a way for callers of
+          // CRM.alert to specify between interrupting vs non-interrupting alerts
+          if (document.getElementById('crm-notification-container')) {
+            CRM.alert(ts('Please fill all required fields.'), ts('Form Error'));
+          }
           return;
         }
         status = CRM.status({error: ts('Not saved')});
@@ -421,13 +440,14 @@
           status.reject();
           $element.unblock();
 
-          // see: CRM/Api4/Page/AJAX.php
-          if (error.error_code !== '1') {
-            displayError(error.error_message, ts('Please resolve these issues'), 'warning');
-          }
-          else {
-            displayError(error.error_message, ts('There is a problem'), 'error');
-          }
+          handleError(error);
+
+          $element.trigger('crmFormError', {
+            afform: ctrl.getFormMeta(),
+            data: data,
+            submissionResponse: submissionResponse,
+            error: error
+          });
         });
       };
 
@@ -459,14 +479,7 @@
         })
         .catch(function(error) {
           setDraftStatus('unsaved');
-
-          // see: CRM/Api4/Page/AJAX.php
-          if (error.error_code !== '1') {
-            displayError(error.error_message, ts('Please resolve these issues'), 'warning');
-          }
-          else {
-            displayError(error.error_message, ts('There is a problem'), 'error');
-          }
+          handleError(error);
         });
       };
 

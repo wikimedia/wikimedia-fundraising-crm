@@ -753,11 +753,7 @@ MODIFY      {$columnName} varchar( $length )
    */
   public static function getFieldAlterSQL($params) {
     $sql = '';
-    $operation = $params['operation'];
-    if ($operation === 'add' && CRM_Core_BAO_SchemaHandler::checkIfFieldExists($params['table_name'], $params['name'])) {
-      $operation = 'modify';
-    }
-    switch ($operation) {
+    switch ($params['operation']) {
       case 'add':
         $separator = "\n";
         $sql .= self::buildFieldSQL($params, $separator, "ADD COLUMN ");

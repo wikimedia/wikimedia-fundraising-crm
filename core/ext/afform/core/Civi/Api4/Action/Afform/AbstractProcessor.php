@@ -235,7 +235,7 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
 
     // Limit number of records based on af-repeat settings
     // If 'min' is set then it is repeatable, and max will either be a number or NULL for unlimited.
-    if (isset($entity['min']) && isset($entity['max'])) {
+    if (isset($entity['min'], $entity['max'])) {
       $values = array_slice($values, 0, $entity['max'], TRUE);
     }
     $matchField = self::getNestedKey($values);
@@ -878,7 +878,7 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
    */
   public function replaceTokens(string $text): string {
     $matches = [];
-    preg_match_all('/[[a-zA-Z0-9_]{1,}\.[0-9]{1,}\.[^]]+]/', $text, $matches);
+    preg_match_all('/\[[a-zA-Z0-9_]+\.[0-9]+\.[^]]+]/', $text, $matches);
 
     foreach ($matches[0] as $match) {
       // strip [ ] and split on .

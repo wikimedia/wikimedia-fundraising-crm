@@ -273,6 +273,8 @@ class CRM_Price_BAO_PriceField extends CRM_Price_DAO_PriceField {
     $otherAmount = $qf->get('values');
     $config = CRM_Core_Config::singleton();
     $currencySymbol = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_Currency', $config->defaultCurrency, 'symbol', 'name');
+    // @todo - this is for calculate.tpl but doesn't seem to work here because
+    // the main form needs it - see Contribution_Form->assignCurrencySymbol()
     $qf->assign('currencySymbol', $currencySymbol);
     $qf->assign('currency', $config->defaultCurrency);
     // get currency name for price field and option attributes
@@ -405,6 +407,7 @@ class CRM_Price_BAO_PriceField extends CRM_Price_DAO_PriceField {
 
         $element = &$qf->addRadio($elementName, $label, $choice, [], NULL, FALSE, $choiceAttrs);
         foreach ($element->getElements() as $radioElement) {
+          $radioElement->setTextEscaped();
           // CRM-6902 - Add "max" option for a price set field
           if (in_array($radioElement->getValue(), $freezeOptions)) {
             self::freezeIfEnabled($radioElement, $customOption[$radioElement->getValue()]);
@@ -473,6 +476,7 @@ class CRM_Price_BAO_PriceField extends CRM_Price_DAO_PriceField {
           'class' => 'crm-select2' . $class,
           'data-price-field-values' => json_encode($customOption),
         ]);
+        $element->setOptionTextEscaped();
 
         // CRM-6902 - Add "max" option for a price set field
         $button = substr($qf->controller->getButtonName(), -4);
@@ -503,6 +507,7 @@ class CRM_Price_BAO_PriceField extends CRM_Price_DAO_PriceField {
             // CRM-14696 - Improve display for sold out price set options
             $check[$opId]->setText('<span class="sold-out-option">' . $check[$opId]->getText() . '&nbsp;(' . ts('Sold out') . ')</span>');
           }
+          $check[$opId]->setTextEscaped();
         }
         $element = &$qf->addGroup($check, $elementName, $label);
         if ($useRequired && $field->is_required) {

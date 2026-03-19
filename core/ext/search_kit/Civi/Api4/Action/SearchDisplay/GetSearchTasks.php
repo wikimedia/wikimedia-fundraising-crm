@@ -179,11 +179,21 @@ class GetSearchTasks extends \Civi\Api4\Generic\AbstractAction {
     }
 
     if ($entity['name'] === 'Contribution') {
+      $defaultSoftCreditTypeID = \CRM_Core_OptionGroup::getDefaultValue('soft_credit_type');
       $tasks['Contribution']['add_soft_credit'] = [
         'title' => E::ts('Add Soft Credits'),
-        'uiDialog' => ['templateUrl' => '~/crmSearchTasks/crmSearchTaskSoftCredit.html'],
         'icon' => 'fa-user-plus',
         'module' => 'crmSearchTasks',
+        'apiBatch' => [
+          'entity' => 'ContributionSoft',
+          'action' => 'save',
+          'runMsg' => E::ts('Adding soft credits...'),
+          'idField' => 'contribution_id',
+          'fields' => [
+            ['name' => 'contact_id', 'required' => TRUE],
+            ['name' => 'soft_credit_type_id', 'required' => TRUE, 'default_value' => $defaultSoftCreditTypeID],
+          ],
+        ],
       ];
     }
 
@@ -294,7 +304,7 @@ class GetSearchTasks extends \Civi\Api4\Generic\AbstractAction {
 
   private function getApiBatchFields(array &$task): bool {
     try {
-      $fieldInfo = civicrm_api4($task['entity'], 'getFields', [
+      $fieldInfo = civicrm_api4($task['apiBatch']['entity'] ?? $task['entity'], 'getFields', [
         'checkPermissions' => $this->getCheckPermissions(),
         'action' => $task['apiBatch']['action'] ?? 'update',
         'select' => ['name', 'label', 'description', 'input_type', 'data_type', 'serialize', 'options', 'fk_entity', 'required', 'nullable'],
