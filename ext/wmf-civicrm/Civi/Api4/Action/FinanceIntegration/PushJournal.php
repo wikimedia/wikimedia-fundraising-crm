@@ -227,6 +227,7 @@ class PushJournal extends AbstractAction {
             'location'   => !empty($row['LOCATION_ID']) ? ['id' => $row['LOCATION_ID']] : null,
             'department' => !empty($row['DEPT_ID'])     ? ['id' => $row['DEPT_ID']]     : null,
             'vendor'     => !empty($row['GLENTRY_VENDORID']) ? ['id' => $row['GLENTRY_VENDORID']] : null,
+            'project'    => !empty($row['GLENTRY_PROJECTID']) ? ['id' => $row['GLENTRY_PROJECTID']] : null,
             'nsp::funding' => ['key' => (string) ($row['GLDIMFUNDING'] === 'Unrestricted' ? 10004 : 10005)],
           ]),
         ];
