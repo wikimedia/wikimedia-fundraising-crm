@@ -56,4 +56,10 @@ class InvalidateChecksum extends AbstractAction {
       ->execute();
   }
 
+  /**
+   * @return array
+   */
+  public function getPermissions(): array {
+    return ["*always allow*"];
+  }
 }
