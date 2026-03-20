@@ -291,7 +291,8 @@ SELECT  id, html_type
     $this->assign('partiallyPaid', array_search('Partially paid', $statuses));
     $this->assign('pendingRefund', array_search('Pending refund', $statuses));
     $this->assign('participantStatus', $this->getParticipantValue('status_id'));
-
+    // @todo - this is for calculate.tpl but may not work here
+    // the main form needs it - see Contribution_Form->assignCurrencySymbol()
     $this->assign('currencySymbol', CRM_Core_BAO_Country::defaultCurrencySymbol());
 
     // line items block
@@ -329,7 +330,8 @@ SELECT  id, html_type
       ['onclick' => "showHideByValue('send_receipt','','notice','table-row','radio',false); showHideByValue('send_receipt','','from-email','table-row','radio',false);"]
     );
 
-    $this->add('select', 'from_email_address', ts('Receipt From'), $this->_fromEmails['from_email_id']);
+    $fromEmailSelect = $this->add('select', 'from_email_address', ts('Receipt From'), $this->_fromEmails['from_email_id']);
+    $fromEmailSelect->setOptionTextEscaped();
 
     $this->add('textarea', 'receipt_text', ts('Confirmation Message'));
 
@@ -840,7 +842,7 @@ SELECT  id, html_type
             $currentCount = 1;
           }
 
-          if (isset($priceSetFields[$priceFieldId]) && isset($priceSetFields[$priceFieldId]['options'][$optId])) {
+          if (isset($priceSetFields[$priceFieldId], $priceSetFields[$priceFieldId]['options'][$optId])) {
             $currentCount = $priceSetFields[$priceFieldId]['options'][$optId] * $optVal;
           }
 

@@ -352,27 +352,36 @@ class AuditMessage extends DonationMessage {
    * Get the CiviCRM status that maps to the audit status.
    *
    * @return string
-   * @throws \CRM_Core_Exception
    */
   protected function getMappedStatus(): string {
-     if ($this->isCancel()) {
-       return 'Cancelled';
-     }
-     if ($this->isRefund()) {
-       return 'Refunded';
-     }
-     if ($this->isChargeback()) {
-       return 'Chargeback';
-     }
+    if ($this->isCancel()) {
+      return 'Cancelled';
+    }
+    if ($this->isRefund()) {
+      return 'Refunded';
+    }
+    if ($this->isChargeback()) {
+      return 'Chargeback';
+    }
     if ($this->isReversal()) {
       return 'Reversal';
     }
-     return 'Completed';
+    if ($this->isRefundReversal()) {
+      return 'refund_reversal';
+    }
+    if ($this->isChargebackReversal()) {
+      return 'chargeback_reversal';
+    }
+    if ($this->isReversalReversal()) {
+      return 'reversal_reversal';
+    }
+    return 'Completed';
   }
 
   /**
    * @return array|null
    * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
    */
   public function getExistingContribution(): ?array {
     $debugInformation = [];
@@ -390,57 +399,19 @@ class AuditMessage extends DonationMessage {
       }
 
       $selectFields = $this->getContributionSelectFields();
-      if ($this->isRefund() || $this->isChargeback() || $this->isReversal()) {
-        // Check whether a standalone refund or chargeback has been created - this occurs when
-        // we get a chargeback on one we have already refunded.
-        $transaction = WMFTransaction::from_message($this->message);
-        $trxn_id = $transaction->get_unique_id();
-        $transaction->is_recurring = TRUE;
-        $trxn_id_recur = $transaction->get_unique_id();
-        $this->existingContribution = Contribution::get(FALSE)
-          ->setSelect($selectFields)
-          // Include status as otherwise we might pick up a balance transaction
-          // which would have a status of completed, rather than falling through
-          // to look at the main contribution record.
-          // @see RefundQueueConsumer->markRefund
-          // @todo - maybe give balance transactions an extra twiddle int
-          // their trxn_id - if we do that this will age out...
-          ->addWhere('contribution_status_id:name', '=', $this->getMappedStatus())
-          ->addClause('OR', ['trxn_id', '=', $trxn_id], ['trxn_id', '=', $trxn_id_recur])
-          ->execute()->first() ?? [];
+      if ($this->isRefund() || $this->isChargeback() || $this->isReversal()
+        || $this->isReversingPriorReversal()
+      ) {
+        // First check whether a standalone negative or reversal-reversing contribution already exists.
+        $this->existingContribution = $this->lookupByTrxnIdAndStatus() ?: [];
       }
-      if ($this->isReversingPriorReversal()) {
-        // Reversals would result in a discreet contribution with a trxn_id
-        // like CHARGEBACK_REVERSAL GRAVY e6d5ed2f-00cc-4e1f-a840-09dbc4a28df9
-        // or REFUND_REVERSAL GRAVY e6d5ed2f-00cc-4e1f-a840-09dbc4a28df9
-        // That is the only contribution that would be a 'match' for an incoming chargeback reversal
-        if (empty($this->existingContribution)) {
-          $trxn_id = WMFTransaction::from_message($this->message)->get_unique_id();
-          $debugInformation[$this->getType() . 'reversal_trxn_id'] = $trxn_id;
-          $this->existingContribution = Contribution::get(FALSE)
-            ->setSelect($selectFields)
-            ->addWhere('trxn_id', '=', $trxn_id)
-            ->execute()->first() ?? [];
-        }
-      }
-      else {
+      if (!$this->isReversingPriorReversal()) {
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
-          $this->existingContribution = Contribution::get(FALSE)
-            ->setSelect($selectFields)
-            ->addWhere('contribution_extra.payment_orchestrator_reconciliation_id', '=', $this->getPaymentOrchestratorReconciliationReference())
-            ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
-            ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
-            ->execute()->first() ?? [];
+          $this->existingContribution = $this->lookupByPaymentOrchestratorReconciliationId() ?? [];
         }
         if (empty($this->existingContribution) && $this->getBackendProcessorTxnID() && $this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
           // Looking at a gravy transaction in the Adyen file or a recurring in the trustly file.
-          $this->existingContribution = Contribution::get(FALSE)
-            ->setSelect($selectFields)
-            ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
-            // Try the parent ID, if provided (e.g. refund) or the backend processor txn ID.
-            ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorParentTxnID() ?: $this->getBackendProcessorTxnID())
-            ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
-            ->execute()->first() ?? [];
+          $this->existingContribution = $this->lookupByBackendProcessorTrxnId() ?? [];
         }
         $orderID = $this->getOrderID();
         $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
@@ -453,7 +424,7 @@ class AuditMessage extends DonationMessage {
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getGatewayOriginalTxnID()) {
           $this->existingContribution = Contribution::get(FALSE)
             ->setSelect($selectFields)
-            ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
+            ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
             ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
             ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayOriginalTxnID())
             ->execute()->first() ?? [];
@@ -854,6 +825,11 @@ class AuditMessage extends DonationMessage {
       'contribution_recur_id',
       'contact_id',
       'invoice_id',
+      'contribution_extra.backend_processor_txn_id',
+      'contribution_extra.backend_processor_gateway_txn_id',
+      'contribution_extra.backend_processor_reversal_id',
+      'contribution_extra.payment_orchestrator_reconciliation_id',
+      'contribution_extra.payment_orchestrator_reversal_id',
     ];
   }
 
@@ -923,13 +899,84 @@ class AuditMessage extends DonationMessage {
     $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
     $this->existingContribution = Contribution::get(FALSE)
       ->setSelect($this->getContributionSelectFields())
-      ->addWhere('financial_type_id:name', 'NOT IN', ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'])
+      ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
       ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
       ->addClause('OR',
         ['invoice_id', '=', $orderID],
         ['invoice_id', 'LIKE', $orderID . '|%']
       )
       ->execute()->first() ?? [];
+  }
+
+  /**
+   * Check whether a standalone contribution for the transaction has been created.
+   *
+   * These standalone transactions would occur when a contribution is charged back AND refunded.
+   * One of these would likely later be reversed - which would also be caught here.
+   *
+   * Trxn ID examples
+   * - CHARGEBACK_REVERSAL GRAVY e6d5ed2f-00cc-4e1f-a840-09dbc4a28df9
+   * - CHARGEBACK GRAVY e6d5ed2f-00cc-4e1f-a840-09dbc4a28df9
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+ */
+  private function lookupByTrxnIdAndStatus(): ?array {
+    $transaction = WMFTransaction::from_message($this->message);
+    $trxn_id = $transaction->get_unique_id();
+    $transaction->is_recurring = TRUE;
+    $trxn_id_recur = $transaction->get_unique_id();
+    return Contribution::get(FALSE)
+      ->setSelect($this->getContributionSelectFields())
+      // Include status as otherwise we might pick up a balance transaction
+      // which would have a status of completed, rather than falling through
+      // to look at the main contribution record.
+      // @see RefundQueueConsumer->markRefund
+      // @todo - maybe give balance transactions an extra twiddle in
+      // their trxn_id - if we do that this will age out...
+      ->addWhere('contribution_status_id:name', '=', $this->getMappedStatus())
+      ->addClause('OR', ['trxn_id', '=', $trxn_id], ['trxn_id', '=', $trxn_id_recur])
+      ->execute()->first();
+  }
+
+  /**
+   * Lookup using the payment orchestrator reconciliation ID.
+   *
+   * This is the Base62 version of the Gravy Gateway Txn ID.
+   *
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   */
+  private function lookupByPaymentOrchestratorReconciliationId(): ?array {
+    return Contribution::get(FALSE)
+      ->setSelect($this->getContributionSelectFields())
+      ->addWhere('contribution_extra.payment_orchestrator_reconciliation_id', '=', $this->getPaymentOrchestratorReconciliationReference())
+      // @todo - maybe remove the gateway check in favour of returning early if the
+      // payment_orchestrator_reconciliation_id is empty. Gateway hasn't turned out to be very reliable
+      // when dealing with refunds when Gr4vy involved.
+      ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
+      ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
+      ->execute()->first();
+  }
+
+  private function getReversalReversalFinancialTypeNames(): array {
+    return ['Chargeback Reversal', 'Refund Reversal', 'Reversal Reversal'];
+  }
+
+  /**
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  private function lookupByBackendProcessorTrxnId(): ?array {
+    return Contribution::get(FALSE)
+      ->setSelect($this->getContributionSelectFields())
+      ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
+      // Try the parent ID, if provided (e.g. refund) or the backend processor txn ID.
+      ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorParentTxnID() ?: $this->getBackendProcessorTxnID())
+      ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
+      ->execute()->first();
   }
 
 }

@@ -162,7 +162,7 @@ return [
       'sql_type' => 'int unsigned',
       'input_type' => 'EntityRef',
       'deprecated' => TRUE,
-      'description' => ts('Phone ID of the number called (optional - used if an existing phone number is selected).'),
+      'description' => ts('Unused deprecated column.'),
       'add' => '2.0',
       'input_attrs' => [
         'label' => ts('Phone (called)'),
@@ -178,7 +178,7 @@ return [
       'sql_type' => 'varchar(64)',
       'input_type' => 'Text',
       'deprecated' => TRUE,
-      'description' => ts('Phone number in case the number does not exist in the civicrm_phone table.'),
+      'description' => ts('Unused deprecated column.'),
       'add' => '2.0',
     ],
     'details' => [
@@ -284,7 +284,7 @@ return [
       'sql_type' => 'int unsigned',
       'input_type' => 'EntityRef',
       'deprecated' => TRUE,
-      'description' => ts('FK to Relationship ID'),
+      'description' => ts('Unused deprecated column.'),
       'add' => '2.2',
       'default' => NULL,
       'input_attrs' => [

@@ -4,7 +4,6 @@ namespace Civi\WMFHelper;
 
 use Civi;
 use Civi\Api4\ContributionSoft;
-use Civi\Api4\RelationshipCache;
 
 class Contact {
 
@@ -101,25 +100,35 @@ class Contact {
 
   /**
    * Is the individual employed by the given organization, taking soft credits into account.
+   * Return a score based on how long ago the most recent soft credit was
+   * 10: last 12 months, 5: last 36 months, 2: any time, 0 never
    *
    * @param int $organizationID
    * @param int $contactID
    *
-   * @return bool
+   * @return int
    * @throws \CRM_Core_Exception
    */
-  public static function isContactSoftCreditorOf(int $organizationID, int $contactID): bool {
-    $softCredits = ContributionSoft::get(FALSE)->addWhere('contact_id', '=', $contactID)
-      ->addSelect('contribution_id.contact_id')->execute();
-    if (count($softCredits) === 0) {
-      return FALSE;
+  public static function isContactSoftCreditorOf(int $organizationID, int $contactID): int {
+    $softCredit = ContributionSoft::get(FALSE)
+      ->addWhere('contact_id', '=', $contactID)
+      ->addWhere('contribution_id.contact_id', '=', $organizationID)
+      ->addSelect('contribution_id.receive_date')
+      ->addOrderBy('contribution_id.receive_date', 'DESC')
+      ->setLimit(1)->execute()->first();
+    if (!$softCredit) {
+      return 0;
     }
-    foreach ($softCredits as $softCredit) {
-      if ($softCredit['contribution_id.contact_id'] === $organizationID) {
-        return TRUE;
-      }
+    $receiveDate = new \DateTime($softCredit['contribution_id.receive_date']);
+    if ($receiveDate >= new \DateTime('-12 months')) {
+      return 10;
     }
-    return FALSE;
+    elseif ($receiveDate >= new \DateTime('-36 months')) {
+      return 5;
+    }
+    else {
+      return 2;
+    }
   }
 
   /**
@@ -165,55 +174,47 @@ class Contact {
       ->addWhere('is_deleted', '=', 0)
       ->addWhere('contact_type', '=', 'Individual')
       ->addOrderBy('organization_name', 'DESC')
-      ->addSelect('employer_id', 'organization_name', 'email_primary.email', 'address_primary.postal_code');
+      ->addSelect('employer_id', 'organization_name', 'email_primary.email', 'address_primary.postal_code', 'DAF.id')
+      ->addJoin('Contact AS DAF', 'LEFT', 'RelationshipCache',
+        ['id', '=', 'DAF.far_contact_id'],
+        ['DAF.near_relation:name', '=', '"Holds a Donor Advised Fund of"'],
+        ['DAF.id', '=', $organizationID]
+      );
 
+    // todo: handle cases where we might not match both names or we match email only even though we have names
+    // perhaps with a helper that would be used beyond imports
     foreach (['last_name' => $lastName, 'first_name' => $firstName, 'email_primary.email' => $email] as $fieldName => $fieldValue) {
       if ($fieldValue) {
         $contactGet->addWhere($fieldName, '=', $fieldValue);
       }
     }
     $contacts = $contactGet->execute();
-
-    if (count($contacts) === 1) {
-      $contact = $contacts->first();
-      if ($email
-        || ($organizationID && $contact['employer_id'] === $organizationID)
-        || ($organizationID && self::isContactSoftCreditorOf($organizationID, $contact['id']))) {
-        return $contact['id'];
-      }
+    if ($contacts->count() === 0) {
       return FALSE;
     }
 
-    if (count($contacts) > 1) {
-      $possibleContacts = [];
-      foreach ($contacts as $contact) {
-        if ($organizationID && ($contact['employer_id'] === $organizationID || self::isContactSoftCreditorOf($organizationID, $contact['id']))) {
-          $possibleContacts[] = $contact['id'];
-        }
+    $scores = [];
+    foreach ($contacts as $contact) {
+      $scores[$contact['id']] = 0;
+      if ($contact['email_primary.email']) {
+        $scores[$contact['id']] += 10;
       }
-      if (count($possibleContacts) > 1) {
-        foreach ($possibleContacts as $index => $possibleContactID) {
-          $employerID = $contacts->indexBy('id')[$possibleContactID]['employer_id'];
-          // If they are employed by someone else then they have possibly moved on.
-          if (($employerID && $employerID !== $organizationID) || !$employerID) {
-            unset($possibleContacts[$index]);
-          }
-        }
+      if ($contact['address_primary.postal_code'] && $postalCode &&
+        mb_substr($contact['address_primary.postal_code'], 0, 5) === mb_substr($postalCode, 0, 5)) {
+        $scores[$contact['id']] += 10;
       }
-      // If we still have 2+ matches, try zip code and return the first match if we find one.
-      if ((count($possibleContacts) > 1) && $postalCode) {
-        foreach ($possibleContacts as $possibleContactID) {
-          $zipCode = $contacts->indexBy('id')[$possibleContactID]['address_primary.postal_code'];
-          if (mb_substr($zipCode, 0, 5) === mb_substr($postalCode, 0, 5)) {
-            return $possibleContactID;
-          }
-        }
+      if (($organizationID && $contact['employer_id'] === $organizationID) || $contact['DAF.id']) {
+        $scores[$contact['id']] += 25;
+        // We don't need to check soft credits if we have employer or DAF.
+        continue;
       }
-      if (count($possibleContacts) >= 1) {
-        return reset($possibleContacts);
+      if ($organizationID) {
+        $scores[$contact['id']] += self::isContactSoftCreditorOf($organizationID, $contact['id']);
       }
     }
-    return FALSE;
+
+    arsort($scores);
+    return $scores[array_key_first($scores)] > 0 ? array_key_first($scores) : FALSE;
   }
 
   /**

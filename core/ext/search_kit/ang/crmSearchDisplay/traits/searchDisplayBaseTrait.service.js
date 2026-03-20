@@ -59,9 +59,6 @@
           });
         }
 
-        _.each(ctrl.onInitialize, function(callback) {
-          callback.call(ctrl, $scope, $element);
-        });
         ctrl.onInitialize.forEach(callback => callback.call(ctrl, $scope, $element));
 
         // _.debounce used here to trigger the initial search immediately but prevent subsequent launches within 300ms
@@ -305,6 +302,10 @@
       getFieldTemplate: function(colIndex, colData) {
         let colType = this.columns[colIndex].type;
         if (colType === 'include') {
+          // Throw exception if path doesn't start with '~/'
+          if (/^~\/.+/.test(this.columns[colIndex].path) === false) {
+            throw 'Invalid path for include column: "' + this.columns[colIndex].path + '"';
+          }
           return this.columns[colIndex].path;
         }
         if (colType === 'field') {

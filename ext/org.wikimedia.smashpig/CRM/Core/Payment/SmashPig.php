@@ -287,6 +287,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
       in_array($params['payment_instrument'] , ['iDeal', 'SEPA Direct Debit']) => 'rtbt',
       $params['payment_instrument'] === 'Paypal' => 'paypal',
       $params['payment_instrument'] === 'Venmo' => 'venmo',
+      $params['payment_instrument'] === 'Cash' => 'cash',
       str_starts_with($params['payment_instrument'], 'Bank Transfer:') => 'bt',
       str_starts_with($params['payment_instrument'], 'Google Pay') => 'google',
       str_starts_with($params['payment_instrument'], 'Apple Pay') => 'apple',
@@ -314,6 +315,8 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
         return 'upi';
       case 'Bank Transfer: PayTM Wallet':
         return 'paytmwallet';
+      case 'Cash':
+        return ($params['currency'] === 'BRL') ? 'pix' : null;
       default:
         // TODO: add new helper function to FinanceInstrument
         return null;
