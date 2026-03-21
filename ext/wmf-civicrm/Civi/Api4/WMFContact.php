@@ -109,9 +109,9 @@ class WMFContact extends Generic\AbstractEntity {
    */
   public static function permissions():array {
     return [
-      'getCommunicationsPreferences' => '*always allow*',
-      'getDonorSummary' => '*always allow*',
-      'doubleOptIn' => '*always allow*',
+      'getCommunicationsPreferences' => 'access AJAX API',
+      'getDonorSummary' => 'access AJAX API',
+      'doubleOptIn' => 'access AJAX API',
       'save' => 'edit all contacts',
     ];
   }

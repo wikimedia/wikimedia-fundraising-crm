@@ -20,6 +20,6 @@ class GetCiviCRMStatus extends AbstractAction
    * @return array
    */
   public function getPermissions(): array {
-    return ["*always allow*"];
+    return ["access AJAX API"];
   }
 }

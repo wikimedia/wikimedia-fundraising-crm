@@ -96,7 +96,7 @@ class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase imple
      ])->execute();
 
     $checksum = CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
-    $contact =  \Civi\Api4\WMFContact::getCommunicationsPreferences()
+    $contact =  \Civi\Api4\WMFContact::getCommunicationsPreferences(FALSE)
       ->setChecksum($checksum)
       ->setContact_id($contactID)
       ->execute()->first();
