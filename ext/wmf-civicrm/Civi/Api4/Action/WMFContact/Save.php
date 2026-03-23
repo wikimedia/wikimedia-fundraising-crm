@@ -91,15 +91,13 @@ class Save extends AbstractAction {
     }
 
     if (!empty($msg['email'])) {
+      $contact['email_primary.email'] = $msg['email'];
       // For updates we are still using our own process which may or may not confer benefits
       // For inserts however we can rely on the core api.
       // for payment method from third party like apple venmo paypal assign different email type
-      if (isset($msg['payment_method']) && !$this->isEmailSourceTrusted($msg['payment_method']) && $msg['payment_method'] !== 'ach') {
-        // for ach, we have the ach email as $msg['billing_email']
-        $contact['email_primary.location_type_id:name'] = $msg['payment_method'];
+      if (isset($msg['payment_method']) && $this->getIsLowConfidenceNameSource()) {
+        $contact['email_primary.location_type_id:name'] = $msg['payment_method'] === 'ach' ? 'achForm' : $msg['payment_method'];
       }
-
-      $contact['email_primary.email'] = $msg['email'];
     }
     // for gravy ACH, additional billing email might be provided here.
     if (!empty($msg['billing_email'])) {
@@ -557,7 +555,7 @@ class Save extends AbstractAction {
         ->execute();
 
       // If there is a consent from the front end, save it
-        $this->createPhoneConsent($existingContact['id']);
+      $this->createPhoneConsent($existingContact['id']);
     }
   }
 
@@ -733,7 +731,6 @@ class Save extends AbstractAction {
       'exactMatchPrimary' => NULL,
       'locationMatch' => NULL,
       'currentPrimary' => NULL,
-      'primaryTrusted' => FALSE,
     ];
 
     foreach ($existingEmails as $email) {
@@ -824,11 +821,29 @@ class Save extends AbstractAction {
       if (!$emailContext['primaryTrusted']) {
         $this->createPrimaryEmail($contact_id, $newEmail, $loc_type_id);
       }
+      // if current primary match is ach still update to the latest location type id
+      // $loc_type_id might be home or billing since it's trusted email source
+      if ($emailContext['exactMatchPrimary']['location_type_id:name'] == 'achForm' && $this->getMessage()['payment_method'] ?? '' !== 'ach') {
+        $this->updatePrimaryEmailLocation($emailContext['exactMatchPrimary']['id']);
+      }
     } else {
       if (!($emailContext['locationMatch'] && strcasecmp($emailContext['locationMatch']['email'], $newEmail) === 0)) {
         $this->createSecondaryEmailWithLocation($contact_id, $newEmail, $loc_type_id);
       }
     }
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private function updatePrimaryEmailLocation($emailId): void
+  {
+    Email::save(FALSE)->addRecord([
+      'id' => $emailId,
+      'location_type_id' => \CRM_Core_BAO_LocationType::getDefault()->id,
+      'is_primary' => 1,
+      'on_hold' => 0,
+    ])->execute();
   }
 
   /**
@@ -881,16 +896,13 @@ class Save extends AbstractAction {
   /**
    * Look for existing exact-match contact in the database.
    *
-   * Match strategy order of priority:
+   * Match strategy order of priority (Return the oldest contact ID (lowest ID) if multiple matches exist):
    * 1: Direct ID lookup – If contact_id is provided, fetch that contact directly.
    * 2: Name validation – If either first_name or last_name is missing and not from low confidence source, like ach might missing name, stop searching (return NULL).
    * 3: External identifier match – Look up by custom external identifier fields (e.g., Venmo username, paypal payerid).
    * -  Venmo-specific logic – For Venmo payments, prioritize matching by phone number or Venmo email, then update the username if needed.
    * 4: ACH billing email match – For ACH payments, check if a contact exists with the provided billing email tagged as ach location type.
-   * 5: Primary email + name match – Search by primary email address:
-   * - First, try exact name match (case-insensitive)
-   * - If no exact match, accept low-confidence name sources (e.g., third-party payments)
-   * - Return the oldest contact ID (lowest ID) if multiple matches exist
+   * 5: Email Match - Update based on Email/name/location type
    * 6: Address match – As a fallback, search by street address, city, postal code, and name if all address fields meet minimum length requirements.
    * No match – Return NULL if no contact is found through any method.
    * The method returns the contact array with id, first_name, and last_name keys, or NULL if no match is found.
@@ -930,9 +942,9 @@ class Save extends AbstractAction {
       }
     }
 
-    // Strategy 5: Primary email + name match
+    // Strategy 5: Match by Email with different confidence leve
     if (!empty($msg['email'])) {
-      $contact = $this->matchByPrimaryEmail($msg);
+      $contact = $this->matchByEmail($msg);
       if ($contact) {
         return $contact;
       }
@@ -1031,15 +1043,21 @@ class Save extends AbstractAction {
   }
 
   /**
+   * Match by email with different confidence level (priority order):
+   * 1) primary email + name (case-insensitive)
+   * 2) email + name (case-insensitive)
+   * 3) primary email where location type indicates a low-confidence source
+   * 4) email + location type
+   * 5) email where location type indicates a low-confidence source
+   *
    * @throws \CRM_Core_Exception
    */
-  private function matchByPrimaryEmail(array $msg): ?array {
+  private function matchByEmail(array $msg): ?array {
     $matches = Email::get(FALSE)
       ->addWhere('contact_id.is_deleted', '=', 0)
       ->addWhere('contact_id.is_deceased', '=', 0)
       ->addWhere('email', '=', $msg['email'])
-      ->addWhere('is_primary', '=', TRUE)
-      ->setSelect(['contact_id', 'contact_id.first_name', 'contact_id.last_name', 'location_type_id:name'])
+      ->setSelect(['contact_id', 'contact_id.first_name', 'contact_id.last_name', 'location_type_id:name', 'is_primary'])
       ->setOrderBy(['contact_id' => 'ASC'])
       ->execute();
 
@@ -1047,21 +1065,60 @@ class Save extends AbstractAction {
       return NULL;
     }
 
-    $lowConfidenceCandidates = [];
+    $nameMatches = [];
+    $primaryLowConfidence = [];
+    $locationMatches = [];
+    $lowConfidence = [];
 
     foreach ($matches as $candidate) {
-      // Exact name match (case-insensitive)
-      if ($this->isNameMatch($candidate, $msg)) {
+      $isNameMatch = $this->isNameMatch($candidate, $msg);
+      $isPrimary = $candidate['is_primary'];
+      $isLowConfidence = $this->getIsLowConfidenceNameSource($candidate['location_type_id:name']);
+      $isLocationMatch = strcasecmp(
+        $msg['payment_method'] == 'ach' ? 'achForm' : $msg['payment_method'],
+        $candidate['location_type_id:name']) === 0;
+
+      // 1) primary email + name
+      if ($isNameMatch && $isPrimary) {
         return $this->keyAsContact($candidate);
       }
 
-      // Save low-confidence matches for fallback
-      if ($this->getIsLowConfidenceNameSource($candidate['location_type_id:name'])) {
-        $lowConfidenceCandidates[] = $candidate;
+      // 2) email + name
+      if ($isNameMatch) {
+        $nameMatches[] = $candidate;
+      }
+
+      // 3) primary email + low-confidence
+      if ($isPrimary && $isLowConfidence) {
+        $primaryLowConfidence[] = $candidate;
+      }
+
+      // 4) email + location type when low-confidence
+      if ($isLocationMatch && $isLowConfidence) {
+        $locationMatches[] = $candidate;
+      }
+
+      // 5) email + low-confidence
+      if ($isLowConfidence) {
+        $lowConfidence[] = $candidate;
       }
     }
 
-    return !empty($lowConfidenceCandidates) ? $this->keyAsContact($lowConfidenceCandidates[0]) : NULL;
+    // Apply fallback priority
+    if (!empty($nameMatches)) {
+      return $this->keyAsContact($nameMatches[0]);
+    }
+    if (!empty($primaryLowConfidence)) {
+      return $this->keyAsContact($primaryLowConfidence[0]);
+    }
+    if (!empty($locationMatches)) {
+      return $this->keyAsContact($locationMatches[0]);
+    }
+    if (!empty($lowConfidence)) {
+      return $this->keyAsContact($lowConfidence[0]);
+    }
+
+    return NULL;
   }
 
   private function isNameMatch(array $candidate, array $msg): bool {
@@ -1195,9 +1252,8 @@ class Save extends AbstractAction {
    */
   protected function getIsLowConfidenceNameSource($primaryEmailType = NULL): bool {
     $paymentMethodsReturnLowConfidenceName = ['apple', 'google', 'venmo', 'paypal', 'ach'];
-    // todo: T418790 will use name type to define if IsLowConfidenceNameSource other than check email type
     // check if currency primary not trusted source, then no need to check first name and last name, otherwise check incoming payment_method.
-    if (!empty($primaryEmailType) && in_array(strtolower($primaryEmailType), $paymentMethodsReturnLowConfidenceName)) {
+    if (!empty($primaryEmailType) && (in_array(strtolower($primaryEmailType), $paymentMethodsReturnLowConfidenceName) || $primaryEmailType === 'achForm')) {
       return true;
     } else {
       if (
