@@ -13,7 +13,7 @@ use Civi\Api4\InvalidChecksum;
  * to set as invalid any checksums in the invalidated table.
  */
 function checksum_invalidator_civicrm_invalidateChecksum($contactID, $checksum, &$invalid) {
-  $invalid = (bool) InvalidChecksum::get(FALSE)
+  $invalid = $invalid || (bool) InvalidChecksum::get(FALSE)
     ->addWhere('contact_id', '=', $contactID)
     ->addWhere('checksum', '=', $checksum)
     ->execute()->count();
