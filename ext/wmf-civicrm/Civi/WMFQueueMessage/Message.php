@@ -172,7 +172,8 @@ class Message {
       ],
       'gateway_refund_id' => [
         'name' => 'gateway_refund_id',
-        'description' => 'Gateway Transaction reference for refund',
+        'description' => 'Gateway Transaction reference for refund. Note this could be the orchestrator or the backend processor.
+          More specific fields are backend_processor_reversal_id and payment_orchestrator_reversal_id',
         'data_type' => 'String',
         'used_for' => 'Audit messages',
       ],
@@ -235,15 +236,32 @@ class Message {
       ],
       'backend_processor_refund_id' => [
         'name' => 'backend_processor_refund_id',
-        'title' => 'Backend Processor refund ID - eg. adyen refund_trxn_id when main gateway is gravy',
+        'title' => 'Backend Processor refund ID',
+        'description' => 'deprecated in favour of backend_processor_reversal_id',
         'data_type' => 'String',
         'used_for' => 'Audit messages',
         'api_entity' => 'Contribution',
+      ],
+      'backend_processor_reversal_id' => [
+        'name' => 'backend_processor_reversal_id',
+        'title' => 'Backend Processor reversal ID',
+        'data_type' => 'String',
+        'used_for' => 'Audit messages',
+        'api_entity' => 'Contribution',
+        'api_field' => 'contribution_extra.backend_processor_reversal_id',
       ],
       'payment_orchestrator_reconciliation_id' => [
         'name' => 'payment_orchestrator_reconciliation_id',
         'api_field' => 'contribution_extra.payment_orchestrator_reconciliation_id',
         'api_entity' => 'Contribution',
+      ],
+      'payment_orchestrator_reversal_id' => [
+        'name' => 'payment_orchestrator_reversal_id',
+        'title' => 'Payment Orchestrator reversal ID',
+        'data_type' => 'String',
+        'used_for' => 'Audit messages',
+        'api_entity' => 'Contribution',
+        'api_field' => 'contribution_extra.payment_orchestrator_txn_id',
       ],
       'parent_contribution_id' => [
         'name' => 'parent_contribution_id',
