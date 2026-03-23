@@ -533,7 +533,7 @@ class SaveTest extends TestCase {
     $this->assertEquals('diff-firstname', $afterMatchPaypal[0]['first_name']);
   }
 
-  public function testTrustedSecondaryPromotesAndDemotesUntrustedPrimary(): void {
+  public function testSecondaryPromotesAndDemotesUntrustedPrimary(): void {
     // Step 1: Create contact with untrusted primary (venmo)
     $init = new RecurDonationMessage([
       'first_name' => 'Init',
@@ -553,7 +553,34 @@ class SaveTest extends TestCase {
 
     $this->ids['Contact'][] = $contact['id'];
 
-    // Step 2: Add trusted email (cc)
+    // Step 2: Add new, but untrusted email
+    $trusted = new DonationMessage([
+      'first_name' => 'Untrustworthy',
+      'last_name' => 'Mouse',
+      'email' => 'untrusted_primary@test.org',
+      'gateway' => 'adyen',
+      'payment_method' => 'google',
+      'contact_id' => $contact['id'],
+      'country' => 'US',
+    ]);
+    WMFContact::save(FALSE)->setMessage($trusted->normalize())->execute();
+
+    $emails = Email::get(FALSE)
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->addSelect('email', 'is_primary', 'on_hold', 'location_type_id:name')
+      ->execute()
+      ->indexBy('email');
+
+    // new email becomes primary because current primary is untrusted
+    $this->assertEquals(1, $emails['untrusted_primary@test.org']['is_primary']);
+    $this->assertEquals(0, $emails['untrusted_primary@test.org']['on_hold']);
+    $this->assertEquals('google', $emails['untrusted_primary@test.org']['location_type_id:name']);
+
+    // Old venmo demoted
+    $this->assertEquals(0, $emails['venmo_primary@test.org']['is_primary']);
+    $this->assertEquals('venmo', $emails['venmo_primary@test.org']['location_type_id:name']);
+
+    // Step 3: Add trusted email (cc)
     $trusted = new DonationMessage([
       'first_name' => 'Trusted',
       'last_name' => 'Mouse',
@@ -576,12 +603,12 @@ class SaveTest extends TestCase {
     $this->assertEquals(0, $emails['trusted_primary@test.org']['on_hold']);
     $this->assertEquals('Home', $emails['trusted_primary@test.org']['location_type_id:name']);
 
-    // Old venmo demoted
-    $this->assertEquals(0, $emails['venmo_primary@test.org']['is_primary']);
-    $this->assertEquals('venmo', $emails['venmo_primary@test.org']['location_type_id:name']);
+    // Old google demoted
+    $this->assertEquals(0, $emails['untrusted_primary@test.org']['is_primary']);
+    $this->assertEquals('google', $emails['untrusted_primary@test.org']['location_type_id:name']);
   }
 
-  public function testDoNotDemoteTrustedPrimary(): void {
+  public function testUpdatePrimary(): void {
     // Step 1: Create contact with trusted primary (cc)
     $init = new DonationMessage([
       'first_name' => 'Init',
@@ -1141,7 +1168,7 @@ class SaveTest extends TestCase {
       ->execute();
     $this->assertCount(2, $emails);
     $this->assertEquals('init-ach@test.org', $emails[0]['email']);
-    $this->assertEquals('achForm', $emails[0]['location_type_id:name']); // update to Home, since trusted name source get replaced
+    $this->assertEquals('achForm', $emails[0]['location_type_id:name']);
     $this->assertEquals('ach-from-bank@mouse.com', $emails[1]['email']);
     $this->assertEquals('ach', $emails[1]['location_type_id:name']);
     $this->assertEquals('ACH', $emails[0]['contact_id.first_name']);

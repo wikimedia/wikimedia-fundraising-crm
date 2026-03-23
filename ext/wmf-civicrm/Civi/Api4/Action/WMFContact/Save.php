@@ -772,7 +772,7 @@ class Save extends AbstractAction {
     $achLocationTypeId = \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Email', 'location_type_id', 'ach');
 
     if (empty($billingEmail)) {
-      $this->createSecondaryEmailWithLocation($contact_id, $msg['billing_email'], $achLocationTypeId);
+      $this->createEmail($contact_id, $msg['billing_email'], $achLocationTypeId, FALSE);
     } elseif (strcasecmp($msg['billing_email'], $billingEmail['email']) !== 0) {
       // replace to make sure only have one ach per contact
       Email::save(FALSE)->addRecord([
@@ -805,11 +805,11 @@ class Save extends AbstractAction {
     // 3️⃣ CREATE BRANCH - nothing matched and incoming email is trust or primary is not trusted
     // incoming email should replace the current primary
     if ($incomingTrusted || !$emailContext['primaryTrusted']) {
-      $this->createPrimaryEmail($contact_id, $newEmail, $loc_type_id);
+      $this->createEmail($contact_id, $newEmail, $loc_type_id, TRUE);
       return;
     }
 
-    $this->createSecondaryEmailWithLocation($contact_id, $newEmail, $loc_type_id);
+    $this->createEmail($contact_id, $newEmail, $loc_type_id, FALSE);
   }
 
   /**
@@ -819,7 +819,7 @@ class Save extends AbstractAction {
   {
     if ($incomingTrusted) {
       if (!$emailContext['primaryTrusted']) {
-        $this->createPrimaryEmail($contact_id, $newEmail, $loc_type_id);
+        $this->createEmail($contact_id, $newEmail, $loc_type_id, TRUE);
       }
       // if current primary match is ach still update to the latest location type id
       // $loc_type_id might be home or billing since it's trusted email source
@@ -828,7 +828,7 @@ class Save extends AbstractAction {
       }
     } else {
       if (!($emailContext['locationMatch'] && strcasecmp($emailContext['locationMatch']['email'], $newEmail) === 0)) {
-        $this->createSecondaryEmailWithLocation($contact_id, $newEmail, $loc_type_id);
+        $this->createEmail($contact_id, $newEmail, $loc_type_id, FALSE);
       }
     }
   }
@@ -864,32 +864,20 @@ class Save extends AbstractAction {
   }
 
   /**
-   * @throws \CRM_Core_Exception
-   */
-  private function createPrimaryEmail($contact_id, $newEmail, $loc_type_id): void
-  {
-    Email::save(FALSE)->addRecord([
-      'email' => $newEmail,
-      'contact_id' => $contact_id,
-      'location_type_id' => $loc_type_id,
-      'is_primary' => 1,
-    ])->execute();
-  }
-
-  /**
-   * @param $contact_id
-   * @param $newEmail
-   * @param $loc_type_id
+   * @param int $contact_id
+   * @param string $newEmail
+   * @param int $loc_type_id
+   * @param bool $isPrimary
    * @return void
    * @throws \CRM_Core_Exception
    */
-  private function createSecondaryEmailWithLocation($contact_id, $newEmail, $loc_type_id): void
+  private function createEmail($contact_id, $newEmail, $loc_type_id, $isPrimary): void
   {
     Email::save(FALSE)->addRecord([
       'email' => $newEmail,
       'contact_id' => $contact_id,
       'location_type_id' => $loc_type_id,
-      'is_primary' => 0
+      'is_primary' => $isPrimary,
     ])->execute();
   }
 
@@ -921,7 +909,7 @@ class Save extends AbstractAction {
     }
 
     // Strategy 2: Name validation if not low confidence name source - both names required for other lookups
-    if (empty($msg['first_name']) || empty($msg['last_name']) && !$this->getIsLowConfidenceNameSource()) {
+    if ((empty($msg['first_name']) || empty($msg['last_name'])) && !$this->getIsLowConfidenceNameSource()) {
       return NULL;
     }
 
@@ -942,7 +930,7 @@ class Save extends AbstractAction {
       }
     }
 
-    // Strategy 5: Match by Email with different confidence leve
+    // Strategy 5: Match by Email with different confidence level
     if (!empty($msg['email'])) {
       $contact = $this->matchByEmail($msg);
       if ($contact) {
