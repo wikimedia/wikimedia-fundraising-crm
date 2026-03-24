@@ -1204,7 +1204,10 @@ class Save extends AbstractAction {
       ->execute();
 
     $needToAddNewRelationship = TRUE;
-    $isProvidedByDonor = isset($msg['source_type']) && $msg['source_type'] === 'payments';
+    // Assume the relationship is provided by the donor if the message
+    // is from payments-wiki, the audit, or the IPN listener or job runner.
+    $isProvidedByDonor = isset($msg['source_type']) &&
+      in_array($msg['source_type'], ['audit', 'job-runner', 'listener', 'payments']);
     $relationshipParams = [];
     if ($isProvidedByDonor) {
       $relationshipParams['Relationship_Metadata.provided_by_donor'] = 1;
