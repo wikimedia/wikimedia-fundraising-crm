@@ -90,7 +90,7 @@ class Import {
 
     // Tweaks to apply during import only.
     if ($this->context === 'import' && $this->importType === 'contribution_import') {
-      // If we have imported a contribution ID, we are updating an existing contribution
+        // If we have imported a contribution ID, we are updating an existing contribution
       // and we need to not overwrite existing data.
       $createMode = empty($this->mappedRow['Contribution']['id']);
       if (!empty($this->mappedRow['SoftCreditContact'])) {
@@ -101,6 +101,9 @@ class Import {
         $this->mappedRow['SoftCreditContact'] = [$this->mappedRow['SoftCreditContact']];
       }
       if ($createMode) {
+        $this->mappedRow['Contribution']['Gift_Data.Channel'] ??= 'Other Offline';
+        $this->mappedRow['Contribution']['Gift_Data.is_major_gift'] = $this->isMajorGift();
+
         // Provide a default, allowing the import to be configured to override.
         $isMatchingGift = $this->isMatchingGift();
         // Now ensure converted total_amount is set.
@@ -730,6 +733,39 @@ class Import {
         return FALSE;
       }
     }
+    return TRUE;
+  }
+
+  /**
+   * Is this to be categorised as a major gift.
+   *
+   * @see https://docs.google.com/document/d/18ySEhZoVL14XWnZExn_G-SsirQgoEN10dWSfEYBn0qs/edit?usp=sharing
+   *
+   * @return bool
+   */
+  public function isMajorGift(): bool {
+    $channel = $this->mappedRow['Contribution']['Gift_Data.Channel'];
+    // Probably it would be the label/value not the name but try both.
+    if ($channel === 'Direct Mail' || $channel === 'Direct_Mail') {
+      $appeal = strtolower($this->mappedRow['Contribution']['Gift_Data.Appeal']);
+      if (str_ends_with($appeal, 'mge') || str_ends_with($appeal, 'mgf')) {
+        return TRUE;
+      }
+      $totalAmount = ContributionHelper::getConvertedTotalAmount($this->mappedRow['Contribution']);
+      if ($totalAmount >= 10000) {
+        return TRUE;
+      }
+      if ($totalAmount >= 250 &&
+        (
+          $appeal === 'white mail'
+          || str_ends_with($appeal, 'fwm')
+          || str_ends_with($appeal, 'ewm')
+        )) {
+        return TRUE;
+      }
+      return FALSE;
+    }
+    // ie Other offline, workplace giving, planned giving etc.
     return TRUE;
   }
 

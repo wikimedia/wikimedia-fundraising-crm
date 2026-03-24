@@ -1113,6 +1113,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       [],
       [],
       [],
+      ['name' => 'Contribution.Gift_Data.Fund', 'default_value' => 'Major Gifts - CC104'],
       ['name' => 'Contribution.contribution_extra.gateway', 'default_value' => 'fidelity'],
     ], [
       'dateFormats' => \CRM_Utils_Date::DATE_mm_dd_yy,
@@ -1136,8 +1137,12 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $contribution = Contribution::get(FALSE)
       ->addSelect('contact_id', 'donor_advised_fund.owns_donor_advised_for')
       ->addSelect('contact_id.address_primary.street_address')
+      ->addSelect('Gift_Data.*')
       ->addWhere('id', '=', $importRows[1]['_entity_id'])
       ->execute()->single();
+    $this->assertEquals('Major Gifts - CC104', $contribution['Gift_Data.Fund']);
+    $this->assertTrue($contribution['Gift_Data.is_major_gift']);
+    $this->assertEquals('Other Offline', $contribution['Gift_Data.Channel']);
     $this->assertEquals('75 Big Way', $contribution['contact_id.address_primary.street_address']);
     $softCredit = ContributionSoft::get(FALSE)
       ->addWhere('contribution_id', '=', $contribution['id'])
