@@ -222,6 +222,7 @@ class Message {
       'backend_processor_txn_id' => [
         'name' => 'backend_processor_txn_id',
         'title' => 'Backend Processor - eg. adyen trxn_id when main gateway is gravy',
+        'description' => 'For Adyen this should be the auth_id, varies by processor',
         'data_type' => 'String',
         'used_for' => 'Audit messages',
         'api_field' => 'contribution_extra.backend_processor_txn_id',
@@ -249,6 +250,24 @@ class Message {
         'used_for' => 'Audit messages',
         'api_entity' => 'Contribution',
         'api_field' => 'contribution_extra.backend_processor_reversal_id',
+      ],
+      'auth_id' => [
+        'name' => 'auth_id',
+        'title' => 'Auth ID',
+        'description' => 'Auth ID provided by the backend processor',
+        'data_type' => 'String',
+        'used_for' => 'Audit messages',
+        'api_field' => 'contribution_extra.auth_id',
+        'api_entity' => 'Contribution',
+      ],
+      'capture_id' => [
+        'name' => 'capture_id',
+        'title' => 'Capture ID',
+        'description' => 'Capture ID provided by the backend processor',
+        'data_type' => 'String',
+        'used_for' => 'Audit messages',
+        'api_field' => 'contribution_extra.capture_id',
+        'api_entity' => 'Contribution',
       ],
       'payment_orchestrator_reconciliation_id' => [
         'name' => 'payment_orchestrator_reconciliation_id',
