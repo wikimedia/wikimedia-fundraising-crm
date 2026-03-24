@@ -633,7 +633,7 @@ class AuditMessage extends DonationMessage {
    */
   public function getAuditMessageType(): string {
     $type = $this->message['type'] ?? 'settled';
-    if ($type === 'donations' || $type === 'recurring' || $type === 'recurring-modify') {
+    if ($type === 'donation' || $type === 'recurring' || $type === 'recurring-modify') {
       // It seems type could be one of these others here from fundraise up (the others are unset).
       // It might be nice to switch from main to donations but for now ...
       $type = 'settled';
