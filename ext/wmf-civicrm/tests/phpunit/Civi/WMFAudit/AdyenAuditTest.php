@@ -540,6 +540,35 @@ class AdyenAuditTest extends BaseAuditTestCase {
   }
 
   /**
+   * Test that our repair routine fixes incorrect capture id in auth field.
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function testRepairBackendGatewayTxnSetToCapture(): void {
+    $captureID = 'QRF';
+    $authID = 'FGH';
+    $contributionID = $this->createTestEntity('Contribution', [
+      'contribution_extra.backend_processor_txn_id' => $captureID,
+      'contact_id' => $this->createIndividual(['email_primary.email' => 'mouse@wikimedia.org']),
+      'total_amount' => 56.70,
+      'contribution_extra.payment_orchestrator_reconciliation_id' => '1w24hGOdCSFLtsgBQr2jKh',
+      'receive_date' => '2025-07-24 05:55:55',
+      'financial_type_id:name' => 'Recurring Gift - Cash',
+      'payment_instrument_id:name' => 'Credit Card: Visa',
+      'contribution_extra.gateway' => 'gravy',
+      'contribution_extra.gateway_txn_id' => 'MNOP',
+      'contribution_extra.backend_processor' => 'adyen',
+    ])['id'];
+    $this->runAuditBatch('donation_gravy', 'settlement_detail_report_batch_4.csv');
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('id', '=', $contributionID)
+      ->addSelect('contribution_extra.backend_processor_txn_id')
+      ->execute()->single();
+    $this->assertEquals($authID, $contribution['contribution_extra.backend_processor_txn_id']);
+  }
+
+  /**
    * Test that gravy adyen chargebacks are handled if picked up through the adyen audit.
    *
    * The match is found based on the backend processor fields.
