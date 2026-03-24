@@ -28,6 +28,11 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
     );
 
     $message = $this->truncateFields($message);
+    // Temporary check - so we don't mess with them while we solve https://phabricator.wikimedia.org/T421024
+    if (($message['utm_medium'] ?? '') === 'audit' && \CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_contribution_tracking WHERE id = ' . $message['id'])) {
+      $this->log("Probably instance of https://phabricator.wikimedia.org/T421024", ['id' => $message['id']]);
+      return;
+    }
 
     if (!empty($message['contribution_id'])) {
       $existingContributionID = $this->getExistingContributionID($message['id']);
