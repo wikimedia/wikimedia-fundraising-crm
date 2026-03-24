@@ -299,6 +299,8 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'original_net_amount' => -1,
               'original_fee_amount' => 0,
               'original_total_amount' => -1,
+              'backend_processor_reversal_id' => '4522268869855336',
+              'payment_orchestrator_reversal_id' => NULL,
             ],
           ],
         ],
@@ -325,6 +327,8 @@ class AdyenAuditTest extends BaseAuditTestCase {
               'original_net_amount' => -3,
               'original_fee_amount' => -2,
               'original_total_amount' => -1,
+              'backend_processor_reversal_id' => '4555568869855336',
+              'payment_orchestrator_reversal_id' => NULL,
             ],
           ],
         ],
@@ -721,9 +725,10 @@ class AdyenAuditTest extends BaseAuditTestCase {
 
     $reverseContributions = Contribution::get(FALSE)
       ->addWhere('contribution_settlement.settlement_batch_reversal_reference', '=', 'adyen_1120_USD')
-      ->addSelect('contribution_settlement.*', 'total_amount', 'contribution_status_id:name', 'fee_amount')
+      ->addSelect('contribution_settlement.*', 'total_amount', 'contribution_status_id:name', 'fee_amount', 'contribution_extra.backend_processor_reversal_id')
       ->execute();
     $this->assertCount(4, $reverseContributions);
+    $this->assertEquals('REF1', $reverseContributions->first()['contribution_extra.backend_processor_reversal_id']);
   }
 
   /**

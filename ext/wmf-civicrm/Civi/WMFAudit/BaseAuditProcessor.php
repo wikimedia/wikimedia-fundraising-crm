@@ -514,6 +514,8 @@ abstract class BaseAuditProcessor {
     }
     $allowList = [
       'parent_contribution_id',
+      'backend_processor_reversal_id',
+      'payment_orchestrator_reversal_id',
       'settlement_batch_reference',
       'settled_total_amount',
       'settled_fee_amount',

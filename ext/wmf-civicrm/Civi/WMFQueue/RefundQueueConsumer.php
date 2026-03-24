@@ -178,6 +178,8 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           'contribution_status_id:name',
           'contribution_extra.original_currency',
           'contribution_extra.original_amount',
+          'contribution_extra.backend_processor_reversal_id',
+          'contribution_extra.payment_orchestrator_reversal_id',
           'Gift_Data.*',
         ])->execute()->single();
     }
@@ -205,7 +207,8 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         $reversalTrxnId = $this->getRefundUniqueID($contribution['trxn_id'], $refund_gateway_txn_id, $messageObject->getContributionStatus());
         $reversedContribution = Contribution::get(FALSE)
           ->addWhere('trxn_id', '=', $reversalTrxnId)
-          ->addSelect('id')->execute()->first();
+          ->addSelect('id')
+          ->execute()->first();
         \Civi::log('wmf')->info('refund {reversal_trxn_id}: Recorded double-reversal', ['reversal_trxn_id' => $reversalTrxnId]);
         if ($reversedContribution) {
           throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution is already refunded: $contribution_id");
@@ -228,12 +231,27 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           'contribution_extra.original_amount' => $messageObject->getOriginalAmount(),
           'contribution_extra.parent_contribution_id' => $contribution_id,
           'contribution_extra.no_thank_you' => 1,
+          'contribution_extra.backend_processor_reversal_id' => $messageObject->getBackendProcessorReversalID(),
+          'contribution_extra.payment_orchestrator_reversal_id' => $messageObject->getPaymentOrchestratorReversalID(),
           // Add Other Online as a default channel for these extraneous refunds / chargebacks
         ] + $giftDataFields + array_filter($messageObject->getSettlementFields()) + ['Gift_Data.Channel' => 'Other Online'])
           ->execute();
         return;
       }
       throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution is already refunded: $contribution_id");
+    }
+
+    // Check that we don't have an existing reversal with a different processor reference
+    // We might also extend this to checking the payment_orchestrator_reversal_id, once we have
+    // some data for that.
+    if ($messageObject->getBackendProcessorReversalID() && $contribution['contribution_extra.backend_processor_reversal_id']
+      && $messageObject->getBackendProcessorReversalID() !== $contribution['contribution_extra.backend_processor_reversal_id']
+    ) {
+      throw new WMFException(WMFException::INVALID_MESSAGE, 'Mismatched backend processor reversal IDs: existing '
+        . $contribution['contribution_extra.backend_processor_reversal_id']
+        . ' and incoming : ' . $messageObject->getBackendProcessorReversalID()
+        . ' note that there this check might need watering down as there are real cases where paypal has multiple partial refunds'
+      );
     }
     // Deal with any discrepancies in the refunded amount.
     [$original_currency, $original_amount] = explode(" ", $contribution['source']);
@@ -268,6 +286,8 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           'contribution_status_id:name' => $messageObject->getContributionStatus(),
           'cancel_date' => $messageObject->getDate(),
           'refund_trxn_id' => $refund_gateway_txn_id,
+          'contribution_extra.backend_processor_reversal_id' => $messageObject->getBackendProcessorReversalID(),
+          'contribution_extra.payment_orchestrator_reversal_id' => $messageObject->getPaymentOrchestratorReversalID(),
         ]
           // These fields do include a settlement_date override
           // - I'm still working through whether that is a good thing

@@ -87,6 +87,8 @@ class AuditMessage extends DonationMessage {
     'gateway_txn_id',
   ];
   private array $existingContribution;
+
+  private ?array $parentContribution = NULL;
   private array $transactionDetails;
 
   /**
@@ -308,6 +310,9 @@ class AuditMessage extends DonationMessage {
       return NULL;
     }
     $existingContribution = $this->getExistingContribution();
+    if (!$existingContribution && $this->parentContribution) {
+      return $this->parentContribution['id'];
+    }
     if (!$existingContribution && $this->getGatewayAlternateParentTxnID()) {
       $existingContribution = Contribution::get(FALSE)
         ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
@@ -463,6 +468,7 @@ class AuditMessage extends DonationMessage {
             )
           )
         ) {
+          $this->parentContribution = $this->existingContribution;
           $this->existingContribution = [];
         }
       }

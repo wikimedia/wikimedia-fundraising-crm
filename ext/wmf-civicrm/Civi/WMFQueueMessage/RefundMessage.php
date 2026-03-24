@@ -21,6 +21,9 @@ class RefundMessage extends Message {
    *
    * @var array{
    *   gateway_parent_id: string,
+   *   backend_processor_reversal_id: string,
+   *   payment_orchestrator_reversal_id: string,
+   *   settlement_batch_reference: string,
    *   parent_contribution_id: int,
    *   type: string,
    *  }
@@ -165,6 +168,14 @@ class RefundMessage extends Message {
    */
   public function getOriginalCurrency(): string {
     return $this->message['original_currency'] ?? $this->message['gross_currency'];
+  }
+
+  public function getBackendProcessorReversalID() {
+    return $this->message['backend_processor_reversal_id'] ?? NULL;
+  }
+
+  public function getPaymentOrchestratorReversalID() {
+    return $this->message['payment_orchestrator_reversal_id'] ?? NULL;
   }
 
 }

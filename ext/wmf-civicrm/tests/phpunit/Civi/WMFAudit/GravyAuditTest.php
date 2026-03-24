@@ -127,6 +127,8 @@ class GravyAuditTest extends BaseAuditTestCase {
         'original_net_amount' => NULL,
         'original_fee_amount' => NULL,
         'original_total_amount' => NULL,
+        'backend_processor_reversal_id' => NULL,
+        'payment_orchestrator_reversal_id' => NULL,
       ],
     ];
   }
