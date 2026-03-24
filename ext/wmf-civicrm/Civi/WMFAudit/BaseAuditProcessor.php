@@ -1430,7 +1430,7 @@ abstract class BaseAuditProcessor {
         $key = $auditRecord['is_negative'] ? 'negative' : 'main';
         if ($key === 'main' && !empty($auditRecord['message']['transaction_details'])) {
           $fullRecord = $this->merge_data($auditRecord['message']['transaction_details']['message'], $auditRecord['message']);
-          if (empty($record['contribution_tracking']) && !empty($fullRecord['contribution_tracking_id'])) {
+          if (empty($fullRecord['contribution_tracking']) && !empty($fullRecord['contribution_tracking_id'])) {
             $result = ContributionTracking::get(FALSE)->addWhere('id', '=', $fullRecord['contribution_tracking_id'])->execute()->first();
             if (!$result) {
               $this->createContributionTracking($fullRecord['contribution_tracking_id'], $fullRecord['payment_method'] ?? '', $fullRecord['date'] ?? NULL, $fullRecord['language'] ?? NULL, $fullRecord['country'] ?? NULL);
