@@ -1431,7 +1431,10 @@ abstract class BaseAuditProcessor {
         if ($key === 'main' && !empty($auditRecord['message']['transaction_details'])) {
           $fullRecord = $this->merge_data($auditRecord['message']['transaction_details']['message'], $auditRecord['message']);
           if (empty($record['contribution_tracking']) && !empty($fullRecord['contribution_tracking_id'])) {
-            $this->createContributionTracking($fullRecord['contribution_tracking_id'], $fullRecord['payment_method'] ?? '', $fullRecord['date'] ?? NULL, $fullRecord['language'] ?? NULL, $fullRecord['country'] ?? NULL);
+            $result = ContributionTracking::get(FALSE)->addWhere('id', '=', $fullRecord['contribution_tracking_id'])->execute()->first();
+            if (!$result) {
+              $this->createContributionTracking($fullRecord['contribution_tracking_id'], $fullRecord['payment_method'] ?? '', $fullRecord['date'] ?? NULL, $fullRecord['language'] ?? NULL, $fullRecord['country'] ?? NULL);
+            }
           }
           unset($fullRecord['transaction_details'], $fullRecord['contribution_tracking']);
           $this->send_queue_message($fullRecord, 'main');
