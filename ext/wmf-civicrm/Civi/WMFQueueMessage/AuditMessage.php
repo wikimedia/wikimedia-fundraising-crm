@@ -432,6 +432,27 @@ class AuditMessage extends DonationMessage {
         if (!$this->existingContribution) {
           $this->lookupByOrderId();
         }
+
+        // Do not accept existing contribution with mismatch against backend_processor_txn_id.
+        if ($this->existingContribution &&
+          (
+            (
+              !$this->isNegative()
+              && !empty($this->message['backend_processor_txn_id'])
+              && !empty($this->existingContribution['contribution_extra.backend_processor_txn_id'])
+              && $this->message['backend_processor_txn_id'] !== $this->existingContribution['contribution_extra.backend_processor_txn_id']
+            )
+            ||
+            (
+              $this->isNegative()
+              && !empty($this->message['backend_processor_reversal_id'])
+              && !empty($this->existingContribution['contribution_extra.backend_processor_reversal_id'])
+              && $this->message['backend_processor_reversal_id'] !== $this->existingContribution['contribution_extra.backend_processor_reversal_id']
+            )
+          )
+        ) {
+          $this->existingContribution = [];
+        }
       }
     }
     if (!$this->existingContribution && !$this->isAggregateRow()) {
