@@ -4166,6 +4166,48 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Set gift data for all subsequent recurring gifts correctly.
+   *
+   * Note that I'm updating gl_code if updating other fields but if other
+   * fields are correct I'll get it in a different update.
+   *
+   * We are identifying these by financial type (32) and setting the following:
+   *
+   * is_major_gift = false
+   * channel = Recurring Gift,
+   * gl_code = GL43480
+   *
+   * The expected impacted rows are
+   * select c.id, contact_id, receive_date, channel, is_major_gift, count(*) FROM civicrm_contribution c LEFT JOIN civicrm_value_1_gift_data_7 v ON v.entity_id = c.id
+   * WHERE financial_type_id = 32 AND   (channel <> 'Recurring Gift' OR channel IS NULL  OR
+   * is_major_gift=1) GROUP BY channel, is_major_gift;
+   * +----------+------------+---------------------+----------------+---------------+----------+
+   * | id       | contact_id | receive_date        | channel        | is_major_gift | count(*) |
+   * +----------+------------+---------------------+----------------+---------------+----------+
+   * | 90200804 |   39180477 | 2023-07-01 00:30:27 | NULL           |             0 |     4542 |
+   * | 95743085 |    5200390 | 2023-10-21 09:03:04 | Recurring Gift |             1 |     2652 |
+   * +----------+------------+---------------------+----------------+---------------+----------+
+   * 2 rows in set (1 min 53.367 sec)
+   *
+   * @return bool
+   *
+   * Bug: T409994
+   */
+  public function upgrade_4930(): true {
+    CRM_Core_DAO::executeQuery('
+      UPDATE civicrm_contribution c
+        LEFT JOIN civicrm_value_1_gift_data_7 v ON v.entity_id = c.id
+      SET v.channel = "Recurring Gift",
+          v.gl_code = "GL43480",
+          v.is_major_gift = 0
+      WHERE financial_type_id = 32 AND
+          (channel <> "Recurring Gift" OR channel IS NULL  OR is_major_gift=1)
+
+    ');
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
