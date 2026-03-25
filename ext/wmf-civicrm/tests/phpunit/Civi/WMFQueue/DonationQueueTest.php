@@ -43,6 +43,8 @@ class DonationQueueTest extends BaseQueueTestCase {
       'gross' => 400,
       'original_gross' => 400,
       'original_currency' => 'USD',
+      'auth_id' => 'auth123',
+      'capture_id' => 'capture123',
     ]);
     $message2 = $this->processDonationMessage();
     $this->processContributionTrackingQueue();
@@ -64,7 +66,9 @@ class DonationQueueTest extends BaseQueueTestCase {
       'invoice_id' => $message['order_id'],
       'Gift_Data.Campaign' => 'Online Gift',
       'wmf_donor.last_donation_currency' => 'PLN',
-      'wmf_donor.last_donation_amount' => '952.34'
+      'wmf_donor.last_donation_amount' => '952.34',
+      'contribution_extra.auth_id' => 'auth123',
+      'contribution_extra.capture_id' => 'capture123',
     ];
     $this->assertExpectedContributionValues($expected, $message['gateway_txn_id'], $message['contribution_tracking_id']);
 
