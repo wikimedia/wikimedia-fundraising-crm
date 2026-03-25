@@ -159,7 +159,7 @@ class CRM_WMFFraud_DAO_PaymentsFraudBreakdown extends CRM_Core_DAO {
         ],
         'risk_score' => [
           'name' => 'risk_score',
-          'type' => CRM_Utils_Type::T_MONEY,
+          'type' => CRM_Utils_Type::T_FLOAT,
           'title' => E::ts('risk_score'),
           'required' => TRUE,
           'precision' => [
