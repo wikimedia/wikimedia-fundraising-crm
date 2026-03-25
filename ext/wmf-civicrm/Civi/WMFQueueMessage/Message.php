@@ -1171,7 +1171,7 @@ class Message {
         return 'Desktop Banner';
       }
       if (str_contains($utmSource, '_m_')
-        || str_contains($utmSource, 'mob')
+        || str_contains($utmSource, '_mob_')
       ) {
         return 'Mobile Banner';
       }
