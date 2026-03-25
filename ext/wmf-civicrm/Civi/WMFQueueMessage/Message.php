@@ -1432,7 +1432,10 @@ class Message {
       // It will already be a float in that case.
       return $this->message['settled_total_amount'];
     }
-    return $this->cleanMoney($this->message['gross'] ?? 0) * $this->getConversionRate();
+    if (empty($this->message['gross'])) {
+      return 0.0;
+    }
+    return $this->cleanMoney($this->message['gross']) * $this->getConversionRate();
   }
 
   public function getSettledAmountRounded(): string {
