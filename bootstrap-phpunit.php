@@ -9,7 +9,13 @@ define('CIVICRM_TEST', TRUE);
 define('DRUPAL_ROOT', __DIR__ . "/drupal");
 require_once(__DIR__ . "/vendor/mrmarkfrench/silverpop-php-connector/test/tests/BaseTestClass.php");
 require_once(__DIR__ . "/vendor/mrmarkfrench/silverpop-php-connector/test/tests/SilverpopBaseTestClass.php");
+set_error_handler(function ($severity, $message, $file, $line) {
+  if ($severity === E_USER_DEPRECATED || $severity === E_DEPRECATED) {
+    throw new \ErrorException($message, 0, $severity, $file, $line);
+  }
 
+  return false; // fallback to normal handler for others
+});
 // Argh.  Crib from _drush_bootstrap_drupal_site_validate
 $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
 
