@@ -1469,7 +1469,7 @@ abstract class BaseAuditProcessor {
     $transaction = $auditRecord['message'];
     $type = $auditRecord['audit_message_type'];
     if ($type === 'aggregate') {
-      $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] ??= Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP);
+      $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] ??= Money::zero($transaction['settled_currency']);
       $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] = $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']]->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
       $this->batches[$file][$transaction['settlement_batch_reference']]['settlement_date'] = date('Ymd', $transaction['settled_date']);
       return;
@@ -1659,11 +1659,11 @@ abstract class BaseAuditProcessor {
     if (!isset($this->batches[$file][$batchName])) {
       $this->batches[$file][$batchName] = [
         'transaction_count' => 0,
-        'settled_total_amount' => Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP),
-        'settled_fee_amount' => Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP),
-        'settled_net_amount' => Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP),
-        'settled_reversal_amount' => Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP),
-        'settled_donation_amount' => Money::of(0, $transaction['settled_currency'], NULL, RoundingMode::HALF_UP),
+        'settled_total_amount' => Money::zero($transaction['settled_currency']),
+        'settled_fee_amount' => Money::zero($transaction['settled_currency']),
+        'settled_net_amount' => Money::zero($transaction['settled_currency']),
+        'settled_reversal_amount' => Money::zero($transaction['settled_currency']),
+        'settled_donation_amount' => Money::zero($transaction['settled_currency']),
         'settlement_currency' => $transaction['settled_currency'],
         'settlement_date' => date('Ymd', $transaction['settled_date']),
         'settlement_batch_reference' => $batchName,

@@ -225,7 +225,7 @@ class GenerateBatch extends AbstractAction {
    */
   private function writeJournalToCsv(array $csv_rows, string $batchName): array {
     $renderedSql = $this->getBatchValue($batchName, 'sql');
-    $this->batchSummary[$batchName]['endowment_transfer'] = Money::of(0, $this->batchSummary[$batchName]['currency']);
+    $this->batchSummary[$batchName]['endowment_transfer'] = Money::zero($this->batchSummary[$batchName]['currency']);
 
     if ($this->isOutputCsv) {
       $batchJournalWriter = $this->getBatchJournalWriter($batchName);
@@ -240,8 +240,8 @@ class GenerateBatch extends AbstractAction {
         else {
           if (empty($this->batchSummary[$batchName]['accounts'][$row['ACCT_NO']])) {
             $this->batchSummary[$batchName]['accounts'][$row['ACCT_NO']] = [
-              'annual_fund' => Money::of(0, $this->batchSummary[$batchName]['currency']),
-              'endowment_fund' => Money::of(0, $this->batchSummary[$batchName]['currency']),
+              'annual_fund' => Money::zero($this->batchSummary[$batchName]['currency']),
+              'endowment_fund' => Money::zero($this->batchSummary[$batchName]['currency']),
             ];
           }
           $fund = $row['is_endowment'] ? 'endowment_fund' : 'annual_fund';
@@ -1101,8 +1101,8 @@ GROUP BY s.settlement_batch_reference
 
     $this->batchSummary[$batch['name']] = [
       'currency' => $batch['batch_data.settlement_currency'],
-      'annual_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
-      'endowment_fund_fees' => Money::of(0, $batch['batch_data.settlement_currency']),
+      'annual_fund_fees' => Money::zero($batch['batch_data.settlement_currency']),
+      'endowment_fund_fees' => Money::zero($batch['batch_data.settlement_currency']),
     ];
     $renderedSql = $this->getRenderedSql($batch);
     $batchedData = CRM_Core_DAO::executeQuery($renderedSql)->fetchAll();
@@ -1143,7 +1143,7 @@ GROUP BY s.settlement_batch_reference
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   private function validateBatch(array $batch, array $journalRows): array {
-    $debit = $credit = $feeDebit = $feeCredit = Money::of(0, $batch['batch_data.settlement_currency']);
+    $debit = $credit = $feeDebit = $feeCredit = Money::zero($batch['batch_data.settlement_currency']);
     $count = 0;
     foreach ($journalRows as $row) {
       $isFee = $this->isFee($row);
