@@ -10,7 +10,8 @@ use Civi\WorkflowMessage\NewChecksumLinkMessage;
 class NewChecksumLinkQueueConsumer extends QueueConsumer {
 
   /**
-   * Sends out emails with new links to the email preferences center or recurring upgrade page.
+   * Sends out emails with new links to the email preferences center, donor portal
+   * or recurring upgrade page.
    *
    * @param array $message
    *
@@ -80,7 +81,8 @@ class NewChecksumLinkQueueConsumer extends QueueConsumer {
       ->setValues([
         'contact' => $contact,
         'contactID' => $contactID,
-        'url' => $url
+        'url' => $url,
+        'targetPage' => $message['page'],
       ])
       ->execute()->first();
 
