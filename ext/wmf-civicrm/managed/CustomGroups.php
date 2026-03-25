@@ -624,7 +624,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
       'is_view' => 0,
       'option_values' => [
         ['name' => 'GL43481', 'label' => 'GL43481 Banner', 'value' => 'GL43481'],
-        ['name' => 'GL43484', 'label' => 'GL43484 Portal', 'value' => 'GL43484'],
+        ['name' => 'GL43484', 'label' => 'GL43484 Other Online', 'value' => 'GL43484'],
         ['name' => 'GL43482', 'label' => 'GL43482 Email', 'value' => 'GL43482'],
         ['name' => 'GL43483', 'label' => 'GL43483 Direct Mail', 'value' => 'GL43483'],
         ['name' => 'GL43480', 'label' => 'GL43480 Recurring Gift', 'value' => 'GL43480'],
