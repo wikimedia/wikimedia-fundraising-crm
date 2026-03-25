@@ -35,6 +35,20 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
   }
 
   /**
+   * We want to ignore one of
+   *
+   * settlement_detail_report_batch_1138.csv
+   * settlement_detail_report_2025-11-20.csv
+   *
+   * Prefer to keep the batch version and ignore the dated one.
+   *
+   * Bug: T418967
+   */
+  protected function regexForFilesToIgnore(): string {
+    return '/settlement_detail_report_\d{4}-\d{2}-\d{2}\.csv/';
+  }
+
+  /**
    * Note: the output is only used to sort files in chronological order
    * The settlement detail report is named with sequential batch numbers
    * while the payments detail report has the date at the end of the name

@@ -16,16 +16,18 @@ class AuditMessage extends DonationMessage {
    * @var array{
    *    gateway: string,
    *    audit_file_gateway: string,
+   *    auth_id: string,
    *    backend_processor: string,
    *    backend_processor_txn_id: string,
    *    backend_processor_parent_id: string,
    *    backend_processor_reversal_id: string,
-   *    grant_provider: string,
+   *    capture_id: string,
    *    gateway_txn_id: string,
    *    gateway_refund_id: string,
    *    gateway_account: string,
    *    gateway_status: string,
    *    gateway_parent_id: string,
+   *    grant_provider: string,
    *    invoice_id: string,
    *    contribution_tracking_id: string,
    *    payment_method: string,
@@ -633,7 +635,7 @@ class AuditMessage extends DonationMessage {
    */
   public function getAuditMessageType(): string {
     $type = $this->message['type'] ?? 'settled';
-    if ($type === 'donations' || $type === 'recurring' || $type === 'recurring-modify') {
+    if ($type === 'donation' || $type === 'recurring' || $type === 'recurring-modify') {
       // It seems type could be one of these others here from fundraise up (the others are unset).
       // It might be nice to switch from main to donations but for now ...
       $type = 'settled';

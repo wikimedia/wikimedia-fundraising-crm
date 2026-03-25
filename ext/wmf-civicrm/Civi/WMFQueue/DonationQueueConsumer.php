@@ -29,6 +29,13 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
 
   private AbstractCollector $statsCollector;
 
+  public function dequeueMessages(): int {
+    // Force RPOW to use the R/W database for all queries, so we
+    // don't end up with bad data in case of replication lag
+    \CRM_Core_DAO::executeQuery('select "civirpow-force-write"');
+    return parent::dequeueMessages();
+  }
+
   public function initiateStatistics(): void {
     $this->statsCollector = DonationStatsCollector::getInstance();
     $this->statsCollector->startDefaultTimer();
