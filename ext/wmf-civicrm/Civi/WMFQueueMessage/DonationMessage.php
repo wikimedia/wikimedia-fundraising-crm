@@ -249,6 +249,9 @@ class DonationMessage extends Message {
   }
 
   public function isMajorGift() : bool {
+    if ($this->isSubsequentRecurring()) {
+      return FALSE;
+    }
     if ($this->getReportingAmount() > 9999.99) {
       return TRUE;
     }
