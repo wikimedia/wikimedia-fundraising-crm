@@ -30,7 +30,7 @@
             {$field.label}
         </div>
         <div class="content">
-          {$field.value|escape}
+          {$field.value|purify}
         </div>
         <div class="clear"></div>
       </div>
