@@ -814,6 +814,33 @@ class AuditMessage extends DonationMessage {
     return $this->getGrantProvider() && $this->message['audit_file_gateway'] === 'paypal';
   }
 
+  /**
+   * Is this an older Adyen transaction with the backend_gateway_txn_id holding capture rather than authorize id.
+   * @return bool
+   */
+  public function isRequiresBackendProcessorTxnIdRepair(): bool {
+    if (!$this->getGateway() === 'gravy' || $this->getBackendProcessor() !== 'adyen'
+      || !$this->getCaptureID() || !$this->getAuthID()
+      || $this->message['type'] !== 'donation'
+    ) {
+      return FALSE;
+    }
+    if ($this->getSettlementTimeStamp() > strtotime('2026-03-25')) {
+      return FALSE;
+    }
+    return (bool) \CRM_Core_DAO::singleValueQuery('SELECT id FROM wmf_contribution_extra WHERE backend_processor_txn_id = %1 AND backend_processor = "adyen"', [
+      1 => [$this->message['capture_id'], 'String'],
+    ]);
+  }
+
+  public function getAuthID(): ?string {
+    return $this->message['auth_id'] ?? NULL;
+  }
+
+  public function getCaptureID(): ?string {
+    return $this->message['capture_id'] ?? NULL;
+  }
+
   public function getGrantProvider(): ?string {
     return ($this->message['grant_provider'] ?? NULL);
   }
