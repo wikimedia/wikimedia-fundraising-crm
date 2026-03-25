@@ -1183,7 +1183,9 @@ class Message {
       return 'Sidebar';
     }
 
-    if (str_starts_with($utmSource, 'sp') || $utmMedium === 'email') {
+    if (str_starts_with($utmSource, 'sp')
+      || str_starts_with($utmSource, 'civi_mail')
+      || $utmMedium === 'email') {
       return 'Email';
     }
     if ($utmMedium === 'portal') {

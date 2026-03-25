@@ -4248,6 +4248,41 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Treat all 'civi_mail%' utm_source as major gifts email.
+   *
+   * SELECT channel,utm_medium, MIN(receive_date), MAX(receive_date), COUNT(*) FROM civicrm_contribution_tracking t
+   * LEFT JOIN civicrm_value_1_gift_data_7 v
+   * ON v.entity_id = t.contribution_id
+   * LEFT JOIN civicrm_contribution c ON t.contribution_id = c.id WHERE utm_source LIKE ( 'civi_mail%')  GROUP BY channel, utm_medium;
+   * +--------------+------------+---------------------+---------------------+----------+
+   * | channel      | utm_medium | MIN(receive_date)   | MAX(receive_date)   | COUNT(*) |
+   * +--------------+------------+---------------------+---------------------+----------+
+   * | NULL         | endowment  | NULL                | NULL                |       60 |
+   * | NULL         | MGFE       | NULL                | NULL                |       92 |
+   * | Email        | endowment  | 2024-11-26 15:51:15 | 2025-01-15 01:45:16 |      463 |
+   * | Email        | MGFE       | 2024-11-26 15:49:06 | 2025-01-24 15:10:41 |      359 |
+   * | Other Online | endowment  | 2026-03-02 14:25:17 | 2026-03-02 14:25:17 |        1 |
+   * | Other Online | MGFE       | 2025-11-02 18:07:38 | 2025-11-02 18:07:38 |        1 |
+   *
+   * @return bool
+   *
+   * Bug: T409994
+ */
+  public function upgrade_4940(): bool {
+    CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_contribution_tracking t
+     LEFT JOIN civicrm_contribution c on t.contribution_id = c.id
+    LEFT JOIN civicrm_value_1_gift_data_7 v
+      ON v.entity_id = c.id
+    SET
+      v.is_major_gift = 1,
+      v.channel = 'Email',
+      v.gl_code = 'GL43485'
+      WHERE t.utm_source LIKE 'civi_mail%'");
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
