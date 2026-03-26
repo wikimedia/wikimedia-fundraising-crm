@@ -828,8 +828,19 @@ class AuditMessage extends DonationMessage {
     if ($this->getSettlementTimeStamp() > strtotime('2026-04-01')) {
       return FALSE;
     }
-    return (bool) \CRM_Core_DAO::singleValueQuery('SELECT id FROM wmf_contribution_extra WHERE backend_processor_txn_id = %1 AND backend_processor = "adyen"', [
+    if ($this->getAuthID() === $this->getCaptureID() && $this->getPaymentOrchestratorReconciliationReference()) {
+      // We don't get a capture ID here to check against - we just want to update to
+      // the transaction ID - to the one from the file
+      return !\CRM_Core_DAO::singleValueQuery('SELECT id
+        FROM wmf_contribution_extra WHERE backend_processor_txn_id = %1
+            AND backend_processor = %2', [
+        1 => [$this->message['backend_processor_txn_id'], 'String'],
+        2 => [$this->getBackendProcessor(), 'String'],
+      ]);
+    }
+    return (bool) \CRM_Core_DAO::singleValueQuery('SELECT id FROM wmf_contribution_extra WHERE backend_processor_txn_id = %1 AND backend_processor = %2', [
       1 => [$this->message['capture_id'], 'String'],
+      2 => [$this->getBackendProcessor(), 'String'],
     ]);
   }
 
