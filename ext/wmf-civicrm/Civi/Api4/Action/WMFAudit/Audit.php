@@ -223,6 +223,11 @@ class Audit extends AbstractAction {
    */
   public function repairOlderGravyAdyenTransactions(AuditMessage $message): void {
     if ($message->isRequiresBackendProcessorTxnIdRepair()) {
+      \Civi::log('wmf')->info('Updating backend processor for {auth_id}', [
+        'auth_id' => $message->getAuthID(),
+        'capture_id' => $message->getCaptureID(),
+        'backend_processor' => $message->getBackendProcessor(),
+      ]);
       \CRM_Core_DAO::executeQuery(
         'UPDATE wmf_contribution_extra
         SET backend_processor_txn_id = %1,
