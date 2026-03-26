@@ -11,6 +11,8 @@ use Civi\Api4\WorkflowMessage;
 use Civi\ExchangeRates\ExchangeRatesException;
 use Civi\WMFException\WMFException;
 use Civi\WMFQueueMessage\RecurringModifyMessage;
+use CRM_Utils_Date;
+use CRM_Utils_Money;
 
 class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
 
@@ -398,6 +400,10 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
     foreach ($fieldValues as $field => $value) {
       $newContributionRecur[$field] = $value;
     }
+
+    $oldContributionRecur['amount_formatted'] = CRM_Utils_Money::format( $oldContributionRecur['amount'], $oldContributionRecur['currency'], "%c%a %C" );
+    $newContributionRecur['amount_formatted'] = CRM_Utils_Money::format( $newContributionRecur['amount'], $newContributionRecur['currency'], "%c%a %C" );
+    $newContributionRecur['next_sched_contribution_date_formatted'] = CRM_Utils_Date::customFormat($newContributionRecur['next_sched_contribution_date'], '%B %E%f, %Y');
 
     ContributionRecur::update(FALSE)
       ->setValues($fieldValues)

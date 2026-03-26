@@ -248,6 +248,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
   public function testRecurringDowngrade(): void {
     $testRecurringContributionFor15Dollars = $this->createContributionRecur([
       'amount' => 15.00,
+      'next_sched_contribution_date' => '2026-03-26 17:48:35'
     ]);
 
     // The recurring donation has been reduced by 10 dollars
