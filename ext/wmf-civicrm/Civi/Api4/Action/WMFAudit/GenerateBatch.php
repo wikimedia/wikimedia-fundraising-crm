@@ -290,7 +290,7 @@ class GenerateBatch extends AbstractAction {
             $fromRow['CREDIT'] = $toBalancingRow['CREDIT'] = $row['DEBIT'];
             $fromBalancingRow['ACCT_NO'] = self::GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT;
             $toBalancingRow['ACCT_NO'] = self::GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE;
-            $transfer = $row['CREDIT'] - $row['DEBIT'];
+            $transfer = (string) ($row['CREDIT'] - $row['DEBIT']);
             $this->batchSummary[$batchName]['endowment_transfer'] = $this->batchSummary[$batchName]['endowment_transfer']->plus($transfer);
             $endowmentWriterFrom->insertOne($fromRow);
             $endowmentWriterFrom->insertOne($fromBalancingRow);
