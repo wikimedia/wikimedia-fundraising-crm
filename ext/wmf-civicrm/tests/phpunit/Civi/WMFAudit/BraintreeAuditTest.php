@@ -204,6 +204,10 @@ class BraintreeAuditTest extends BaseAuditTestCase {
     $file = $this->auditFileBaseDirectory . DIRECTORY_SEPARATOR . $directory . DIRECTORY_SEPARATOR . $this->gateway . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR . $fileName;
     try {
       $rows = json_decode(file_get_contents($file, 'r'), true, 512, JSON_THROW_ON_ERROR);
+      if (isset($rows['id'])) {
+        // Single row file.
+        $rows = [$rows];
+      }
     }
     catch (\JsonException $e) {
       // File is in new NDJSON format - each line is a valid json object.
@@ -221,8 +225,8 @@ class BraintreeAuditTest extends BaseAuditTestCase {
 
   public function createTransactionLog(array $row): void {
     if ($row['type'] ?? '' === 'CHARGEBACK') {
-      // Simplest for now - we don't have enough to create one.
-      return;
+      // Base it off the parent transaction.
+      $row = $row['transaction'];
     }
     $orderParts = explode('.', $row['orderId'] ?? '');
     if (!empty($orderParts[0])) {
@@ -244,7 +248,7 @@ class BraintreeAuditTest extends BaseAuditTestCase {
       'date' => $row['date'] ?? UtcDate::getUtcTimestamp( $row['createdAt'] ),
       'gateway' => $gateway,
       'gateway_account' => 'WikimediaDonations',
-      'order_id' => $trackingID . '.1',
+      'order_id' => $row['orderId'] ?? $trackingID . '.1',
       'gateway_txn_id' => $gatewayTxnID,
       'message' => [
         "gateway_txn_id" => $gatewayTxnID,
@@ -314,6 +318,27 @@ class BraintreeAuditTest extends BaseAuditTestCase {
       ->execute();
     $this->runAuditor();
     $this->assertMessages($expectedMessages);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function testAlreadyChargebackReversal(): void {
+    $this->createTestEntity('Contribution', [
+      'trxn_id' => 'BRAINTREE dHJhbnNhY3Rpb25fa2szNmZ4Y3A',
+      'contribution_extra.backend_processor' => 'braintree',
+      'contribution_extra.backend_processor_txn_id' => 'dHJhbnNh',
+      'contact_id' => $this->createIndividual(),
+      'total_amount' => 3.10,
+      'invoice_id' => '2339.5',
+      'financial_type_id:name' => 'Cash',
+    ]);
+    $this->runAuditBatch('chargeback_reversal', 'raw_disbursement_report_chargeback_2026-02-24_2026-02-24.json');
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('invoice_id', 'contribution_status_id:name')
+      ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'braintree_20260224_ch_USD')
+      ->execute();
+    $this->assertCount(1, $contribution);
   }
 
   /**
