@@ -11,6 +11,8 @@ use Civi\Api4\WorkflowMessage;
 use Civi\ExchangeRates\ExchangeRatesException;
 use Civi\WMFException\WMFException;
 use Civi\WMFQueueMessage\RecurringModifyMessage;
+use CRM_Utils_Date;
+use CRM_Utils_Money;
 
 class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
 
@@ -157,8 +159,8 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
    */
 
   protected function pauseRecurRecord(RecurringModifyMessage $message, array $msg): void {
-    $date = date_create($message->getNextScheduledDate());
-    $new_date = date_add($date, date_interval_create_from_date_string($msg['duration']));
+    $date = date_create_immutable($message->getNextScheduledDate());
+    $new_date = $date->add(date_interval_create_from_date_string($msg['duration']));
     $formatDate = date_format($new_date, 'Y-m-d H:i:s');
     $pauseScheduledParams = [
       'next_sched_contribution_date' => $formatDate,
@@ -398,6 +400,10 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
     foreach ($fieldValues as $field => $value) {
       $newContributionRecur[$field] = $value;
     }
+
+    $oldContributionRecur['amount_formatted'] = CRM_Utils_Money::format( $oldContributionRecur['amount'], $oldContributionRecur['currency'], "%c%a %C" );
+    $newContributionRecur['amount_formatted'] = CRM_Utils_Money::format( $newContributionRecur['amount'], $newContributionRecur['currency'], "%c%a %C" );
+    $newContributionRecur['next_sched_contribution_date_formatted'] = CRM_Utils_Date::customFormat($newContributionRecur['next_sched_contribution_date'], '%B %E%f, %Y');
 
     ContributionRecur::update(FALSE)
       ->setValues($fieldValues)
