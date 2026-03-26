@@ -68,6 +68,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       ->first();
     $activity = Activity::get(FALSE)
       ->addSelect('subject')
+      ->addSelect('details')
       ->addSelect('activity_tracking.*')
       ->addWhere('source_record_id', '=', $testRecurring['id'])
       ->addWhere('activity_type_id:name', '=', $this->getActivityTypeID('paused'))
@@ -81,6 +82,8 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
     $this->assertEquals("Paused recurring till {$formatDate}", $activity['subject']);
     $this->assertEquals(TRUE, $activity['activity_tracking.activity_is_from_donor_portal']);
     $this->assertEquals('Blast1', $activity['activity_tracking.activity_campaign']);
+    $decodedDetails = json_decode($activity['details'], true);
+    $this->assertEquals('2025-07-06 14:16:40', $decodedDetails['old_date']);
   }
 
   public function testRecurringCancel(): void {
