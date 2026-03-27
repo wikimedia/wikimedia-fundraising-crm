@@ -93,7 +93,21 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
 
     if (!$createPaymentResponse->isSuccessful()) {
       foreach ($createPaymentResponse->getErrors() as $error) {
-        Civi::log('wmf')->debug('Payment error message: ' . $error->getDebugMessage());
+        $message = 'Payment Error during recurring charge'
+          . '. Message: ' . $error->getDebugMessage()
+          . '. Payment Method: ' . $paymentMethod
+          . '. Payment Submethod: ' . $paymentSubmethod
+          . '. Request: ' . (json_encode($request, JSON_UNESCAPED_SLASHES) ?: 'Request encoding failed');
+        if ($createPaymentResponse->getRawResponse()) {
+          $message .= '. Response: ' . (json_encode($createPaymentResponse->getRawResponse(), JSON_UNESCAPED_SLASHES) ?: 'Response encoding failed');
+        }
+        // most validation error like below validation errors, where map to tax id or cvv and so on,
+        // if failed to categorized as validation error must be some non-general errors, then should get a failmail to alert us to fix it
+        if ($error->getErrorCode() == ErrorCode::VALIDATION) {
+          Civi::log('wmf')->alert($message);
+        } else {
+          Civi::log('wmf')->debug($message);
+        }
       }
       foreach ($createPaymentResponse->getValidationErrors() as $error) {
         $message = 'Validation error during recurring charge, in field: ' . $error->getField()
