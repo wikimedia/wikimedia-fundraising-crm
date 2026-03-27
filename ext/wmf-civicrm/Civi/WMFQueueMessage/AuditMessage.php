@@ -825,7 +825,7 @@ class AuditMessage extends DonationMessage {
     ) {
       return FALSE;
     }
-    if ($this->getSettlementTimeStamp() > strtotime('2026-03-26')) {
+    if ($this->getSettlementTimeStamp() > strtotime('2026-04-01')) {
       return FALSE;
     }
     return (bool) \CRM_Core_DAO::singleValueQuery('SELECT id FROM wmf_contribution_extra WHERE backend_processor_txn_id = %1 AND backend_processor = "adyen"', [
