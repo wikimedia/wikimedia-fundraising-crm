@@ -334,7 +334,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
   public function supportsRefund() {
     return in_array(
       $this->getPaymentProcessor()['name'],
-      ['adyen', 'braintree', 'dlocal', 'gravy', 'paypal']
+      ['adyen', 'braintree', 'dlocal', 'gravy', 'paypal_ec']
     );
   }
 

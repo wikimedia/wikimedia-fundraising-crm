@@ -1,6 +1,12 @@
 <?xml version="1.0"?>
 <menu>
   <item>
+    <path>civicrm/refund_contribution</path>
+    <page_callback>CRM_Wmf_Form_RefundContribution</page_callback>
+    <title>Refund contribution</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
     <path>civicrm/wmf-segment</path>
     <page_callback>CRM_Wmf_Page_Segment</page_callback>
     <title>WMF Donor Segment Explanation</title>
