@@ -228,17 +228,32 @@ class Audit extends AbstractAction {
         'capture_id' => $message->getCaptureID(),
         'backend_processor' => $message->getBackendProcessor(),
       ]);
-      \CRM_Core_DAO::executeQuery(
-        'UPDATE wmf_contribution_extra
+      if ($message->getAuthID() === $message->getCaptureID()) {
+        \CRM_Core_DAO::executeQuery(
+          'UPDATE wmf_contribution_extra
+        SET backend_processor_txn_id = %1,
+            auth_id = %1,
+            capture_id = %1
+        WHERE payment_orchestrator_reconciliation_id = %2 AND backend_processor = %3
+      ', [
+          1 => [$message->getAuthID(), 'String'],
+          2 => [$message->getPaymentOrchestratorReconciliationReference(), 'String'],
+          3 => [$message->getBackendProcessor(), 'String'],
+        ]);
+      }
+      else {
+        \CRM_Core_DAO::executeQuery(
+          'UPDATE wmf_contribution_extra
         SET backend_processor_txn_id = %1,
             auth_id = %1,
             capture_id = %2
         WHERE backend_processor_txn_id = %2 AND backend_processor = %3
       ', [
-        1 => [$message->getAuthID(), 'String'],
-        2 => [$message->getCaptureID(), 'String'],
-        3 => [$message->getBackendProcessor(), 'String'],
-      ]);
+          1 => [$message->getAuthID(), 'String'],
+          2 => [$message->getCaptureID(), 'String'],
+          3 => [$message->getBackendProcessor(), 'String'],
+        ]);
+      }
     }
   }
 

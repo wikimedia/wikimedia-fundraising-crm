@@ -5,6 +5,8 @@ namespace Civi\WorkflowMessage\DonorPortalRecurring;
 use Civi\Test as DemoData;
 use Civi\WorkflowMessage\DonorPortalRecurring;
 use Civi\WorkflowMessage\WorkflowMessageExample;
+use CRM_Utils_Date;
+use CRM_Utils_Money;
 
 class DonorPortalRecurringExample extends WorkflowMessageExample {
 
@@ -71,19 +73,24 @@ class DonorPortalRecurringExample extends WorkflowMessageExample {
       'cancel_date' => NULL,
       'cancel_reason' => NULL,
     ];
+    $oldContributionRecur['amount_formatted'] = CRM_Utils_Money::format( $oldContributionRecur['amount'], $oldContributionRecur['currency'], "%c%a %C" );
+    $newContributionRecur['next_sched_contribution_date_formatted'] = CRM_Utils_Date::customFormat($newContributionRecur['next_sched_contribution_date'], '%B %E%f, %Y');
     switch (basename($example['name'])) {
       case 'downgrade':
         $newContributionRecur['amount'] -= 5;
+        $newContributionRecur['amount_formatted'] = CRM_Utils_Money::format( $newContributionRecur['amount'], $newContributionRecur['currency'], "%c%a %C" );
         $message->setAction('Recurring Downgrade');
         break;
       case 'pause':
         $newContributionRecur['next_sched_contribution_date'] = '2026-06-23 15:39:20';
+        $newContributionRecur['next_sched_contribution_date_formatted'] = CRM_Utils_Date::customFormat($newContributionRecur['next_sched_contribution_date'], '%B %E%f, %Y');
         $message->setAction('Recurring Paused');
         break;
       case 'annual_conversion':
         $message->setAction('Recurring Annual Conversion');
         $newContributionRecur['frequency_unit'] = 'year';
         $newContributionRecur['next_sched_contribution_date'] = '2027-02-23 15:39:20';
+        $newContributionRecur['next_sched_contribution_date_formatted'] = CRM_Utils_Date::customFormat($newContributionRecur['next_sched_contribution_date'], '%B %E%f, %Y');
         break;
       case 'cancel':
         $message->setAction('Cancel Recurring Contribution');
