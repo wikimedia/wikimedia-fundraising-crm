@@ -228,7 +228,7 @@ class Audit extends AbstractAction {
         'capture_id' => $message->getCaptureID(),
         'backend_processor' => $message->getBackendProcessor(),
       ]);
-      if ($message->getAuthID() === $message->getCaptureID()) {
+      if ($message->getAuthID() === $message->getCaptureID() && $message->getPaymentOrchestratorReconciliationReference()) {
         \CRM_Core_DAO::executeQuery(
           'UPDATE wmf_contribution_extra
         SET backend_processor_txn_id = %1,
