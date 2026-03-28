@@ -59,7 +59,7 @@ class Audit extends AbstractAction {
     $message = new AuditMessage($this->values);
     // @todo - won't need this forever....
     // but repair before we try to find them.
-    $this->repairOlderGravyAdyenTransactions($message);
+    $this->repairOlderGravyTransactions($message);
     $isMissing = !$message->getExistingContributionID();
     if ($message->isPaypalGrant()) {
       GrantTransaction::save(FALSE)
@@ -221,14 +221,14 @@ class Audit extends AbstractAction {
    * @return void
    * @throws \Civi\Core\Exception\DBQueryException
    */
-  public function repairOlderGravyAdyenTransactions(AuditMessage $message): void {
+  public function repairOlderGravyTransactions(AuditMessage $message): void {
     if ($message->isRequiresBackendProcessorTxnIdRepair()) {
       \Civi::log('wmf')->info('Updating backend processor for {auth_id}', [
         'auth_id' => $message->getAuthID(),
         'capture_id' => $message->getCaptureID(),
         'backend_processor' => $message->getBackendProcessor(),
       ]);
-      if ($message->getAuthID() === $message->getCaptureID()) {
+      if ($message->getAuthID() === $message->getCaptureID() && $message->getPaymentOrchestratorReconciliationReference()) {
         \CRM_Core_DAO::executeQuery(
           'UPDATE wmf_contribution_extra
         SET backend_processor_txn_id = %1,
