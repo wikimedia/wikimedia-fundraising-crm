@@ -259,6 +259,7 @@ class DonationMessage extends Message {
     }
     $utmMedium = $this->message['utm_medium'] ?? '';
     $appeal = $this->getAppeal() ?: '';
+    $utmSource = strtolower($this->message['utm_source'] ?? '');
     // This pattern is in use in 2026 & hopefully will be going forwards.
     // However getChannel() could change to Direct Mail and we might add
     // str_ends_with($appeal, 'MGF') on the principle we should show endowment
@@ -279,6 +280,13 @@ class DonationMessage extends Message {
 
     // Note question about case over at https://phabricator.wikimedia.org/T406193#11338650
     if (str_starts_with($utmMedium, 'MG') || str_starts_with($appeal, 'MG')) {
+      return TRUE;
+    }
+    // e.g EarlyEndAppeal2023.default~default~default~default~MG5000.paypal
+    // civi_email.default~default~JimmyQuote~default~MG5000.apple
+    // in 2026 saw at least one like
+    // civi_mail.default~default~JimmyQuote~default~MG350.cc
+    if (preg_match('/~MG\d+./', $utmSource)) {
       return TRUE;
     }
     return FALSE;
