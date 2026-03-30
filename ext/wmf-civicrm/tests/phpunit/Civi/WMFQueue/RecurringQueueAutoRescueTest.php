@@ -50,6 +50,7 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
       'contribution_recur_smashpig.rescue_reference' => $rescueReference,
       'invoice_id' => $orderId,
     ]);
+    $previousDay = min((int)date('d'), (int)date('t', strtotime('first day of last month')));
 
     $this->createContribution([
       'total_amount' => $recur['amount'],
@@ -58,7 +59,7 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
       'amount' => $recur['amount'],
       'currency' => $recur['currency'],
       'contact_id' => $recur['contact_id'],
-      'receive_date' => date('Y-m-d H:i:s', strtotime('-1 month')),
+      'receive_date' => date('Y-m-', strtotime('first day of last month')) . $previousDay,
       'gateway' => 'adyen',
       'trxn_id' => $recur['trxn_id'],
       'financial_type_id' => RecurHelper::getFinancialTypeForFirstContribution(),
