@@ -4285,6 +4285,74 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Update our offline gifts to have offline for channel, is_major_gift = TRUE.
+   *
+   * Bug: T409994
+   *
+   * @return bool
+   */
+  public function upgrade_4945(): bool {
+    $sql = "UPDATE civicrm_contribution c
+    INNER JOIN wmf_contribution_extra x ON x.entity_id = c.id
+    LEFT JOIN civicrm_value_1_gift_data_7 v
+    ON v.entity_id = c.id
+SET
+    v.channel = 'Other Offline',
+    v.is_major_gift = 1,
+  v.gl_code = 'GL43485'
+WHERE
+    v.channel IS NULL AND x.gateway IN (
+      'benevity'
+      , 'check'
+      , 'citibank'
+      , 'eft daf'
+      , 'eft individual'
+      , 'eft organization'
+      , 'engage'
+      , 'engage daf'
+      , 'engage dm'
+      , 'overflow'
+      , 'printed check'
+    ) AND c.id BETWEEN %1 AND %2";
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 0,
+        'type' => 'Integer',
+        'increment' => 20000,
+      ],
+      2 => [
+        'value' => 20000,
+        'type' => 'Integer',
+        'increment' => 20000,
+      ],
+    ],
+      [
+        // This is the max ID we need to update - once we get here we
+        // are done on this query.
+        'sql_returns_none' => "SELECT c.id FROM civicrm_contribution c
+    INNER JOIN wmf_contribution_extra x ON x.entity_id = c.id
+    LEFT JOIN civicrm_value_1_gift_data_7 v
+    ON v.entity_id = c.id
+WHERE
+    v.channel IS NULL AND x.gateway IN (
+                                        'benevity'
+    , 'check'
+    , 'citibank'
+    , 'eft daf'
+    , 'eft individual'
+    , 'eft organization'
+    , 'engage'
+    , 'engage daf'
+    , 'engage dm'
+    , 'overflow'
+    , 'printed check'
+    )
+AND c.id = 122844672",
+      ], 2);
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
