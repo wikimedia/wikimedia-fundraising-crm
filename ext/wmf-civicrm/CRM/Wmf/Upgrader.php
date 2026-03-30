@@ -4269,6 +4269,8 @@ AND channel <> 'Chapter Gifts'";
    * Bug: T409994
  */
   public function upgrade_4940(): bool {
+    // Joseph changed his mind
+    return TRUE;
     CRM_Core_DAO::executeQuery("
     UPDATE civicrm_contribution_tracking t
      LEFT JOIN civicrm_contribution c on t.contribution_id = c.id
