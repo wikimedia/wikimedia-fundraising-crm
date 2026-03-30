@@ -4243,7 +4243,7 @@ AND channel <> 'Chapter Gifts'";
          ELSE v.channel
          END
     WHERE
-      c.Appeal LIKE 'MGGO%' AND v.is_major_gift = 0");
+      v.Appeal LIKE 'MGGO%' AND v.is_major_gift = 0");
     return TRUE;
   }
 
