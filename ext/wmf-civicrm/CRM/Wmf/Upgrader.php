@@ -4208,6 +4208,46 @@ AND channel <> 'Chapter Gifts'";
   }
 
   /**
+   * Set is_major_gift for MGGO appeals to TRUE.
+   *
+   * SELECT Appeal, c.id, contact_id, receive_date, channel, is_major_gift, count(*) FROM civicrm_contribution c LEFT JOIN civicrm_value_1_gift_data_7 v ON v.entity_id = c.id WHERE Appeal LIKE 'MGGO%' AND is_major_gift = 0 GROUP BY channel, is_major_gift
+   * ;
+   * +--------+-----------+------------+---------------------+------------------+---------------+----------+
+   * | Appeal | id        | contact_id | receive_date        | channel          | is_major_gift | count(*) |
+   * +--------+-----------+------------+---------------------+------------------+---------------+----------+
+   * | MGGO23 |  95455051 |     470229 | 2023-10-16 12:29:44 | NULL             |             0 |       94 |
+   * | MGGO25 | 127152911 |     862070 | 2025-07-23 19:17:33 | Desktop Banner   |             0 |       15 |
+   * | MGGO26 | 137570627 |     412044 | 2026-01-01 16:56:04 | Email            |             0 |        1 |
+   * | MGGO25 | 134582060 |    9618537 | 2025-12-02 22:28:25 | Mobile Banner    |             0 |       10 |
+   * | MGGO24 | 100822702 |   51337370 | 2023-12-18 00:00:00 | Other Offline    |             0 |       30 |
+   * | MGGO23 |  93801255 |   38042682 | 2023-09-17 20:40:38 | Other Online     |             0 |       36 |
+   * | MGGO24 |  93503886 |    3091200 | 2023-09-13 13:19:33 | Other Portal     |             0 |        2 |
+   * | MGGO25 | 135401003 |    3601459 | 2025-12-01 00:00:00 | Planned Giving   |             0 |        2 |
+   * | MGGO23 |  96495152 |    1155145 | 2023-11-06 20:59:00 | Portal Banner    |             0 |       24 |
+   * | MGGO25 | 136375024 |    3117452 | 2025-12-19 02:03:10 | Sidebar          |             0 |        4 |
+   * | MGGO26 | 139109177 |   50662898 | 2026-01-29 00:00:00 | Workplace Giving |             0 |        1 |
+   *
+   * @return bool
+   *
+   * Bug: T409994
+   */
+  public function upgrade_4935(): true {
+    CRM_Core_DAO::executeQuery("
+    UPDATE civicrm_contribution c
+    LEFT JOIN civicrm_value_1_gift_data_7 v
+      ON v.entity_id = c.id
+    SET
+      v.is_major_gift = 1,
+      v.channel = CASE
+         WHEN v.channel IS NULL THEN 'Other Online'
+         ELSE v.channel
+         END
+    WHERE
+      c.Appeal LIKE 'MGGO%' AND v.is_major_gift = 0");
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
