@@ -385,7 +385,10 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertEquals($pendingMessage['utm_campaign'], $contribution['Gift_Data.Appeal']);
     $pendingEntry = PendingDatabase::get()->fetchMessageByGatewayOrderId(
       $message['gateway'],
-      $pendingMessage['order_id']
+      $pendingMessage['order_id'],
+      NULL,
+      NULL,
+      FALSE
     );
     $this->assertNull($pendingEntry, 'Should have deleted pending DB entry');
   }
