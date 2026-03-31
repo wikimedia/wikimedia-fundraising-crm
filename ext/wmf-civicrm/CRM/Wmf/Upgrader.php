@@ -4353,6 +4353,50 @@ AND c.id = 122844672",
   }
 
   /**
+   * Update the rest of gifts with a contribution tracking to Other Online.
+   *
+   * Bug: T409994
+   *
+   * @return bool
+   */
+  public function upgrade_4950(): bool {
+    $sql = "UPDATE
+civicrm_contribution c
+INNER JOIN civicrm_contribution_tracking ct ON c.id = ct.contribution_id
+LEFT JOIN civicrm_value_1_gift_data_7 v
+  ON v.entity_id = c.id
+SET v.channel = 'Other Online'
+    WHERE
+v.channel IS NULL AND c.id BETWEEN %1 AND %2";
+    $this->queueSQL($sql, [
+      1 => [
+        'value' => 116000,
+        'type' => 'Integer',
+        'increment' => 20000,
+      ],
+      2 => [
+        'value' => 136000,
+        'type' => 'Integer',
+        'increment' => 20000,
+      ],
+    ],
+      [
+        // This is the max ID we need to update - once we get here we
+        // are done on this query.
+        'sql_returns_none' => "SELECT c.id
+    FROM
+civicrm_contribution c
+INNER JOIN civicrm_contribution_tracking ct ON c.id = ct.contribution_id
+LEFT JOIN civicrm_value_1_gift_data_7 v
+  ON v.entity_id = c.id
+
+    WHERE
+v.channel IS NULL AND c.id = 131486342;",
+      ], 2);
+    return TRUE;
+  }
+
+  /**
    * Queue up an API4 update.
    *
    * @param string $entity
