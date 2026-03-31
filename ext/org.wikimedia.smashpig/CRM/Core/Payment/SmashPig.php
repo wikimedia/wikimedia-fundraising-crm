@@ -117,14 +117,8 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
           . '. Request: ' . (json_encode($request, JSON_UNESCAPED_SLASHES) ?: 'Request encoding failed');
         if ($createPaymentResponse->getRawResponse()) {
           $message .= '. Response: ' . (json_encode($createPaymentResponse->getRawResponse(), JSON_UNESCAPED_SLASHES) ?: 'Response encoding failed');
-          Civi::log('wmf')->debug($message);
         }
-        else {
-          // If we have validation errors but no raw response from the processor, that means we are failing the payment
-          // in our own code before we even send it off for authorization. That's probably our error, and we should
-          // hear about it loudly.
-          Civi::log('wmf')->alert($message);
-        }
+        Civi::log('wmf')->alert($message);
       }
       $this->throwException('CreatePayment failed', $createPaymentResponse);
     }
