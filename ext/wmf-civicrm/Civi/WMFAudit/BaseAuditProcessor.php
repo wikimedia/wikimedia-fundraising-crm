@@ -514,6 +514,8 @@ abstract class BaseAuditProcessor {
     }
     $allowList = [
       'parent_contribution_id',
+      'backend_processor_reversal_id',
+      'payment_orchestrator_reversal_id',
       'settlement_batch_reference',
       'settled_total_amount',
       'settled_fee_amount',
@@ -670,6 +672,9 @@ abstract class BaseAuditProcessor {
         foreach ($transactions as $missing) {
           foreach ($missing as $transaction) {
             try {
+              // For when gravy is the gateway txn ID but, we don't know it...
+              // This is only for logging output.
+              $transaction['gateway_txn_id'] = $transaction['gateway_txn_id'] ?: 'BE-' . $transaction['backend_processor_txn_id'];
               $wrap_up .= "\t" . WMFTransaction::from_message($transaction)
                   ->get_unique_id() . "\n";
             }
