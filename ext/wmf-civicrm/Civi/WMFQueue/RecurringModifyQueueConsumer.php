@@ -182,7 +182,13 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       $activityParams['contribution_recur_id'], $values, self::RECURRING_PAUSED_ACTIVITY_TYPE_NAME
     );
 
-    $this->createRecurringActivity(json_encode($pauseScheduledParams), $activityParams);
+    $amountDetails = [
+      'frequency_unit' => $message->getExistingContributionRecurValue('frequency_unit:name'),
+      'native_currency' => $message->getModifiedCurrency(),
+      'native_original_amount' => $message->getOriginalExistingAmountRounded(),
+      'usd_original_amount' => $message->getSettledExistingAmountRounded(),
+    ];
+    $this->createRecurringActivity(json_encode($pauseScheduledParams + $amountDetails), $activityParams);
   }
 
   /**
@@ -214,7 +220,13 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       $update_params + ['contribution_status_id:name' => 'Cancelled'],
       self::RECURRING_CANCELLED_ACTIVITY_TYPE_NAME
     );
-    $this->createRecurringActivity(json_encode($update_params), $activityParams);
+    $amountDetails = [
+      'frequency_unit' => $message->getExistingContributionRecurValue('frequency_unit:name'),
+      'native_currency' => $message->getModifiedCurrency(),
+      'native_original_amount' => $message->getOriginalExistingAmountRounded(),
+      'usd_original_amount' => $message->getSettledExistingAmountRounded(),
+    ];
+    $this->createRecurringActivity(json_encode($update_params + $amountDetails), $activityParams);
   }
 
   /**
