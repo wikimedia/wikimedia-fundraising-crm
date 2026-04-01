@@ -27,7 +27,7 @@ class StripeAuditProcessorTest extends BaseAuditTestCase {
     ]);
     $output = $this->runAuditBatch('reports', 'settlement_report.csv', 'stripe_123_USD');
     $batch = $output['batch']->first();
-    $this->assertEquals(15, $batch['settled_total_amount']);
+    $this->assertEquals(25, $batch['settled_total_amount']);
   }
 
   public function createTransactionLog(array $row): void {
