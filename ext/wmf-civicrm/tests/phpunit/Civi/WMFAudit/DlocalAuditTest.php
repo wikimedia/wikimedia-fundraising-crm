@@ -213,8 +213,8 @@ class DlocalAuditTest extends BaseAuditTestCase {
     $this->assertEquals('T-648-x1kn16ut', $contribution['contribution_extra.gateway_txn_id']);
     $this->assertEquals('dlocal', $contribution['contribution_extra.gateway']);
     $this->assertEquals('Refunded', $contribution['contribution_status_id:name']);
-    $this->assertEquals('dlocal_20260206_USD', $contribution['contribution_settlement.settlement_batch_reference']);
-    $this->assertEquals('dlocal_20260206_USD', $contribution['contribution_settlement.settlement_batch_reversal_reference']);
+    $this->assertEquals('dlocal_662986_USD', $contribution['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals('dlocal_662986_USD', $contribution['contribution_settlement.settlement_batch_reversal_reference']);
 
     $contribution = Contribution::get(FALSE)
       ->addWhere('invoice_id', '=', 2293.9)
@@ -224,11 +224,11 @@ class DlocalAuditTest extends BaseAuditTestCase {
       ->execute()->single();
     $this->assertEquals('dlocal', $contribution['contribution_extra.gateway']);
     $this->assertEquals('Refunded', $contribution['contribution_status_id:name']);
-    $this->assertEquals('dlocal_20260206_USD', $contribution['contribution_settlement.settlement_batch_reversal_reference']);
+    $this->assertEquals('dlocal_662986_USD', $contribution['contribution_settlement.settlement_batch_reversal_reference']);
   }
 
   public function testProcessSettlementBatch(): void {
-    $auditResult = $this->runAuditBatch('cross_border_report', 'Wikimedia_cross_border_report_20260207_083659.csv', 'dlocal_20260207')['validate']->first();
+    $auditResult = $this->runAuditBatch('cross_border_report', 'Wikimedia_cross_border_report_20260207_083659.csv', 'dlocal_642926')['validate']->first();
     // Expecting 7 means we include the rounding fee.
     $this->assertEquals(7, $auditResult['expected']['count']);
   }
