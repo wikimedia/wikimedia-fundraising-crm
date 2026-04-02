@@ -833,7 +833,7 @@ class AuditMessage extends DonationMessage {
    * @return bool
    */
   public function isRequiresBackendProcessorTxnIdRepair(): bool {
-    if (!$this->getGateway() === 'gravy' || !in_array($this->getBackendProcessor(), ['adyen', 'paypal'], TRUE)
+    if ($this->getGateway() !== 'gravy' || !in_array($this->getBackendProcessor(), ['adyen', 'paypal'], TRUE)
       || !$this->getCaptureID() || !$this->getAuthID()
       || $this->message['type'] !== 'donation'
     ) {
