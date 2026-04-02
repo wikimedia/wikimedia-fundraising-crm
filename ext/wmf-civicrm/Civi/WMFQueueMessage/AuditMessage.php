@@ -839,7 +839,7 @@ class AuditMessage extends DonationMessage {
     ) {
       return FALSE;
     }
-    if ($this->getSettlementTimeStamp() > strtotime('2026-04-01')) {
+    if ($this->getSettlementTimeStamp() > strtotime('2026-05-01')) {
       return FALSE;
     }
     if ($this->getAuthID() === $this->getCaptureID() && $this->getPaymentOrchestratorReconciliationReference()) {
