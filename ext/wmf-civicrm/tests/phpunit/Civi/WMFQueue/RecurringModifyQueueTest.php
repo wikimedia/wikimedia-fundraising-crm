@@ -140,6 +140,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'source' => 'direct'
     ];
     $amountDetails = [
+      'frequency_unit' => 'month',
       'native_currency' => $msg['currency'],
       'native_original_amount' => '10.00',
       'usd_original_amount' => '10.00',
@@ -264,6 +265,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
     ];
 
     $amountDetails = [
+      'frequency_unit' => 'month',
       'native_currency' => 'USD',
       'native_original_amount' => '15.00',
       'usd_original_amount' => '15.00',

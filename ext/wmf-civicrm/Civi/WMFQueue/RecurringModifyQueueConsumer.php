@@ -264,6 +264,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
       ->execute();
 
     $amountDetails = [
+      'frequency_unit' => $message->getExistingContributionRecurValue('frequency_unit:name'),
       'native_currency' => $message->getModifiedCurrency(),
       'native_original_amount' => $message->getOriginalExistingAmountRounded(),
       'usd_original_amount' => $message->getSettledExistingAmountRounded(),
@@ -304,6 +305,7 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
    */
   protected function downgradeRecurAmount(RecurringModifyMessage $message, array $msg): void {
     $amountDetails = [
+      'frequency_unit' => $message->getExistingContributionRecurValue('frequency_unit:name'),
       'native_currency' => $message->getModifiedCurrency(),
       'native_original_amount' => $message->getOriginalExistingAmountRounded(),
       'usd_original_amount' => $message->getSettledExistingAmountRounded(),
