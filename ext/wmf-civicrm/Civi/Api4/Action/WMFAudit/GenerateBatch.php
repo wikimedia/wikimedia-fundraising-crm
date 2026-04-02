@@ -1033,8 +1033,9 @@ GROUP BY s.settlement_batch_reference
   private function getGatewayLevelTransactionExcludeClause($batchName): string {
     $gateway = $this->getGateway($batchName);
     return "(trxn_id NOT LIKE '{$gateway} transaction%'
-      AND trxn_id NOT LIKE '{$gateway} invoice %'
-      AND trxn_id NOT LIKE '{$gateway} rounding %'
+      AND trxn_id NOT LIKE '{$gateway} invoice%'
+      AND trxn_id NOT LIKE '{$gateway} rounding%'
+      AND trxn_id NOT LIKE '{$gateway} fee%'
     )";
   }
 
