@@ -557,11 +557,15 @@ class Import {
         }
       }
 
+      $fidelitySoftCreditID = Contact::getOrganizationID('Fidelity Charitable Gift Fund');
+      if (!$fidelitySoftCreditID) {
+        throw new \CRM_Core_Exception('No organization contact named "Fidelity Charitable Gift Fund" found for anonymous soft credit. Perhaps it was renamed? It should be cid 67.');
+      }
       $this->mappedRow['SoftCreditContact']['Fidelity'] = [
         'soft_credit_type_id' => ContributionSoftHelper::getBankingInstitutionSoftCreditTypes()['Banking Institution'],
         'total_amount' => $this->mappedRow['Contribution']['total_amount'],
         'contact_type' => 'Organization',
-        'id' => Contact::getOrganizationID('Fidelity Charitable Gift Fund'),
+        'id' => $fidelitySoftCreditID,
       ];
     }
   }
