@@ -75,7 +75,7 @@ class PushJournal extends AbstractAction {
    *
    * @var string|null
    */
-  protected ?string $batchDescriptionPrefix;
+  protected ?string $batchDescriptionPrefix = NULL;
 
   public function getBatchDescriptionPrefix(): ?string {
     return $this->batchDescriptionPrefix;
@@ -215,7 +215,7 @@ class PushJournal extends AbstractAction {
           'txnType'   => $transactionType,
           'txnAmount' => (string) $transactionMoney->getAmount(),
           'glAccount' => ['id' => (string) $row['ACCT_NO']],
-          'documentId'=> $row['DOCUMENT'] ?: null,
+          'documentId'=> substr($row['DOCUMENT'] ?: '', 0, 30),
           'currency' => [
             'baseCurrency' => 'USD',
             'txnCurrency' => $currency,
