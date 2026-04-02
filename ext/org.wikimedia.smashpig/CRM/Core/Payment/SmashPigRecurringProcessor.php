@@ -31,7 +31,12 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
   protected $smashPigProcessors;
 
+  protected int $minRecurID;
+
+  protected int $maxRecurID;
+
   const MAX_MERCHANT_REFERENCE_RETRIES = 3;
+
   /**
    * @param bool $useQueue Send messages to donations queue instead of directly
    *  inserting new contributions
@@ -41,6 +46,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @param int $batchSize Maximum number of payments to process in a batch
    * @param string $descriptor Shown on donors' card statements
    * @param int $timeLimitInSeconds Maximum number of seconds to spend processing
+   * @param int $minRecurID minimum (inclusive) contribution_recur.id to process (to segment jobs)
+   * @param int $maxRecurID maximum (inclusive) contribution_recur.id to process (to segment jobs)
    * @throws CRM_Core_Exception
    */
   public function __construct(
@@ -50,7 +57,9 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $catchUpDays,
     $batchSize,
     $descriptor,
-    $timeLimitInSeconds = 0
+    $timeLimitInSeconds = 0,
+    $minRecurID = 0,
+    $maxRecurID = 0,
   ) {
     \CRM_SmashPig_ContextWrapper::createContext('recurring-processor');
     $this->useQueue = $useQueue;
@@ -62,6 +71,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $processorsApiResult = civicrm_api3('PaymentProcessor', 'get', ['class_name' => 'Payment_SmashPig']);
     $this->smashPigProcessors = $processorsApiResult['values'];
     $this->timeLimitInSeconds = $timeLimitInSeconds;
+    $this->minRecurID = $minRecurID;
+    $this->maxRecurID = $maxRecurID;
   }
 
   /**
@@ -267,6 +278,12 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       // misusing the payment_processor_id for years :(
         'payment_token_id', 'IS NOT NULL'
       )->setLimit($this->batchSize);
+    }
+    if ($this->minRecurID) {
+      $getAction->addWhere('id', '>=', $this->minRecurID);
+    }
+    if ($this->maxRecurID) {
+      $getAction->addWhere('id', '<=', $this->maxRecurID);
     }
     return $getAction->execute();
   }

@@ -35,7 +35,9 @@ function civicrm_api3_job_process_smashpig_recurring($params) {
     $params['catch_up_days'],
     $params['batch_size'],
     $params['charge_descriptor'],
-    $params['time_limit_in_seconds']
+    $params['time_limit_in_seconds'],
+    $params['min_recur_id'] ?? 0,
+    $params['max_recur_id'] ?? 0
   );
   $result = $recurringProcessor->run(
     $params['contribution_recur_id'] ?? NULL
@@ -60,4 +62,6 @@ function _civicrm_api3_job_process_smashpig_recurring_spec(&$params) {
     'description' => ts('When specified, only charge this one recur record'),
     'type' => CRM_Utils_Type::T_INT,
   ];
+  $params['min_recur_id']['title'] = ts('Minimum (inclusive) contribution_recur.id to charge, for segmenting jobs');
+  $params['max_recur_id']['title'] = ts('Maximum (inclusive) contribution_recur.id to charge, for segmenting jobs');
 }
