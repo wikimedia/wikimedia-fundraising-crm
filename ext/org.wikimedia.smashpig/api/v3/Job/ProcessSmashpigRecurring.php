@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Helper\CadenceValidator;
+
 /**
  * Pass all due recurring contributions to the SmashPig processor
  * Note that this filename needs to be cased the way it is - if you
@@ -14,13 +16,18 @@
 function civicrm_api3_job_process_smashpig_recurring($params) {
   $allowedParams = [
     'use_queue',
-    'retry_delay_days',
-    'max_failures',
+    'retry_cadence',
     'catch_up_days',
     'batch_size',
     'charge_descriptor',
     'time_limit_in_seconds',
   ];
+  if (isset($params['retry_cadence'])) {
+    $cadenceError = CadenceValidator::hasErrors($params['retry_cadence']);
+    if ($cadenceError) {
+      return civicrm_api3_create_error($cadenceError);
+    }
+  }
   $settings = Civi::settings();
   foreach ($allowedParams as $paramName) {
     if (!isset($params[$paramName])) {
@@ -30,8 +37,7 @@ function civicrm_api3_job_process_smashpig_recurring($params) {
   }
   $recurringProcessor = new CRM_Core_Payment_SmashPigRecurringProcessor(
     $params['use_queue'],
-    $params['retry_delay_days'],
-    $params['max_failures'],
+    explode(',', $params['retry_cadence']),
     $params['catch_up_days'],
     $params['batch_size'],
     $params['charge_descriptor'],
@@ -52,8 +58,7 @@ function civicrm_api3_job_process_smashpig_recurring($params) {
  */
 function _civicrm_api3_job_process_smashpig_recurring_spec(&$params) {
   $params['use_queue']['title'] = ts('Send donations to queue');
-  $params['retry_delay_days']['title'] = ts('Days to wait before retrying failed charge');
-  $params['max_failures']['title'] = ts('Number of failures at which we stop retrying');
+  $params['retry_cadence']['title'] = ts('Comma-separated list of days after failure on which to retry failed charge');
   $params['catch_up_days']['title'] = ts('Number of days in the past to look for charges due');
   $params['batch_size']['title'] = ts('Batch size');
   $params['charge_descriptor']['title'] = ts('Soft descriptor for recurring charge');

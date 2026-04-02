@@ -1025,9 +1025,18 @@ class SmashPigTest extends SmashPigBaseTestClass {
   /**
    * @throws \CRM_Core_Exception
    * @throws \PHPQueue\Exception\JobNotFoundException
+   * @dataProvider failDataProvider
    */
-  public function testPaymentFails() {
-    $contributionRecur = $this->setupRecurring();
+  public function testPaymentFails(
+    array $cadence, int $failureCount, int $expectedDelay, bool $isCancelled = FALSE
+  ) {
+    $contact = $this->createContact();
+    $token = $this->createToken($contact['id']);
+    $contributionRecur = $this->createContributionRecur($token, [
+      'failure_count' => $failureCount,
+      'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-1 second')),
+    ]);
+    $this->createContribution($contributionRecur);
     $response = (new CreatePaymentResponse())->addErrors(
       new PaymentError(
         ErrorCode::DECLINED,
@@ -1041,7 +1050,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         $response
       );
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
+      TRUE, $cadence, 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
     $queue = QueueWrapper::getQueue('donations');
@@ -1049,17 +1058,31 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $newContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', [
       'id' => $contributionRecur['id'],
     ]);
-    $expectedRetryDate = UtcDate::getUtcTimestamp('+1 days');
+    if (!$isCancelled) {
+      $expectedRetryDate = UtcDate::getUtcTimestamp("+$expectedDelay days");
     $retryDate = UtcDate::getUtcTimestamp(
       $newContributionRecur['next_sched_contribution_date']
     );
     $this->assertLessThan(100, abs($retryDate - $expectedRetryDate));
 
+    }
     $this->assertEquals(
-      'Failing',
+      $isCancelled ? 'Cancelled' : 'Failing',
       \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
     );
-    $this->assertEquals('1', $newContributionRecur['failure_count']);
+    $this->assertEquals($failureCount + 1, $newContributionRecur['failure_count']);
+  }
+
+  public function failDataProvider(): array {
+    return [
+      [[1,2], 0, 1],
+      [[1,2], 1, 1],
+      [[1,2], 2, 1, TRUE],
+      [[3,7], 0, 3],
+      [[3,7], 1, 4],
+      [[3,7,14], 2, 7],
+      [[3,7,14], 3, 7, TRUE],
+    ];
   }
 
   /**
@@ -1126,7 +1149,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       ->willReturn($response);
 
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
     $queue = QueueWrapper::getQueue('donations');
@@ -1184,7 +1207,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
     // run the recurring processor job
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
     // Run the queue task to send the email
@@ -1247,7 +1270,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
     // run the recurring processor job
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
 
@@ -1318,7 +1341,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
     // run the recurring processor job
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
 
@@ -1403,7 +1426,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
     // run the recurring processor job
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
 
@@ -1489,7 +1512,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         $response
       );
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
     $queue = QueueWrapper::getQueue('donations');
@@ -1516,7 +1539,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
    */
   public function testGetErrorMessageText(): void {
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
     );
 
     $response = (new ApprovePaymentResponse())->addErrors(
@@ -1626,7 +1649,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         $this->approvePaymentResponse
       );
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
     $queue = QueueWrapper::getQueue('donations');
@@ -1787,7 +1810,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         $response
       );
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
     return $contributionRecur;
@@ -1829,7 +1852,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       ->willReturn($response);
 
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, 1, 3, 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
     );
     $processor->run();
 

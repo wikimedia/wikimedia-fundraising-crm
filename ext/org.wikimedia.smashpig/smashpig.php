@@ -10,6 +10,7 @@ use CRM_SmashPig_ExtensionUtil as E;
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_config
  */
 function smashpig_civicrm_config(&$config) {
+  Civi::dispatcher()->addListener('hook_civicrm_validateForm', ['Civi\SmashPig\Hooks', 'validateSettings']);
   _smashpig_civix_civicrm_config($config);
 }
 
