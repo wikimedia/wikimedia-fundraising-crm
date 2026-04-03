@@ -4,6 +4,7 @@ namespace Civi\WMFQueue;
 
 use Civi;
 use Civi\Api4\ContributionRecur;
+use Civi\Api4\Generic\Result;
 use Civi\Api4\PaymentToken;
 use Civi\Api4\WMFContact;
 use Civi\WMFHelper\PaymentProcessor;
@@ -52,21 +53,23 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
       $message['contribution_recur_id'] = $this->insertContributionRecur($messageObject);
     }
 
-    QueueWrapper::push('donations', $message);
-
     // Refund donation received after cancelled recurring
     if (!empty($contributionRecur) && $contributionRecur['contribution_status_id:name'] === 'Cancelled'
       && $message['gateway_status'] === 'PAID') {
+      // Need to insert donation before refunding it
+      $dqc = new DonationQueueConsumer( 'donations' );
+      $dqc->processMessage( $message );
       Civi::log('wmf')->info(
         "Refunding UPI payment from cancelled recurring with order ID: "
         . $message['order_id']
       );
-      $refundMessage = array_merge([
+      $refundMessage = [
         "amount" => $message['gross'],
         "payment_processor_id" => PaymentProcessor::getPaymentProcessorID($message['gateway']),
-      ], $message);
+        'trxn_id' => $messageObject->getTrxnID()
+      ];
       $refundResponse = $this->refundPayment($refundMessage);
-      if ($refundResponse['payment_status'] === 'Refunded') {
+      if ($refundResponse['refund_status'] === 'Completed') {
         // Mark donation as refund
         $refundMessage = [
           "gateway_parent_id" => $message['gateway_txn_id'],
@@ -79,15 +82,20 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
         ];
         QueueWrapper::push('refund', $refundMessage);
       }
+    } else {
+      QueueWrapper::push('donations', $message);
     }
   }
 
   /**
    * @throws \CRM_Core_Exception
    */
-  protected function refundPayment($refundMessage): array {
-    $result = civicrm_api3('PaymentProcessor', 'refund', $refundMessage);
-    return $result['values'][0];
+  protected function refundPayment($refundMessage): Result {
+    return Civi\Api4\PaymentProcessor::refund(FALSE)
+      ->setPaymentProcessorID($refundMessage['payment_processor_id'])
+      ->setTransactionID($refundMessage['trxn_id'])
+      ->setAmountToRefund($refundMessage['amount'])
+      ->execute();
   }
 
   /**

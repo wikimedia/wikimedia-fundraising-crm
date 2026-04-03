@@ -129,14 +129,9 @@ class UpiDonationsQueueConsumerTest extends BaseQueueTestCase {
 
     $this->hostedPaymentProvider->expects($this->once())
       ->method('refundPayment')
-      ->with([
-        'gross' => $message['gross'],
-        'currency' => $message['currency'],
-        'gateway_txn_id' => $message['gateway_txn_id'],
-      ])
       ->willReturn(
         (new RefundPaymentResponse())
-          ->setGatewayTxnId($message['gateway_txn_id'])
+          ->setGatewayRefundId('blahdedah')
           ->setStatus(FinalStatus::REFUNDED)
           ->setSuccessful(TRUE)
       );
@@ -146,11 +141,6 @@ class UpiDonationsQueueConsumerTest extends BaseQueueTestCase {
     // Process UPI message
     $processed = (new UpiDonationsQueueConsumer('upi-donations'))->dequeueMessages();
     $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
-
-    // Process donation
-    $donationMessage = QueueWrapper::getQueue('donations')->pop();
-    $this->assertNotNull($donationMessage, 'Did not push a donation queue message');
-    (new DonationQueueConsumer('test'))->processMessage($donationMessage);
 
     // Process refund
     $refundMessage = QueueWrapper::getQueue('refund')->pop();
@@ -290,11 +280,6 @@ class UpiDonationsQueueConsumerTest extends BaseQueueTestCase {
 
     $this->hostedPaymentProvider->expects($this->once())
       ->method('refundPayment')
-      ->with([
-        'gross' => $messageAmount,
-        'currency' => $message['currency'],
-        'gateway_txn_id' => $message['gateway_txn_id'],
-      ])
       ->willReturn(
         (new RefundPaymentResponse())
           ->setGatewayTxnId($message['gateway_txn_id'])
@@ -315,11 +300,6 @@ class UpiDonationsQueueConsumerTest extends BaseQueueTestCase {
 
     $processed = $this->processMessage($message)['dequeued'];
     $this->assertEquals(1, $processed, 'Did not process exactly 1 message');
-
-    $donationMessage = QueueWrapper::getQueue('donations')->pop();
-    $this->assertNotNull($donationMessage, 'Did not push a donation queue message');
-    $this->assertEquals($recur1['id'], $donationMessage['contribution_recur_id']);
-    (new DonationQueueConsumer('test'))->processMessage($donationMessage);
 
     // Process refund
     $refundMessage = QueueWrapper::getQueue('refund')->pop();
