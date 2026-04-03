@@ -396,8 +396,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       if ($this->isProcessorGravy($processorName)) {
         $queueMessage = $this->addProcessorSpecificFieldsToQueueMessage($queueMessage, $payment);
       }
-
-      QueueWrapper::push('donations', $queueMessage, TRUE);
+      $queueName = ($payment['payment_status'] === 'Completed') ? 'donations' : 'pending';
+      QueueWrapper::push($queueName, $queueMessage, TRUE);
     }
     else {
       // Create the contribution
@@ -407,7 +407,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         'total_amount' => $recurringPayment['amount'],
         'currency' => $recurringPayment['currency'],
         'contribution_recur_id' => $recurringPayment['id'],
-        'contribution_status_id:name' => 'Completed',
+        'contribution_status_id:name' => $payment['payment_status'],
         'invoice_id' => $invoiceId,
         'contact_id' => $recurringPayment['contact_id'],
         'trxn_id' => $payment['processor_id'],

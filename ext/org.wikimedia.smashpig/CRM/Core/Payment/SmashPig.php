@@ -63,6 +63,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    */
   public function doPayment(&$params, $component = 'contribute'): array {
     $completedStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+    $pendingStatusID = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Pending');
     if ((float) $this->getAmount($params) === 0.0) {
       $result['payment_status_id'] = $completedStatusID;
       $result['payment_status'] = 'Completed';
@@ -138,12 +139,16 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
     }
 
     $paymentResponse = isset($approvePaymentResponse) && $approvePaymentResponse->isSuccessful() ? $approvePaymentResponse : $createPaymentResponse;
-
+    $map = [
+      FinalStatus::COMPLETE => ['id' => $completedStatusID, 'name' => 'Completed'],
+      FinalStatus::PENDING => ['id' => $pendingStatusID, 'name' => 'Pending'],
+    ];
+    $statusArray = $map[$paymentResponse->getStatus()];
     $result = [
       'processor_id' => $gatewayTxnId,
       'invoice_id' => $params['invoice_id'],
-      'payment_status_id' => $completedStatusID,
-      'payment_status' => 'Completed',
+      'payment_status_id' => $statusArray['id'],
+      'payment_status' => $statusArray['name'],
     ];
 
     if ($this->isProcessorGravy()) {
