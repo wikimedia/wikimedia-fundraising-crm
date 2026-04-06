@@ -833,7 +833,7 @@ class AuditMessage extends DonationMessage {
    * @return bool
    */
   public function isRequiresBackendProcessorTxnIdRepair(): bool {
-    if (!$this->getGateway() === 'gravy' || !in_array($this->getBackendProcessor(), ['adyen', 'paypal'], TRUE)
+    if ($this->getGateway() !== 'gravy' || !in_array($this->getBackendProcessor(), ['adyen', 'paypal'], TRUE)
       || !$this->getCaptureID() || !$this->getAuthID()
       || $this->message['type'] !== 'donation'
     ) {
@@ -842,7 +842,10 @@ class AuditMessage extends DonationMessage {
     if ($this->getSettlementTimeStamp() > strtotime('2026-05-01')) {
       return FALSE;
     }
-    if ($this->getAuthID() === $this->getCaptureID() && $this->getPaymentOrchestratorReconciliationReference()) {
+    if ($this->getPaymentOrchestratorReconciliationReference() && (
+      $this->getAuthID() === $this->getCaptureID()
+      || $this->getBackendProcessor() === 'paypal')
+    ) {
       // We don't get a capture ID here to check against - we just want to update to
       // the transaction ID - to the one from the file
       return !\CRM_Core_DAO::singleValueQuery('SELECT id
