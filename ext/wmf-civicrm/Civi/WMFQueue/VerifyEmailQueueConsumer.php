@@ -43,7 +43,7 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
       $contact = $this->getContact($contactID);
     }
 
-    if ($contact['email_primary.email'] !== $message['email']) {
+    if (strcasecmp($contact['email_primary.email'], $message['email']) !== 0) {
       $this->updatePrimaryEmail($contact, $message['email']);
     } else {
       \Civi::log('wmf')->info("No need to update primary email for contact ID $contactID, already {$message['email']}");
