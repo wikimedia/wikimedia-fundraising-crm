@@ -432,6 +432,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'invoice_id' => $contributionRecur['invoice_id'],
       'contribution_recur_id' => NULL,
       'amount' => 12.00,
+      'receive_date' => gmdate('Y-m-d H:i:s', strtotime('-30 days')),
     ]);
 
     [
@@ -524,14 +525,16 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $params = [
       'id' => $contributionRecur['id'],
       'payment_processor_id.name' => $this->processorName,
-      // FIXME: We're putting this 28 days in the past to fool the too-soon
-      // contribution filter. Instead we should set this to now and update
-      // the contribution record created in the previous run to set it to
-      // 28 days earlier.
-      'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-28  days')),
+      'next_sched_contribution_date' => gmdate('Y-m-d H:i:s'),
     ];
     $this->callAPISuccess('ContributionRecur', 'create', $params);
 
+    // Now pretend a month has passed, by backdating the contribution that was
+    // inserted in that run. This gets us past the too-recent-charge filter.
+    Contribution::update(FALSE)
+      ->addWhere('contribution_recur_id', '=', $contributionRecur['id'])
+      ->addValue('receive_date', gmdate('Y-m-d H:i:s', strtotime('-28 days')))
+      ->execute();
 
     // trigger the recurring payment job to create the second payment
     // this second payment will use `contribution_recur_id` internally to find
