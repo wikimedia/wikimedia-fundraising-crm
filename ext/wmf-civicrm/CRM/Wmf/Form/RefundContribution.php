@@ -1,49 +1,71 @@
 <?php
 
 use Civi\Api4\Contribution;
-use Civi\Api4\PaymentProcessor;
 
 /**
  * Form controller class
  *
  * @see https://docs.civicrm.org/dev/en/latest/framework/quickform/
  */
-class CRM_Wmf_Form_RefundContribution extends CRM_Core_Form {
+class CRM_Wmf_Form_RefundContribution extends CRM_Contribute_Form_Task {
+
+  const MAX_REFUNDS_TO_PROCESS_SYNCHRONOUSLY = 5;
 
   /**
    * Build basic form.
    *
-   * @throws \CRM_Core_Exception
+   * @throws CRM_Core_Exception
    */
   public function buildQuickForm(): void {
-    $contributionID = CRM_Utils_Request::retrieve('contribution_id', 'Integer', $this);
-    $contribution = Contribution::get(FALSE)
+    if (!empty($this->_submitValues['id'])) {
+      // Initial load from SearchKit, or submitting this form.
+      // Note that under SearchKit $this->_contributionIds contains ALL the
+      // IDs returned in the search, not the specific IDs selected for the action.
+      $ids = explode(',', $this->_submitValues['id']);
+    } else {
+      // Loaded from individual contact contribution tab or from old contribution search
+      $ids = $this->_contributionIds;
+    }
+
+    $contributions = Contribution::get(FALSE)
       ->addSelect('*')
       ->addSelect('contribution_status_id:name')
+      ->addSelect('contact_id.display_name')
       ->addSelect('contribution_extra.*')
-      ->addWhere('id', '=', $contributionID)
-      ->execute()->first();
-    $status = $contribution['contribution_status_id:name'];
-    if ($status !== 'Completed') {
-      $message = ($status === 'Refunded')
-        ? "Contribution is refunded"
-        : "Unable to refund contribution with status $status";
-      $this->assign('no_go_reason', $message);
+      ->addWhere('id', 'IN', $ids)
+      ->execute();
+    $toRefund = [];
+    $notToRefund = [];
+    foreach($contributions as $contribution) {
+      $status = $contribution['contribution_status_id:name'];
+      // Make a few things with dots available in Smarty
+      $contribution['display_name'] = $contribution['contact_id.display_name'];
+      $contribution['original_amount'] = $contribution['contribution_extra.original_amount'];
+      $contribution['original_currency'] = $contribution['contribution_extra.original_currency'];
+
+      if ($status === 'Completed' && $this->processorCanRefund($contribution)) {
+        $toRefund[] = $contribution;
+      }
+      else {
+        $notToRefund[] = $contribution;
+      }
+    }
+    $numberToRefund = count($toRefund);
+    if ($numberToRefund === 0) {
+      $this->assign('no_go_reason', 'No selected contributions can be refunded');
       return;
     }
-    $amount = $contribution['contribution_extra.original_amount'];
-    $currency = $contribution['contribution_extra.original_currency'];
-    $processorName = $contribution['contribution_extra.gateway'];
-    $this->assign('amount', $amount);
-    $this->assign('currency', $currency);
-    $this->assign('processor', $processorName);
-    $this->assign('receive_date', $contribution['receive_date']);
-    $this->assign('trxn_id', $contribution['trxn_id']);
+    if ($numberToRefund > self::MAX_REFUNDS_TO_PROCESS_SYNCHRONOUSLY) {
+      $this->assign('async_message', 'Too many to refund synchronously. Refunds will be processed in the background.');
+    }
+    $this->assign('to_refund', $toRefund);
+    $this->assign('not_to_refund', $notToRefund);
     $this->add('checkbox', 'is_fraud', 'Mark as fraudulent');
+    $this->add('hidden', 'id', implode(',', $ids));
     $this->addButtons([
       [
         'type' => 'submit',
-        'name' => 'Submit refund to processor',
+        'name' => 'Submit refund(s)',
         'isDefault' => TRUE,
       ],
     ]);
@@ -59,34 +81,85 @@ class CRM_Wmf_Form_RefundContribution extends CRM_Core_Form {
       CRM_Core_Session::setStatus($vars['no_go_reason']);
       return;
     }
-    $processor = PaymentProcessor::get(FALSE)
-      ->addWhere('name', '=', $vars['processor'])
-      ->addWhere('is_test', '=', FALSE)
-      ->execute()->first();
-    $result = PaymentProcessor::Refund(FALSE)
-      ->setPaymentProcessorID($processor['id'])
-      ->setAmountToRefund($vars['amount'])
-      ->setTransactionID($vars['trxn_id'])
-      ->execute();
-    if ($result['refund_status'] === 'Completed') {
-      $updateCall = Contribution::update(FALSE)
-        ->addWhere('id', '=', CRM_Utils_Request::retrieve('contribution_id', 'Integer', $this))
-        ->addValue('cancel_date', date('Y-m-d H:i:s'))
-        ->addValue('contribution_status_id:name', 'Refunded');
-      if ($this->getSubmittedValue('is_fraud')) {
-        $updateCall->addValue('cancel_reason', 'fraud');
+    $isFraud = $this->getSubmittedValue('is_fraud') ?? FALSE;
+    $numberToProcess = count($vars['to_refund']);
+    $results = [];
+    if ($numberToProcess > self::MAX_REFUNDS_TO_PROCESS_SYNCHRONOUSLY) {
+      $queue = \Civi::queue('refund', [
+        'type' => 'Sql',
+        'runner' => 'task',
+        'retry_limit' => 3,
+        'retry_interval' => 20,
+        'error' => 'abort',
+      ]);
+      foreach ($vars['to_refund'] as $contribution) {
+        $this->refundViaQueue($queue, $contribution, $isFraud);
+        $results[$contribution['id']] = [
+          'refund_status' => 'Queued',
+          'trxn_id' => $contribution['trxn_id'],
+        ];
       }
-      if ($result['processor_id']) {
-        if ($vars['processor'] === 'gravy') {
-          $fieldName = 'payment_orchestrator_reversal_id';
-        } else {
-          $fieldName = 'backend_processor_reversal_id';
-        }
-        $updateCall->addValue("contribution_extra.$fieldName", $result['processor_id']);
-      }
-      $updateCall->execute();
+      CRM_Core_Session::setStatus("Processing $numberToProcess refunds in the background");
     }
-    CRM_Core_Session::setStatus('Refund status: ' . $result['refund_status']);
+    else {
+      $successCount = $failureCount = 0;
+      foreach ($vars['to_refund'] as $contribution) {
+        try {
+          $results[$contribution['id']] = Contribution::refundAndMarkIfFraud(FALSE)
+            ->setContributionID($contribution['id'])
+            ->setProcessorName($contribution['contribution_extra.gateway'])
+            ->setAmount($contribution['contribution_extra.original_amount'])
+            ->setTransactionID($contribution['trxn_id'])
+            ->setIsFraud($isFraud)
+            ->execute()->first();
+          $results[$contribution['id']]['trxn_id'] = $contribution['trxn_id'];
+        }
+        catch (\Exception $e) {
+          $results[$contribution['id']] = [
+            'refund_status' => 'Failed',
+            'trxn_id' => $contribution['trxn_id'],
+            'error' => $e->getMessage(),
+          ];
+        }
+        if ($results[$contribution['id']]['refund_status'] === 'Completed') {
+          $successCount++;
+        } else {
+          $failureCount++;
+        }
+      }
+      CRM_Core_Session::setStatus("$successCount succeeded, $failureCount failed.");
+    }
+    $this->assign('results', $results);
   }
 
+  protected function refundViaQueue($queue, $contribution, $isFraud) {
+    $refundParameters = [
+      'contributionID' => $contribution['id'],
+      'processorName' => $contribution['contribution_extra.gateway'],
+      'amount' => $contribution['contribution_extra.original_amount'],
+      'transactionID' => $contribution['trxn_id'],
+      'isFraud' => $isFraud
+    ];
+    $queue->createItem(new \CRM_Queue_Task(
+      'civicrm_api4_queue',
+      ['Contribution', 'refundAndMarkIfFraud', $refundParameters],
+      'Refund contribution ' . $contribution['trxn_id'],
+    ), ['weight' => 100]);
+  }
+
+  protected function processorCanRefund($contribution) {
+    if (empty($contribution['contribution_extra.gateway'])) {
+      return FALSE;
+    }
+    try {
+      $processor = \Civi\Payment\System::singleton()->getByName(
+        $contribution['contribution_extra.gateway'],
+        FALSE
+      );
+      return $processor !== NULL && $processor->supportsRefund();
+    }
+    catch (CRM_Core_Exception) {
+      return FALSE;
+    }
+  }
 }
