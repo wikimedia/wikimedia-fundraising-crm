@@ -605,16 +605,18 @@ function wmf_civicrm_civicrm_links($op, $objectName, $objectId, &$links, &$mask,
     Activity::links($objectId, $links);
   }
   if ($objectName === 'Contribution' && $op === 'contribution.selector.row') {
-    // Would be nice if $values had the contribution status but it doesn't,
-    // so always add this option.
-    $links[] = [
-      'name' => ts('Refund'),
-      'title' => ts('Refund contribution'),
-      'url' => 'civicrm/refund_contribution',
-      'qs' => "contribution_id=$objectId",
-      'class' => 'crm-popup medium-popup',
-      'weight' => 1,
-    ];
+    if (CRM_Core_Permission::check('refund contributions')) {
+      // Would be nice if $values had the contribution status but it doesn't,
+      // so always add this option.
+      $links[] = [
+        'name' => ts('Refund'),
+        'title' => ts('Refund contribution'),
+        'url' => 'civicrm/refund_contribution',
+        'qs' => "contribution_id=$objectId",
+        'class' => 'crm-popup medium-popup',
+        'weight' => 1,
+      ];
+    }
   }
 }
 
