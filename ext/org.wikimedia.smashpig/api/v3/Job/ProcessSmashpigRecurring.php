@@ -20,6 +20,7 @@ function civicrm_api3_job_process_smashpig_recurring($params) {
     'catch_up_days',
     'batch_size',
     'charge_descriptor',
+    'min_days_between_charges',
     'time_limit_in_seconds',
   ];
   if (isset($params['retry_cadence'])) {
@@ -41,6 +42,7 @@ function civicrm_api3_job_process_smashpig_recurring($params) {
     $params['catch_up_days'],
     $params['batch_size'],
     $params['charge_descriptor'],
+    $params['min_days_between_charges'],
     $params['time_limit_in_seconds'],
     $params['min_recur_id'] ?? 0,
     $params['max_recur_id'] ?? 0

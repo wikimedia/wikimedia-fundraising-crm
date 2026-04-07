@@ -119,4 +119,22 @@ return [
     'description' => 'The first 22 or so characters of this string show up on credit card statements.',
     'settings_pages' => ['smashpig' => ['weight' => 8]],
   ],
+  'smashpig_recurring_min_days_between_charges' => [
+    'group name' => 'SmashPig Preferences',
+    'group' => 'smashpig',
+    'name' => 'smashpig_recurring_min_days_between_charges',
+    'type' => 'Integer',
+    'quick_form_type' => 'Element',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 4,
+      'maxlength' => 4,
+    ],
+    'default' => 23,
+    'title' => 'Minimum time to wait between one charge and the next for a given recurring contribution',
+    'is_domain' => '1',
+    'is_contact' => 0,
+    'description' => 'Needs to account for the longest possible retry delay in the "cadence" setting.',
+    'settings_pages' => ['smashpig' => ['weight' => 9]],
+  ],
 ];

@@ -31,6 +31,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
   protected $descriptor;
 
+  protected int $minDaysBetweenCharges;
+
   protected $timeLimitInSeconds;
 
   protected $smashPigProcessors;
@@ -49,6 +51,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @param int $catchUpDays Number of days in the past to look for payments
    * @param int $batchSize Maximum number of payments to process in a batch
    * @param string $descriptor Shown on donors' card statements
+   * @param int $minDaysBetweenCharges Refuse to charge a second time in this many days
    * @param int $timeLimitInSeconds Maximum number of seconds to spend processing
    * @param int $minRecurID minimum (inclusive) contribution_recur.id to process (to segment jobs)
    * @param int $maxRecurID maximum (inclusive) contribution_recur.id to process (to segment jobs)
@@ -60,6 +63,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $catchUpDays,
     $batchSize,
     $descriptor,
+    $minDaysBetweenCharges,
     $timeLimitInSeconds = 0,
     $minRecurID = 0,
     $maxRecurID = 0,
@@ -76,6 +80,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $this->timeLimitInSeconds = $timeLimitInSeconds;
     $this->minRecurID = $minRecurID;
     $this->maxRecurID = $maxRecurID;
+    $this->minDaysBetweenCharges = $minDaysBetweenCharges;
   }
 
   /**
@@ -133,10 +138,12 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         )->days;
 
         // Ignore check when a specific contribution recur id is given
-        if ($days < 24 && !$contributionRecurId) {
+        if ($days <= $this->minDaysBetweenCharges && !$contributionRecurId) {
           // Allow autorescue donations to be charged in close date ranges
           if (!$this->getAutorescueReference($recurringPayment)) {
-            Civi::log('wmf')->info('Skipping payment: Two recurring charges within 23 days. recurring_id: ' . $recurringPayment['id']);
+            Civi::log('wmf')->info(
+              "Skipping payment: Two recurring charges within $this->minDaysBetweenCharges days. " .
+              "recurring_id: {$recurringPayment['id']}");
             continue;
           }
         }

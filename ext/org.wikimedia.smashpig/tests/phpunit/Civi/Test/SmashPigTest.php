@@ -1059,7 +1059,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       ->method('approvePayment');
 
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription(), 23
     );
     $processor->run();
 
@@ -1101,7 +1101,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         $response
       );
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, $cadence, 1, 1, $this->getExpectedDescription()
+      TRUE, $cadence, 1, 1, $this->getExpectedDescription(), 23
     );
     $processor->run();
     $queue = QueueWrapper::getQueue('donations');
@@ -1200,7 +1200,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       ->willReturn($response);
 
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription(), 23
     );
     $processor->run();
     $queue = QueueWrapper::getQueue('donations');
@@ -1258,7 +1258,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
     // run the recurring processor job
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription(), 23
     );
     $processor->run();
     // Run the queue task to send the email
@@ -1321,7 +1321,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
     // run the recurring processor job
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription(), 23
     );
     $processor->run();
 
@@ -1392,7 +1392,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
     // run the recurring processor job
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription(), 23
     );
     $processor->run();
 
@@ -1477,7 +1477,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
     // run the recurring processor job
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription(), 23
     );
     $processor->run();
 
@@ -1563,7 +1563,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         $response
       );
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription(), 23
     );
     $processor->run();
     $queue = QueueWrapper::getQueue('donations');
@@ -1590,7 +1590,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
    */
   public function testGetErrorMessageText(): void {
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription(), 23
     );
 
     $response = (new ApprovePaymentResponse())->addErrors(
@@ -1700,7 +1700,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         $this->approvePaymentResponse
       );
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription(), 23
     );
     $processor->run();
     $queue = QueueWrapper::getQueue('donations');
@@ -1861,7 +1861,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         $response
       );
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription(), 23
     );
     $processor->run();
     return $contributionRecur;
@@ -1903,7 +1903,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       ->willReturn($response);
 
     $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
-      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription(), 23
     );
     $processor->run();
 
