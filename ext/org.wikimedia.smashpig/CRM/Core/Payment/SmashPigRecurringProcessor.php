@@ -524,7 +524,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         $cancelRecurringDonation = TRUE;
         $params['cancel_reason'] = '(auto) un-retryable card decline reason code';
       }
-      if ($newFailureCount >= $this->maxFailures) {
+      elseif ($newFailureCount >= $this->maxFailures) {
         $cancelRecurringDonation = TRUE;
         $params['cancel_reason'] = '(auto) maximum failures reached';
       }
