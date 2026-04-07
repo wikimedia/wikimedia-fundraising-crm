@@ -484,23 +484,17 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
     $this->createActivity($recurringPayment, $errorResponse, $errorMessage, 'failure');
 
-    $params = [
-      'id' => $recurringPayment['id'],
-    ];
+    $params = [];
     if (!empty($errorResponse) &&
                 $errorResponse instanceof CreatePaymentWithProcessorRetryResponse
     ) {
       // if failed, also update the rescue_reference
       if (!empty($errorResponse->getProcessorRetryRescueReference())) {
-        ContributionRecur::update(FALSE)
-          ->addWhere('id', '=', $recurringPayment['id'])
-          ->setValues([
-            'contribution_recur_smashpig.rescue_reference' => $errorResponse->getProcessorRetryRescueReference(),
-          ])->execute();
+        $params['contribution_recur_smashpig.rescue_reference'] = $errorResponse->getProcessorRetryRescueReference();
       }
       if ($errorResponse->getIsProcessorRetryScheduled()) {
         // Set status to Pending but advance the next charge date a month so we don't try to charge again
-        $params['contribution_status_id'] = 'Pending';
+        $params['contribution_status_id:name'] = 'Pending';
         $params['next_sched_contribution_date'] = CRM_Core_Payment_Scheduler::getNextContributionDate($recurringPayment);
         $this->createActivity($recurringPayment, $errorResponse, $errorMessage, 'processorRetry');
       } else {
@@ -538,7 +532,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
         $delayInterval = new DateInterval('P' . $delayDays . 'D');
 
-        $params['contribution_status_id'] = 'Failing';
+        $params['contribution_status_id:name'] = 'Failing';
         $params['next_sched_contribution_date'] = UtcDate::getUtcDatabaseString(
           (new DateTimeImmutable())->add($delayInterval)->getTimestamp()
         );
@@ -547,10 +541,13 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     if ($cancelRecurringDonation) {
       // @todo note the core terminology would moe accurately set this to Failed
       // leaving cancelled for something where a user or staff member made a choice.
-      $params['contribution_status_id'] = 'Cancelled';
+      $params['contribution_status_id:name'] = 'Cancelled';
       $params['cancel_date'] = UtcDate::getUtcDatabaseString();
     }
-    civicrm_api3('ContributionRecur', 'create', $params);
+    ContributionRecur::update(FALSE)
+      ->addWhere('id', '=', $recurringPayment['id'])
+      ->setValues($params)
+      ->execute();
 
     if ($cancelRecurringDonation) {
       $hasOtherActiveRecurring = $this->hasOtherActiveRecurringContribution(
@@ -567,7 +564,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   }
 
   /**
-   * Send an email notifing of cancellation.
+   * Send an email notifying donor of cancellation.
    *
    * @param int $contributionRecurID
    * @param int $contactID
@@ -576,7 +573,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function sendFailureEmail(int $contributionRecurID, int $contactID) {
-    if ( Civi::settings()->get('smashpig_recurring_send_failure_email') ) {
+    if (Civi::settings()->get('smashpig_recurring_send_failure_email')) {
       FailureEmail::sendViaQueue($contactID, $contributionRecurID);
     }
   }
