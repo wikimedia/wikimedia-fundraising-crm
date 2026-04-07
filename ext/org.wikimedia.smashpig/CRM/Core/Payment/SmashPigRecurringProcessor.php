@@ -588,13 +588,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function getAutorescueReference($recurringPayment): ?string {
-    $autorescue = ContributionRecur::get(FALSE)
-      ->addSelect('contribution_recur_smashpig.rescue_reference')
-      ->addWhere('id','=',$recurringPayment['id'])
-      ->execute()
-      ->first();
-
-    return $autorescue['contribution_recur_smashpig.rescue_reference'];
+    return $recurringPayment['contribution_recur_smashpig.rescue_reference'];
   }
 
   /**
