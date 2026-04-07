@@ -43,7 +43,7 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
       $contact = $this->getContact($contactID);
     }
 
-    if ($contact['email_primary.email'] !== $message['email']) {
+    if (strcasecmp($contact['email_primary.email'], $message['email']) !== 0) {
       $this->updatePrimaryEmail($contact, $message['email']);
     } else {
       \Civi::log('wmf')->info("No need to update primary email for contact ID $contactID, already {$message['email']}");
@@ -86,6 +86,7 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
       ->addSelect('email_primary.email')
       ->addSelect('email_primary.id')
       ->addSelect('address_primary.country_id')
+      ->addSelect('email_primary.location_type_id')
       ->execute()
       ->first();
   }
@@ -114,14 +115,30 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
    */
   private function updatePrimaryEmail(array $contact, string $newEmail): void {
     $oldEmail = $contact['email_primary.email'];
-    $updatePrimaryEmail = Email::update()
-      ->addWhere('email', '=', $oldEmail)
-      ->addWhere('contact_id', '=', $contact['id'])
-      ->setValues([
+    // demote the primary if location type is not default or EPC
+    if (!in_array($contact['email_primary.location_type_id'], [
+      \CRM_Core_BAO_LocationType::getDefault()->id,
+      \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Email', 'location_type_id', 'EmailPreference')
+    ])) {
+      $updatePrimaryEmail = Email::save()
+        ->addRecord([
+          'contact_id' => $contact['id'],
+          'email' => $newEmail,
+          'is_primary' => TRUE,
+          'location_type_id:name' => 'EmailPreference'
+        ])
+        ->execute();
+    }
+    else {
+      $updatePrimaryEmail = Email::update()
+        ->addWhere('email', '=', $oldEmail)
+        ->addWhere('contact_id', '=', $contact['id'])
+        ->setValues([
           'email' => $newEmail,
           'location_type_id:name' => 'EmailPreference'
-      ])
-      ->execute();
+        ])
+        ->execute();
+    }
 
     if (!$updatePrimaryEmail->first()) {
       throw new \CRM_Core_Exception("Failed to update {$contact['id']}'s email from $oldEmail to $newEmail.");
