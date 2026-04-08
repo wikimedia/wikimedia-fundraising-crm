@@ -332,31 +332,40 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
   }
 
   public function supportsRefund() {
-    return $this->getPaymentProcessor()['name'] === 'dlocal';
+    return in_array(
+      $this->getPaymentProcessor()['name'],
+      ['adyen', 'braintree', 'dlocal', 'gravy', 'paypal_ec']
+    );
   }
 
   public function doRefund(&$params): array {
-    $refundedStatusID = CRM_Core_PseudoConstant::getKey(
-      'CRM_Contribute_BAO_Contribution',
-      'contribution_status_id',
-      'Refunded'
-    );
-    $orderID = $params['order_id'] ?? null;
-    $trxnID = $params['gateway_txn_id'];
-    $amount = (float)$this->getAmount($params);
     $gateway = $this->getPaymentProcessor()['name'];
-
+    $amount = (float)$this->getAmount($params);
     if ($amount === 0.0) {
-      throw new RuntimeException("Invalid refund amount of $amount. Order id $orderID and transaction id $trxnID");
+      throw new RuntimeException("Invalid refund amount of $amount. Transaction ID is {$params['trxn_id']}");
+    }
+    $contribution = Civi\Api4\Contribution::get(FALSE)
+      ->addWhere('trxn_id', '=', $params['trxn_id'])
+      ->addSelect('invoice_id')
+      ->addSelect('contribution_extra.*')
+      ->addSelect('payment_instrument_id:name')
+      ->execute()->first();
+    if (!$contribution) {
+      throw new PaymentProcessorException("Unable to find contribution with trxn_id {$params['trxn_id']}");
+    }
+    if ($amount > (float)$contribution['contribution_extra.original_amount']) {
+      throw new PaymentProcessorException("Attempting to refund more than the original amount for trxn_id {$params['trxn_id']}");
+    }
+    if ($gateway !== $contribution['contribution_extra.gateway']) {
+      throw new PaymentProcessorException(
+        "Invalid payment_processor_id for trxn_id {$params['trxn_id']}"
+      );
     }
     $this->setContext();
 
-    if (!empty($params['payment_method'])) {
-      $paymentMethod = $params['payment_method'];
-    }
-    else {
-      $paymentMethod = self::getPaymentMethod($params);
-    }
+    $paymentMethod = self::getPaymentMethod([
+      'payment_instrument' => $contribution['payment_instrument_id:name'],
+    ]);
 
     $provider = PaymentProviderFactory::getProviderForMethod($paymentMethod);
 
@@ -367,28 +376,28 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
     }
 
     $request = [
-      'gateway_txn_id' => $trxnID,
-      'gross' => $amount,
-      'currency' => $params['currency']
+      'amount' => $amount,
+      'currency' => $contribution['contribution_extra.original_currency'],
+      'gateway_txn_id' => $contribution['contribution_extra.gateway_txn_id'],
+      'order_id' => $contribution['invoice_id'],
     ];
 
     Civi::log('wmf')->debug('Refund request params: ' . print_r($request, true));
 
     /** @var RefundPaymentResponse $refundPaymentResponse */
-    $refundPaymentResponse = $provider->refundPayment( $request );
+    $refundPaymentResponse = $provider->refundPayment($request);
 
     Civi::log('wmf')->debug('Raw response: ' . print_r($refundPaymentResponse->getRawResponse(), true));
 
     if (!$refundPaymentResponse->isSuccessful()) {
       $this->throwException('Refund failed', $refundPaymentResponse);
     }
-    $gatewayTxnId = $refundPaymentResponse->getGatewayTxnId();
+    $gatewayTxnId = $refundPaymentResponse->getGatewayRefundId() ?? $refundPaymentResponse->getGatewayTxnId();
 
     return [
       'processor_id' => $gatewayTxnId,
-      'invoice_id' => $params['invoice_id'] ?? $params['order_id'] ?? null,
-      'payment_status_id' => $refundedStatusID,
-      'payment_status' => 'Refunded',
+      'invoice_id' => $contribution['invoice_id'] ?? null,
+      'refund_status' => 'Completed',
     ];
   }
 
