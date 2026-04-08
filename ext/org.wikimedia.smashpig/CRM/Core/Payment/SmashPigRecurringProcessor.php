@@ -125,7 +125,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
         // Catch for double recurring payments in one month (23 days of one another)
         $days = date_diff(
-          new DateTime($recurringPayment['next_sched_contribution_date']),
+          new DateTime(),
           new DateTime($previousContribution['receive_date'])
         )->days;
 

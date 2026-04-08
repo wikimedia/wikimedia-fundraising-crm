@@ -402,6 +402,7 @@ class CRM_Contribute_Selector_Search extends CRM_Core_Selector_Base implements C
         'cid' => (int) $result->contact_id,
         'cxt' => $this->_context,
         'financial_type_id' => $result->financial_type_id ? (int) $result->financial_type_id : NULL,
+        'contribution_status_id' => $result->contribution_status_id,
       ];
 
       if (in_array($row['contribution_status_name'], ['Partially paid', 'Pending refund']) || $isPayLater) {
