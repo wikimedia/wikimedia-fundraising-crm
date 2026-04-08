@@ -397,6 +397,10 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         $queueMessage = $this->addProcessorSpecificFieldsToQueueMessage($queueMessage, $payment);
       }
       $queueName = ($payment['payment_status'] === 'Completed') ? 'donations' : 'pending';
+      // Temporary logging to ensure we are only sending the expected donations to pending.
+      if ($queueName === 'pending') {
+        \Civi::log('wmf')->info('Sending message to pending queue: ' . json_encode($queueMessage));
+      }
       QueueWrapper::push($queueName, $queueMessage, TRUE);
     }
     else {
