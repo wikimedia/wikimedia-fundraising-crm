@@ -108,7 +108,7 @@ class CRM_Wmf_Upgrader extends CRM_Extension_Upgrader_Base {
      * giving over x - which is a common usage.
      *
     */
-    CRM_Core_DAO::executeQuery('ALTER TABLE wmf_donor ADD INDEX entity_total (entity_id, lifetime_usd_total)');
+    CRM_Core_DAO::executeQuery('ALTER TABLE wmf_donor ADD INDEX entity_total (entity_id, lifetime_including_endowment)');
     CRM_Core_BAO_SchemaHandler::safeRemoveFK('civicrm_activity', 'FK_civicrm_activity_original_id');
     $this->upgrade_4640();
   }
