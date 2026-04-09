@@ -18,4 +18,10 @@
     <title>Zendesk Ticket Data</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/wmf/edit-cancel-reason</path>
+    <page_callback>CRM_Wmf_Form_EditCancelReason</page_callback>
+    <title>Edit Recurring Cancel Reason</title>
+    <access_arguments>edit contributions</access_arguments>
+  </item>
 </menu>
