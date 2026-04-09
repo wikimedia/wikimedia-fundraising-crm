@@ -17,8 +17,12 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
   protected $useQueue;
 
-  protected $retryDelayDays;
+  protected $retryCadence;
 
+  /**
+   * Calculated from $retryCadence
+   * @var int|null
+   */
   protected $maxFailures;
 
   protected $catchUpDays;
@@ -40,8 +44,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   /**
    * @param bool $useQueue Send messages to donations queue instead of directly
    *  inserting new contributions
-   * @param int $retryDelayDays Days to wait before retrying failed payment
-   * @param int $maxFailures Maximum failures before canceling subscription
+   * @param array $retryCadence Days to wait before retrying failed payment. The max number of
+   *  failures is the length of this array plus one.
    * @param int $catchUpDays Number of days in the past to look for payments
    * @param int $batchSize Maximum number of payments to process in a batch
    * @param string $descriptor Shown on donors' card statements
@@ -52,8 +56,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    */
   public function __construct(
     $useQueue,
-    $retryDelayDays,
-    $maxFailures,
+    $retryCadence,
     $catchUpDays,
     $batchSize,
     $descriptor,
@@ -63,8 +66,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   ) {
     \CRM_SmashPig_ContextWrapper::createContext('recurring-processor');
     $this->useQueue = $useQueue;
-    $this->retryDelayDays = $retryDelayDays;
-    $this->maxFailures = $maxFailures;
+    $this->retryCadence = array_map('intval', $retryCadence);
+    $this->maxFailures = count($retryCadence) + 1;
     $this->catchUpDays = $catchUpDays;
     $this->batchSize = $batchSize;
     $this->descriptor = $descriptor;
@@ -507,7 +510,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     }
     else {
       // only if not handle by auto rescue, compare failure with maxFailure or update next retry day
-      $newFailureCount = $recurringPayment['failure_count'] + 1;
+      $previousFailureCount = $recurringPayment['failure_count'];
+      $newFailureCount = $previousFailureCount + 1;
       $params['failure_count'] = $newFailureCount;
       if ($exception->getErrorCode() === ErrorCode::DECLINED_DO_NOT_RETRY) {
         $cancelRecurringDonation = TRUE;
@@ -518,10 +522,19 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         $params['cancel_reason'] = '(auto) maximum failures reached';
       }
       else {
+        // Calculate the number of days between retry day N and N-1
+        if ($previousFailureCount === 0) {
+          $delayDays = $this->retryCadence[0];
+        } else {
+          $delayDays = $this->retryCadence[$previousFailureCount] - $this->retryCadence[$previousFailureCount - 1];
+        }
+
+        $delayInterval = new DateInterval('P' . $delayDays . 'D');
+
         $params['contribution_status_id'] = 'Failing';
         $params['next_sched_contribution_date'] = UtcDate::getUtcDatabaseString(
-        "+$this->retryDelayDays days"
-         );
+          (new DateTimeImmutable())->add($delayInterval)->getTimestamp()
+        );
       }
     }
     if ($cancelRecurringDonation) {
