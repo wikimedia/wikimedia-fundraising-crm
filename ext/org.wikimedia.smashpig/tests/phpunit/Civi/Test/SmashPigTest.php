@@ -1023,6 +1023,57 @@ class SmashPigTest extends SmashPigBaseTestClass {
   }
 
   /**
+   * When a recurring charge returns a pending status, the message should be
+   * sent to the pending queue with an order_id for later lookup.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \PHPQueue\Exception\JobNotFoundException
+   */
+  public function testPendingRecurringChargeIncludesOrderId(): void {
+    \Civi::settings()->set(
+      'smashpig_recurring_use_queue', '1'
+    );
+    \Civi::settings()->set(
+      'smashpig_recurring_catch_up_days', '1'
+    );
+
+    $contact = $this->createContact();
+    $token = $this->createToken($contact['id'], ['payment_processor_id.name' => 'gravy']);
+    $contributionRecur = $this->createContributionRecur($token, [
+      'gateway' => 'GRAVY',
+      'payment_processor_id.name' => 'gravy',
+    ]);
+
+    $contribution = $this->createContribution($contributionRecur);
+    [, $expectedNextPaymentInvoiceId] = $this->getExpectedIds($contribution);
+
+    $this->hostedCheckoutProvider->expects($this->once())
+      ->method('createPayment')
+      ->willReturn(
+        (new CreatePaymentResponse())
+          ->setGatewayTxnId('pending-txn-123')
+          ->setStatus(FinalStatus::PENDING)
+          ->setSuccessful(TRUE)
+      );
+    $this->hostedCheckoutProvider->expects($this->never())
+      ->method('approvePayment');
+
+    $processor = new \CRM_Core_Payment_SmashPigRecurringProcessor(
+      TRUE, [1,2], 1, 1, $this->getExpectedDescription()
+    );
+    $processor->run();
+
+    $donationsQueue = QueueWrapper::getQueue('donations');
+    $this->assertNull($donationsQueue->pop(), 'Pending message should not go to donations queue');
+
+    $pendingQueue = QueueWrapper::getQueue('pending');
+    $pendingMessage = $pendingQueue->pop();
+    $this->assertNotNull($pendingMessage, 'Pending message not added to pending queue');
+    $this->assertEquals($expectedNextPaymentInvoiceId, $pendingMessage['order_id']);
+    $this->assertEquals($expectedNextPaymentInvoiceId, $pendingMessage['invoice_id']);
+  }
+
+  /**
    * @throws \CRM_Core_Exception
    * @throws \PHPQueue\Exception\JobNotFoundException
    * @dataProvider failDataProvider
