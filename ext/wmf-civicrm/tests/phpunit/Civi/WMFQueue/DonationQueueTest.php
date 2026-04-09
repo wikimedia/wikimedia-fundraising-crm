@@ -1100,7 +1100,7 @@ class DonationQueueTest extends BaseQueueTestCase {
             'wmf_donor.first_donation_date' => '2024-03-01 00:00:00',
             'wmf_donor.last_donation_date' => '2024-03-01 00:00:00',
             'wmf_donor.last_donation_usd' => '1.23',
-            'wmf_donor.lifetime_usd_total' => '1.23',
+            'wmf_donor.lifetime_including_endowment' => '1.23',
             'wmf_donor.total_2023_2024' => 1.23,
           ],
           'contribution' => [

@@ -149,7 +149,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
   public function testMergeHook(bool $isReverse): void {
     $this->giveADuckADonation($isReverse);
     $this->assertContactValues($isReverse ? $this->contactID2 : $this->contactID, [
-      'wmf_donor.lifetime_usd_total' => 10,
+      'wmf_donor.lifetime_including_endowment' => 10,
     ]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', [
@@ -157,7 +157,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
     ]);
     $this->assertCount(1, $result['values']['merged']);
     $this->assertContactValues($this->contactID, [
-      'wmf_donor.lifetime_usd_total' => 24,
+      'wmf_donor.lifetime_including_endowment' => 24,
       'Communication.do_not_solicit' => 1,
       'wmf_donor.last_donation_amount' => 20,
       'wmf_donor.last_donation_currency' => 'NZD',
@@ -185,7 +185,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
     ]);
     $this->assertCount(1, $result['values']['merged']);
     $this->assertContactValues($this->contactID, [
-      'wmf_donor.lifetime_usd_total' => 24,
+      'wmf_donor.lifetime_including_endowment' => 24,
       'Communication.do_not_solicit' => TRUE,
     ]);
   }
@@ -237,7 +237,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * @dataProvider isReverse
    *
    * @throws \CRM_Core_Exception
-   * @throws \CRM_Core_Exception
    */
   public function testMergeEmailNonPrimary($isReverse): void {
     $this->giveADuckADonation($isReverse);
@@ -264,22 +263,22 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
-   * Test that wmf_donor calculations don't include Endowment.
+   * Test wmf_donor lifetime calculations.
    *
    * We set up 2 contacts
    *  - one with an Endowment gift
-   *  - one with a cash donation
+   *  - one with a cash donation & an endowment gift
    *
-   * We check the cash donation but not the gift is in the totals
+   * We check that all are included in the lifetime calculation but only the cash gist is included
+   * in others (last_ are all foundation only, which is confusing because they are different in Acoustic export).)
    *
    * After merging we check the same again.
    *
    * Although a bit tangential we test calculations on deleting a contribution at the end.
    *
    * @throws \CRM_Core_Exception
-   * @throws \CRM_Core_Exception
    */
-  public function testMergeEndowmentCalculation(): void {
+  public function testMergeCalculation(): void {
     $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $this->contactID,
       'financial_type_id:name' => 'Endowment Gift',
@@ -309,11 +308,11 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
     ]);
 
     $this->assertContactValues($this->contactID, [
-      'wmf_donor.lifetime_usd_total' => 0,
+      'wmf_donor.lifetime_including_endowment' => 10,
     ]);
 
     $this->assertContactValues($this->contactID2, [
-      'wmf_donor.lifetime_usd_total' => 5,
+      'wmf_donor.lifetime_including_endowment' => 12,
     ]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', [
@@ -321,22 +320,22 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
     ]);
     $this->assertCount(1, $result['values']['merged']);
     $this->assertContactValues($this->contactID, [
-      'wmf_donor.lifetime_usd_total' => 5,
+      'wmf_donor.lifetime_including_endowment' => 22,
       'wmf_donor.last_donation_amount' => 5,
       'wmf_donor.last_donation_currency' => 'USD',
       'wmf_donor.last_donation_usd' => 5,
       'wmf_donor.last_donation_date' => '2023-01-04 00:00:00',
-      'wmf_donor.total_2023_2024' => 0,
+      'wmf_donor.total_2024_2025' => 0,
     ]);
 
     $this->callAPISuccess('Contribution', 'delete', ['id' => $cashJob['id']]);
     $this->assertContactValues($this->contactID, [
-      'wmf_donor.lifetime_usd_total' => 0,
+      'wmf_donor.lifetime_including_endowment' => 17,
       'wmf_donor.last_donation_amount' => 0,
       'wmf_donor.last_donation_currency' => '',
       'wmf_donor.last_donation_usd' => 0,
       'wmf_donor.last_donation_date' => '',
-      'wmf_donor.total_2023_2024' => 0,
+      'wmf_donor.total_2024_2025' => 0,
     ]);
   }
 

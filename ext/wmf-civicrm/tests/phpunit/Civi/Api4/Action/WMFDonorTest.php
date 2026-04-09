@@ -397,7 +397,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     $updatedContacts = $this->updateWMFDonorData();
     foreach ($updatedContacts as $updatedContact) {
       $this->assertEquals(100, $updatedContact['wmf_donor.donor_segment_id']);
-      $this->assertEquals(20000, $updatedContact['wmf_donor.lifetime_usd_total']);
+      $this->assertEquals(20000, $updatedContact['wmf_donor.lifetime_including_endowment']);
     }
 
     $this->clearWMFDonorData();
@@ -405,7 +405,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     $updatedContacts = $this->updateWMFDonorData(['donor_segment_id' => TRUE]);
     foreach ($updatedContacts as $updatedContact) {
       $this->assertEquals(100, $updatedContact['wmf_donor.donor_segment_id']);
-      $this->assertEquals(0, $updatedContact['wmf_donor.lifetime_usd_total']);
+      $this->assertEquals(0, $updatedContact['wmf_donor.lifetime_including_endowment']);
     }
   }
 
@@ -485,7 +485,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ->execute();
     return Contact::get(FALSE)
       ->addWhere('id', 'IN', $this->ids['Contact'])
-      ->addSelect('wmf_donor.donor_segment_id', 'wmf_donor.donor_status_id', 'wmf_donor.lifetime_usd_total')
+      ->addSelect('wmf_donor.donor_segment_id', 'wmf_donor.donor_status_id', 'wmf_donor.lifetime_including_endowment')
       ->execute();
   }
 
