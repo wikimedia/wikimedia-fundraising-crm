@@ -4442,14 +4442,51 @@ v.channel IS NULL AND c.id = 131486342;",
     return TRUE;
   }
 
-  /**
-   * Queue up an API4 update.
-   *
-   * @param string $entity
-   * @param $action
-   * @param array $params
-   * @param array $incrementParameters
-   */
+   /**
+    * Backfill email location types for existing contacts based on latest donation payment method when it is ach.
+    *
+    * Finds contacts with primary emails currently set to Home (default),
+    * retrieves their latest contribution payment method, and updates the
+    * email location type for trusted payment methods ach.
+    *
+    * Bug: T420992
+    *
+    * @return bool
+    */
+   public function upgrade_4965(): bool {
+     $scriptPath = __DIR__ . '/../../scripts/T420992/backfill_email_location_types.php';
+     require_once $scriptPath;
+     $minContact = (int) \CRM_Core_DAO::singleValueQuery("SELECT MIN(contact_id) FROM civicrm_email");
+     $maxContact = (int) \CRM_Core_DAO::singleValueQuery("SELECT MAX(contact_id) FROM civicrm_email");
+     // get the group id once than repeat in real query here
+     $paymentInstrumentGroupId = (int) \CRM_Core_DAO::singleValueQuery(
+       "SELECT id FROM civicrm_option_group WHERE name = 'payment_instrument'"
+     );
+
+     $blockSize = 1000000; // Process 1m contacts at a time
+     echo "start ach backfill: " . time() . "\n";
+     for ($i = $minContact; $i <= $maxContact; $i += $blockSize) {
+       $upperBound = $i + $blockSize - 1;
+
+       // Pass the range
+       backfillEmailRange($i, $upperBound, $paymentInstrumentGroupId);
+
+       // small pause to reduce lock pressure
+       usleep(200000); // 200ms
+     }
+     echo "end ach backfill: " .time() . "\n";
+
+     return TRUE;
+   }
+
+   /**
+    * Queue up an API4 update.
+    *
+    * @param string $entity
+    * @param $action
+    * @param array $params
+    * @param array $incrementParameters
+    */
   private function queueApi4(string $entity, $action, array $params = [], array $incrementParameters = []): void {
     $queue = new QueueHelper(\Civi::queue('wmf_data_upgrades', [
       'type' => 'Sql',
