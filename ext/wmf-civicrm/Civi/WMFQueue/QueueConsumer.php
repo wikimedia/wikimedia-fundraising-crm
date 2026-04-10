@@ -8,17 +8,17 @@ use SmashPig\Core\SequenceGenerators\Factory;
 use Civi\Core\Exception\DBQueryException;
 use Civi\WMFStatistic\ImportStatsCollector;
 use SmashPig\Core\QueueConsumers\BaseQueueConsumer;
-use Exception;
 use SmashPig\Core\UtcDate;
 use SmashPig\CrmLink\Messages\DateFields;
 use Civi\WMFException\WMFException;
+use Throwable;
 
 /**
  * Queue consumer that knows what to do with WMFExceptions
  */
 abstract class QueueConsumer extends BaseQueueConsumer {
 
-  protected function handleError(array $message, Exception $ex) {
+  protected function handleError(array $message, Throwable $ex) {
     $context = QueueContext::singleton()->pop();
     if (isset($message['gateway']) && isset($message['order_id'])) {
       $logId = "{$message['gateway']}-{$message['order_id']}";
