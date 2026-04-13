@@ -35,6 +35,7 @@ class SendSecondRecurringFailureEmail extends AbstractAction {
     $secondFailureActivityType = CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Second Recurring Failure Email');
 
     // Get the recurrings that have the first failure email sent at least $days ago with no second failure email
+    // Exclude donors who are snoozed; we use snooze to suppress the 2nd email if the donor responds to the first failure email.
     $recurringQuery = ContributionRecur::get(FALSE)
       ->addSelect('id', 'contact_id')
       ->addWhere('contribution_status_id:name', '=', 'Cancelled')
@@ -49,7 +50,17 @@ class SendSecondRecurringFailureEmail extends AbstractAction {
         'Activity AS second',
         'EXCLUDE',
         ['second.source_record_id', '=', 'id'],
-        ['second.activity_type_id', '=', $secondFailureActivityType]);
+        ['second.activity_type_id', '=', $secondFailureActivityType])
+      ->addJoin(
+        'Contact AS c',
+        'INNER',
+        ['contact_id', '=', 'c.id'])
+      ->addJoin(
+        'Email AS e',
+        'EXCLUDE',
+        ['c.id', '=', 'e.contact_id'],
+        ['e.is_primary', '=', TRUE],
+        ['e.email_settings.snooze_date', '>', '"now"']);
 
     $result['notifications'] = [];
     $result['send_success_count'] = $result['send_failure_count'] = 0;
