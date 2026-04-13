@@ -1954,7 +1954,8 @@ abstract class BaseAuditProcessor {
         /** @var Money $settledNetAmount */
         $settledNetAmount = $batch['settled_net_amount'];
         if ($expectedAmount->compareTo($settledNetAmount) === 0) {
-          if ($batch['settlement_gateway'] === 'adyen') {
+          if ($batch['settlement_gateway'] === 'adyen'
+            && strtotime($batch['settlement_date']) < strtotime('2026-04-10')) {
             $batch['settlement_date'] = $this->moveToNextFriday($batch['settlement_date']);
           }
           $batch['status_id:name'] = 'total_verified';
