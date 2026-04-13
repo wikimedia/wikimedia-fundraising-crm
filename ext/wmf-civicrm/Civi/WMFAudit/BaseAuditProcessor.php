@@ -1317,7 +1317,7 @@ abstract class BaseAuditProcessor {
       // Generally in unit tests we want the files left unmoved.
       return TRUE;
     }
-    return $this->moveFile($file, $this->getCompletedFilesDirectory());
+    return $this->moveFile($file, $this->getCompletedFilesDirectory(), TRUE);
   }
 
   /**
@@ -1793,7 +1793,26 @@ abstract class BaseAuditProcessor {
   protected function parseReconciliationFile(string $file): array {
     $this->startTiming("Parsing $file");
     $records = [];
-    // Send the file through to the processor if needed
+
+    // If gzipped, decompress in-place and delete the .gz
+    if (substr($file, -3) === '.gz') {
+      $unzippedFile = substr($file, 0, -3);
+
+      $command = sprintf(
+        'gzip -d %s',
+        escapeshellarg($file)
+      );
+
+      exec($command, $output, $returnCode);
+
+      if ($returnCode !== 0 || !file_exists($unzippedFile)) {
+        $this->logError("Failed to decompress $file", 'FILE_GUNZIP');
+        return [];
+      }
+
+      $file = $unzippedFile; // switch to decompressed file
+    }
+
     if ($this instanceof MultipleFileTypeParser) {
       $this->setFilePath($file);
     }
