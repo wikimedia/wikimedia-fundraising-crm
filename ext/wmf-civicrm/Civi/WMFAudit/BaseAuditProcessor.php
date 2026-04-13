@@ -207,10 +207,10 @@ abstract class BaseAuditProcessor {
    * @param string $message The message we want to log. Should be
    * descriptive enough that we can bug hunt without having to go all cowboy in
    * prod.
-   * @param string $drush_code If this code is fatal (According to
+   * @param string $errorCode If this code is fatal (According to
    * wmf_audit_error_isfatal), this will result in the whole script dying.
    */
-  protected function logError($message, $drush_code) {
+  protected function logError($message, $errorCode) {
     \Civi::log('wmf')
       ->error($this->name . '_audit: {message}',
         ['message' => $message]);
@@ -229,8 +229,8 @@ abstract class BaseAuditProcessor {
       'UTM_DATA_MISMATCH',
       'NORMALIZE_DATA',
     ];
-    if (!in_array($drush_code, $nonfatal)) {
-      die("\n*** Fatal Error $drush_code: $message");
+    if (!in_array($errorCode, $nonfatal)) {
+      die("\n*** Fatal Error $errorCode: $message");
     }
   }
 
