@@ -34,6 +34,7 @@ class FinanceInstrument {
     'banco_do_brasil' => 'Banco do Brasil', // Brazil
     'bbva' => 'BBVA', // Peru
     'bcp' => 'BCP', // Peru
+    'blik' => 'Blik',
     'bradesco' => 'Bradesco', // Brazil
     'interbank' => 'Interbank', // Peru
     'itau' => 'Itau', // Brazil
