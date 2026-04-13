@@ -31,6 +31,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
   protected $descriptor;
 
+  protected int $minDaysBetweenCharges;
+
   protected $timeLimitInSeconds;
 
   protected $smashPigProcessors;
@@ -49,6 +51,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @param int $catchUpDays Number of days in the past to look for payments
    * @param int $batchSize Maximum number of payments to process in a batch
    * @param string $descriptor Shown on donors' card statements
+   * @param int $minDaysBetweenCharges Refuse to charge a second time in this many days
    * @param int $timeLimitInSeconds Maximum number of seconds to spend processing
    * @param int $minRecurID minimum (inclusive) contribution_recur.id to process (to segment jobs)
    * @param int $maxRecurID maximum (inclusive) contribution_recur.id to process (to segment jobs)
@@ -60,6 +63,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $catchUpDays,
     $batchSize,
     $descriptor,
+    $minDaysBetweenCharges,
     $timeLimitInSeconds = 0,
     $minRecurID = 0,
     $maxRecurID = 0,
@@ -76,6 +80,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $this->timeLimitInSeconds = $timeLimitInSeconds;
     $this->minRecurID = $minRecurID;
     $this->maxRecurID = $maxRecurID;
+    $this->minDaysBetweenCharges = $minDaysBetweenCharges;
   }
 
   /**
@@ -133,10 +138,12 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         )->days;
 
         // Ignore check when a specific contribution recur id is given
-        if ($days < 24 && !$contributionRecurId) {
+        if ($days <= $this->minDaysBetweenCharges && !$contributionRecurId) {
           // Allow autorescue donations to be charged in close date ranges
           if (!$this->getAutorescueReference($recurringPayment)) {
-            Civi::log('wmf')->info('Skipping payment: Two recurring charges within 23 days. recurring_id: ' . $recurringPayment['id']);
+            Civi::log('wmf')->info(
+              "Skipping payment: Two recurring charges within $this->minDaysBetweenCharges days. " .
+              "recurring_id: {$recurringPayment['id']}");
             continue;
           }
         }
@@ -477,23 +484,17 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
     $this->createActivity($recurringPayment, $errorResponse, $errorMessage, 'failure');
 
-    $params = [
-      'id' => $recurringPayment['id'],
-    ];
+    $params = [];
     if (!empty($errorResponse) &&
                 $errorResponse instanceof CreatePaymentWithProcessorRetryResponse
     ) {
       // if failed, also update the rescue_reference
       if (!empty($errorResponse->getProcessorRetryRescueReference())) {
-        ContributionRecur::update(FALSE)
-          ->addWhere('id', '=', $recurringPayment['id'])
-          ->setValues([
-            'contribution_recur_smashpig.rescue_reference' => $errorResponse->getProcessorRetryRescueReference(),
-          ])->execute();
+        $params['contribution_recur_smashpig.rescue_reference'] = $errorResponse->getProcessorRetryRescueReference();
       }
       if ($errorResponse->getIsProcessorRetryScheduled()) {
         // Set status to Pending but advance the next charge date a month so we don't try to charge again
-        $params['contribution_status_id'] = 'Pending';
+        $params['contribution_status_id:name'] = 'Pending';
         $params['next_sched_contribution_date'] = CRM_Core_Payment_Scheduler::getNextContributionDate($recurringPayment);
         $this->createActivity($recurringPayment, $errorResponse, $errorMessage, 'processorRetry');
       } else {
@@ -517,7 +518,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         $cancelRecurringDonation = TRUE;
         $params['cancel_reason'] = '(auto) un-retryable card decline reason code';
       }
-      if ($newFailureCount >= $this->maxFailures) {
+      elseif ($newFailureCount >= $this->maxFailures) {
         $cancelRecurringDonation = TRUE;
         $params['cancel_reason'] = '(auto) maximum failures reached';
       }
@@ -531,7 +532,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
 
         $delayInterval = new DateInterval('P' . $delayDays . 'D');
 
-        $params['contribution_status_id'] = 'Failing';
+        $params['contribution_status_id:name'] = 'Failing';
         $params['next_sched_contribution_date'] = UtcDate::getUtcDatabaseString(
           (new DateTimeImmutable())->add($delayInterval)->getTimestamp()
         );
@@ -540,10 +541,13 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     if ($cancelRecurringDonation) {
       // @todo note the core terminology would moe accurately set this to Failed
       // leaving cancelled for something where a user or staff member made a choice.
-      $params['contribution_status_id'] = 'Cancelled';
+      $params['contribution_status_id:name'] = 'Cancelled';
       $params['cancel_date'] = UtcDate::getUtcDatabaseString();
     }
-    civicrm_api3('ContributionRecur', 'create', $params);
+    ContributionRecur::update(FALSE)
+      ->addWhere('id', '=', $recurringPayment['id'])
+      ->setValues($params)
+      ->execute();
 
     if ($cancelRecurringDonation) {
       $hasOtherActiveRecurring = $this->hasOtherActiveRecurringContribution(
@@ -560,7 +564,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   }
 
   /**
-   * Send an email notifing of cancellation.
+   * Send an email notifying donor of cancellation.
    *
    * @param int $contributionRecurID
    * @param int $contactID
@@ -569,7 +573,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   public function sendFailureEmail(int $contributionRecurID, int $contactID) {
-    if ( Civi::settings()->get('smashpig_recurring_send_failure_email') ) {
+    if (Civi::settings()->get('smashpig_recurring_send_failure_email')) {
       FailureEmail::sendViaQueue($contactID, $contributionRecurID);
     }
   }
@@ -584,13 +588,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   protected function getAutorescueReference($recurringPayment): ?string {
-    $autorescue = ContributionRecur::get(FALSE)
-      ->addSelect('contribution_recur_smashpig.rescue_reference')
-      ->addWhere('id','=',$recurringPayment['id'])
-      ->execute()
-      ->first();
-
-    return $autorescue['contribution_recur_smashpig.rescue_reference'];
+    return $recurringPayment['contribution_recur_smashpig.rescue_reference'];
   }
 
   /**
