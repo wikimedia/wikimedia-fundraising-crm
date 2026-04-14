@@ -30,6 +30,7 @@ $instruments = [
   'Google Pay: Visa' => 'Google Pay: Visa',
   'Bitcoin' => 'Bitcoin',
   'Bank Transfer' => 'Bank Transfer',
+  'Blik' => 'Blik',
   'Boleto' => 'Boleto',
   'Bpay' => 'Bpay',
   'Cash' => 'Cash',

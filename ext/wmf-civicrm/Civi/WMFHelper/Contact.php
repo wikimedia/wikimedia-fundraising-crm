@@ -241,6 +241,30 @@ class Contact {
   }
 
   /**
+   * Get the ID of our gateway fee contact.
+   *
+   * @return int
+   * @throws \CRM_Core_Exception
+   */
+  public static function getGatewayContactID(): int {
+    $gateway = 'Payment Processor Fee Bucket';
+    if (!isset(\Civi::$statics[__CLASS__][$gateway])) {
+      \Civi::$statics[__CLASS__][$gateway] = (int) \Civi\Api4\Contact::get(FALSE)
+        ->addSelect('id')
+        ->addWhere('contact_type', '=', 'Organization')
+        ->addWhere('organization_name', '=', $gateway)
+        ->execute()->first()['id'];
+    }
+    if (!\Civi::$statics[__CLASS__][$gateway]) {
+      \Civi::$statics[__CLASS__][$gateway] = (int) \Civi\Api4\Contact::create(FALSE)
+        ->addValue('contact_type', 'Organization')
+        ->addValue('organization_name', $gateway)
+        ->execute()->first()['id'];
+    }
+    return \Civi::$statics[__CLASS__][$gateway];
+  }
+
+  /**
    * Check if there is any other contacts share same primary email
    * with the given contact id, return all ids, need to merge
    * @param int $contact_id

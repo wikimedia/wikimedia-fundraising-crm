@@ -268,7 +268,7 @@ class RecurringModifyMessage extends Message {
    * Returns true for messages send from the email prefs center or the donor portal
    */
   public function isFromDonorPortal(): bool {
-    return $this->message['source_type'] ??= self::DONOR_PORTAL_MESSAGE_SOURCE_TYPE;
+    return ($this->message['source_type'] ?? '') === self::DONOR_PORTAL_MESSAGE_SOURCE_TYPE;
   }
 
   /**

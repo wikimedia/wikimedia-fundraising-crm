@@ -207,10 +207,10 @@ abstract class BaseAuditProcessor {
    * @param string $message The message we want to log. Should be
    * descriptive enough that we can bug hunt without having to go all cowboy in
    * prod.
-   * @param string $drush_code If this code is fatal (According to
+   * @param string $errorCode If this code is fatal (According to
    * wmf_audit_error_isfatal), this will result in the whole script dying.
    */
-  protected function logError($message, $drush_code) {
+  protected function logError($message, $errorCode) {
     \Civi::log('wmf')
       ->error($this->name . '_audit: {message}',
         ['message' => $message]);
@@ -229,8 +229,8 @@ abstract class BaseAuditProcessor {
       'UTM_DATA_MISMATCH',
       'NORMALIZE_DATA',
     ];
-    if (!in_array($drush_code, $nonfatal)) {
-      die("\n*** Fatal Error $drush_code: $message");
+    if (!in_array($errorCode, $nonfatal)) {
+      die("\n*** Fatal Error $errorCode: $message");
     }
   }
 
@@ -1414,7 +1414,7 @@ abstract class BaseAuditProcessor {
               // We record this fee transaction against the anonymous contact
               // I thought about going with a specific contact but triggers already exclude
               // the anonymous contact
-              'contact_id' => \Civi\WMFHelper\Contact::getAnonymousContactID(),
+              'contact_id' => \Civi\WMFHelper\Contact::getGatewayContactID(),
               // fee is unique within a batch but description might be date specific.
               'trxn_id' => strtoupper($auditRecord['message']['audit_file_gateway']) . ' ' . $auditRecord['message']['gateway_txn_id'],
               'contribution_extra.gateway' => $auditRecord['message']['audit_file_gateway'],
@@ -1954,7 +1954,8 @@ abstract class BaseAuditProcessor {
         /** @var Money $settledNetAmount */
         $settledNetAmount = $batch['settled_net_amount'];
         if ($expectedAmount->compareTo($settledNetAmount) === 0) {
-          if ($batch['settlement_gateway'] === 'adyen') {
+          if ($batch['settlement_gateway'] === 'adyen'
+            && strtotime($batch['settlement_date']) < strtotime('2026-04-10')) {
             $batch['settlement_date'] = $this->moveToNextFriday($batch['settlement_date']);
           }
           $batch['status_id:name'] = 'total_verified';

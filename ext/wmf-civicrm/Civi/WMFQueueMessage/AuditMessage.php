@@ -548,7 +548,7 @@ class AuditMessage extends DonationMessage {
   public function getGatewayTxnID(): ?string {
     $gatewayTxnID = parent::getGatewayTxnID();
     if ($this->isFeeRow()) {
-      return $gatewayTxnID . ' ' . $this->getSettlementBatchReference();
+      return str_replace(' ', '-', $gatewayTxnID . '-' . $this->getSettlementBatchReference());
     }
     return $gatewayTxnID;
   }
