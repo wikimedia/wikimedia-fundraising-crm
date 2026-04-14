@@ -16,11 +16,20 @@
     // The ts() and hs() functions help load strings for this module.
     var ts = $scope.ts = CRM.ts('unsubscribeemail');
     var hs = $scope.hs = crmUiHelp({file: 'CRM/unsubscribeemail/UnsubCntrl'}); // See: templates/CRM/unsubscribeemail/UnsubCntrl.hlp
-    $scope.unsubscribeContacts = {};
+    $scope.unsubscribeContacts = [];
     $scope.unsubscribeEmails = {};
     $scope.nothingToUnsubscribe = true;
     $scope.searchedEmail = '';
     $scope.formVars = {};
+
+    var customFields = {};
+    var customFieldsReady = crmApi([
+      ['CustomField', 'getvalue', {return: 'id', name: 'opt_in'}],
+      ['CustomField', 'getvalue', {return: 'id', name: 'no_direct_mail'}],
+    ]).then(function(results) {
+      customFields.optIn = 'custom_' + results[0];
+      customFields.noDirectMail = 'custom_' + results[1];
+    });
 
     $scope.find = function find() {
       $scope.nothingToUnsubscribe = true;
@@ -32,23 +41,30 @@
       else {
         var messages = {start: ts('Finding matches...'), success: ts('Search complete')}
       }
-      crmApi('Contact', 'get', {
+      customFieldsReady.then(function() { return crmApi('Contact', 'get', {
           email: emailEntered,
           sequential: 1,
-          return: 'id, display_name, contact_type, is_opt_out, country',
+          return: ['id', 'display_name', 'contact_type', 'is_opt_out', 'country', 'do_not_sms', customFields.optIn, customFields.noDirectMail],
         },
         messages
-      )
+      );})
         .then(function (apiResult) {
             var contactResults = apiResult['values'];
             $scope.unsubscribeContacts = apiResult['values'];
             for (var id in contactResults) {
-              if (contactResults[id]['is_opt_out'] === '0') {
-                contactResults[id].do_opt_out = true;
-                $scope.nothingToUnsubscribe = false;
+              contactResults[id].opt_out_done = contactResults[id]['is_opt_out'] === "1";
+              contactResults[id].do_opt_out = !contactResults[id].opt_out_done;
+              contactResults[id].opt_in_done = contactResults[id][customFields.optIn] === "0";
+              contactResults[id].do_opt_in = !contactResults[id].opt_in_done;
+              if (contactResults[id].country === 'United States') {
+                contactResults[id].sms_done = contactResults[id].do_not_sms === "1";
+                contactResults[id].do_sms = !contactResults[id].sms_done;
+                contactResults[id].direct_mail_done = contactResults[id][customFields.noDirectMail] === "1";
+                contactResults[id].do_direct_mail = !contactResults[id].direct_mail_done;
               }
-              else {
-                contactResults[id].do_opt_out = false;
+              if (contactResults[id].do_opt_out || contactResults[id].do_opt_in ||
+                  contactResults[id].do_sms || contactResults[id].do_direct_mail) {
+                $scope.nothingToUnsubscribe = false;
               }
               contactResults[id].url = CRM.url('civicrm/contact/view', {
                 'cid': contactResults[id].id,
@@ -56,6 +72,7 @@
               });
             }
             $scope.unsubscribeContacts = contactResults;
+            $scope.hasUSContacts = contactResults.filter(function(c) { return c.country === 'United States'; }).length > 0;
           }
         );
       $scope.unsubscribeEmails = {};
@@ -89,11 +106,15 @@
     $scope.unsubscribe = function unsubscribe() {
       var requests = [];
       for (var id in $scope.unsubscribeContacts) {
-        if ($scope.unsubscribeContacts[id].do_opt_out) {
-          requests.push(['Contact', 'create', {
-            id: $scope.unsubscribeContacts[id].id,
-            is_opt_out: 1,
-          }]);
+        var contact = $scope.unsubscribeContacts[id];
+        var params = {};
+        if (contact.do_opt_out) params.is_opt_out = 1;
+        if (contact.do_opt_in) params[customFields.optIn] = 0;
+        if (contact.do_sms) params.do_not_sms = 1;
+        if (contact.do_direct_mail) params[customFields.noDirectMail] = 1;
+        if (Object.keys(params).length) {
+          params.id = contact.id;
+          requests.push(['Contact', 'create', params]);
         }
       }
       for (var id in $scope.unsubscribeEmails) {
@@ -117,12 +138,13 @@
             }
           }
           for (var id in $scope.unsubscribeContacts) {
-            if ($scope.unsubscribeContacts[id]['do_opt_out'] == 1) {
-              $scope.unsubscribeContacts[id]['is_opt_out'] = 1;
-              $scope.unsubscribeContacts[id]['do_opt_out'] = 0;
-              $scope.unsubscribeContacts[id]['opt_out_actioned'] = 1;
-            }
-            else {
+            var contact = $scope.unsubscribeContacts[id];
+            if (contact.do_opt_out) contact.opt_out_done = true;
+            if (contact.do_opt_in) contact.opt_in_done = true;
+            if (contact.do_sms) contact.sms_done = true;
+            if (contact.do_direct_mail) contact.direct_mail_done = true;
+            if (!contact.opt_out_done || !contact.opt_in_done ||
+                (contact.country === 'United States' && (!contact.sms_done || !contact.direct_mail_done))) {
               $scope.nothingToUnsubscribe = false;
             }
           }
