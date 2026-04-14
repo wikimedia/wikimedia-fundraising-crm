@@ -674,7 +674,11 @@ function wmf_civicrm_civicrm_smashpig_stats($stats) {
   }
   $prometheusPath = \Civi::settings()->get('metrics_reporting_prometheus_path');
   $reporter = new PrometheusReporter($prometheusPath);
-  $reporter->reportMetrics('recurring_smashpig', $metrics);
+  $statsSuffix = getenv('SMASHPIG_JOB_LABEL') ?? '';
+  if ($statsSuffix !== '') {
+    $statsSuffix = "_$statsSuffix";
+  }
+  $reporter->reportMetrics("recurring_smashpig$statsSuffix", $metrics);
 }
 
 /**

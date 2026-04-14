@@ -100,15 +100,13 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       'failed' => ['ids' => []]
     ];
 
-    $errorCount = [
-      'Failed{error="declined"}' => 0,
-      'Failed{error="declined_do_not_retry"}' => 0,
-      'Failed{error="missing_transaction_id"}' => 0,
-      'Failed{error="no_response"}' => 0,
-      'Failed{error="server_timeout"}' => 0,
-      'Failed{error="transaction_not_found"}' => 0,
-      'Failed{error="other"}' => 0
+    $codesToInitialize = [
+      'declined', 'declined_do_not_retry', 'missing_transaction_id',
+      'no_response', 'server_timeout', 'transaction_not_found', 'other'
     ];
+    foreach ($codesToInitialize as $code) {
+      $errorCount['Failed' . $this->getStatsLabel($code)] = 0;
+    }
 
     foreach ($recurringPayments as $recurringPayment) {
       if ($this->timeLimitInSeconds > 0 && time() - $startTime > $this->timeLimitInSeconds) {
@@ -182,41 +180,54 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     }
 
     $stats = array_merge([
-      'Completed' => count($result['success']['ids'])
+      'Completed' . $this->getStatsLabel() => count($result['success']['ids'])
     ], $errorCount);
     CRM_SmashPig_Hook::smashpigOutputStats($stats);
     return $result;
   }
 
   /**
-   * Count the recurring transactions that has any of the error codes that corresponds
-   * to any of the cases.
+   * Increment the count of recurring transactions with a particular error code
+   *
    * @param array $errorCount
    * @param int $code
    */
   private function addErrorStats(array &$errorCount, int $code): void {
-    switch ($code) {
-      case ErrorCode::DECLINED:
-        ++$errorCount['Failed{error="declined"}'];
-        break;
-      case ErrorCode::DECLINED_DO_NOT_RETRY:
-        ++$errorCount['Failed{error="declined_do_not_retry"}'];
-        break;
-      case ErrorCode::MISSING_TRANSACTION_ID:
-        ++$errorCount['Failed{error="missing_transaction_id"}'];
-        break;
-      case ErrorCode::NO_RESPONSE:
-        ++$errorCount['Failed{error="no_response"}'];
-        break;
-      case ErrorCode::SERVER_TIMEOUT:
-        ++$errorCount['Failed{error="server_timeout"}'];
-        break;
-      case ErrorCode::TRANSACTION_NOT_FOUND:
-        ++$errorCount['Failed{error="transaction_not_found"}'];
-        break;
-      default:
-        ++$errorCount['Failed{error="other"}'];
+    $errorCodeString = match ($code) {
+      ErrorCode::DECLINED => 'declined',
+      ErrorCode::DECLINED_DO_NOT_RETRY => 'declined_do_not_retry',
+      ErrorCode::MISSING_TRANSACTION_ID => 'missing_transaction_id',
+      ErrorCode::NO_RESPONSE => 'no_response',
+      ErrorCode::SERVER_TIMEOUT => 'server_timeout',
+      ErrorCode::TRANSACTION_NOT_FOUND => 'transaction_not_found',
+      default => 'other'
+    };
+    $label = $this->getStatsLabel($errorCodeString);
+    ++$errorCount["Failed$label"];
+  }
+
+  /**
+   * Get a prometheus-style label for the statistic, including a 'job'
+   * component when specified in environment variable SMASHPIG_JOB_LABEL
+   * and any error code we want to add.
+   * E.g. {job="newer",error="declined_do_not_retry"}
+   *
+   * @param string|null $errorCode
+   * @return string
+   */
+  private function getStatsLabel(?string $errorCode = null): string {
+    $labelParts = [];
+    $jobLabel = getenv('SMASHPIG_JOB_LABEL');
+    if ($jobLabel) {
+      $labelParts[] = 'job="' . $jobLabel . '"';
     }
+    if ($errorCode) {
+      $labelParts[] = 'error="' . $errorCode . '"';
+    }
+    if ($labelParts) {
+      return '{' . implode(',', $labelParts) . '}';
+    }
+    return '';
   }
 
   /**

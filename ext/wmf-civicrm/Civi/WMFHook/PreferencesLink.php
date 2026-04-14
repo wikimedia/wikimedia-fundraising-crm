@@ -3,6 +3,8 @@
 namespace Civi\WMFHook;
 
 use Civi\Api4\WMFLink;
+use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
 
 class PreferencesLink {
 
@@ -77,17 +79,17 @@ class PreferencesLink {
   /**
    * Get the url to link to the preference centre.
    *
-   * @todo figure out where this should live. We have an api in ThankYou extension
-   * called WMFLink with getUnsubscribeUrl which makes sense except that the
-   * preference code kinda 'belongs' to this extension. We could move that api class
-   * into this extension maybe?
+   * @todo figure out where this and getDonorPortalUrl should live.
+   * We have an api in ThankYou extension called WMFLink with getUnsubscribeUrl which
+   * makes sense except that the preference code kinda 'belongs' to this extension.
+   * We could move that api class into this extension maybe?
    *
    * @param int $contactID
    * @return string
    * @throws \CRM_Core_Exception
    */
   public static function getPreferenceUrl(int $contactID): string {
-    $email = \Civi\Api4\Contact::get(FALSE)
+    $email = Contact::get(FALSE)
       ->addWhere('id', '=', $contactID)
       ->addSelect('email_primary.email')
       ->addSelect('preferred_language')
@@ -97,6 +99,37 @@ class PreferencesLink {
       ->setEmail($email['email_primary.email'])
       ->setLanguage($email['preferred_language'])
       ->execute()->first()['unsubscribe_url'];
+  }
+
+  /**
+   * Get the url to link to the donor portal, if eligible or '' otherwise.
+   *
+   * A donor is eligible if they have a segment > 200 and not 1000 (they aren't a major or mid-tier donor or a non-donor)
+   * and they do not have an active paypal (via paypal but not via gravy) recurring that can't be edited in the portal
+   * and their language is English.
+   *
+   * @param int $contactID
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  public static function getDonorPortalUrl(int $contactID): string {
+    $contact = Contact::get(FALSE)
+      ->addSelect('id')
+      ->addWhere('id', '=', $contactID)
+      ->addWhere('wmf_donor.donor_segment_id', '>', 200)
+      ->addWhere('wmf_donor.donor_segment_id', '!=', 1000)
+      ->addWhere('preferred_language', 'LIKE', 'en%')
+      ->addJoin('ContributionRecur AS recur',
+        'EXCLUDE',
+        ['id', '=', 'recur.contact_id'],
+        ['recur.payment_processor_id:name', 'IN', ['paypal', 'paypal_ec']],
+        ['recur.contribution_status_id:name', 'NOT IN', ['Completed', 'Cancelled', 'Failed']])
+      ->execute()->first();
+    if ($contact) {
+      $donorPortalBaseUrl = (string) \Civi::settings()->get('wmf_donor_portal_url');
+      return self::addContactAndChecksumToUrl($donorPortalBaseUrl, $contactID, \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID));
+    }
+    return '';
   }
 
 }
