@@ -38,13 +38,17 @@
           <div class="crm-group">
             <table>
               <tr>
-                <th width="50%">{{ ts('Contact') }}</th>
+                <th>{{ ts('Contact') }}</th>
+                <th>{{ ts('Country') }}</th>
                 <th>{{ ts('Set opt out communication preference?') }}</th>
               </tr>
               <tr ng-repeat="unsubscribeContact in unsubscribeContacts">
                 <td><a href="{{unsubscribeContact.url}}">
                   {{unsubscribeContact.display_name}} ({{unsubscribeContact.contact_type}})
                 </a>
+                </td>
+                <td>
+                  {{unsubscribeContact.country}}
                 </td>
                 <td>
                   <span ng-show="unsubscribeContact.is_opt_out > 0 && !unsubscribeContact.opt_out_actioned">{{ ts('Contact is already opted out') }} </span>

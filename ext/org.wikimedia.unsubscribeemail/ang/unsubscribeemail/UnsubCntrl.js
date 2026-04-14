@@ -35,7 +35,7 @@
       crmApi('Contact', 'get', {
           email: emailEntered,
           sequential: 1,
-          return: 'id, display_name, contact_type, is_opt_out',
+          return: 'id, display_name, contact_type, is_opt_out, country',
         },
         messages
       )
