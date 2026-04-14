@@ -96,7 +96,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ->addWhere('gateway_txn_id', 'LIKE', '35610b63-6667-4de7-94f9-ef8a26cf6131')
       ->execute();
     TransactionLog::delete(FALSE)
-      ->addWhere('gateway_txn_id', 'LIKE', '%Discounts and additional%')
+      ->addWhere('gateway_txn_id', 'LIKE', '%Discounts%and%additional%')
       ->execute();
     TransactionLog::delete(FALSE)
       ->addWhere('order_id', 'IN', ['1004.1', '12000.1'])
@@ -105,10 +105,13 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ->addWhere('id', '=', 43992337)
       ->execute();
     Contribution::delete(FALSE)
-      ->addWhere('trxn_id', 'LIKE', 'ADYEN Transaction Fees%')
+      ->addWhere('trxn_id', 'LIKE', 'ADYEN%Transaction%Fees%')
       ->execute();
     Contribution::delete(FALSE)
-      ->addWhere('trxn_id', 'LIKE', '%Discounts and additional%')
+      ->addWhere('trxn_id', 'LIKE', '%Discounts%and%additional%')
+      ->execute();
+    Contribution::delete(FALSE)
+      ->addWhere('trxn_id', 'LIKE', 'fee%')
       ->execute();
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'adyen_112%')
