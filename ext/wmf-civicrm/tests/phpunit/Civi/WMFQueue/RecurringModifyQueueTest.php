@@ -8,6 +8,7 @@ use Civi\Api4\ContributionRecur;
 use Civi\Api4\Email;
 use Civi\Test\Api3TestTrait;
 use Civi\Test\ContactTestTrait;
+use SmashPig\Core\Context;
 
 /**
  * @group queues
@@ -56,9 +57,9 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'txn_type' => 'recurring_paused',
       'contribution_recur_id' => $testRecurring['id'],
       'duration' => '60 days',
-      'source_type' => 'emailpreferences',
       'campaign' => 'Blast1',
     ];
+    $this->setSourceType('emailpreferences');
 
     $this->processMessage($msg);
     $updatedRecurring = ContributionRecur::get(FALSE)
@@ -98,10 +99,9 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'contribution_recur_id' => $testRecurring['id'],
       'cancel_reason' => 'Financial reason',
       'cancel_date' => date('Y-m-d H:i:s'),
-      'source_type' => 'emailpreferences',
       'medium' => 'email',
     ];
-
+    $this->setSourceType('emailpreferences');
     $this->processMessage($msg);
     $updatedRecurring = ContributionRecur::get(FALSE)
       ->addSelect('id', 'contribution_status_id:name', 'cancel_date', 'end_date')
@@ -136,7 +136,6 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'amount' => $testRecurring['amount'] + $additionalAmount,
       'currency' => $testRecurring['currency'],
       'is_from_save_flow' => FALSE,
-      'source_type' => 'emailpreferences',
       'source' => 'direct'
     ];
     $amountDetails = [
@@ -148,6 +147,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'usd_amount_added' => '5.00',
       'is_from_save_flow' => FALSE,
     ];
+    $this->setSourceType('recurringupgrade');
 
     $this->processMessage($msg);
     $updatedRecurring = ContributionRecur::get(FALSE)
@@ -167,7 +167,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
     $this->assertEquals($testRecurring['amount'] + $additionalAmount, $updatedRecurring['amount']);
     $this->assertEquals('Added 5.00 USD', $activity['subject']);
     $this->assertEquals(json_encode($amountDetails), $activity['details']);
-    $this->assertEquals(TRUE, $activity['activity_tracking.activity_is_from_donor_portal']);
+    $this->assertEquals(FALSE, $activity['activity_tracking.activity_is_from_donor_portal']);
     $this->assertEquals('direct', $activity['activity_tracking.activity_source']);
   }
 
@@ -261,7 +261,6 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'amount' => $newRecurringDonationAmount,
       'currency' => $testRecurringContributionFor15Dollars['currency'],
       'is_from_save_flow' => TRUE,
-      'source_type' => 'emailpreferences',
     ];
 
     $amountDetails = [
@@ -273,6 +272,7 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
       'usd_amount_removed' => '10.00',
       'is_from_save_flow' => TRUE,
     ];
+    $this->setSourceType('emailpreferences');
 
     $this->processMessage($recurringQueueMessage);
 
@@ -302,6 +302,10 @@ class RecurringModifyQueueTest extends BaseQueueTestCase {
     // clean up fixture data
     $this->ids['ContributionRecur'][$testRecurringContributionFor15Dollars['id']] = $testRecurringContributionFor15Dollars['id'];
     $this->ids['Activity'][$activity['id']] = $activity['id'];
+  }
+
+  protected function setSourceType(string $type) {
+    Context::get()->setSourceType($type);
   }
 
 }
