@@ -285,6 +285,10 @@ class GenerateBatch extends AbstractAction {
               'GLENTRY_VENDORID' => 'V04981',
             ];
             $toBalancingRow = $toRow = array_merge($row, $endowmentValues);
+            if (str_starts_with($this->getAccountName($toRow['ACCT_NO']), 'Major Gifts')) {
+              // In endowment journal treat all major gifts as restricted.
+              $toRow['ACCT_NO'] = $this->getRestrictedMajorGiftsAccount();
+            }
 
             $fromRow['DEBIT'] = $toBalancingRow['DEBIT'] = $row['CREDIT'];
             $fromRow['CREDIT'] = $toBalancingRow['CREDIT'] = $row['DEBIT'];
@@ -344,18 +348,15 @@ class GenerateBatch extends AbstractAction {
   }
 
   private function getAccountName($accountCode): string {
-    $map = [
-      43480 => 'Recurring Gift',
-      43481 => 'Banner',
-      43482 => 'Email',
-      43483 => 'Direct Mail',
-      43484 => 'Online Other',
-      43440 => 'Chapter Gifts',
-      43485 => 'Major Gifts - Unrestricted',
-      43428 => 'Major Gifts - Restricted',
-    ];
+    $map = $this->getAccountMapping();
     return $map[$accountCode] ?? '';
   }
+
+  private function getRestrictedMajorGiftsAccount(): string {
+    $map = array_flip($this->getAccountMapping());
+    return $map['Major Gifts - Restricted'];
+  }
+
   /**
    * @return string
    */
@@ -1139,7 +1140,6 @@ GROUP BY s.settlement_batch_reference
    *
    * @return array
    * @throws \Brick\Money\Exception\MoneyMismatchException
-   * @throws \Brick\Money\Exception\UnknownCurrencyException
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
@@ -1278,6 +1278,22 @@ GROUP BY s.settlement_batch_reference
     }
     $reordered += $row;
     return $reordered;
+  }
+
+  /**
+   * @return string[]
+   */
+  private function getAccountMapping(): array {
+    return [
+      43480 => 'Recurring Gift',
+      43481 => 'Banner',
+      43482 => 'Email',
+      43483 => 'Direct Mail',
+      43484 => 'Online Other',
+      43440 => 'Chapter Gifts',
+      43485 => 'Major Gifts - Unrestricted',
+      43428 => 'Major Gifts - Restricted',
+    ];
   }
 
 }
