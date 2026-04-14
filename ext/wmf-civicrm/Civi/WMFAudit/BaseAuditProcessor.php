@@ -1411,6 +1411,7 @@ abstract class BaseAuditProcessor {
               'net_amount' => $auditRecord['message']['settled_fee_amount'],
               'fee_amount' => -$auditRecord['message']['settled_fee_amount'],
               'contribution_settlement.settled_fee_amount' => $auditRecord['message']['settled_fee_amount'],
+              'source' => $auditRecord['message']['settlement_batch_reference'] . ' fee ' . -$auditRecord['message']['settled_fee_amount'],
               // We record this fee transaction against the anonymous contact
               // I thought about going with a specific contact but triggers already exclude
               // the anonymous contact
