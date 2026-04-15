@@ -180,4 +180,46 @@ return [
       ],
     ],
   ],
+  [
+    'name' => 'Tag_Preference_Email_Once_Per_Year',
+    'entity' => 'Tag',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'name' => 'Preference_Email_Once_Per_Year',
+        'label' => E::ts('Preference: email-once-per-year'),
+        'description' => E::ts('Donor wants only one email campaign per year'),
+        'used_for' => [
+          'civicrm_contact',
+        ],
+        'color' => '#7a4a58',
+      ],
+      'match' => [
+        'name',
+      ],
+    ],
+  ],
+  [
+    'name' => 'Tag_Preference_DM_Once_Per_Year',
+    'entity' => 'Tag',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'name' => 'Preference_DM_Once_Per_Year',
+        'label' => E::ts('Preference: dm-once-per-year'),
+        'description' => E::ts('Donor wants only one direct mail letter per year'),
+        'used_for' => [
+          'civicrm_contact',
+        ],
+        'color' => '#b07a86',
+      ],
+      'match' => [
+        'name',
+      ],
+    ],
+  ],
 ];
