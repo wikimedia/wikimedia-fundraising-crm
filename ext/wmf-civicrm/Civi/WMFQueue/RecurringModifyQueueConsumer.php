@@ -284,12 +284,13 @@ class RecurringModifyQueueConsumer extends TransactionalQueueConsumer {
 
     $this->createRecurringActivity(json_encode($amountDetails), $activityParams);
 
-    // TODO: use generic WorkflowMessage sendViaQueue
-    RecurUpgradeEmail::send()
-      ->setCheckPermissions(FALSE)
+    WorkflowMessage::sendViaQueue(FALSE)
+      ->setWorkflow('recurring_upgrade_message')
       ->setContactID($message->getExistingContributionRecurValue('contact_id'))
-      ->setContributionRecurID($message->getContributionRecurID())
-      ->execute();
+      ->setActivitySourceRecordID($message->getContributionRecurID())
+      ->setTemplateParameters([
+        'contributionRecurID' => $message->getContributionRecurID()
+      ])->execute();
   }
 
   /**
