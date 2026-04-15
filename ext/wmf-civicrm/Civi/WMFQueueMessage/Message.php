@@ -1153,11 +1153,12 @@ class Message {
       // The first recurring goes to the solicted channel. After that to Recurring Gift.
       return 'Recurring Gift';
     }
-    if (!empty($this->message['recipient_id'])) {
-      return 'SMS';
-    }
     $utmSource = $this->message['utm_source'] ?? '';
     $utmMedium = strtolower($this->message['utm_medium'] ?? '');
+
+    if (!empty($this->message['recipient_id']) || $utmMedium === 'sms') {
+      return 'SMS';
+    }
 
     if ($utmMedium === 'mail' || str_contains($utmSource, 'DMURL')) {
       return 'Direct Mail';

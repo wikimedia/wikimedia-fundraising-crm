@@ -58,7 +58,7 @@ class StripeAuditProcessor extends BaseAuditProcessor {
    * intentionally based on the leading report type only.
    */
 	protected function regexForFilesToProcess(): string {
-		return '/^(settlement-report|payments-activity).*\.csv$/i';
+		return '/^(settlement-report|payments-activity)/i';
 	}
 
   /**

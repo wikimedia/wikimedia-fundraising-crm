@@ -7,7 +7,6 @@ use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\PaymentToken;
 use Civi\Api4\WMFContact;
-use Civi\Core\Exception\DBQueryException;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as ContributionRecurHelper;
 use Civi\WMFHelper\PaymentProcessor as PaymentProcessorHelper;
@@ -17,12 +16,9 @@ use Civi\WMFStatistic\DonationStatsCollector;
 use Civi\WMFStatistic\ImportStatsCollector;
 use Civi\WMFStatistic\PrometheusReporter;
 use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
-use Civi\WMFTransaction;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
-use SmashPig\PaymentProviders\IDeleteRecurringPaymentTokenProvider;
-use SmashPig\PaymentProviders\PaymentProviderFactory;
 use Statistics\Collector\AbstractCollector;
 
 class DonationQueueConsumer extends TransactionalQueueConsumer {
@@ -281,7 +277,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    * @return array
    *
    * @throws \CRM_Core_Exception
-   * @throws \Civi\Core\Exception\DBQueryException
    * @throws \Civi\WMFException\WMFException
    */
   private function importContribution(DonationMessage $message, array $msg): array {
