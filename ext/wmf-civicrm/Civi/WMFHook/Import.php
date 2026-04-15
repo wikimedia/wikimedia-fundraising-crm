@@ -88,6 +88,12 @@ class Import {
     $this->filterBadBenevityData();
     $this->applyFieldTransformations();
 
+    // Temp handling to set all contributions from SK batch import to major gift, if not set, April 2026
+    // To be removed once we have resolved https://phabricator.wikimedia.org/T422221
+    if ($this->context === 'import' && $this->importType === 'contribution_import_searchkit') {
+      $this->mappedRow['Contribution']['Gift_Data.is_major_gift'] = $this->mappedRow['Contribution']['Gift_Data.is_major_gift'] ?? TRUE;
+    }
+
     // Tweaks to apply during import only.
     if ($this->context === 'import' && $this->importType === 'contribution_import') {
         // If we have imported a contribution ID, we are updating an existing contribution
