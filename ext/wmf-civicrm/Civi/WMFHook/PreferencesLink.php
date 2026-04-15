@@ -54,6 +54,15 @@ class PreferencesLink {
       $donorPortalBaseUrl = (string) \Civi::settings()->get('wmf_donor_portal_url');
       $donorPortalUrl = self::addContactAndChecksumToUrl($donorPortalBaseUrl, $contactID, $checksum);
       $page->assign('donorPortalLink', $donorPortalUrl);
+      $email = \Civi\Api4\Email::get(FALSE)
+        ->addSelect('email')
+        ->addWhere('contact_id', '=', $contactID)
+        ->addWhere('is_primary', '=', 1)
+        ->execute()->first();
+      if ($email) {
+        $unsubLink = '/civicrm/a/#/email/unsubscribe?email=' . urlencode($email['email']);
+        $page->assign('unsubLink', $unsubLink);
+      }
       // FIXME: should be enough to have this path in tpl_file in the contactSummaryBlocks hook
       \CRM_Core_Region::instance('contact-basic-info-right')->add(array(
         'template' => 'CRM/Wmf/Page/Inline/PreferencesLink.tpl',

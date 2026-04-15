@@ -12,7 +12,7 @@
   //   $scope -- This is the set of variables shared between JS and HTML.
   //   crmApi, crmStatus, crmUiHelp -- These are services provided by civicrm-core .
   //   myContact -- The current contact, defined above in config().
-  angular.module('unsubscribeemail').controller('UnsubscribeemailUnsubCntrl', function ($scope, crmApi, crmStatus, crmUiHelp) {
+  angular.module('unsubscribeemail').controller('UnsubscribeemailUnsubCntrl', function ($scope, $location, crmApi, crmStatus, crmUiHelp) {
     // The ts() and hs() functions help load strings for this module.
     var ts = $scope.ts = CRM.ts('unsubscribeemail');
     var hs = $scope.hs = crmUiHelp({file: 'CRM/unsubscribeemail/UnsubCntrl'}); // See: templates/CRM/unsubscribeemail/UnsubCntrl.hlp
@@ -20,7 +20,7 @@
     $scope.unsubscribeEmails = {};
     $scope.nothingToUnsubscribe = true;
     $scope.searchedEmail = '';
-    $scope.formVars = {};
+    $scope.formVars = {enteredEmail: $location.search().email};
 
     var customFields = {};
     var customFieldsReady = crmApi([
@@ -152,6 +152,9 @@
       );
 
     };
+    if ($scope.formVars.enteredEmail) {
+      $scope.find();
+    }
   });
 
 })(angular, CRM.$, CRM._);
