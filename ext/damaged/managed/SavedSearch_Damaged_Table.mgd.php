@@ -24,7 +24,7 @@ return [
             'gateway',
             'order_id',
             'gateway_txn_id',
-            'error',
+            'LEFT(error, 100) AS LEFT_error_100',
           ],
           'orderBy' => [],
           'where' => [],
@@ -116,11 +116,10 @@ return [
             ],
             [
               'type' => 'field',
-              'key' => 'error',
+              'key' => 'LEFT_error_100',
               'dataType' => 'Text',
               'label' => 'Error',
               'sortable' => TRUE,
-              'rewrite' => '{"[error]"|truncate:100:"..."}',
               'link' => [
                 'path' => '',
                 'entity' => 'Damaged',
