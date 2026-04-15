@@ -18,6 +18,8 @@ abstract class BaseAuditProcessor {
    */
   const LOG_SEARCH_WINDOW = 30;
 
+  public const ADYEN_DAILY_SETTLEMENT_START = '2026-04-10';
+
   protected $options;
 
   protected $name;
@@ -2020,7 +2022,7 @@ abstract class BaseAuditProcessor {
         $settledNetAmount = $batch['settled_net_amount'];
         if ($expectedAmount->compareTo($settledNetAmount) === 0) {
           if ($batch['settlement_gateway'] === 'adyen'
-            && strtotime($batch['settlement_date']) < strtotime('2026-04-10')) {
+            && strtotime($batch['settlement_date']) < strtotime(self::ADYEN_DAILY_SETTLEMENT_START)) {
             $batch['settlement_date'] = $this->moveToNextFriday($batch['settlement_date']);
           }
           $batch['status_id:name'] = 'total_verified';
