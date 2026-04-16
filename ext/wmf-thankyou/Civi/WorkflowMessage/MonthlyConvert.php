@@ -50,7 +50,7 @@ class MonthlyConvert extends ThankYou {
   public function setDayOfMonth(int|string $dayOfMonth) {
     // Format the day of the month as an ordinal number
     $ordinal = new \NumberFormatter($this->getLocale() ?: \Civi::settings()->get('format_locale'), \NumberFormatter::ORDINAL);
-    $this->dayOfMonth = $ordinal->format($dayOfMonth);
+    $this->dayOfMonth = $ordinal->format((int)$dayOfMonth);
     return $this;
   }
 

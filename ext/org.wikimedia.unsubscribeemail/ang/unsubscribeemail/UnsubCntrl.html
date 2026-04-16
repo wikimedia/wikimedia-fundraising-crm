@@ -3,9 +3,8 @@
 
     <div class="help">
       <p>{{ts('Enter the email address you wish to unsubscribe.')}}</p>
-      <p>{{ts('Unsubscribing is defined as setting the opt out flag on the contact if it is the primary address and
-        removing any bulk email flag from non-primaries. Once you have found potential matches, check the actions you
-        wish to take and click Unsubscribe')}}</p>
+      <p>{{ts('Unsubscribing is defined as setting the flags on any contacts that have the primary email address and
+        removing any bulk email flag from non-primaries.')}}</p>
     </div>
 
     <div crm-ui-accordion="{title: ts('Email to Unsubscribe')}">
@@ -31,8 +30,7 @@
     </div>
     <div ng-show="searchedEmail && searchedEmail == formVars.enteredEmail && (unsubscribeContacts[0] || unsubscribeEmails[0])" crm-ui-accordion="{title: ts('Actions')}">
       <div ng-show="unsubscribeContacts[0]"><h3>{{ts('Contacts to opt out')}}</h3>
-        <p>{{ ts('These contacts use %1 as their primary address. Leave them checked and click
-          Unsubscribe to set their communication preference to NO BULK Emails (User Opt Out)', {1:
+        <p>{{ ts('These contacts use %1 as their primary address. Leave them checked and click Unsubscribe to opt them out', {1:
           formVars.enteredEmail }) }}</p>
         <div class="crm-block">
           <div class="crm-group">
@@ -40,22 +38,32 @@
               <tr>
                 <th>{{ ts('Contact') }}</th>
                 <th>{{ ts('Country') }}</th>
-                <th>{{ ts('Set opt out communication preference?') }}</th>
+                <th>{{ ts('Email opt out') }}</th>
+                <th>{{ ts('Email Opt in = No') }}</th>
+                <th ng-show="hasUSContacts">{{ ts('No SMS') }}</th>
+                <th ng-show="hasUSContacts">{{ ts('No direct mail') }}</th>
               </tr>
               <tr ng-repeat="unsubscribeContact in unsubscribeContacts">
                 <td><a href="{{unsubscribeContact.url}}">
                   {{unsubscribeContact.display_name}} ({{unsubscribeContact.contact_type}})
                 </a>
                 </td>
+                <td>{{unsubscribeContact.country}}</td>
                 <td>
-                  {{unsubscribeContact.country}}
+                  <span ng-show="unsubscribeContact.opt_out_done">&#10003;</span>
+                  <input ng-show="!unsubscribeContact.opt_out_done" type="checkbox" ng-model="unsubscribeContact.do_opt_out"/>
                 </td>
                 <td>
-                  <span ng-show="unsubscribeContact.is_opt_out > 0 && !unsubscribeContact.opt_out_actioned">{{ ts('Contact is already opted out') }} </span>
-                  <span ng-show="unsubscribeContact.is_opt_out > 0 && unsubscribeContact.opt_out_actioned == 1">{{ ts('Contact has been set to opted out') }} </span>
-                  <span ng-show="unsubscribeContact.is_opt_out == 0">
-                    <input type="checkbox" ng-model="unsubscribeContact.do_opt_out"/>
-                  </span>
+                  <span ng-show="unsubscribeContact.opt_in_done">&#10003;</span>
+                  <input ng-show="!unsubscribeContact.opt_in_done" type="checkbox" ng-model="unsubscribeContact.do_opt_in"/>
+                </td>
+                <td ng-show="hasUSContacts">
+                  <span ng-show="unsubscribeContact.sms_done">&#10003;</span>
+                  <input ng-show="unsubscribeContact.sms_done === false" type="checkbox" ng-model="unsubscribeContact.do_sms"/>
+                </td>
+                <td ng-show="hasUSContacts">
+                  <span ng-show="unsubscribeContact.direct_mail_done">&#10003;</span>
+                  <input ng-show="unsubscribeContact.direct_mail_done === false" type="checkbox" ng-model="unsubscribeContact.do_direct_mail"/>
                 </td>
               </tr>
             </table>
@@ -63,7 +71,7 @@
         </div>
       </div>
       <div ng-show="unsubscribeEmails[0]"><h3>{{ts('Emails to remove bulk email flag from (non primary)')}}</h3>
-        <p>{{ ts('These contacts have %1 as as a non-primary email. Leave them checked and click
+        <p>{{ ts('These contacts have %1 as a non-primary email. Leave them checked and click
           unsubscribe to unset the bulk email flag on them.', {1: formVars.enteredEmail}) }}</p>
         <div class="crm-group">
           <table>
