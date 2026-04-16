@@ -10,6 +10,7 @@ use Civi\Api4\ContributionTracking;
 use Civi\Api4\OptionValue;
 use Civi\Api4\PaymentProcessor;
 use Civi\Api4\PaymentToken;
+use Civi\Api4\QueueItem;
 use Civi\Api4\TransactionLog;
 use Civi\MonoLog\MonologManager;
 use Civi\Omnimail\MailFactory;
@@ -136,6 +137,7 @@ trait WMFEnvironmentTrait {
     foreach ($this->originalSettings as $key => $value) {
       \Civi::settings()->set($key, $value);
     }
+    QueueItem::delete(FALSE)->addWhere('queue_name', '=', 'email')->execute();
   }
 
   /**

@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueue;
 
+use Civi\Api4\Activity;
 use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
@@ -10,6 +11,7 @@ use Civi\Api4\ContributionTracking;
 use Civi\Api4\Email;
 use Civi\Api4\MessageTemplate;
 use Civi\Api4\PaymentToken;
+use Civi\Api4\Queue;
 use Civi\Test\Api3TestTrait;
 use Civi\Test\ContactTestTrait;
 use Civi\WMFException\WMFException;
@@ -387,26 +389,36 @@ class RecurringQueueTest extends BaseQueueTestCase {
 
     $this->processRecurringSignup($signupMessage);
 
-    $this->assertEquals(1, $this->getMailingCount());
-    $sent = $this->getMailing(0);
+    // Run the queue task to send the email
+    Queue::run(FALSE)
+      ->setQueue('email')
+      ->execute();
 
-    // Check the right email
-    $this->assertEquals($donationMessage['email'], $sent['to_address']);
+    $contributionRecur = ContributionRecur::get(FALSE)
+      ->addWhere('trxn_id', '=', 'RECURRING ' . strtoupper(($signupMessage['gateway'])) . ' ' . $subscr_id)
+      ->execute()->single();
 
+    $mailActivity = Activity::get(FALSE)
+      ->addWhere('activity_type_id:name', '=', 'Email')
+      ->addWhere('source_record_id', '=', $contributionRecur['id'])
+      ->addOrderBy('activity_date_time', 'DESC')
+      ->execute()->first();
+
+    $details = $mailActivity['details'];
     // Check right email content
-    $this->assertMatchesRegularExpression('/you donated, and then decided to set up an additional/', $sent['html']);
+    $this->assertMatchesRegularExpression('/you donated, and then decided to set up an additional/', $details);
 
     // Check the right donation amount
-    $this->assertMatchesRegularExpression('/3.00/', $sent['html']);
+    $this->assertMatchesRegularExpression('/3.00/', $details);
 
     // Check the right donation currency, original currency is CAD
-    $this->assertMatchesRegularExpression('/CA\$/', $sent['html']);
+    $this->assertMatchesRegularExpression('/CA\$/', $details);
     // Check the subject.
-    $expectedSubject = MessageTemplate::get(FALSE)
+    $expectedSubject = 'monthly_convert message: ' . MessageTemplate::get(FALSE)
       ->addWhere('workflow_name', '=', 'monthly_convert')
       ->addWhere('is_default', '=', TRUE)
       ->execute()->first()['msg_subject'];
-    $this->assertEquals($expectedSubject, $sent['subject']);
+    $this->assertEquals($expectedSubject, $mailActivity['subject']);
   }
 
   /**

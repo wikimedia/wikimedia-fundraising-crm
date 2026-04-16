@@ -251,33 +251,15 @@ class ContributionRecur {
     ];
   }
 
-  public static function sendSuccessThankYouMail(array $contributionRecur, int $contributionId) {
-    // Using the same params sent through in thank_you.module thank_you_for_contribution
-    $start_date = $contributionRecur['start_date'];
-
-    // Get the day of the month
-    $day_of_month = (new \DateTime($start_date, new \DateTimeZone('UTC')))->format('j');
-
-    $contactId = $contributionRecur['contact_id'];
-
-    $params = [
-      'amount' => $contributionRecur['amount'],
-      'contact_id' => $contactId,
-      'currency' => $contributionRecur['currency'],
-      'receive_date' => $start_date,
-      'day_of_month' => $day_of_month,
-      'recurring' => TRUE,
-      'transaction_id' => "CNTCT-{$contactId}",
-      // shown in the body of the text
-      'contribution_id' => $contributionId,
-    ];
+  public static function sendSuccessThankYouMail(array $contributionRecur, int $contributionID): void {
+    $params = self::getParamsForConvertThankYou($contributionRecur, $contributionID);
 
     try {
-      $sendResult = ThankYou::send(FALSE)
-        ->setTemplateName('monthly_convert')
-        ->setContributionID($contributionId)
-        ->setParameters($params)
-        ->setActivityType('Recurring convert email')
+      $sendResult = Civi\Api4\WorkflowMessage::send(FALSE)
+        ->setWorkflow('monthly_convert')
+        ->setContactID($contributionRecur['contact_id'])
+        ->setActivitySourceRecordID($contributionRecur['id'])
+        ->setTemplateParameters($params)
         ->execute()->first();
       }
     catch (CRM_Core_Exception $e) {
@@ -303,5 +285,28 @@ class ContributionRecur {
         $context
       );
     }
+  }
+
+  public static function getParamsForConvertThankYou(array $contributionRecur, int $contributionID): array {
+    // Using the same params sent through in thank_you.module thank_you_for_contribution
+    $start_date = $contributionRecur['start_date'];
+
+    // Get the day of the month
+    $day_of_month = (new \DateTime($start_date, new \DateTimeZone('UTC')))->format('j');
+
+    $contactID = $contributionRecur['contact_id'];
+
+    return [
+      'amount' => $contributionRecur['amount'],
+      'contactID' => $contactID,
+      'currency' => $contributionRecur['currency'],
+      'receiveDate' => $start_date,
+      'dayOfMonth' => $day_of_month,
+      'isRecurring' => TRUE,
+      'transactionID' => "CNTCT-{$contactID}",
+      // shown in the body of the text
+      'contributionID' => $contributionID,
+      'contributionRecurId' => $contributionRecur['id'],
+    ];
   }
 }

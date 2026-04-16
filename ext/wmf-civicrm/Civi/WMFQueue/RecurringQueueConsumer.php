@@ -7,8 +7,8 @@ use Civi\Api4\Address;
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
 use Civi\Api4\PaymentToken;
-use Civi\Api4\ThankYou;
 use Civi\Api4\WMFContact;
+use Civi\Api4\WorkflowMessage;
 use Civi\Core\Exception\DBQueryException;
 use Civi\Helper\FailureEmail;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
@@ -385,9 +385,20 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     }
 
     if (isset($msg['recurring_payment_token']) && isset($newContributionRecur['id'])) {
-      RecurHelper::sendSuccessThankYouMail($newContributionRecur, $ctRecord['contribution_id']);
+      $this->sendRecurringConvertMailViaQueue($newContributionRecur, $ctRecord['contribution_id']);
     }
     Civi::log('wmf')->notice('recurring: Successfully inserted subscription signup for subscriber id: {subscriber_id}', ['subscriber_id' => $msg['subscr_id']]);
+  }
+
+  protected function sendRecurringConvertMailViaQueue(array $contributionRecur, int $contributionID) {
+    $params = RecurHelper::getParamsForConvertThankYou($contributionRecur, $contributionID);
+
+    WorkflowMessage::sendViaQueue(FALSE)
+      ->setWorkflow('monthly_convert')
+      ->setContactID($contributionRecur['contact_id'])
+      ->setActivitySourceRecordID($contributionRecur['id'])
+      ->setTemplateParameters($params)
+      ->execute();
   }
 
   protected function createContributionRecurWithErrorHandling($params) {
