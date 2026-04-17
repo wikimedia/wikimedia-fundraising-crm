@@ -12,6 +12,15 @@
               id: $route.current.params.id,
               'sequential' : 1
             });
+          },
+          activeRecurring: function(crmApi4, $route) {
+            return crmApi4('ContributionRecur', 'get', {
+              where: [
+                ['contact_id', '=', $route.current.params.id],
+                ['contribution_status_id:name', 'NOT IN', ['Completed', 'Cancelled', 'Failed']]
+              ],
+              limit: 1
+            });
           }
         }
       });
@@ -22,7 +31,7 @@
   //   $scope -- This is the set of variables shared between JS and HTML.
   //   crmApi, crmStatus, crmUiHelp -- These are services provided by civicrm-core.
   //   currentContact -- The current contact, defined above in config().
-  angular.module('forgetme').controller('ForgetmeForgetCntrl', function($scope, crmApi, crmStatus, crmUiHelp, currentContact) {
+  angular.module('forgetme').controller('ForgetmeForgetCntrl', function($scope, crmApi, crmStatus, crmUiHelp, currentContact, activeRecurring) {
     // The ts() and hs() functions help load strings for this module.
     var ts = $scope.ts = CRM.ts('forgetme');
     var hs = $scope.hs = crmUiHelp({file: 'CRM/forgetme/ForgetCntrl'}); // See: templates/CRM/forgetme/ForgetCntrl.hlp
@@ -34,6 +43,7 @@
     $scope.forgotten = '';
     $scope.formSubmitted = 0;
     $scope.reference = '';
+    $scope.hasActiveRecurring = activeRecurring.length;
 
     $scope.forget = function forget() {
       $scope.formSubmitted = 1;
