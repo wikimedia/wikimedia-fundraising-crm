@@ -605,16 +605,18 @@ function wmf_civicrm_civicrm_links($op, $objectName, $objectId, &$links, &$mask,
     Activity::links($objectId, $links);
   }
   if ($objectName === 'Contribution' && $op === 'contribution.selector.row') {
-    // Would be nice if $values had the contribution status but it doesn't,
-    // so always add this option.
-    $links[] = [
-      'name' => ts('Refund'),
-      'title' => ts('Refund contribution'),
-      'url' => 'civicrm/refund_contribution',
-      'qs' => "contribution_id=$objectId",
-      'class' => 'crm-popup medium-popup',
-      'weight' => 1,
-    ];
+    if (CRM_Core_Permission::check('refund contributions')) {
+      // Would be nice if $values had the contribution status but it doesn't,
+      // so always add this option.
+      $links[] = [
+        'name' => ts('Refund'),
+        'title' => ts('Refund contribution'),
+        'url' => 'civicrm/refund_contribution',
+        'qs' => "contribution_id=$objectId",
+        'class' => 'crm-popup medium-popup',
+        'weight' => 1,
+      ];
+    }
   }
 }
 
@@ -674,9 +676,11 @@ function wmf_civicrm_civicrm_smashpig_stats($stats) {
   }
   $prometheusPath = \Civi::settings()->get('metrics_reporting_prometheus_path');
   $reporter = new PrometheusReporter($prometheusPath);
-  $statsSuffix = getenv('SMASHPIG_JOB_LABEL') ?? '';
-  if ($statsSuffix !== '') {
+  $statsSuffix = getenv('SMASHPIG_JOB_LABEL');
+  if ($statsSuffix) {
     $statsSuffix = "_$statsSuffix";
+  } else {
+    $statsSuffix = '';
   }
   $reporter->reportMetrics("recurring_smashpig$statsSuffix", $metrics);
 }
