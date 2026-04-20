@@ -5,6 +5,7 @@ use Civi;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\PendingTransaction;
+use SmashPig\Core\Context;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\FinalStatus;
@@ -64,6 +65,7 @@ class Consume extends AbstractAction {
     $startTime = time();
     $processed = 0;
     \CRM_SmashPig_ContextWrapper::createContext('pending_transaction_resolver', $this->gateway);
+    Context::get()->setSourceName('pendingresolver');
     $pendingDb = PendingDatabase::get();
     $message = $pendingDb->fetchMessageByGatewayOldest(
       $this->gateway, $this->getMethodsToResolve()
