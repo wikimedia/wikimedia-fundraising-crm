@@ -228,6 +228,13 @@ class ContributionRecur {
       )->execute()->first();
   }
 
+  public static function getByGatewayToken(string $gateway, string $token): ?array {
+    return \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addWhere('payment_processor_id:name', '=', $gateway)
+      ->addWhere('payment_token_id.token', '=', $token)
+      ->execute()->first();
+  }
+
   /**
    * Gets the list of donor-selectable cancel reasons for the dropdown on the
    * donor relations cancel form.

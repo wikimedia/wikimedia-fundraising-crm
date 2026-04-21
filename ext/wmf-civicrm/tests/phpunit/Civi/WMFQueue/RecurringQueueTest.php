@@ -618,6 +618,57 @@ class RecurringQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * Test processing a Gravy PayPal recurring cancel message with the token.
+   */
+  public function testRecurringCancelGravyPaypalMessageByToken(): void {
+    // Create the first donation
+    $contributionTrackingRecordID = $this->addContributionTrackingRecord();
+    $this->processDonationMessage([
+      'gateway' => 'gravy',
+      'gross' => 400,
+      'original_gross' => 400,
+      'original_currency' => 'CAD',
+      'contribution_tracking_id' => $contributionTrackingRecordID,
+    ]);
+    $this->processContributionTrackingQueue();
+
+    // Create a Gravy PayPal recurring signup to have something to cancel
+    $this->processRecurringSignup([
+      'gateway' => 'gravy',
+      'payment_method' => 'paypal',
+      'subscr_id' => '48df827f-93bd-4c33-8186-2da6fc02c878',
+      'recurring_payment_token' => '12345678-93bd-4c33-8186-2da6fc02c878',
+      'contribution_tracking_id' => $contributionTrackingRecordID,
+      'user_ip' => '127.0.0.1',
+    ]);
+
+    // Now process the cancellation message specifying the token rather than the subscr_id
+    $cancelMessage = [
+      'gateway' => 'gravy',
+      'txn_type' => 'subscr_cancel',
+      'recurring_payment_token' => '12345678-93bd-4c33-8186-2da6fc02c878',
+      'payment_method' => 'paypal',
+      'date' => 1719773621,
+      'cancel_date' => 1719773621,
+      'recurring' => '1',
+    ];
+
+    $this->processMessage($cancelMessage);
+
+    // Verify the cancellation was processed correctly
+    $recur_record = ContributionRecur::get(FALSE)
+      ->addWhere('payment_token_id.token', '=', '12345678-93bd-4c33-8186-2da6fc02c878')
+      ->addSelect('*', 'contribution_status_id:name')
+      ->execute()->single();
+    $this->assertEquals('(auto) User Cancelled via Gateway', $recur_record['cancel_reason']);
+    $this->assertEquals('2024-06-30 18:53:41', $recur_record['cancel_date']);
+    $this->assertEquals('2024-06-30 18:53:41', $recur_record['end_date']);
+    $this->assertNotEmpty($recur_record['payment_processor_id']);
+    $this->assertEmpty($recur_record['failure_retry_date']);
+    $this->assertEquals('Cancelled', $recur_record['contribution_status_id:name']);
+  }
+
+  /**
    * Test record of failed recurring payment rather than by the subscr_id
    */
   public function testRecurringFailedMessageWithRecurringContributionID(): void {

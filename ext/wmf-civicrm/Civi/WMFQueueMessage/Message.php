@@ -888,14 +888,26 @@ class Message {
     }
     $this->contributionRecurID = !empty($this->message['contribution_recur_id']) ? (int) $this->message['contribution_recur_id'] : FALSE;
 
+    $recurRecord = NULL;
     if (!$this->contributionRecurID && !empty($this->message['subscr_id'])) {
       $recurRecord = RecurHelper::getByGatewaySubscriptionId($this->getGateway(), $this->message['subscr_id']);
-      if ($recurRecord) {
-        // Since we have loaded this we should register it so we can lazy access it.
-        $this->define('ContributionRecur', 'ContributionRecur', $recurRecord);
-        $this->contributionRecurID = $recurRecord['id'];
-        return $this->contributionRecurID ?: NULL;
-      }
+    }
+    // If the message is a subscr_cancel, look up the ID by the token
+    if (
+      !$this->contributionRecurID &&
+      !$recurRecord &&
+      !empty($this->message['recurring_payment_token']) &&
+      ($this->message['txn_type'] ?? '') === 'subscr_cancel'
+    ) {
+      $recurRecord = RecurHelper::getByGatewayToken(
+        $this->getGateway(),
+        $this->message['recurring_payment_token']
+      );
+    }
+    if ($recurRecord) {
+      // Since we have loaded this we should register it so we can lazy access it.
+      $this->define('ContributionRecur', 'ContributionRecur', $recurRecord);
+      $this->contributionRecurID = $recurRecord['id'];
     }
     return $this->contributionRecurID ?: NULL;
   }
