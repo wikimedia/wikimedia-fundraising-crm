@@ -33,6 +33,7 @@ $instruments = [
   'Blik' => 'Blik',
   'Boleto' => 'Boleto',
   'Bpay' => 'Bpay',
+  'Bre-B' => 'Bre-B',
   'Cash' => 'Cash',
   'Stock' => 'Stock',
   // Cashu exists on live but has no contributions.
@@ -87,6 +88,7 @@ $instruments = [
   'Stripe' => 'Stripe',
   'Trilogy' => 'Trilogy',
   'Webmoney' => 'Webmoney',
+  'Yape' => 'Yape',
 
   // Latin payment methods for Dlocal
   'Credit Card: Alia' => 'Credit Card: Alia',
@@ -137,7 +139,7 @@ $instruments = [
   'Bank Transfer: UPI' => 'Bank Transfer: UPI',
   // Mobile payment methods
   'Venmo' => 'Venmo',
-  'Vipps' => 'Vipps'
+  'Vipps' => 'Vipps',
 ];
 
 $paymentInstruments = [];
