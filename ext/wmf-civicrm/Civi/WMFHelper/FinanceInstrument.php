@@ -36,6 +36,7 @@ class FinanceInstrument {
     'bcp' => 'BCP', // Peru
     'blik' => 'Blik',
     'bradesco' => 'Bradesco', // Brazil
+    'bre-b' => 'Bre-B', // Colombia
     'interbank' => 'Interbank', // Peru
     'itau' => 'Itau', // Brazil
     'mercadopago' => 'MercadoPago', // Latin America
@@ -48,7 +49,8 @@ class FinanceInstrument {
     'santander_rio' => 'Santander', // Argentina (same bank as above)
     'stitch' => 'Stitch', // South Africa
     'upi' => 'UPI', // India
-    'webpay_bt' => 'Webpay' // Chile
+    'webpay_bt' => 'Webpay', // Chile
+    'yape' => 'Yape',
   ];
 
   public const CARD_SUBMETHOD_LIST = [
