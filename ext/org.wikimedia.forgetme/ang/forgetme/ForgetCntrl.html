@@ -5,6 +5,10 @@
 
   <h1 crm-page-title><a href="{{currentContactViewUrl}}">{{currentContact.display_name}}</a></h1>
 
+  <div ng-show="hasActiveRecurring" class="messages warning">
+    {{ts('This contact has at least one active recurring contribution. Please cancel their recurring contribution(s) and then reload this page.')}}
+  </div>
+
   <button class="btn btn-primary" ng-print print-element-id="all-the-stuff"><i class="fa fa-print"></i> Print</button>
 
   <form name="myForm" crm-ui-id-scope>
@@ -22,7 +26,7 @@
         ng-model="reference"
     />
     <div>
-      <button ng-click="forget()" ng-disabled="formSubmitted">{{ts('Forget')}}</button>
+      <button ng-click="forget()" ng-disabled="formSubmitted || hasActiveRecurring">{{ts('Forget')}}</button>
     </div>
     <div ng-show="(forgotten)">
       <div>{{ts('The following data has been forgotten')}}</div>

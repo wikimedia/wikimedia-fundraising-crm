@@ -164,7 +164,7 @@ class GenerateBatch extends AbstractAction {
                     'usd_credit' => $apiBatch['usd_credit'] ?? '',
                     'usd_debit' => $apiBatch['usd_debit'] ?? '',
                   ];
-                  $record['remote'] = $remote;
+                  $record['remote'][$journal['remote_descriptor']] = $remote;
                   Batch::update(FALSE)
                     ->addWhere('name', '=', $batch['name'])
                     ->setValues([
@@ -567,12 +567,7 @@ END";
         else {
           $html .= "<p>One of more errors have prevented the batch from being closed.</p>";
         }
-        $includeRemoteURL = FALSE;
-        foreach ($result as $batch) {
-          if (isset($batch['remote']['url'])) {
-            $includeRemoteURL = TRUE;
-          }
-        }
+
         $html .= $tableOpenHtml . '
           <thead>
             <tr style="background-color: #f2f2f2; font-weight: bold;">
@@ -581,9 +576,9 @@ END";
               <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Settled Total (In Bank)</th>
               <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Total in batch (From CiviCRM)</th>
               <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Discrepancy</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Journal total (debits + credits)</th>'
-              . ($includeRemoteURL ? '<th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Intacct Batch</th>' : '')
-              . '<th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Exchange rate in Intacct</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Journal total (debits + credits)</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Intacct Batch</th>
+              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Exchange rate in Intacct</th>
               <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Files</th>
             </tr>
           </thead>
@@ -613,13 +608,14 @@ END";
 
           $settled   = \Civi::format()->money(htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8'), $currency);
           $journalTotal = \Civi::format()->money(htmlspecialchars($batch['totals']['debit'] + $batch['totals']['credit'] + $batch['totals']['fee'], ENT_QUOTES, 'UTF-8'), $currency);
-          $usdJournalTotal = $currency === 'USD' ? $journalTotal : $batch['remote']['usd_journal_total'] ?? '';
+          $remoteBatch = $batch['remote']['main'];
+          $usdJournalTotal = $currency === 'USD' ? $journalTotal : $remoteBatch['usd_journal_total'] ?? '';
           $totalInBatch = \Civi::format()->money(htmlspecialchars($batch['batch']['batch_data.settled_net_amount'] ?? 0, ENT_QUOTES, 'UTF-8'), $currency);
           $numberOfTransactions = $batch['batch']['total'];
           $transactionsUrl = BatchFile::getBatchFileUrl([$batchName], 'details');
           $journalUrl = BatchFile::getBatchFileUrl([$batchName], 'journals');
-          $remoteURL = $batch['remote']['url'] ?? '';
-          $exchangeRate = $batch['remote']['exchange_rate'] ?? '';
+          $remoteURL = $remoteBatch['url'] ?? '';
+          $exchangeRate = $remoteBatch['exchange_rate'] ?? '';
           $html .= "
           <tr>
             <td style=\"$cell\"><a href='{$batchUrl}'>{$batchName}</a></td>
@@ -628,8 +624,8 @@ END";
             <td style=\"$cellRight\">{$settled}</td>
             <td style=\"$discrepancyStyle\">{$discrepancy}</td>
             <td style=\"$cellRight\">{$journalTotal} ($usdJournalTotal)</td>
-            " . ($includeRemoteURL ? "<td style=\"$cellRight\">" . ($remoteURL ? "<a href='{$remoteURL}'>{$batch['remote']['txn_number']}</a>" : '') . "</td>" : '')
-            . "<td style=\"$cellRight\">{$exchangeRate}</td><td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" . "<br><a href='{$journalUrl}'> Download Journals</a>" : '') . "</td>
+            <td style=\"$cellRight\">" . ($remoteURL ? "<a href='{$remoteURL}'>{$remoteBatch['txn_number']}</a>" : '') . "</td>
+            <td style=\"$cellRight\">{$exchangeRate}</td><td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" . "<br><a href='{$journalUrl}'> Download Journals</a>" : '') . "</td>
           </tr>
         ";
         }
@@ -666,12 +662,12 @@ END";
 
         $incompleteBatches = Batch::get(FALSE)
           // Status list will probably grow.
-          ->addWhere('status_id:name', 'IN', ['Open'])
+          ->addWhere('status_id:name', 'IN', ['Open', 'needs_attention'])
           ->addWhere('mode_id:name', '=', 'Automatic Batch')
           ->addSelect('*', 'batch_data.*', 'status_id:label')
           ->execute();
         if (!empty($incompleteBatches)) {
-          $html .= "<h3>Incomplete batches</h3><p>The following batches are still open, pending a verified total</p>" . $tableOpenHtml;
+          $html .= "<h3>Incomplete batches</h3><p>The following batches are still open, pending a verified total or manual intervention</p>" . $tableOpenHtml;
           $html .= $this->getTableHeader( ['Batch', 'Created Date', 'Currency', 'Total', 'Count', 'Status']);
           foreach ($incompleteBatches as $incompleteBatch) {
             $html .= "<tr><td>{$incompleteBatch['name']}</td><td>{$incompleteBatch['created_date']}</td><td>{$incompleteBatch['batch_data.settlement_currency']}</td><td>{$incompleteBatch['batch_data.settled_net_amount']}</td><td>{$incompleteBatch['item_count']}</td><td>{$incompleteBatch['status_id:label']}</td></tr>";

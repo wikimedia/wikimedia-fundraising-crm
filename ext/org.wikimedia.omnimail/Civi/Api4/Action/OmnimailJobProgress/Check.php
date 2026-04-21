@@ -31,15 +31,20 @@ class Check extends AbstractAction {
    */
   public function _run(Result $result) {
     // Check for jobs that have been running longer than expected
-    $outdatedJobCount = OmnimailJobProgress::get($this->getCheckPermissions())
-      ->selectRowCount()
+    $outdatedJobs = OmnimailJobProgress::get($this->getCheckPermissions())
       ->addWhere('created_date', '<=', $this->getTimeDescription())
       ->addWhere('job', '=', $this->getJobName())
-      ->execute()
-      ->count();
+      ->execute();
 
-    if ($outdatedJobCount > 0) {
-      throw new \CRM_Core_Exception('Out of date ' . $this->getJobName() . ' request found');
+    if ($outdatedJobs->count() > 0) {
+      $identifiers = [];
+      foreach ($outdatedJobs as $job) {
+        $identifiers[] = $job['job_identifier'];
+      }
+      $message = 'Out of date ' . $this->getJobName() . ' request found. Please check the status of job(s) ' .
+        implode(', ', $identifiers) . ' at ' .
+        'https://cloud.goacoustic.com/campaign-automation/Settings/Activity_reports/All_data_jobs';
+      throw new \CRM_Core_Exception($message);
     }
   }
 
