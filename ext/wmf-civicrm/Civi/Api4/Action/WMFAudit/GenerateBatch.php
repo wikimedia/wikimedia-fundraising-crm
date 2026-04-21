@@ -282,7 +282,7 @@ class GenerateBatch extends AbstractAction {
             $endowmentValues = [
               'LOCATION_ID' => '300-END',
               'DEPT_ID' => '',
-              'GLENTRY_VENDORID' => 'V04981',
+              'GLENTRY_VENDORID' => $this->mapVendorToEndowmentVendor($row['GLENTRY_VENDORID']),
             ];
             $toBalancingRow = $toRow = array_merge($row, $endowmentValues);
             if (str_starts_with($this->getAccountName($toRow['ACCT_NO']), 'Major Gifts')) {
@@ -306,6 +306,15 @@ class GenerateBatch extends AbstractAction {
       return [$csvFiles, empty($this->incompleteRows[$batchName])];
     }
     return [[], FALSE];
+  }
+
+  private function mapVendorToEndowmentVendor($mainVendorCode): string {
+    foreach ($this->getVendorCodesForGateways() as $codes) {
+      if ($codes['main'] === $mainVendorCode) {
+        return $codes['endowment'];
+      }
+    }
+    throw new \CRM_Core_Exception('Vendor not mapped :' . $mainVendorCode . ' see https://docs.google.com/spreadsheets/d/1FFIhblreQKSiPBxfatc5XhDdjqoaR7R280r9TTOlQcw/edit?gid=1609952585#gid=1609952585');
   }
 
   /**
@@ -422,7 +431,7 @@ END";
   public function getVendorCode($batchName): string {
     $gateway = $this->getGateway($batchName);
     $codes = $this->getVendorCodesForGateways();
-    return $codes[$gateway];
+    return $codes[$gateway]['main'];
   }
 
   /**
@@ -494,7 +503,12 @@ END";
   }
 
   private function getReversalAccountCode($currency, $vendor): int {
-    $gateway = array_search($vendor, $this->getVendorCodesForGateways());
+    foreach ($this->getVendorCodesForGateways() as $key => $vendorAccounts) {
+      if ($vendorAccounts['main'] === $vendor) {
+        $gateway = $key;
+        break;
+      }
+    }
     if ($gateway === 'dlocal') {
       return 10835;
     }
@@ -857,21 +871,24 @@ END";
   }
 
   /**
-   * @return string[]
+   * @see https://docs.google.com/spreadsheets/d/1FFIhblreQKSiPBxfatc5XhDdjqoaR7R280r9TTOlQcw/edit?gid=1609952585#gid=1609952585
+   * @return array[]
    */
   public function getVendorCodesForGateways(): array {
-    $codes = [
-      'adyen' => 'V01670',
-      'braintree' => 'V05089',
-      'paypal' => 'V00282',
-      'dlocal' => 'V04134',
-      'engage' => 'V01948',
-      'stripe' => 'V04137',
-      'trustly' => 'V05354',
-      // V00343	Wikimedia Deutschland
-      // V01729	Wikimedia CH
+    return [
+      'adyen' => ['main' => 'V01670', 'endowment' => 'V04988'],
+      'braintree' => ['main' => 'V05089', 'endowment' => 'V04991'],
+      'paypal' => ['main' => 'V00282', 'endowment' => 'V04989'],
+      'dlocal' => ['main' => 'V04134', 'endowment' => 'V04990'],
+      'engage' => ['main' => 'V01948', 'endowment' => 'V04993'],
+      'stripe' => ['main' => 'V04137', 'endowment' => 'V04994'],
+      'trustly' => ['main' => 'V05354', 'endowment' => 'V04995'],
+      'chariot' => ['main' => 'V05811', 'endowment' => 'V05002'],
+      // V00343	& V04999 Wikimedia Deutschland
+      // V01729	& V05000Wikimedia CH
+      // fundraise up - paypal V05040, V05001
+      // overflow app V05045, V04996
     ];
-    return $codes;
   }
 
   /**
