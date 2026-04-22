@@ -50,6 +50,7 @@ class DlocalAuditTest extends BaseAuditTestCase {
               'contribution_tracking_id' => '26683111',
               'country' => 'BR',
               'currency' => 'BRL',
+              'original_currency' => 'BRL',
               'date' => 1434477552,
               'email' => 'nonchalant@gmail.com',
               'first_name' => 'Test',
@@ -90,6 +91,7 @@ class DlocalAuditTest extends BaseAuditTestCase {
             [
               'contribution_tracking_id' => '24761',
               'country' => 'BR',
+              'original_currency' => 'BRL',
               'currency' => 'BRL',
               'date' => 1434506370,
               'email' => 'jimmy@bankster.com',
