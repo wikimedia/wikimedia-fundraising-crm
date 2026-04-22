@@ -45,7 +45,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       try {
         \Civi::log('wmf')->info('refund {log_id}: Marking as refunded', $context);
         $this->markRefund(
-          $originalContribution['id'],
+          $originalContribution,
           $messageObject,
           $refundTxn,
           $message['gross']
@@ -152,36 +152,12 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    * now.
    */
   private function markRefund(
-    int $contribution_id,
+    array $contribution,
     RefundMessage $messageObject,
     ?string $refund_gateway_txn_id,
     ?float $refund_amount
   ): void {
     $amount_scammed = 0;
-
-    try {
-      $contribution = Contribution::get(FALSE)
-        ->addWhere('id', '=', $contribution_id)
-        ->setSelect([
-          'total_amount',
-          'trxn_id',
-          'source',
-          'contact_id',
-          'receive_date',
-          'payment_instrument_id',
-          'contribution_status_id:name',
-          'contribution_extra.original_currency',
-          'contribution_extra.original_amount',
-          'contribution_extra.backend_processor_reversal_id',
-          'contribution_extra.payment_orchestrator_reversal_id',
-          'Gift_Data.*',
-        ])->execute()->single();
-    }
-    catch (\CRM_Core_Exception $e) {
-      throw new WMFException(
-        WMFException::INVALID_MESSAGE, "Could not load contribution: $contribution_id with error " . $e->getMessage()
-      );
-    }
 
     $giftDataFields = [];
     foreach ($contribution as $field => $value) {
@@ -223,7 +199,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           'currency' => 'USD',
           'contribution_extra.original_currency' => $messageObject->getOriginalCurrency(),
           'contribution_extra.original_amount' => $messageObject->getOriginalAmount(),
-          'contribution_extra.parent_contribution_id' => $contribution_id,
+          'contribution_extra.parent_contribution_id' => $contribution['id'],
           'contribution_extra.no_thank_you' => 1,
           'contribution_extra.backend_processor_reversal_id' => $messageObject->getBackendProcessorReversalID(),
           'contribution_extra.payment_orchestrator_reversal_id' => $messageObject->getPaymentOrchestratorReversalID(),
@@ -275,7 +251,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     try {
       Contribution::update(FALSE)
         ->setDebug(TRUE)
-        ->addWhere('id', '=', $contribution_id)
+        ->addWhere('id', '=', $contribution['id'])
         ->setValues([
           'contribution_status_id:name' => $messageObject->getContributionStatus(),
           'cancel_date' => $messageObject->getDate(),
@@ -294,7 +270,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       throw new WMFException(
         WMFException::IMPORT_CONTRIB,
         "Cannot mark original contribution as refunded:
-                $contribution_id, " . $e->getMessage() . print_r($e->getErrorData(), TRUE)
+                {$contribution['id']}, " . $e->getMessage() . print_r($e->getErrorData(), TRUE)
       );
     }
 
@@ -320,7 +296,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
             'receive_date' => $messageObject->getDate(),
             'currency' => 'USD',
             'debug' => 1,
-            'contribution_extra.parent_contribution_id' => $contribution_id,
+            'contribution_extra.parent_contribution_id' => $contribution['id'],
             'contribution_extra.no_thank_you' => 1,
             // Add Other Online as a default channel for these adjustments
           ] + $giftDataFields + ['Gift_Data.Channel' => 'Other Online'])->execute();
@@ -329,7 +305,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           throw new WMFException(
             WMFException::IMPORT_CONTRIB,
             "Cannot create new contribution for the refund difference:
-                $contribution_id, " . $e->getMessage() . print_r($e->getErrorData(), TRUE)
+                {$contribution['id']}, " . $e->getMessage() . print_r($e->getErrorData(), TRUE)
           );
         }
       }
@@ -337,13 +313,13 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
 
     $alert_factor = \Civi::settings()->get('wmf_refund_alert_factor');
     if ($amount_scammed > $alert_factor * $original_amount) {
-      \Civi::log('wmf')->alert("Refund amount mismatch for : $contribution_id, difference is {$amount_scammed}. See "
+      \Civi::log('wmf')->alert("Refund amount mismatch for : {$contribution['id']}, difference is {$amount_scammed}. See "
         . \CRM_Utils_System::url('civicrm/contact/view/contribution', [
           'reset' => 1,
-          'id' => $contribution_id,
+          'id' => $contribution['id'],
           'action' => 'view',
         ], TRUE),
-        ['subject' => "Refund amount mismatch for : $contribution_id, difference is {$amount_scammed}."]
+        ['subject' => "Refund amount mismatch for : {$contribution['id']}, difference is {$amount_scammed}."]
       );
     }
   }

@@ -106,16 +106,26 @@ class RefundMessage extends Message {
    * @throws \CRM_Core_Exception
    */
   public function getOriginalContribution(): array {
+    $selectFields = [
+      'contribution_status_id:name',
+      'contribution_extra.original_currency',
+      'contribution_extra.original_amount',
+      'contribution_extra.backend_processor_reversal_id',
+      'contribution_extra.payment_orchestrator_reversal_id',
+      'Gift_Data.*',
+      '*',
+    ];
     if (!empty($this->message['parent_contribution_id'])) {
       return Contribution::get(FALSE)
         ->addWhere('id', '=', $this->message['parent_contribution_id'])
-        ->addSelect('*', 'contribution_status_id:name')
+        ->setSelect($selectFields)
         ->execute()->single();
     }
     // @todo add functions ->getOriginalContributionID() and `->getOriginalContributionValue()`
     // similar to getRecurringPriorContributionValue on the RecurringQueue class.
     $originalContribution = Contribution::get(FALSE)
       ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
+      ->setSelect($selectFields)
       ->addWhere('contribution_extra.gateway_txn_id', '=', $this->message['gateway_parent_id'])
       ->execute()->first();
     // Fall back to searching by invoice ID, generally for Ingenico recurring
@@ -127,6 +137,7 @@ class RefundMessage extends Message {
           // For recurring payments, we sometimes append a | and a random number after the invoice ID
           ['invoice_id', 'LIKE', $this->message['invoice_id'] . '|%']
         )
+        ->setSelect($selectFields)
         ->execute()->first();
     }
 
@@ -141,6 +152,7 @@ class RefundMessage extends Message {
        * gateway if no match is found for the gateway supplied.
        */
       $originalContribution = Contribution::get(FALSE)
+        ->setSelect($selectFields)
         ->addWhere('contribution_extra.gateway', 'IN', ['paypal', 'paypal_ec'])
         ->addWhere('contribution_extra.gateway_txn_id', '=', $this->message['gateway_parent_id'])
         ->execute()->first();
