@@ -32,6 +32,8 @@ class GenerateBatch extends AbstractAction {
 
   const GL_ENDOWMENT_MEMO_SUFFIX = 'Earmarked for Endowment from WMF';
 
+  const NUMBER_OF_DAYS_OLD = 2;
+
   /**
    * Is this a dry run (if so do not close batches or push to the api).
    *
@@ -108,6 +110,8 @@ class GenerateBatch extends AbstractAction {
   private string $endDate = '';
 
   private array $batches;
+
+  private array $incomingFiles;
 
   /**
    * This function updates the settled transaction with new fee & currency conversion data.
@@ -692,6 +696,7 @@ END";
           $html .= "</table>";
 
         }
+        $html .= $this->renderIncomingFilesHtml();
 
         $html .= '<h3>Batch Summary</h3>';
         $html .= $this->getTableHeader( ['Batch', 'Account Code', 'Account', 'Endowment Amount', 'Annual Fund Amount']);
@@ -736,6 +741,9 @@ END";
             $incompleteCount += count($batch);
           }
           $params['subject'] .= " $incompleteCount contributions need attention";
+        }
+        if ($this->countOldIncomingFiles()) {
+          $params['subject'] .= $this->countOldIncomingFiles() ." incoming files older than " . self::NUMBER_OF_DAYS_OLD . 'days';
         }
 
         $params['html'] = $html;
@@ -1310,6 +1318,121 @@ GROUP BY s.settlement_batch_reference
       43485 => 'Major Gifts - Unrestricted',
       43428 => 'Major Gifts - Restricted',
     ];
+  }
+
+  private function renderIncomingFilesHtml(): string {
+    $tableOpenHtml = $this->getTableOpenHtml();
+    $files = $this->getUnprocessedAuditFiles();
+
+    $html = '<h3>Incoming files</h3>';
+
+    if (empty($files)) {
+      $html .= '<p>No files found in incoming directories.</p>';
+      return $html;
+    }
+
+    $oldCount = count(array_filter($files, fn(array $file): bool => !empty($file['old'])));
+
+    if ($oldCount) {
+      $html .= '<p style="color: #b30000; font-weight: bold;">'
+        . $oldCount . ' file(s) older than 2 days were found in incoming directories.'
+        . '</p>';
+    }
+    else {
+      $html .= '<p>No files older than 2 days were found in incoming directories.</p>';
+    }
+
+    $html .= $tableOpenHtml . '
+    <thead>
+      <tr style="background-color: #f2f2f2; font-weight: bold;">
+        <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Modified</th>
+        <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Size</th>
+        <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Path</th>
+        <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Status</th>
+        <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Age (days)</th>
+      </tr>
+    </thead>
+    <tbody>
+  ';
+
+    foreach ($files as $file) {
+      $rowStyle = 'border: 1px solid #ccc; padding: 6px;';
+      $rowStyleRight = $rowStyle . ' text-align: right;';
+      $highlight = !empty($file['old']) ? ' color: #b30000; font-weight: bold;' : '';
+
+      $html .= '<tr>';
+      $html .= '<td style="' . $rowStyle . $highlight . '">'
+        . htmlspecialchars(date('Y-m-d H:i', $file['mtime']), ENT_QUOTES, 'UTF-8')
+        . '</td>';
+      $html .= '<td style="' . $rowStyleRight . $highlight . '">'
+        . number_format($file['size'])
+        . '</td>';
+      $html .= '<td style="' . $rowStyle . $highlight . '">'
+        . htmlspecialchars($file['path'], ENT_QUOTES, 'UTF-8')
+        . '</td>';
+      $html .= '<td style="' . $rowStyle . $highlight . '">'
+        . (!empty($file['old']) ? 'OLDER THAN 2 DAYS' : 'OK')
+        . '</td>';
+      $html .= '<td style="' . $rowStyle . $highlight . '">' . $file['days_old'] . '</td>';
+      $html .= '</tr>';
+    }
+
+    $html .= '</tbody></table>';
+
+    return $html;
+  }
+
+  private function getUnprocessedAuditFiles(): array {
+    if (isset($this->incomingFiles)) {
+      return $this->incomingFiles;
+    }
+    $basePath = \Civi::settings()->get('wmf_audit_directory_audit');
+    $cutoff = time() - (self::NUMBER_OF_DAYS_OLD * 24 * 60 * 60);
+
+    $this->incomingFiles = [];
+
+    $iterator = new \RecursiveIteratorIterator(
+      new \RecursiveDirectoryIterator($basePath, \FilesystemIterator::SKIP_DOTS)
+    );
+
+    foreach ($iterator as $file) {
+      if (!$file->isFile()) {
+        continue;
+      }
+
+      $path = $file->getPathname();
+
+      if (strpos($path, DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR) === FALSE) {
+        continue;
+      }
+      $mtime = $file->getMTime();
+      $ageSeconds = time() - $mtime;
+      $daysOld = (int) floor($ageSeconds / (24*60*60));
+      $this->incomingFiles[] = [
+        'path' => $path,
+        'mtime' => $file->getMTime(),
+        'size' => $file->getSize(),
+        'old' => ($file->getMTime() < $cutoff),
+        'days_old' => $daysOld,
+      ];
+    }
+
+    usort($this->incomingFiles, function(array $a, array $b): int {
+      return $a['mtime'] <=> $b['mtime'];
+    });
+
+    return $this->incomingFiles;
+  }
+
+  private function countOldIncomingFiles(): int {
+    $files = $this->getUnprocessedAuditFiles();
+    $count = 0;
+    foreach ($files as $file) {
+      if (!empty($file['old'])) {
+        $count++;
+      }
+    }
+    return $count;
   }
 
 }
