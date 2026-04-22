@@ -31,19 +31,13 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     $gateway = $message['gateway'];
 
     $refundTxn = isset($message['gateway_refund_id']) ? $message['gateway_refund_id'] : NULL;
-    if ($refundTxn === NULL) {
-      $logId = $message['gateway_parent_id'];
-    }
-    else {
-      $logId = $refundTxn;
-    }
 
     if ($message['gross'] < 0) {
       $message['gross'] = abs($message['gross']);
     }
     $originalContribution = $messageObject->getOriginalContribution();
 
-    $context = ['log_id' => $logId];
+    $context = ['log_id' => $message['gateway_refund_id'] ?? $message['gateway_parent_id']];
     // not all messages have a reason
     $reason = $message['reason'] ?? '';
     if ($originalContribution) {
