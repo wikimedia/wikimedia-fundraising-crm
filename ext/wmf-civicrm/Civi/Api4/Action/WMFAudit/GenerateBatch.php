@@ -682,9 +682,12 @@ END";
           ->execute();
         if (!empty($incompleteBatches)) {
           $html .= "<h3>Incomplete batches</h3><p>The following batches are still open, pending a verified total or manual intervention</p>" . $tableOpenHtml;
-          $html .= $this->getTableHeader( ['Batch', 'Created Date', 'Currency', 'Total', 'Count', 'Status']);
+          $html .= $this->getTableHeader( ['Batch', 'Created Date', 'Currency', 'Total', 'Count', 'Status', 'Phab']);
           foreach ($incompleteBatches as $incompleteBatch) {
-            $html .= "<tr><td>{$incompleteBatch['name']}</td><td>{$incompleteBatch['created_date']}</td><td>{$incompleteBatch['batch_data.settlement_currency']}</td><td>{$incompleteBatch['batch_data.settled_net_amount']}</td><td>{$incompleteBatch['item_count']}</td><td>{$incompleteBatch['status_id:label']}</td></tr>";
+            $phabLink = ($incompleteBatch['batch_data.issue_tracker_reference'] ? ('<a href="https://phabricator.wikimedia.org/' . $incompleteBatch['batch_data.issue_tracker_reference'] . '">' . $incompleteBatch['batch_data.issue_tracker_reference'] . '</a>') : '');
+            $html .= "<tr><td>{$incompleteBatch['name']}</td><td>{$incompleteBatch['created_date']}</td><td>{$incompleteBatch['batch_data.settlement_currency']}</td><td>{$incompleteBatch['batch_data.settled_net_amount']}</td><td>{$incompleteBatch['item_count']}</td><td>{$incompleteBatch['status_id:label']}</td>
+              <td>{$phabLink}</td>
+            </tr>";
           }
           $html .= "</table>";
 
