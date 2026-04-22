@@ -95,6 +95,11 @@ class Send extends AbstractAction {
     ];
 
     $success = \CRM_Utils_Mail::send($params);
+    if (trim($rendered['text'])) {
+      $details = trim($rendered['text']);
+    } else {
+      $details = \CRM_Utils_String::htmlToText($rendered['html']);
+    }
     if ($success) {
       Activity::create()->setCheckPermissions(FALSE)->setValues([
         'target_contact_id' => $this->contactID,
@@ -102,7 +107,7 @@ class Send extends AbstractAction {
             \CRM_Core_Session::getLoggedInContactID() ??
             $this->contactID,
         'subject' => $this->workflow . ' message: ' . $rendered['subject'],
-        'details' => $rendered['text'],
+        'details' => $details,
         'activity_type_id:name' => 'Email',
         'activity_date_time' => 'now',
         'source_record_id' => $this->activitySourceRecordID ?? NULL,
