@@ -209,8 +209,49 @@ class PaypalAuditTest extends BaseAuditTestCase {
     $this->assertCount(4, $contributions);
     $this->assertEquals('PAYPAL ABCD', $contributions['Completed']['trxn_id']);
     $this->assertEquals('RFD REVERSAL PAYPAL 9TA257', $contributions['Reversal']['trxn_id']);
+    $this->assertEquals('9TA257', $contributions['Reversal']['contribution_extra.backend_processor_reversal_id']);
     $this->assertEquals('REVERSAL_REVERSAL PAYPAL 9TA257', $contributions['reversal_reversal']['trxn_id']);
     $this->assertEquals('PAYPAL 1VR655', $contributions['Chargeback']['trxn_id']);
+  }
+
+  /**
+   * In some cases PayPal does more than one transaction as part of a chargeback - check these are recorded.
+   *
+   * @return void
+   */
+  public function testDuplicateValidReversals(): void {
+    $this->createTestEntity('Contribution', [
+      'contribution_extra.gateway' => 'gravy',
+      'trxn_id' => 'GRAVY 706eff86-4496-4f08-8597-dc0d5530a479',
+      'contribution_extra.backend_processor_id' => 'paypal',
+      'contribution_extra.original_currency' => 'EUR',
+      'contribution_extra.original_amount' => 5.20,
+      'contribution_extra.backend_txn_id' => 'ABC',
+      'contribution_extra.payment_orchestrator_reconciliation_id' => '3Q9rkQDRAGUNMZSFdtWau9',
+      'contribution_extra.gateway_txn_id' => '706eff86-4496-4f08-8597-dc0d5530a479',
+      'invoice_id' => '2290.1',
+      'contact_id' => $this->createIndividual([], 'donor'),
+      'financial_type_id:name' => 'Cash',
+    ], 'donation');
+    $this->runAuditBatch('stl_chargeback_double_transaction', 'STL-20260106.01.009.csv', 'paypal_20260221');
+    $contributions = Contribution::get(FALSE)
+      ->addOrderBy('id')
+      ->addWhere('contact_id', '=', $this->ids['Contact']['donor'])
+      ->addSelect('contribution_status_id:name', '*', 'contribution_settlement.*', 'contribution_extra.*')
+      ->execute();
+    $this->assertCount(2, $contributions);
+    $originalContribution = $contributions[0];
+    $secondRefundPayment = $contributions[1];
+    $this->assertEquals('Chargeback', $originalContribution['contribution_status_id:name']);
+    $this->assertEquals('Chargeback', $secondRefundPayment['contribution_status_id:name']);
+    $this->assertEquals('paypal_20260221_EUR', $originalContribution['contribution_settlement.settlement_batch_reversal_reference']);
+    $this->assertEquals('paypal_20260221_EUR', $secondRefundPayment['contribution_settlement.settlement_batch_reversal_reference']);
+    $this->assertEquals(-4.8, $originalContribution['contribution_settlement.settled_reversal_amount']);
+    $this->assertEquals(1, $originalContribution['contribution_settlement.settled_fee_reversal_amount']);
+    $this->assertEquals(-.4, $secondRefundPayment['contribution_settlement.settled_reversal_amount']);
+    $this->assertEquals(0, $secondRefundPayment['contribution_settlement.settled_fee_reversal_amount']);
+    $this->assertEquals('FIRST', $originalContribution['contribution_extra.backend_processor_reversal_id']);
+    $this->assertEquals('SECOND', $secondRefundPayment['contribution_extra.backend_processor_reversal_id']);
   }
 
   /**

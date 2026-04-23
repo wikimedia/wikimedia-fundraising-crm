@@ -30,9 +30,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     $contributionStatus = $messageObject->getContributionStatus();
     $gateway = $message['gateway'];
 
-    if ($message['gross'] < 0) {
-      $message['gross'] = abs($message['gross']);
-    }
     $originalContribution = $messageObject->getOriginalContribution();
 
     $context = ['log_id' => $messageObject->getGatewayRefundID()];
@@ -45,7 +42,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         $this->markRefund(
           $originalContribution,
           $messageObject,
-          $message['gross']
         );
         \Civi::log('wmf')->info('refund {log_id}: Successfully marked as refunded', $context);
       }
@@ -150,10 +146,8 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    */
   private function markRefund(
     array $contribution,
-    RefundMessage $messageObject,
-    ?float $refund_amount
+    RefundMessage $messageObject
   ): void {
-    $amount_scammed = 0;
 
     $giftDataFields = [];
     foreach ($contribution as $field => $value) {
@@ -165,7 +159,13 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     if (in_array($contribution['contribution_status_id:name'], ['Cancelled', 'Chargeback', 'Refunded', 'Reversal'], TRUE)
       || $messageObject->getContributionStatus() === 'Reversal'
     ) {
-      if (($messageObject->getContributionStatus() === 'Chargeback' && in_array($contribution['contribution_status_id:name'], ['Refunded', 'Reversal'], TRUE))
+      if (
+        // Really this first check - ie that the transaction reference is the same for both, would ideally replace
+        // all the others are it should be authoritative once we consistently store correctly.
+        ($messageObject->getBackendProcessorReversalID() && !empty($contribution['contribution_extra.backend_processor_reversal_id']) &&
+          $messageObject->getBackendProcessorReversalID()  !== $contribution['contribution_extra.backend_processor_reversal_id']
+        )
+        || ($messageObject->getContributionStatus() === 'Chargeback' && in_array($contribution['contribution_status_id:name'], ['Refunded', 'Reversal'], TRUE))
         || ($messageObject->getContributionStatus() === 'Refunded' && in_array($contribution['contribution_status_id:name'], ['Chargeback', 'Reversal'], TRUE))
         // Always treat reversals as a bit of an anomaly & create a new transaction.
         || ($messageObject->getContributionStatus() === 'Reversal' && $contribution['contribution_status_id:name'] !== 'Reversal')
@@ -270,9 +270,17 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       );
     }
 
-    if ($refund_amount !== NULL) {
-      $amount_scammed = round($refund_amount, 2) - round($original_amount, 2);
-      if ($amount_scammed != 0) {
+    $amount_scammed = 0;
+    if ($messageObject->getOriginalAmount() !== NULL) {
+      // It the amount refunded, in the original currency, is greater than the amount
+      // paid, in the original currency, create a transaction to show this. Where the amount is less
+      // and the transaction was initiated by the payment gateway we have been seeing a second transaction made
+      // by them for the remainder so do wait for that to come in .
+      // For refunds we keep the historical behaviour which is aligned with over-refunds.
+      // This whole extra transaction is of low value since it does not have settlement information
+      // so is excluded from any settlement based reporting. However, it does alert us to 'something odd'.
+      $amount_scammed = round(abs((float) $messageObject->getOriginalAmount()), 2) - round($original_amount, 2);
+      if ($amount_scammed > 0 || ($amount_scammed != 0 && $messageObject->getContributionStatus() === 'Refunded')) {
         $refund_unique_id = $this->getRefundUniqueID($contribution['trxn_id'], $messageObject->getGatewayRefundID(), $messageObject->getContributionStatus(), TRUE);
 
         try {
