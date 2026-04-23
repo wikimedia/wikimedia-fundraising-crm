@@ -186,6 +186,17 @@ class RefundMessage extends Message {
     return $this->message['backend_processor_reversal_id'] ?? NULL;
   }
 
+  /**
+   * Get the gateway refund ID.
+   *
+   * This could potentially be a gravy ID and is more ambiguous than
+   * getBackendProcessorReversalID and getPaymentOrchestratorReversalID
+   * @return string|null
+   */
+  public function getGatewayRefundID(): ?string {
+    return $this->message['gateway_refund_id'] ?? NULL;
+  }
+
   public function getPaymentOrchestratorReversalID() {
     return $this->message['payment_orchestrator_reversal_id'] ?? NULL;
   }

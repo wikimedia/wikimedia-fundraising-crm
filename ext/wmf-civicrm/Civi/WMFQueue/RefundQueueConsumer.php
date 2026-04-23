@@ -30,14 +30,12 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     $contributionStatus = $messageObject->getContributionStatus();
     $gateway = $message['gateway'];
 
-    $refundTxn = isset($message['gateway_refund_id']) ? $message['gateway_refund_id'] : NULL;
-
     if ($message['gross'] < 0) {
       $message['gross'] = abs($message['gross']);
     }
     $originalContribution = $messageObject->getOriginalContribution();
 
-    $context = ['log_id' => $message['gateway_refund_id'] ?? $message['gateway_parent_id']];
+    $context = ['log_id' => $messageObject->getGatewayRefundID()];
     // not all messages have a reason
     $reason = $message['reason'] ?? '';
     if ($originalContribution) {
@@ -47,7 +45,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         $this->markRefund(
           $originalContribution,
           $messageObject,
-          $refundTxn,
           $message['gross']
         );
         \Civi::log('wmf')->info('refund {log_id}: Successfully marked as refunded', $context);
@@ -154,7 +151,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
   private function markRefund(
     array $contribution,
     RefundMessage $messageObject,
-    ?string $refund_gateway_txn_id,
     ?float $refund_amount
   ): void {
     $amount_scammed = 0;
@@ -174,7 +170,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         // Always treat reversals as a bit of an anomaly & create a new transaction.
         || ($messageObject->getContributionStatus() === 'Reversal' && $contribution['contribution_status_id:name'] !== 'Reversal')
       ) {
-        $reversalTrxnId = $this->getRefundUniqueID($contribution['trxn_id'], $refund_gateway_txn_id, $messageObject->getContributionStatus());
+        $reversalTrxnId = $this->getRefundUniqueID($contribution['trxn_id'], $messageObject->getGatewayRefundID(), $messageObject->getContributionStatus());
         $reversedContribution = Contribution::get(FALSE)
           ->addWhere('trxn_id', '=', $reversalTrxnId)
           ->addSelect('id')
@@ -255,7 +251,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         ->setValues([
           'contribution_status_id:name' => $messageObject->getContributionStatus(),
           'cancel_date' => $messageObject->getDate(),
-          'refund_trxn_id' => $refund_gateway_txn_id,
+          'refund_trxn_id' => $messageObject->getGatewayRefundID(),
           'contribution_extra.backend_processor_reversal_id' => $messageObject->getBackendProcessorReversalID(),
           'contribution_extra.payment_orchestrator_reversal_id' => $messageObject->getPaymentOrchestratorReversalID(),
         ]
@@ -277,7 +273,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     if ($refund_amount !== NULL) {
       $amount_scammed = round($refund_amount, 2) - round($original_amount, 2);
       if ($amount_scammed != 0) {
-        $refund_unique_id = $this->getRefundUniqueID($contribution['trxn_id'], $refund_gateway_txn_id, $messageObject->getContributionStatus(), TRUE);
+        $refund_unique_id = $this->getRefundUniqueID($contribution['trxn_id'], $messageObject->getGatewayRefundID(), $messageObject->getContributionStatus(), TRUE);
 
         try {
           $convertedTotalAmount = ExchangeRate::convert(FALSE)
