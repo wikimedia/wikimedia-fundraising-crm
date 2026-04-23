@@ -288,6 +288,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
             'financial_type_id:name' => 'Refund',
             'contact_id' => $contribution['contact_id'],
             'contribution_source' => $refund_currency . " " . (-$amount_scammed),
+            'invoice_id' => $contribution['invoice_id'] . '-adjustment-' . (string) ($messageObject->getBackendProcessorReversalID() ?: $messageObject->getGatewayRefundID()),
             'trxn_id' => $refund_unique_id,
             'receive_date' => $messageObject->getDate(),
             'currency' => 'USD',
