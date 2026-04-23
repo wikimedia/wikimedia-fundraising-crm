@@ -910,6 +910,8 @@ class SmashPigTest extends SmashPigBaseTestClass {
           ->setGatewayTxnId('7ed31062-9f2a-4e94-8a0b-10fd155dda49')
           ->setBackendProcessor('adyen')
           ->setBackendProcessorTransactionId('FB88G3H5Z5LTWBV5')
+          ->setCaptureID('YY99G3H5Z5LTWBV5')
+          ->setAuthID('FB88G3H5Z5LTWBV5')
           ->setPaymentOrchestratorReconciliationId('3rJUMU18JhgMybJNc5OlIX')
           ->setStatus(FinalStatus::COMPLETE)
           ->setSuccessful(TRUE)
@@ -935,6 +937,8 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $this->assertEquals($expectedBackendProcessor, $contributions[1]['contribution_extra.backend_processor']);
     $this->assertEquals($expectedBackendProcessorTxnId, $contributions[1]['contribution_extra.backend_processor_txn_id']);
     $this->assertEquals($expectedPaymentOrchestratorReconciliationId, $contributions[1]['contribution_extra.payment_orchestrator_reconciliation_id']);
+    $this->assertEquals('FB88G3H5Z5LTWBV5', $contributions[1]['contribution_extra.auth_id']);
+    $this->assertEquals('YY99G3H5Z5LTWBV5', $contributions[1]['contribution_extra.capture_id']);
   }
 
   public function testRecurringChargeJobAddsGravyFieldsToQueueMessageIfNeeded(): void {
@@ -997,6 +1001,8 @@ class SmashPigTest extends SmashPigBaseTestClass {
           ->setGatewayTxnId('7ed31062-9f2a-4e94-8a0b-10fd155dda49')
           ->setBackendProcessor('adyen')
           ->setBackendProcessorTransactionId('FB88G3H5Z5LTWBV5')
+          ->setCaptureID('YY99G3H5Z5LTWBV5')
+          ->setAuthID('FB88G3H5Z5LTWBV5')
           ->setPaymentOrchestratorReconciliationId('3rJUMU18JhgMybJNc5OlIX')
           ->setStatus(FinalStatus::COMPLETE)
           ->setSuccessful(TRUE)
@@ -1019,6 +1025,8 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
     $this->assertEquals($expectedBackendProcessor, $recurringChargeDonationMessage['backend_processor']);
     $this->assertEquals($expectedBackendProcessorTxnId, $recurringChargeDonationMessage['backend_processor_txn_id']);
+    $this->assertEquals('FB88G3H5Z5LTWBV5', $recurringChargeDonationMessage['auth_id']);
+    $this->assertEquals('YY99G3H5Z5LTWBV5', $recurringChargeDonationMessage['capture_id']);
     $this->assertEquals($expectedPaymentOrchestratorReconciliationId, $recurringChargeDonationMessage['payment_orchestrator_reconciliation_id']);
   }
 

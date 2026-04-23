@@ -9,6 +9,7 @@ use SmashPig\PaymentProviders\IRefundablePaymentProvider;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
 use SmashPig\PaymentProviders\Responses\CreatePaymentResponse;
 use SmashPig\PaymentProviders\Responses\ApprovePaymentResponse;
+use SmashPig\PaymentProviders\Responses\PaymentProviderExtendedResponse;
 use SmashPig\PaymentProviders\Responses\PaymentProviderResponse;
 use SmashPig\PaymentProviders\Responses\RefundPaymentResponse;
 
@@ -151,11 +152,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
       'payment_status' => $statusArray['name'],
     ];
 
-    if ($this->isProcessorGravy()) {
-      $result = $this->addProcessorSpecificFieldsToPaymentResult($result, $paymentResponse);
-    }
-
-    return $result;
+    return $this->addProcessorSpecificFieldsToPaymentResult($result, $paymentResponse);
   }
 
   protected function setContext() {
@@ -433,16 +430,23 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
 
   /**
    * @param array $result
-   * @param $paymentResponse
+   * @param PaymentProviderExtendedResponse $paymentResponse
    *
    * @return array
    */
-  protected function addProcessorSpecificFieldsToPaymentResult(array $result, $paymentResponse): array {
-    return array_merge($result, [
+  protected function addProcessorSpecificFieldsToPaymentResult(array $result, PaymentProviderExtendedResponse $paymentResponse): array {
+    $ids = [
       'backend_processor' => $paymentResponse->getBackendProcessor(),
       'backend_processor_txn_id' => $paymentResponse->getBackendProcessorTransactionId(),
       'payment_orchestrator_reconciliation_id' => $paymentResponse->getPaymentOrchestratorReconciliationId(),
-    ]);
+    ];
+    if ($paymentResponse->getCaptureID()) {
+      $ids['capture_id'] = $paymentResponse->getCaptureID();
+    }
+    if ($paymentResponse->getAuthID()) {
+      $ids['auth_id'] = $paymentResponse->getAuthID();
+    }
+    return array_merge($result, $ids);
   }
 
   /**

@@ -906,11 +906,13 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     array $queueMessage,
     array $payment
   ): array {
-    return array_merge($queueMessage, [
-      'backend_processor' => $payment['backend_processor'],
-      'backend_processor_txn_id' => $payment['backend_processor_txn_id'],
-      'payment_orchestrator_reconciliation_id' => $payment['payment_orchestrator_reconciliation_id'],
-    ]);
+    $fieldsToCopy = [
+      'auth_id', 'backend_processor', 'backend_processor_txn_id',
+      'capture_id', 'payment_orchestrator_reconciliation_id'
+    ];
+    $copiedValues = array_intersect_key($payment, array_flip($fieldsToCopy));
+
+    return array_merge($queueMessage, $copiedValues);
   }
 
   /**
@@ -930,6 +932,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       'contribution_extra.backend_processor' => $payment['backend_processor'],
       'contribution_extra.backend_processor_txn_id' => $payment['backend_processor_txn_id'],
       'contribution_extra.payment_orchestrator_reconciliation_id' => $payment['payment_orchestrator_reconciliation_id'],
+      'contribution_extra.capture_id' => $payment['capture_id'] ?? NULL,
+      'contribution_extra.auth_id' => $payment['auth_id'] ?? NULL,
     ]);
   }
 
