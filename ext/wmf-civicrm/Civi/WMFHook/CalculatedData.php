@@ -10,7 +10,7 @@ use CRM_Core_PseudoConstant;
 
 class CalculatedData extends TriggerHook {
 
-  protected const WMF_MIN_ROLLUP_YEAR = 2018;
+  protected const WMF_MIN_ROLLUP_YEAR = 2019;
 
   protected const WMF_MAX_ROLLUP_YEAR = 2026;
 
@@ -748,7 +748,7 @@ class CalculatedData extends TriggerHook {
     for ($year = self::WMF_MIN_ROLLUP_YEAR; $year <= self::WMF_MAX_ROLLUP_YEAR; $year++) {
       $nextYear = $year + 1;
       // This weight setting seems to be ignored - but perhaps doesn't matter.
-      $weight = $year > 2018 ? ($year - 2000) : (2019 - $year);
+      $weight = $year - 2000;
       // Add financial year fields (5 years worth).
       $this->calculatedFields["total_{$year}_{$nextYear}"] = [
         'name' => "total_{$year}_{$nextYear}",
@@ -783,37 +783,35 @@ class CalculatedData extends TriggerHook {
           'select_clause' => "SUM(COALESCE(IF(c.financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as total_{$year}",
         ];
       }
-      if ($year >= 2018) {
-        // Financial year totals for endowment (5 years), but we only started in 2018.
-        $this->calculatedFields["endowment_total_{$year}_{$nextYear}"] = array_merge(
-          $this->calculatedFields["total_{$year}_{$nextYear}"], [
-            'name' => "endowment_total_{$year}_{$nextYear}",
-            'column_name' => "endowment_total_{$year}_{$nextYear}",
-            'label' => 'Endowment ' . ts("FY {$year}-{$nextYear} total"),
-            'select_clause' => "SUM(COALESCE(IF(c.financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}_{$nextYear}",
-          ]
-        );
-        // Endowment field total from 2018
-        if ($year >= self::WMF_MIN_CALENDER_YEAR) {
-          $this->calculatedFields["endowment_total_{$year}"] = array_merge(
-            $this->calculatedFields["total_{$year}"], [
-              'name' => "endowment_total_{$year}",
-              'column_name' => "endowment_total_{$year}",
-              'label' => 'Endowment ' . ts("CY {$year} total"),
-              'select_clause' => "SUM(COALESCE(IF(c.financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}",
-            ]
-          );
-        }
-        // Financial year totals for all funds (5 years). But we only started in 2018
-        $this->calculatedFields["all_funds_total_{$year}_{$nextYear}"] = array_merge(
-          $this->calculatedFields["total_{$year}_{$nextYear}"], [
-            'name' => "all_funds_total_{$year}_{$nextYear}",
-            'column_name' => "all_funds_total_{$year}_{$nextYear}",
-            'label' => 'All Funds ' . ts("FY {$year}-{$nextYear} total"),
-            'select_clause' => "SUM(COALESCE(IF(receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as all_funds_total_{$year}_{$nextYear}",
+      // Financial year totals for endowment (5 years)
+      $this->calculatedFields["endowment_total_{$year}_{$nextYear}"] = array_merge(
+        $this->calculatedFields["total_{$year}_{$nextYear}"], [
+          'name' => "endowment_total_{$year}_{$nextYear}",
+          'column_name' => "endowment_total_{$year}_{$nextYear}",
+          'label' => 'Endowment ' . ts("FY {$year}-{$nextYear} total"),
+          'select_clause' => "SUM(COALESCE(IF(c.financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}_{$nextYear}",
+        ]
+      );
+      // Endowment field total
+      if ($year >= self::WMF_MIN_CALENDER_YEAR) {
+        $this->calculatedFields["endowment_total_{$year}"] = array_merge(
+          $this->calculatedFields["total_{$year}"], [
+            'name' => "endowment_total_{$year}",
+            'column_name' => "endowment_total_{$year}",
+            'label' => 'Endowment ' . ts("CY {$year} total"),
+            'select_clause' => "SUM(COALESCE(IF(c.financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}",
           ]
         );
       }
+      // Financial year totals for all funds (5 years)
+      $this->calculatedFields["all_funds_total_{$year}_{$nextYear}"] = array_merge(
+        $this->calculatedFields["total_{$year}_{$nextYear}"], [
+          'name' => "all_funds_total_{$year}_{$nextYear}",
+          'column_name' => "all_funds_total_{$year}_{$nextYear}",
+          'label' => 'All Funds ' . ts("FY {$year}-{$nextYear} total"),
+          'select_clause' => "SUM(COALESCE(IF(receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as all_funds_total_{$year}_{$nextYear}",
+        ]
+      );
       if ($nextYear >= self::WMF_MIN_CALENDER_YEAR) {
         // Change fields, year ending in this year onwards, co-incident with our calendar years.
         $this->calculatedFields["all_funds_change_{$year}_{$nextYear}"] = [

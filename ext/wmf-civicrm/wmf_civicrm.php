@@ -599,6 +599,23 @@ function wmf_civicrm_civicrm_links($op, $objectName, $objectId, &$links, &$mask,
         $link['weight'] = -15;
       }
     }
+
+    if (CRM_Core_Permission::check('edit contributions')) {
+      $recur = \Civi\Api4\ContributionRecur::get(FALSE)
+        ->addSelect('contribution_status_id:name')
+        ->addWhere('id', '=', $objectId)
+        ->execute()->first();
+      if (in_array($recur['contribution_status_id:name'], ['Cancelled', 'Completed'])) {
+        $links[] = [
+          'name' => ts('Edit Reason'),
+          'title' => ts('Edit Cancellation Reason'),
+          'url' => 'civicrm/wmf/edit-cancel-reason',
+          'qs' => 'reset=1&crid=%%crid%%',
+          'extra' => 'class="crm-popup small-popup"',
+          'weight' => 5,
+        ];
+      }
+    }
   }
 
   if ($objectName === 'Activity') {

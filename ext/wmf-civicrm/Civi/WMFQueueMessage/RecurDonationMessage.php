@@ -174,8 +174,8 @@ class RecurDonationMessage extends DonationMessage {
       }
       return $this->contributionRecurID;
     }
-    $this->contributionRecurID = NULL;
-    return $this->contributionRecurID;
+    $this->contributionRecurID = FALSE;
+    return NULL;
   }
 
   public function getFrequencyUnit() {
