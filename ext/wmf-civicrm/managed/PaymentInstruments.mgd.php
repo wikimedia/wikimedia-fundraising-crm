@@ -30,10 +30,8 @@ $instruments = [
   'Google Pay: Visa' => 'Google Pay: Visa',
   'Bitcoin' => 'Bitcoin',
   'Bank Transfer' => 'Bank Transfer',
-  'Blik' => 'Blik',
   'Boleto' => 'Boleto',
   'Bpay' => 'Bpay',
-  'Bre-B' => 'Bre-B',
   'Cash' => 'Cash',
   'Stock' => 'Stock',
   // Cashu exists on live but has no contributions.
@@ -88,8 +86,6 @@ $instruments = [
   'Stripe' => 'Stripe',
   'Trilogy' => 'Trilogy',
   'Webmoney' => 'Webmoney',
-  'Yape' => 'Yape',
-
   // Latin payment methods for Dlocal
   'Credit Card: Alia' => 'Credit Card: Alia',
   'Credit Card: Codenza' => 'Credit Card: Codenza',
@@ -118,7 +114,9 @@ $instruments = [
   'Bank Transfer: Bancomer' => 'Bank Transfer: Bancomer',
   'Bank Transfer: BBVA' => 'Bank Transfer: BBVA',
   'Bank Transfer: BCP' => 'Bank Transfer: BCP',
+  'Bank Transfer: Blik' => 'Bank Transfer: Blik',
   'Bank Transfer: Bradesco' => 'Bank Transfer: Bradesco',
+  'Bank Transfer: Bre-B' => 'Bank Transfer: Bre-B',
   'Bank Transfer: Interbank' => 'Bank Transfer: Interbank',
   'Bank Transfer: Itau' => 'Bank Transfer: Itau',
   'Bank Transfer: MercadoPago' => 'Bank Transfer: MercadoPago',
@@ -140,6 +138,7 @@ $instruments = [
   // Mobile payment methods
   'Venmo' => 'Venmo',
   'Vipps' => 'Vipps',
+  'Yape' => 'Yape',
 ];
 
 $paymentInstruments = [];
