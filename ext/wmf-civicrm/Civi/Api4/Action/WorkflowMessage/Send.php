@@ -12,7 +12,7 @@ use Civi\Api4\WorkflowMessage;
 /**
  * Class Send.
  *
- * Render and send a workflow message to a contact, recording an email activity
+ * Render and send a workflow message to a contact, optionally recording an email activity
  *
  * @method $this setTemplateParameters(array $templateParameters) Set parameters for rendering the template.
  * @method $this setContactID(int $contactID) Set contact ID.
@@ -47,17 +47,18 @@ class Send extends AbstractAction {
 
   /**
    * Optional source record ID for email activity
+   * The activity is only created if this is set.
    *
-   * @var int
+   * @var int|null
    */
-  protected $activitySourceRecordID;
+  protected $activitySourceRecordID = NULL;
 
   /**
    * Optional source contact ID for email activity
    *
-   * @var int
+   * @var int|null
    */
-  protected $activitySourceContactID;
+  protected $activitySourceContactID = NULL;
 
   /**
    * @inheritDoc
@@ -95,12 +96,12 @@ class Send extends AbstractAction {
     ];
 
     $success = \CRM_Utils_Mail::send($params);
-    if (trim($rendered['text'])) {
-      $details = trim($rendered['text']);
-    } else {
-      $details = \CRM_Utils_String::htmlToText($rendered['html']);
-    }
-    if ($success) {
+    if ($success && $this->activitySourceRecordID) {
+      if (trim($rendered['text'])) {
+        $details = trim($rendered['text']);
+      } else {
+        $details = \CRM_Utils_String::htmlToText($rendered['html']);
+      }
       Activity::create()->setCheckPermissions(FALSE)->setValues([
         'target_contact_id' => $this->contactID,
         'source_contact_id' => $this->activitySourceContactID ??
@@ -110,7 +111,7 @@ class Send extends AbstractAction {
         'details' => $details,
         'activity_type_id:name' => 'Email',
         'activity_date_time' => 'now',
-        'source_record_id' => $this->activitySourceRecordID ?? NULL,
+        'source_record_id' => $this->activitySourceRecordID,
       ])->execute();
     }
 
