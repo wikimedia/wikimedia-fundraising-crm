@@ -36,4 +36,10 @@
     <title>Send email</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/emailredirect</path>
+    <page_callback>CRM_Wmf_Page_EmailRedirect</page_callback>
+    <title>Contacts by Email</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
 </menu>
