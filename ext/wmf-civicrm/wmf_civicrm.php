@@ -599,12 +599,11 @@ function wmf_civicrm_civicrm_links($op, $objectName, $objectId, &$links, &$mask,
         $link['weight'] = -15;
       }
     }
-
+    $recur = \Civi\Api4\ContributionRecur::get(FALSE)
+      ->addSelect('contribution_status_id:name', 'frequency_unit')
+      ->addWhere('id', '=', $objectId)
+      ->execute()->first();
     if (CRM_Core_Permission::check('edit contributions')) {
-      $recur = \Civi\Api4\ContributionRecur::get(FALSE)
-        ->addSelect('contribution_status_id:name')
-        ->addWhere('id', '=', $objectId)
-        ->execute()->first();
       if (in_array($recur['contribution_status_id:name'], ['Cancelled', 'Completed'])) {
         $links[] = [
           'name' => ts('Edit Reason'),
@@ -615,6 +614,34 @@ function wmf_civicrm_civicrm_links($op, $objectName, $objectId, &$links, &$mask,
           'weight' => 5,
         ];
       }
+    }
+    if (in_array($recur['contribution_status_id:name'],['Cancelled', 'Failed'])) {
+      $links[] = [
+        'name' => ts('Send 1st Failure Email'),
+        'title' => ts('Send 1st Failure Email'),
+        'url' => 'civicrm/wmf/recurringnotification?workflow=recurring_failed_message',
+        'qs' => "contribution_recur_id=$objectId&entity_id=$objectId",
+        'class' => 'crm-popup large-popup',
+        'weight' => 10,
+      ];
+      $links[] = [
+        'name' => ts('Send 2nd Failure Email'),
+        'title' => ts('Send 2nd Failure Email'),
+        'url' => 'civicrm/wmf/recurringnotification?workflow=recurring_second_failed_message',
+        'qs' => "contribution_recur_id=$objectId&entity_id=$objectId",
+        'class' => 'crm-popup large-popup',
+        'weight' => 20,
+      ];
+    }
+    if ($recur['frequency_unit'] === 'year' && !in_array($recur['contribution_status_id:name'], ['Cancelled', 'Failed', 'Completed'])) {
+      $links[] = [
+        'name' => ts('Send Annual Prenotification'),
+        'title' => ts('Send Annual Recurring Prenotification Email'),
+        'url' => 'civicrm/workflow-message-preview-and-send',
+        'qs' => 'reset=1&workflow=annual_recurring_prenotification&crid=%%crid%%',
+        'extra' => 'class="crm-popup large-popup"',
+        'weight' => 40,
+      ];
     }
   }
 

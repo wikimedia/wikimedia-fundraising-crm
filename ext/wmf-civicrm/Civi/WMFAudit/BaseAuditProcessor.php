@@ -574,8 +574,7 @@ abstract class BaseAuditProcessor {
     $recon_file_stats = [];
     foreach ($this->getReconciliationFiles() as $file) {
       //parse the recon files into something relatively reasonable.
-      $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'fee' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'reversal' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'reversal_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0, 'total_queued_from_transaction_log' => 0];
-      $parsed = $this->parseReconciliationFile($file);
+      [$parsed, $file] = $this->parseReconciliationFile($file);
       if (empty($parsed)) {
         $this->echo(__FUNCTION__ . $file . ': No transactions to find. Returning.');
         $this->move_completed_recon_file($file);
@@ -1807,11 +1806,12 @@ abstract class BaseAuditProcessor {
 
       if ($returnCode !== 0 || !file_exists($unzippedFile)) {
         $this->logError("Failed to decompress $file", 'FILE_GUNZIP');
-        return [];
+        return [[], $file];
       }
 
       $file = $unzippedFile; // switch to decompressed file
     }
+    $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'fee' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'reversal' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'reversal_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0, 'total_queued_from_transaction_log' => 0];
 
     if ($this instanceof MultipleFileTypeParser) {
       $this->setFilePath($file);
@@ -1832,7 +1832,7 @@ abstract class BaseAuditProcessor {
     $this->echo(count($records) . " results found in $time seconds\n");
     $this->statistics[$file]['total_records'] = count($records);
     $this->statistics['total_records'] += $this->statistics[$file]['total_records'];
-    return $records;
+    return [$records, $file];
   }
 
   /**

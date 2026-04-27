@@ -2388,7 +2388,7 @@ function _wmf_civicrm_get_direct_mail_fields(): array {
   return [
     'direct_mail_appeal' => [
       'name' => 'direct_mail_appeal',
-      'label' => 'Direct Mail Appeal',
+      'label' => 'Appeal',
       'html_type' => 'Text',
       'data_type' => 'String',
       'text_length' => 255,
@@ -2396,11 +2396,40 @@ function _wmf_civicrm_get_direct_mail_fields(): array {
     ],
     'direct_mail_package' => [
       'name' => 'direct_mail_package',
-      'label' => 'Direct Mail Package',
+      'label' => 'Package',
       'html_type' => 'Text',
       'data_type' => 'String',
       'text_length' => 255,
       'column_name' => 'direct_mail_package',
+    ],
+    'direct_mail_segment' => [
+      'name' => 'direct_mail_segment',
+      'label' => 'Segment',
+      'html_type' => 'Text',
+      'data_type' => 'String',
+      'text_length' => 255,
+      'column_name' => 'direct_mail_segment',
+    ],
+    'direct_mail_ask_1' => [
+      'name' => 'direct_mail_ask_1',
+      'label' => 'Ask 1',
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'column_name' => 'direct_mail_ask_1',
+    ],
+    'direct_mail_ask_2' => [
+      'name' => 'direct_mail_ask_2',
+      'label' => 'Ask 2',
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'column_name' => 'direct_mail_ask_2',
+    ],
+    'direct_mail_ask_3' => [
+      'name' => 'direct_mail_ask_3',
+      'label' => 'Ask 3',
+      'data_type' => 'Money',
+      'html_type' => 'Text',
+      'column_name' => 'direct_mail_ask_3',
     ],
   ];
 }

@@ -24,4 +24,16 @@
     <title>Edit Recurring Cancel Reason</title>
     <access_arguments>edit contributions</access_arguments>
   </item>
+  <item>
+    <path>civicrm/wmf/recurringnotification</path>
+    <page_callback>CRM_Wmf_Form_RecurringNotification</page_callback>
+    <title>Re-send Notification</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/workflow-message-preview-and-send</path>
+    <page_callback>CRM_Wmf_Form_WorkflowMessagePreviewAndSend</page_callback>
+    <title>Send email</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
 </menu>

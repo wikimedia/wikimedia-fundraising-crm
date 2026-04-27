@@ -1,15 +1,13 @@
 <?php
 
 use Civi\Api4\Email;
-use CRM_SmashPig_ExtensionUtil as E;
+use CRM_Wmf_ExtensionUtil as E;
 use Civi\Api4\Message;
 
 /**
- * Form controller class
- *
- * @see https://docs.civicrm.org/dev/en/latest/framework/quickform/
+ * Form to preview and send recurring message template emails.
  */
-class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
+class CRM_Wmf_Form_RecurringNotification extends CRM_Core_Form {
 
   /**
    * Details of the html, text & subject of the email to send.
@@ -28,21 +26,17 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
   private $workflow;
 
   public function preProcess() {
-      parent::preProcess();
-      $this->workflow = $this->getNotificationWorkflow();
-      $this->notification = $this->renderNotification($this->workflow);
-      $this->assign( 'notification', $this->notification);
+    parent::preProcess();
+    $this->workflow = $this->getNotificationWorkflow();
+    $this->notification = $this->renderNotification($this->workflow);
+    $this->assign('notification', $this->notification);
   }
 
-    //add preprocess and postprocess
   public function buildQuickForm() {
-
-    // add form elements
     $this->addElement(
-      'hidden', // field type
-      'workflow', // field name
+      'hidden',
+      'workflow',
       $this->getNotificationWorkflow()
-
     );
     $buttons = [];
     if ($this->notification) {
@@ -66,26 +60,22 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
         'class' => 'qanotification-approve-submit',
         'isDefault' => TRUE,
       ];
-
     }
     $buttons[] = [
       'type' => 'cancel',
       'name' => ts('Cancel'),
     ];
     $this->addButtons($buttons);
-
-    // export form elements
     $this->assign('elementNames', $this->getRenderableElementNames());
     parent::buildQuickForm();
   }
 
   public function postProcess() {
     if ($this->notification) {
-      $results = \Civi\Api4\FailureEmail::send()
+      \Civi\Api4\FailureEmail::send()
         ->setContributionRecurID($this->getEntityId())
         ->setWorkflow($this->workflow)
         ->execute();
-      // if not error
       CRM_Core_Session::setStatus("Email sent.");
       parent::postProcess();
     }
@@ -120,18 +110,8 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
     }
   }
 
-
-  /**
-   * Get the fields/elements defined in this form.
-   *
-   * @return array (string)
-   */
   public function getRenderableElementNames() {
-    // The _elements list includes some items which should not be
-    // auto-rendered in the loop -- such as "qfKey" and "buttons".  These
-    // items don't have labels.  We'll identify renderable by filtering on
-    // the 'label'.
-    $elementNames = array();
+    $elementNames = [];
     foreach ($this->_elements as $element) {
       /** @var HTML_QuickForm_Element $element */
       $label = $element->getLabel();
@@ -142,22 +122,22 @@ class CRM_SmashPig_Form_Notification extends CRM_Core_Form {
     return $elementNames;
   }
 
-  private function renderNotification( $workflow ) {
-      if ($workflow === 'recurring_failed_message' || $workflow === 'recurring_second_failed_message') {
-          $results = \Civi\Api4\FailureEmail::render()
-              ->setContributionRecurID( $this->getEntityId() )
-              ->setWorkflow($workflow)
-              ->execute();
-           // assume only one result
-          return $results->first();
-      }
+  private function renderNotification($workflow) {
+    if ($workflow === 'recurring_failed_message' || $workflow === 'recurring_second_failed_message') {
+      $results = \Civi\Api4\FailureEmail::render()
+        ->setContributionRecurID($this->getEntityId())
+        ->setWorkflow($workflow)
+        ->execute();
+      return $results->first();
+    }
   }
 
   private function getEntityId() {
-      return CRM_Utils_Request::retrieve('entity_id', 'Int', $this);
+    return CRM_Utils_Request::retrieve('entity_id', 'Int', $this);
   }
 
   private function getNotificationWorkflow() {
     return CRM_Utils_Request::retrieve('workflow', 'String');
   }
+
 }

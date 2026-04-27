@@ -7,6 +7,10 @@ use Civi\WMFException\WMFException;
 
 class FinanceInstrument {
 
+  /**
+   * Note that the associated payment_instruments for these are
+   * all prefixed with 'Apple Pay: '
+   */
   public const APPLE_PAY_SUBMETHOD_LIST = [
     'apple' => 'Apple',
     'accel' => 'Accel',
@@ -19,6 +23,10 @@ class FinanceInstrument {
     'mc' => 'MasterCard'
   ];
 
+  /**
+   * Note that the associated payment_instruments for these are
+   * all prefixed with 'Google Pay: '
+   */
   public const GOOGLE_PAY_SUBMETHOD_LIST = [
     'google' => 'Google',
     'visa' => 'Visa',
@@ -28,6 +36,10 @@ class FinanceInstrument {
     'mc' => 'MasterCard'
   ];
 
+  /**
+   * Note that the associated payment_instruments for these are
+   * all prefixed with 'Bank Transfer: '
+   */
   public const BT_SUBMETHOD_LIST = [
     'ach' => 'ACH', // Worldwide, via DLocal
     'bancomer' => 'Bancomer', //Mexico
@@ -36,7 +48,7 @@ class FinanceInstrument {
     'bcp' => 'BCP', // Peru
     'blik' => 'Blik',
     'bradesco' => 'Bradesco', // Brazil
-    'bre-b' => 'Bre-B', // Colombia
+    'breb' => 'Bre-B', // Colombia
     'interbank' => 'Interbank', // Peru
     'itau' => 'Itau', // Brazil
     'mercadopago' => 'MercadoPago', // Latin America
@@ -50,9 +62,12 @@ class FinanceInstrument {
     'stitch' => 'Stitch', // South Africa
     'upi' => 'UPI', // India
     'webpay_bt' => 'Webpay', // Chile
-    'yape' => 'Yape',
   ];
 
+  /**
+   * Note that the associated payment_instruments for these are
+   * all prefixed with 'Credit Card: '
+   */
   public const CARD_SUBMETHOD_LIST = [
     'accel' => 'Accel',
     'alia' => 'Alia', // Ecuador
@@ -102,6 +117,7 @@ class FinanceInstrument {
     'ew_yandex' => 'Yandex',
     'ew_alipay' => 'Alipay',
     'vipps' => 'Vipps',
+    'yape' => 'Yape',
   ];
 
   public const OBT_SUBMETHOD_LIST = [

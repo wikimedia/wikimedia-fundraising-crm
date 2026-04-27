@@ -20,9 +20,7 @@
   <compatibility>
     <ver>6.12</ver>
   </compatibility>
-  <comments>This is a intended as something of a catchall for wmf functionality.
-    It is intended to replace the wmf_civicrm module over time
-  </comments>
+  <comments>This is a intended as something of a catchall for wmf functionality.</comments>
   <classloader>
     <psr4 prefix="Civi\" path="Civi"/>
     <psr0 prefix="CRM_" path="."/>
