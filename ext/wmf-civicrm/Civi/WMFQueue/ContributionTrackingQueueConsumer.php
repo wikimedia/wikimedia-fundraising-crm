@@ -9,6 +9,8 @@ use Civi\WMFStatistic\ContributionTrackingStatsCollector;
 
 class ContributionTrackingQueueConsumer extends QueueConsumer {
 
+  const MAX_AMOUNT = 99999999999999999; // 17 9s ought to be enough for anybody
+
   /**
    * Normalise the queue message and insert into civicrm_contribution_tracking
    *
@@ -81,6 +83,9 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
     foreach ($fields as $name => $field) {
       if (isset($field['input_attrs']['maxlength']) && isset($msg[$name])) {
         $truncated[$name] = substr($msg[$name], 0, $field['input_attrs']['maxlength']);
+      }
+      if ($name === 'amount') {
+        $truncated[$name] = min($msg[$name], self::MAX_AMOUNT);
       }
     }
     return $truncated;
