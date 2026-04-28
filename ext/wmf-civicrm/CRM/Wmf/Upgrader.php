@@ -7,6 +7,7 @@ use Civi\Api4\CustomGroup;
 use Civi\Api4\ExchangeRate;
 use Civi\Api4\OptionGroup;
 use Civi\Api4\OptionValue;
+use Civi\Api4\LocationType;
 use Civi\Api4\WMFConfig;
 use Civi\QueueHelper;
 use Civi\WMFHook\CalculatedData;
@@ -4397,13 +4398,95 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
-   * Queue up an API4 update.
+   * Backfill email location types for existing contacts based on latest donation payment method.
    *
-   * @param string $entity
-   * @param $action
-   * @param array $params
-   * @param array $incrementParameters
+   * This covers Venmo, Google Pay, Apple Pay and Paypal, but not ACH, which is more complex.
+   *
+   * Bug: T420992
+   *
+   * @return bool
    */
+  public function upgrade_4960(): bool {
+    $typesToCheck = ['venmo','google','apple','paypal'];
+    foreach ($typesToCheck as $type) {
+      $paymentInstrumentIDs = OptionValue::get(FALSE)
+        ->addSelect('value')
+        ->addWhere('name', 'LIKE', $type . '%')
+        ->addWhere('name', '!=', 'Paypal Grants')
+        ->addWhere('option_group_id:name', '=', 'payment_instrument')
+        ->execute()->column('value');
+      $paymentInstrumentIDsList = implode(',', $paymentInstrumentIDs);
+      $locationTypeID = LocationType::get(FALSE)
+        ->addSelect('id')
+        ->addWhere('name', '=', $type)
+        ->execute()->first()['id'];
+      $sql = "
+      UPDATE civicrm_email e
+        INNER JOIN (
+          SELECT contact_id
+          FROM (
+            SELECT contact_id, payment_instrument_id,
+                   ROW_NUMBER() OVER (PARTITION BY contact_id ORDER BY receive_date DESC) AS rn
+            FROM civicrm_contribution
+          ) ranked
+          WHERE rn = 1
+            AND payment_instrument_id IN ({$paymentInstrumentIDsList})
+        ) qualified ON e.contact_id = qualified.contact_id
+      SET e.location_type_id = {$locationTypeID}
+      WHERE e.is_primary = 1
+        AND e.location_type_id = 1 -- Home
+      ";
+      CRM_Core_DAO::executeQuery($sql);
+      usleep(100000000); // 100s
+    }
+    return TRUE;
+  }
+
+   /**
+    * Backfill email location types for existing contacts based on latest donation payment method when it is ach.
+    *
+    * Finds contacts with primary emails currently set to Home (default),
+    * retrieves their latest contribution payment method, and updates the
+    * email location type for trusted payment methods ach.
+    *
+    * Bug: T420992
+    *
+    * @return bool
+    */
+   public function upgrade_4965(): bool {
+     $scriptPath = __DIR__ . '/../../scripts/T420992/backfill_email_location_types.php';
+     require_once $scriptPath;
+     $minContact = (int) \CRM_Core_DAO::singleValueQuery("SELECT MIN(contact_id) FROM civicrm_email");
+     $maxContact = (int) \CRM_Core_DAO::singleValueQuery("SELECT MAX(contact_id) FROM civicrm_email");
+     // get the group id once than repeat in real query here
+     $paymentInstrumentGroupId = (int) \CRM_Core_DAO::singleValueQuery(
+       "SELECT id FROM civicrm_option_group WHERE name = 'payment_instrument'"
+     );
+
+     $blockSize = 1000000; // Process 1m contacts at a time
+     echo "start ach backfill: " . time() . "\n";
+     for ($i = $minContact; $i <= $maxContact; $i += $blockSize) {
+       $upperBound = $i + $blockSize - 1;
+
+       // Pass the range
+       backfillEmailRange($i, $upperBound, $paymentInstrumentGroupId);
+
+       // small pause to reduce lock pressure
+       usleep(200000); // 200ms
+     }
+     echo "end ach backfill: " .time() . "\n";
+
+     return TRUE;
+   }
+
+   /**
+    * Queue up an API4 update.
+    *
+    * @param string $entity
+    * @param $action
+    * @param array $params
+    * @param array $incrementParameters
+    */
   private function queueApi4(string $entity, $action, array $params = [], array $incrementParameters = []): void {
     $queue = new QueueHelper(\Civi::queue('wmf_data_upgrades', [
       'type' => 'Sql',
