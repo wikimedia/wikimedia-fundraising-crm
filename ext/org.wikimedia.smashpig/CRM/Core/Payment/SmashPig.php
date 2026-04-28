@@ -239,6 +239,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
       'ip_address' => 'user_ip',
       'processor_contact_id' => 'processor_contact_id',
       'initial_scheme_transaction_id' => 'initial_scheme_transaction_id',
+      'payment_service_id' => 'payment_service_id',
       'legal_identifier' => 'fiscal_number'
     ];
     foreach ($convert as $civiName => $smashPigName) {

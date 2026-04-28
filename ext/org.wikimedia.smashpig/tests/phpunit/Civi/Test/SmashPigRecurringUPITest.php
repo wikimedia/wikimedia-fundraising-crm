@@ -102,6 +102,7 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
         'payment_submethod' => 'upi',
         'processor_contact_id' => '123456.1',
         'fiscal_number' => $contact['legal_identifier'],
+        'payment_service_id' => NULL,
       ])
       ->willReturn(
         $this->createPaymentResponse

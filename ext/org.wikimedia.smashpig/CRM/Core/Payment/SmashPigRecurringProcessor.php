@@ -730,6 +730,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       'ip_address' => $ipAddress,
       'payment_instrument' => $previousContribution['payment_instrument'],
       'processor_contact_id' => $recurringPayment['contribution_recur_smashpig.processor_contact_id'] ?? NULL,
+      'payment_service_id' => $recurringPayment['contribution_recur_smashpig.payment_service_id'] ?? NULL,
       // FIXME: SmashPig should choose 'first' or 'recurring' based on seq #
       'installment' => 'recurring',
     ];

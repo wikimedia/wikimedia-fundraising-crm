@@ -235,6 +235,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         'fiscal_number' => '1122334455',
         'recurring' => TRUE,
         'user_ip' => '12.34.56.78',
+        'payment_service_id' => NULL,
       ])
       ->willReturn(
         $this->createPaymentResponse
@@ -348,6 +349,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         'fiscal_number' => '1122334455',
         'recurring' => TRUE,
         'user_ip' => '12.34.56.78',
+        'payment_service_id' => NULL,
       ])
       ->willReturn(
         $this->createPaymentResponse
@@ -461,6 +463,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
           'fiscal_number' => '1122334455',
           'recurring' => TRUE,
           'user_ip' => '12.34.56.78',
+          'payment_service_id' => NULL,
         ],
       ], [
         [
@@ -478,6 +481,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
           'fiscal_number' => '1122334455',
           'recurring' => TRUE,
           'user_ip' => '12.34.56.78',
+          'payment_service_id' => NULL,
         ],
       ])
       ->will(
@@ -753,6 +757,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         'recurring' => TRUE,
         'user_ip' => '12.34.56.78',
         'initial_scheme_transaction_id' => 'ABC123YouAndMe',
+        'payment_service_id' => NULL,
       ])
       ->willReturn(
         $this->createPaymentResponse
@@ -815,6 +820,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         'fiscal_number' => '1122334455',
         'recurring' => TRUE,
         'user_ip' => '12.34.56.78',
+        'payment_service_id' => NULL,
       ])
       ->willReturn(
         $this->createPaymentResponse
@@ -894,6 +900,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         'fiscal_number' => '1122334455',
         'recurring' => TRUE,
         'user_ip' => '12.34.56.78',
+        'payment_service_id' => NULL,
       ])
       ->willReturn(
         (new CreatePaymentResponse())
@@ -985,6 +992,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         'fiscal_number' => '1122334455',
         'recurring' => TRUE,
         'user_ip' => '12.34.56.78',
+        'payment_service_id' => NULL,
       ])
       ->willReturn(
         (new CreatePaymentResponse())
@@ -1681,6 +1689,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'fiscal_number' => '1122334455',
       'recurring' => TRUE,
       'user_ip' => '12.34.56.78',
+      'payment_service_id' => NULL,
     ];
     $secondCallParams = [
       'recurring_payment_token' => 'abc123-456zyx-test12',
@@ -1697,6 +1706,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'fiscal_number' => '1122334455',
       'recurring' => TRUE,
       'user_ip' => '12.34.56.78',
+      'payment_service_id' => NULL,
     ];
     $this->hostedCheckoutProvider->expects($this->exactly(2))
       ->method('createPayment')
@@ -1788,6 +1798,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
         'fiscal_number' => '1122334455',
         'recurring' => TRUE,
         'user_ip' => '12.34.56.78',
+        'payment_service_id' => NULL,
       ])
       ->willReturn(
         $this->createPaymentResponse
