@@ -7,6 +7,7 @@ use Civi\Api4\CustomGroup;
 use Civi\Api4\ExchangeRate;
 use Civi\Api4\OptionGroup;
 use Civi\Api4\OptionValue;
+use Civi\Api4\LocationType;
 use Civi\Api4\WMFConfig;
 use Civi\QueueHelper;
 use Civi\WMFHook\CalculatedData;
@@ -4393,6 +4394,51 @@ LEFT JOIN civicrm_value_1_gift_data_7 v
     WHERE
 v.channel IS NULL AND c.id = 131486342;",
       ], 2);
+    return TRUE;
+  }
+
+  /**
+   * Backfill email location types for existing contacts based on latest donation payment method.
+   *
+   * This covers Venmo, Google Pay, Apple Pay and Paypal, but not ACH, which is more complex.
+   *
+   * Bug: T420992
+   *
+   * @return bool
+   */
+  public function upgrade_4960(): bool {
+    $typesToCheck = ['venmo','google','apple','paypal'];
+    foreach ($typesToCheck as $type) {
+      $paymentInstrumentIDs = OptionValue::get(FALSE)
+        ->addSelect('value')
+        ->addWhere('name', 'LIKE', $type . '%')
+        ->addWhere('name', '!=', 'Paypal Grants')
+        ->addWhere('option_group_id:name', '=', 'payment_instrument')
+        ->execute()->column('value');
+      $paymentInstrumentIDsList = implode(',', $paymentInstrumentIDs);
+      $locationTypeID = LocationType::get(FALSE)
+        ->addSelect('id')
+        ->addWhere('name', '=', $type)
+        ->execute()->first()['id'];
+      $sql = "
+      UPDATE civicrm_email e
+        INNER JOIN (
+          SELECT contact_id
+          FROM (
+            SELECT contact_id, payment_instrument_id,
+                   ROW_NUMBER() OVER (PARTITION BY contact_id ORDER BY receive_date DESC) AS rn
+            FROM civicrm_contribution
+          ) ranked
+          WHERE rn = 1
+            AND payment_instrument_id IN ({$paymentInstrumentIDsList})
+        ) qualified ON e.contact_id = qualified.contact_id
+      SET e.location_type_id = {$locationTypeID}
+      WHERE e.is_primary = 1
+        AND e.location_type_id = 1 -- Home
+      ";
+      CRM_Core_DAO::executeQuery($sql);
+      usleep(100000000); // 100s
+    }
     return TRUE;
   }
 
