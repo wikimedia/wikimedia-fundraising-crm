@@ -440,6 +440,12 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
       'backend_processor_txn_id' => $paymentResponse->getBackendProcessorTransactionId(),
       'payment_orchestrator_reconciliation_id' => $paymentResponse->getPaymentOrchestratorReconciliationId(),
     ];
+    if (empty($ids['backend_processor'])) {
+      $ids['backend_processor'] = $this->_paymentProcessor['name'];
+    }
+    if (empty($ids['backend_processor_txn_id'])) {
+      $ids['backend_processor_txn_id'] = $paymentResponse->getGatewayTxnId();
+    }
     if ($paymentResponse->getCaptureID()) {
       $ids['capture_id'] = $paymentResponse->getCaptureID();
     }

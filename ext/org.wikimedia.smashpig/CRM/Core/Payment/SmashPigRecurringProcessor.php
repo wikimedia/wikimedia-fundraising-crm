@@ -414,9 +414,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         'direct_mail_appeal' => $previousPayment['Gift_Data.Appeal'],
       ];
 
-      if ($this->isProcessorGravy($processorName)) {
-        $queueMessage = $this->addProcessorSpecificFieldsToQueueMessage($queueMessage, $payment);
-      }
+      $queueMessage = $this->addProcessorSpecificFieldsToQueueMessage($queueMessage, $payment);
       $queueName = ($payment['payment_status'] === 'Completed') ? 'donations' : 'pending';
       if ($queueName === 'pending') {
         $queueMessage['order_id'] = $invoiceId;
@@ -445,9 +443,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         'Gift_Data.Appeal' => $previousPayment['Gift_Data.Appeal'],
       ];
 
-      if ($this->isProcessorGravy($processorName)) {
-        $contributionValues = $this->addProcessorSpecificFieldsToContribution($contributionValues, $payment);
-      }
+      $contributionValues = $this->addProcessorSpecificFieldsToContribution($contributionValues, $payment);
 
       Contribution::create(FALSE)
         ->setValues($contributionValues)
@@ -892,8 +888,10 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   }
 
   /**
-   * When making a recurring charge for a subscription added via Gravy, we need
-   * to add in some additional backend-processor fields to the queue message
+   * Add in some additional backend-processor fields to the queue message.
+   * When making the charge via an orchestrator these will differ from the
+   * orchestrator name and transaction ID. When making the charge directly
+   * the backend_ fields duplicate the gateway and gateway_txn_id fields.
    *
    * @See T381866
    *
@@ -912,7 +910,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     ];
     $copiedValues = array_intersect_key($payment, array_flip($fieldsToCopy));
 
-    return array_merge($queueMessage, $copiedValues);
+    return array_merge($queueMessage, array_filter($copiedValues));
   }
 
   /**

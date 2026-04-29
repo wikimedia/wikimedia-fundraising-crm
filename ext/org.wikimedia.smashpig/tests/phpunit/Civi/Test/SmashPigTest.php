@@ -633,6 +633,8 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'restrictions' => 'Unrestricted - General',
       'gift_source' => 'Individual Gift',
       'direct_mail_appeal' => 'Spontaneous Donation',
+      'backend_processor' => 'testSmashPig',
+      'backend_processor_txn_id' => '000000850010000188130000200001',
     ], $contributionMessage);
   }
 
@@ -702,6 +704,8 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'restrictions' => 'Unrestricted - General',
       'gift_source' => 'Individual Gift',
       'direct_mail_appeal' => 'Spontaneous Donation',
+      'backend_processor' => 'testSmashPig',
+      'backend_processor_txn_id' => '000000850010000188130000200001',
     ], $contributionMessage);
   }
 
@@ -846,6 +850,8 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'restrictions' => 'Unrestricted - General',
       'gift_source' => 'Individual Gift',
       'direct_mail_appeal' => 'Spontaneous Donation',
+      'backend_processor' => 'testSmashPig',
+      'backend_processor_txn_id' => '000000850010000188130000200001',
     ], $contributionMessage);
   }
 
@@ -1733,6 +1739,8 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'restrictions' => 'Unrestricted - General',
       'gift_source' => 'Individual Gift',
       'direct_mail_appeal' => 'Spontaneous Donation',
+      'backend_processor' => 'testSmashPig',
+      'backend_processor_txn_id' => '000000850010000188130000200001',
     ], $contributionMessage);
   }
 
