@@ -4407,7 +4407,10 @@ v.channel IS NULL AND c.id = 131486342;",
    * @return bool
    */
   public function upgrade_4960(): bool {
-    $typesToCheck = ['venmo','google','apple','paypal'];
+    $typesToCheck = ['paypal']; // ['venmo','google','apple','paypal'] originally
+    $maxContactId = CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact');
+    $chunkSize = 500000;
+
     foreach ($typesToCheck as $type) {
       $paymentInstrumentIDs = OptionValue::get(FALSE)
         ->addSelect('value')
@@ -4420,24 +4423,27 @@ v.channel IS NULL AND c.id = 131486342;",
         ->addSelect('id')
         ->addWhere('name', '=', $type)
         ->execute()->first()['id'];
-      $sql = "
-      UPDATE civicrm_email e
-        INNER JOIN (
-          SELECT contact_id
-          FROM (
-            SELECT contact_id, payment_instrument_id,
-                   ROW_NUMBER() OVER (PARTITION BY contact_id ORDER BY receive_date DESC) AS rn
-            FROM civicrm_contribution
-          ) ranked
-          WHERE rn = 1
-            AND payment_instrument_id IN ({$paymentInstrumentIDsList})
-        ) qualified ON e.contact_id = qualified.contact_id
-      SET e.location_type_id = {$locationTypeID}
-      WHERE e.is_primary = 1
-        AND e.location_type_id = 1 -- Home
-      ";
-      CRM_Core_DAO::executeQuery($sql);
-      usleep(100000000); // 100s
+
+      for ($start = 0; $start <= $maxContactId; $start += $chunkSize) {
+        $end = $start + $chunkSize - 1;
+        CRM_Core_DAO::executeQuery("
+          UPDATE civicrm_email e
+            INNER JOIN (
+              SELECT contact_id
+              FROM (
+                SELECT contact_id, payment_instrument_id,
+                       ROW_NUMBER() OVER (PARTITION BY contact_id ORDER BY receive_date DESC) AS rn
+                FROM civicrm_contribution
+                WHERE contact_id BETWEEN %1 AND %2
+              ) ranked
+              WHERE rn = 1
+                AND payment_instrument_id IN ({$paymentInstrumentIDsList})
+            ) qualified ON e.contact_id = qualified.contact_id
+          SET e.location_type_id = {$locationTypeID}
+          WHERE e.is_primary = 1
+            AND e.location_type_id = 1 -- Home
+        ", [1 => [$start, 'Integer'], 2 => [$end, 'Integer']]);
+      }
     }
     return TRUE;
   }
