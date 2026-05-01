@@ -1391,30 +1391,38 @@ GROUP BY s.settlement_batch_reference
 
     $this->incomingFiles = [];
 
-    $iterator = new \RecursiveIteratorIterator(
-      new \RecursiveDirectoryIterator($basePath, \FilesystemIterator::SKIP_DOTS)
-    );
+    $topLevelDirs = new \DirectoryIterator($basePath);
 
-    foreach ($iterator as $file) {
-      if (!$file->isFile()) {
+    foreach ($topLevelDirs as $dir) {
+      if (!$dir->isDir() || $dir->isDot()) {
         continue;
       }
 
-      $path = $file->getPathname();
+      $incomingDir = $dir->getPathname() . DIRECTORY_SEPARATOR . 'incoming';
+      \Civi::log('wmf')->info('Looking for files in ' . $incomingDir);
 
-      if (strpos($path, DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR) === FALSE) {
+      if (!is_dir($incomingDir) || !is_readable($incomingDir)) {
+        \Civi::log('wmf')->info('Problem reading ' . $incomingDir);
         continue;
       }
-      $mtime = $file->getMTime();
-      $ageSeconds = time() - $mtime;
-      $daysOld = (int) floor($ageSeconds / (24*60*60));
-      $this->incomingFiles[] = [
-        'path' => $path,
-        'mtime' => $file->getMTime(),
-        'size' => $file->getSize(),
-        'old' => ($file->getMTime() < $cutoff),
-        'days_old' => $daysOld,
-      ];
+
+      $incomingFiles = new \DirectoryIterator($incomingDir);
+
+      foreach ($incomingFiles as $file) {
+        if (!$file->isFile() || $file->isDot()) {
+          continue;
+        }
+
+        $mtime = $file->getMTime();
+
+        $this->incomingFiles[] = [
+          'path' => $file->getPathname(),
+          'mtime' => $mtime,
+          'size' => $file->getSize(),
+          'old' => ($mtime < $cutoff),
+          'days_old' => (int) floor((time() - $mtime) / (24 * 60 * 60)),
+        ];
+      }
     }
 
     usort($this->incomingFiles, function(array $a, array $b): int {
