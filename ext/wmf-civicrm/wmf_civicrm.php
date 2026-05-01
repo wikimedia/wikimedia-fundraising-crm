@@ -633,14 +633,24 @@ function wmf_civicrm_civicrm_links($op, $objectName, $objectId, &$links, &$mask,
         'weight' => 20,
       ];
     }
-    if ($recur['frequency_unit'] === 'year' && !in_array($recur['contribution_status_id:name'], ['Cancelled', 'Failed', 'Completed'])) {
+    if (!in_array($recur['contribution_status_id:name'], ['Cancelled', 'Failed', 'Completed'])) {
+      if ($recur['frequency_unit'] === 'year') {
+        $links[] = [
+          'name' => ts('Send Annual Prenotification'),
+          'title' => ts('Send Annual Recurring Prenotification Email'),
+          'url' => 'civicrm/workflow-message-preview-and-send',
+          'qs' => 'reset=1&workflow=annual_recurring_prenotification&crid=%%crid%%',
+          'extra' => 'class="crm-popup large-popup"',
+          'weight' => 40,
+        ];
+      }
       $links[] = [
-        'name' => ts('Send Annual Prenotification'),
-        'title' => ts('Send Annual Recurring Prenotification Email'),
+        'name' => ts('Send Upgrade TY'),
+        'title' => ts('Send Recurring Upgrade Thank You Email'),
         'url' => 'civicrm/workflow-message-preview-and-send',
-        'qs' => 'reset=1&workflow=annual_recurring_prenotification&crid=%%crid%%',
+        'qs' => 'reset=1&workflow=recurring_upgrade_message&crid=%%crid%%&activity_source_record_id=%%crid%%',
         'extra' => 'class="crm-popup large-popup"',
-        'weight' => 40,
+        'weight' => 50,
       ];
     }
   }

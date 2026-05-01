@@ -1,7 +1,7 @@
 {if $no_go_reason}
   <p>An email cannot be sent because of {$no_go_reason}</p>
 {else}
-  <p>Send a {$templateTitle} message to {$contact.display_name|escape} in their preferred language of
+  <p>Send a {$templateTitle} to {$contact.display_name|escape} in their preferred language of
     {$language} at {$contact.email|escape}</p>
 
   <hr>
