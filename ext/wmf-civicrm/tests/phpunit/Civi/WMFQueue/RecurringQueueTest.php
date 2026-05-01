@@ -414,7 +414,11 @@ class RecurringQueueTest extends BaseQueueTestCase {
     // Check the right donation currency, original currency is CAD
     $this->assertMatchesRegularExpression('/CA\$/', $details);
     // Check the subject.
-    $expectedSubject = 'monthly_convert message: ' . MessageTemplate::get(FALSE)
+    $messagetitle = \Civi\Api4\MessageTemplate::get(FALSE)
+      ->addSelect('msg_title')
+      ->addWhere('workflow_name', '=', 'monthly_convert')
+      ->execute()->first()['msg_title'];
+    $expectedSubject = $messagetitle . ': ' . MessageTemplate::get(FALSE)
       ->addWhere('workflow_name', '=', 'monthly_convert')
       ->addWhere('is_default', '=', TRUE)
       ->execute()->first()['msg_subject'];
