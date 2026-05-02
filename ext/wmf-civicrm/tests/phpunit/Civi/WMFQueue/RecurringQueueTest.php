@@ -84,7 +84,7 @@ class RecurringQueueTest extends BaseQueueTestCase {
     Contribution::delete(FALSE)->addWhere('id', '=', $contribution['id'])
       ->execute();
     // Our expectations on update are
-    // 1) The contact's name is not updated as we already have first_name, last_name
+    // 1) The contact's name is updated as both donations have a low confidence method, so we use the latest name.
     // 2) The contact's email will not be updated, as it exists.
     // 3) The contact's address will not be updated, as it exists.
     $values['first_name'] = 'Robert';
@@ -105,7 +105,7 @@ class RecurringQueueTest extends BaseQueueTestCase {
       ->execute()->single();
     $this->assertEquals('5109 Lockwood Rd', $address['street_address'], 'Address should be unchanged');
     $this->assertEquals($contribution['contact_id'], $address['contact_id']);
-    $this->assertEquals('Bob Mouse', $address['contact_id.display_name']);
+    $this->assertEquals('Robert Mouse', $address['contact_id.display_name']);
 
     $recur_record = $this->getContributionRecurForMessage($message);
     $this->assertIsNumeric($recur_record['payment_processor_id']);
