@@ -53,12 +53,8 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
    * The settlement detail report is named with sequential batch numbers
    * while the payments detail report has the date at the end of the name
    */
-  protected function get_recon_file_sort_key($file) {
-    // sort by the modified date to get the most recent files
-    $directory = $this->getIncomingFilesDirectory();
-    $fullpath = $directory . '/' . $file;
-    $key = filemtime($fullpath);
-    return $key;
+  protected function get_recon_file_sort_key($file): false|int|string {
+    return $this->sortByModifiedDate($file);
   }
 
   protected function get_log_distilling_grep_string() {

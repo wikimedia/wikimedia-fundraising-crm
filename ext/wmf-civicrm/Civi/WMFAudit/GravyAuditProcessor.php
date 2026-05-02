@@ -20,11 +20,7 @@ class GravyAuditProcessor extends BaseAuditProcessor {
    * @throws \Exception
    */
   protected function get_recon_file_sort_key($file) {
-    // sort by the modified date to get the most recent files
-    $directory = $this->getIncomingFilesDirectory();
-    $fullpath = $directory . '/' . $file;
-    $key = filemtime($fullpath);
-    return $key;
+    return $this->sortByModifiedDate($file);
   }
 
   protected function get_log_distilling_grep_string() {

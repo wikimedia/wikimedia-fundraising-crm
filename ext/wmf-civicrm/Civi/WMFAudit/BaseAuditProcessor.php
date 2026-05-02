@@ -91,11 +91,23 @@ abstract class BaseAuditProcessor {
 
   /**
    * @param string $file
+   *
+   * @return false|int
+   */
+  public function sortByModifiedDate(string $file): int|false {
+    // sort by the modified date to get the most recent files
+    $directory = $this->getIncomingFilesDirectory();
+    return filemtime($directory . '/' . $file);
+  }
+
+  /**
+   * @param string $file
    * @param string $directory
+   * @param bool $gzip
    *
    * @return true
    */
-  protected function moveFile(string $file, string $directory, $gzip = FALSE): bool {
+  protected function moveFile(string $file, string $directory, bool $gzip = FALSE): bool {
     if (!is_dir($directory)) {
       if (!mkdir($directory, 0770)) {
         $message = "Could not make $directory";
