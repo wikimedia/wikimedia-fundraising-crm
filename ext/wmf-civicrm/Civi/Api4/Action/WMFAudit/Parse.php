@@ -33,27 +33,27 @@ class Parse extends AbstractAction {
    *
    * @var bool
    */
-  public bool $isMakeMissing = FALSE;
+  protected bool $isMakeMissing = FALSE;
 
   /**
    * How should settlement be done on this run? None (NULL) or queue|now.
    *
-   * @var ?string
+   * @var string|null
    */
-  public ?string $settleMode = NULL;
+  protected ?string $settleMode = NULL;
 
   /**
    *
    * @var bool
    */
-  public bool $isSaveSettlementTransaction = FALSE;
+  protected bool $isSaveSettlementTransaction = FALSE;
 
   /**
    * Should the parser find the file in the completed directory.
    *
    * @var bool
    */
-  public bool $isCompleted = FALSE;
+  protected bool $isCompleted = FALSE;
 
   /**
    * Is move completed file.
@@ -62,7 +62,7 @@ class Parse extends AbstractAction {
    *
    * @var bool
    */
-  public bool $isMoveCompletedFile = TRUE;
+  protected bool $isMoveCompletedFile = TRUE;
 
   /**
    * Should parsing stop on the first missing one.
@@ -71,7 +71,7 @@ class Parse extends AbstractAction {
    *
    * @var bool
    */
-  public bool $isStopOnFirstMissing = FALSE;
+  protected bool $isStopOnFirstMissing = FALSE;
 
   /**
    * Should the disk based log fields be checked.
@@ -83,28 +83,28 @@ class Parse extends AbstractAction {
    *
    * @var bool
    */
-  public bool $isCheckLogFiles = TRUE;
+  protected bool $isCheckLogFiles = TRUE;
 
   /**
    * Name of a file to parse (optional) (must be in the incoming directory, should not include full path).
    *
    * @var string
    */
-  public string $file = '';
+  protected string $file = '';
 
   /**
    * Number of days to go back in finding log files.
    *
    * @var int
    */
-  public int $logSearchPastDays = 7;
+  protected int $logSearchPastDays = 7;
 
   /**
    * @var string
    *
    * @required
    */
-  public string $gateway;
+  protected string $gateway;
 
   /**
    * How many files should be parsed.
@@ -112,7 +112,7 @@ class Parse extends AbstractAction {
    * If left at NULL this will pick up the
    * @var int|null
    */
-  public ?int $fileLimit = NULL;
+  protected ?int $fileLimit = NULL;
 
   /**
    * Log progress after this many rows.
@@ -128,16 +128,16 @@ class Parse extends AbstractAction {
    *
    * @var int|null
    */
-  public ?int $rowLimit = NULL;
+  protected ?int $rowLimit = NULL;
 
   /**
    * Offset row to start at.
    *
-   * By default all rows are passed. Useful for troubleshooting.
+   * By default, all rows are passed. Useful for troubleshooting.
    *
    * @var int
    */
-  public int $offset = 0;
+  protected int $offset = 0;
 
   protected function getOptions(): array {
     return [
