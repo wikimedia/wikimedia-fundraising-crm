@@ -13,11 +13,11 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
 
   protected $filePath;
 
-  public function setFilePath($file) {
-    $this->filePath = $file;
+  public function setFilePath(string $filePath): void {
+    $this->filePath = $filePath;
   }
 
-  public function getFilePath() {
+  public function getFilePath(): string {
     return $this->filePath;
   }
 
