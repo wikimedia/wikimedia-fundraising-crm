@@ -68,14 +68,20 @@ abstract class BaseAuditProcessor {
    */
   abstract protected function get_audit_parser();
 
-  abstract protected function get_log_distilling_grep_string();
+  protected function get_log_distilling_grep_string(): string {
+    return 'Redirecting for transaction:';
+  }
 
-  abstract protected function get_log_line_grep_string($order_id);
+  protected function get_log_line_grep_string(string $order_id): string {
+    return ":$order_id Redirecting for transaction:";
+  }
 
   /**
-   * Create a normalized message from a line in a payments log file
+   * @throws \Civi\WMFException\WMFException
    */
-  abstract protected function parse_log_line($line);
+  protected function parse_log_line(string $logline): array {
+    return $this->parse_json_log_line($logline);
+  }
 
   /**
    * Get some identifier for a given files to let us sort all

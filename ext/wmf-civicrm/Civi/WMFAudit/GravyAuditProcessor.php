@@ -23,7 +23,7 @@ class GravyAuditProcessor extends BaseAuditProcessor {
     return $this->sortByModifiedDate($file);
   }
 
-  protected function get_log_distilling_grep_string() {
+  protected function get_log_distilling_grep_string(): string {
     return 'Completed donation:';
   }
 
@@ -40,12 +40,8 @@ class GravyAuditProcessor extends BaseAuditProcessor {
    *
    * @return string
    */
-  protected function get_log_line_grep_string($order_id) {
+  protected function get_log_line_grep_string($order_id): string {
     return ":$order_id Completed donation:";
-  }
-
-  protected function parse_log_line($logline) {
-    return $this->parse_json_log_line($logline);
   }
 
   /**

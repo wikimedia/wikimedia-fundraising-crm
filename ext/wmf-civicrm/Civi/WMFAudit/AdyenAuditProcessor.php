@@ -57,18 +57,6 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
     return $this->sortByModifiedDate($file);
   }
 
-  protected function get_log_distilling_grep_string() {
-    return 'Redirecting for transaction:';
-  }
-
-  protected function get_log_line_grep_string($order_id) {
-    return ":$order_id Redirecting for transaction:";
-  }
-
-  protected function parse_log_line($logline) {
-    return $this->parse_json_log_line($logline);
-  }
-
   protected function regexForFilesToProcess() {
     return '/settlement_detail_report_|payments_accounting_report_/';
   }
