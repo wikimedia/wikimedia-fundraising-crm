@@ -1809,54 +1809,38 @@ abstract class BaseAuditProcessor {
   /**
    * Parse single reconciliation file.
    *
-   * @param string $file Absolute location of the recon file you want to parse
+   * @param string $originalFilePath Absolute location of the recon file you want to parse
    *
    * @return array An array of date loaded from the reconciliation file.
    */
-  protected function parseReconciliationFile(string $file): array {
-    $this->startTiming("Parsing $file");
+  protected function parseReconciliationFile(string $originalFilePath): array {
+    $filePath = $this->decompressFileIfCompressed($originalFilePath);
+    $fileName = basename($filePath);
+    $this->startTiming("Parsing $fileName");
     $records = [];
 
-    // If gzipped, decompress in-place and delete the .gz
-    if (substr($file, -3) === '.gz') {
-      $unzippedFile = substr($file, 0, -3);
-
-      $command = sprintf(
-        'gzip -d %s',
-        escapeshellarg($file)
-      );
-
-      exec($command, $output, $returnCode);
-
-      if ($returnCode !== 0 || !file_exists($unzippedFile)) {
-        $this->logError("Failed to decompress $file", 'FILE_GUNZIP');
-        return [[], $file];
-      }
-
-      $file = $unzippedFile; // switch to decompressed file
-    }
-    $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'fee' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'reversal' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'reversal_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0, 'total_queued_from_transaction_log' => 0];
-
     if ($this instanceof MultipleFileTypeParser) {
-      $this->setFilePath($file);
+      $this->setFilePath($filePath);
     }
     $recon_parser = $this->get_audit_parser();
 
     try {
-      $records = $recon_parser->parseFile($file);
+      $records = $recon_parser->parseFile($filePath);
     }
     catch (\Exception $e) {
       $this->logError(
         "Something went amiss with the recon parser while "
-        . "processing $file: \"{$e->getMessage()}\"",
+        . "processing $originalFilePath: \"{$e->getMessage()}\"",
         'RECON_PARSE_ERROR'
       );
     }
-    $time = $this->stopTiming("Parsing $file");
+
+    $time = $this->stopTiming("Parsing $fileName");
     $this->echo(count($records) . " results found in $time seconds\n");
-    $this->statistics[$file]['total_records'] = count($records);
-    $this->statistics['total_records'] += $this->statistics[$file]['total_records'];
-    return [$records, $file];
+    $this->statistics[$fileName] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'fee' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'reversal' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'reversal_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0, 'total_queued_from_transaction_log' => 0];
+    $this->statistics[$fileName]['total_records'] = count($records);
+    $this->statistics['total_records'] += $this->statistics[$fileName]['total_records'];
+    return [$records, $fileName];
   }
 
   /**
@@ -2019,6 +2003,33 @@ abstract class BaseAuditProcessor {
       }
     }
     return $validBatches;
+  }
+
+  /**
+   * @param string $file
+   *
+   * @return string
+   */
+  public function decompressFileIfCompressed(string $file): string {
+    $output = $returnCode = NULL;
+    // If gzipped, decompress in-place and delete the .gz
+    if (str_ends_with($file, '.gz')) {
+      $unzippedFile = substr($file, 0, -3);
+
+      $command = sprintf(
+        'gzip -d %s',
+        escapeshellarg($file)
+      );
+
+      exec($command, $output, $returnCode);
+
+      if ($returnCode !== 0 || !file_exists($unzippedFile)) {
+        $this->logError("Failed to decompress $file", 'FILE_GUNZIP');
+      }
+      // switch to decompressed file
+      $file = $unzippedFile;
+    }
+    return $file;
   }
 
 }
