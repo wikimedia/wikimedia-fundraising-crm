@@ -1492,7 +1492,7 @@ abstract class BaseAuditProcessor {
     if ($type === 'aggregate') {
       $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] ??= Money::zero($transaction['settled_currency']);
       $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] = $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']]->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
-      $this->batches[$file][$transaction['settlement_batch_reference']]['settlement_date'] = date('Ymd', $transaction['settled_date']);
+      $this->setBatchValue($file, $transaction['settlement_batch_reference'], $transaction, ['settlement_date' => date('Ymd', $transaction['settled_date'])]);
       return;
     }
     if (isset($transaction['audit_file_gateway']) && !empty($transaction['settlement_batch_reference'])) {
@@ -1677,21 +1677,7 @@ abstract class BaseAuditProcessor {
    */
   private function addToBatch(array $transaction, string $file): void {
     $batchName = $transaction['settlement_batch_reference'];
-    if (!isset($this->batches[$file][$batchName])) {
-      $this->batches[$file][$batchName] = [
-        'transaction_count' => 0,
-        'settled_total_amount' => Money::zero($transaction['settled_currency']),
-        'settled_fee_amount' => Money::zero($transaction['settled_currency']),
-        'settled_net_amount' => Money::zero($transaction['settled_currency']),
-        'settled_reversal_amount' => Money::zero($transaction['settled_currency']),
-        'settled_donation_amount' => Money::zero($transaction['settled_currency']),
-        'settlement_currency' => $transaction['settled_currency'],
-        'settlement_date' => date('Ymd', $transaction['settled_date']),
-        'settlement_batch_reference' => $batchName,
-        'settlement_gateway' => $transaction['audit_file_gateway'],
-        'status_id:name' => 'Open',
-      ];
-    }
+    $this->ensureBatchExists($file, $batchName, $transaction);
 
     $this->batches[$file][$batchName]['transaction_count']++;
     if (!isset($transaction['settled_total_amount'])) {
@@ -2060,6 +2046,44 @@ abstract class BaseAuditProcessor {
     }
     unset($fullRecord['transaction_details'], $fullRecord['contribution_tracking']);
     $this->send_queue_message($fullRecord, 'main');
+  }
+
+  /**
+   * @param string $file
+   * @param string $batchName
+   * @param array $transaction
+   *
+   * @return void
+   */
+  public function ensureBatchExists(string $file, string $batchName, array $transaction): void {
+    if (!isset($this->batches[$file][$batchName])) {
+      $this->batches[$file][$batchName] = [
+        'transaction_count' => 0,
+        'settled_total_amount' => Money::zero($transaction['settled_currency']),
+        'settled_fee_amount' => Money::zero($transaction['settled_currency']),
+        'settled_net_amount' => Money::zero($transaction['settled_currency']),
+        'settled_reversal_amount' => Money::zero($transaction['settled_currency']),
+        'settled_donation_amount' => Money::zero($transaction['settled_currency']),
+        'settlement_currency' => $transaction['settled_currency'],
+        'settlement_date' => date('Ymd', $transaction['settled_date']),
+        'settlement_batch_reference' => $batchName,
+        'settlement_gateway' => $transaction['audit_file_gateway'],
+        'status_id:name' => 'Open',
+      ];
+    }
+  }
+
+  /**
+   * @param string $file
+   * @param string $batchName
+   * @param array $transaction
+   * @param array $values
+   *
+   * @return void
+   */
+  public function setBatchValue(string $file, string $batchName, array $transaction, array $values): void {
+    $this->ensureBatchExists($file, $batchName, $transaction);
+    $this->batches[$file][$batchName] = $values + $this->batches[$file][$batchName];
   }
 
 }
