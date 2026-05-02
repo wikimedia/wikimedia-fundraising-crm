@@ -9,6 +9,7 @@ use Civi\WMFQueueTrait;
 use Civi\Test\EntityTrait;
 use League\Csv\Exception;
 use League\Csv\Reader;
+use League\Csv\UnavailableStream;
 use SmashPig\Core\ConfigurationException;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\CrmLink\Messages\SourceFields;
@@ -153,20 +154,22 @@ class BaseAuditTestCase extends TestCase {
   /**
    * @param string $directory
    * @param string $fileName
-   * @return array
    */
-  public function prepareForAuditProcessing(string $directory, string $fileName): array {
+  public function prepareForAuditProcessing(string $directory, string $fileName): void {
     $rows = $this->getRows($directory, $fileName);
     foreach ($rows as $row) {
       $this->createTransactionLog($row);
     }
-    return $row;
+  }
+
+  public function createTransactionLog(array $row): void {
   }
 
   /**
    * @param string $directory
    * @param string $fileName
    * @param string $batchName
+   *
    * @return array
    */
   public function runAuditBatch(string $directory, string $fileName, string $batchName = ''): array {
@@ -180,16 +183,26 @@ class BaseAuditTestCase extends TestCase {
 
     $this->processContributionTrackingQueue();
     if ($batchName) {
-      $auditResult['validate'] = WMFAudit::generateBatch(FALSE)
-        ->setBatchPrefix($batchName)
-        ->setIsOutputCsv(TRUE)
-        ->setEmailSummaryAddress('test@example.org')
-        ->execute();
+      try {
+        $auditResult['validate'] = WMFAudit::generateBatch(FALSE)
+          ->setBatchPrefix($batchName)
+          ->setIsOutputCsv(TRUE)
+          ->setEmailSummaryAddress('test@example.org')
+          ->execute();
+      }
+      catch (\CRM_Core_Exception $e) {
+        $this->fail($e->getMessage());
+      }
 
       foreach ($auditResult['validate'] as $row) {
         $this->assertEquals(0, array_sum($row['validation']), print_r(array_filter($row), TRUE));
         foreach ($row['csv'] ?? [] as $details) {
-          $rows = Reader::from($details['file'])->setHeaderOffset(0)->getRecords();
+          try {
+            $rows = Reader::from($details['file'])->setHeaderOffset(0)->getRecords();
+          }
+          catch (UnavailableStream|Exception $e) {
+            $this->fail('failed to read csv' . $details['file'] . ': ' . $e->getMessage());
+          }
           foreach ($rows as $line) {
             $this->assertGreaterThanOrEqual(0, $line['DEBIT']);
             $this->assertGreaterThanOrEqual(0, $line['CREDIT']);
