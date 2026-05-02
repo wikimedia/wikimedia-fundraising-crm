@@ -10,6 +10,7 @@ use Civi\Api4\GrantTransaction;
 use Civi\Api4\SettlementTransaction;
 use Civi\Api4\WMFAudit;
 use Civi\WMFQueueMessage\AuditMessage;
+use Civi\WMFQueueMessage\OfflineAuditMessage;
 use SmashPig\Core\DataStores\QueueWrapper;
 
 /**
@@ -72,7 +73,12 @@ class Audit extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   public function _run(Result $result): void {
-    $message = new AuditMessage($this->values);
+    if (!empty($this->values['is_daf']) || !empty($this->values['is_matching_gift']) || $this->values['gateway'] === 'chariot') {
+      $message = new OfflineAuditMessage($this->values);
+    }
+    else {
+      $message = new AuditMessage($this->values);
+    }
     $message->setGatewayAccountString($this->gatewayAccountString);
     // @todo - won't need this forever....
     // but repair before we try to find them.
