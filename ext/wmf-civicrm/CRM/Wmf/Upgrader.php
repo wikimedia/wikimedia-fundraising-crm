@@ -4468,6 +4468,10 @@ v.channel IS NULL AND c.id = 131486342;",
      $paymentInstrumentGroupId = (int) \CRM_Core_DAO::singleValueQuery(
        "SELECT id FROM civicrm_option_group WHERE name = 'payment_instrument'"
      );
+     $locationTypes = implode(', ', LocationType::get(FALSE)
+       ->addSelect('id')
+       ->addWhere('name', 'IN', ['Home'])
+       ->execute()->column('id'));
 
      $blockSize = 1000000; // Process 1m contacts at a time
      echo "start ach backfill: " . time() . "\n";
@@ -4475,7 +4479,7 @@ v.channel IS NULL AND c.id = 131486342;",
        $upperBound = $i + $blockSize - 1;
 
        // Pass the range
-       backfillEmailRange($i, $upperBound, $paymentInstrumentGroupId);
+       backfillEmailRange($i, $upperBound, $paymentInstrumentGroupId, $locationTypes);
 
        // small pause to reduce lock pressure
        usleep(200000); // 200ms
@@ -4484,6 +4488,103 @@ v.channel IS NULL AND c.id = 131486342;",
 
      return TRUE;
    }
+
+  /**
+   * Backfill email location types for existing contacts based on latest donation payment method.
+   *
+   * This covers only contacts with a Main or Billing type primary email
+   * and Venmo, Google Pay, Apple Pay and Paypal, but not ACH, which is more complex.
+   *
+   * Bug: T420992
+   *
+   * @return bool
+   */
+  public function upgrade_4970(): bool {
+    $typesToCheck = ['venmo','google','apple','paypal'];
+    $maxContactId = CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact');
+    $chunkSize = 1000000;
+    $locationTypes = implode(', ', LocationType::get(FALSE)
+      ->addSelect('id')
+      ->addWhere('name', 'IN', ['Main', 'Billing'])
+      ->execute()->column('id'));
+
+    foreach ($typesToCheck as $type) {
+      $paymentInstrumentIDs = OptionValue::get(FALSE)
+        ->addSelect('value')
+        ->addWhere('name', 'LIKE', $type . '%')
+        ->addWhere('name', '!=', 'Paypal Grants')
+        ->addWhere('option_group_id:name', '=', 'payment_instrument')
+        ->execute()->column('value');
+      $paymentInstrumentIDsList = implode(',', $paymentInstrumentIDs);
+      $locationTypeID = LocationType::get(FALSE)
+        ->addSelect('id')
+        ->addWhere('name', '=', $type)
+        ->execute()->first()['id'];
+
+      for ($start = 0; $start <= $maxContactId; $start += $chunkSize) {
+        $end = $start + $chunkSize - 1;
+        CRM_Core_DAO::executeQuery("
+          UPDATE civicrm_email e
+            INNER JOIN (
+              SELECT contact_id
+              FROM (
+                SELECT contact_id, payment_instrument_id,
+                       ROW_NUMBER() OVER (PARTITION BY contact_id ORDER BY receive_date DESC) AS rn
+                FROM civicrm_contribution
+                WHERE contact_id BETWEEN %1 AND %2
+              ) ranked
+              WHERE rn = 1
+                AND payment_instrument_id IN ({$paymentInstrumentIDsList})
+            ) qualified ON e.contact_id = qualified.contact_id
+          SET e.location_type_id = {$locationTypeID}
+          WHERE e.is_primary = 1
+            AND e.location_type_id IN ({$locationTypes})
+        ", [1 => [$start, 'Integer'], 2 => [$end, 'Integer']]);
+      }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Backfill email location types for existing contacts based on latest donation payment method when it is ach.
+   *
+   * Finds contacts with primary emails currently set to Main or Billing,
+   * retrieves their latest contribution payment method, and updates the
+   * email location type for trusted payment methods ach.
+   *
+   * Bug: T420992
+   *
+   * @return bool
+   */
+  public function upgrade_4975(): bool {
+    $scriptPath = __DIR__ . '/../../scripts/T420992/backfill_email_location_types.php';
+    require_once $scriptPath;
+    $minContact = (int) \CRM_Core_DAO::singleValueQuery("SELECT MIN(contact_id) FROM civicrm_email");
+    $maxContact = (int) \CRM_Core_DAO::singleValueQuery("SELECT MAX(contact_id) FROM civicrm_email");
+    // get the group id once than repeat in real query here
+    $paymentInstrumentGroupId = (int) \CRM_Core_DAO::singleValueQuery(
+      "SELECT id FROM civicrm_option_group WHERE name = 'payment_instrument'"
+    );
+    $locationTypes = implode(', ', LocationType::get(FALSE)
+      ->addSelect('id')
+      ->addWhere('name', 'IN', ['Main', 'Billing'])
+      ->execute()->column('id'));
+
+    $blockSize = 1000000; // Process 1m contacts at a time
+    echo "start ach backfill: " . time() . "\n";
+    for ($i = $minContact; $i <= $maxContact; $i += $blockSize) {
+      $upperBound = $i + $blockSize - 1;
+
+      // Pass the range
+      backfillEmailRange($i, $upperBound, $paymentInstrumentGroupId, $locationTypes);
+
+      // small pause to reduce lock pressure
+      usleep(200000); // 200ms
+    }
+    echo "end ach backfill: " .time() . "\n";
+
+    return TRUE;
+  }
 
    /**
     * Queue up an API4 update.

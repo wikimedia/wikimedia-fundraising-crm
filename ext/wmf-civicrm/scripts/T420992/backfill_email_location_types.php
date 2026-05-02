@@ -11,10 +11,11 @@ use Civi\Api4\Email;
  * @param int $minId
  * @param int $maxId
  * @param int $paymentInstrumentGroupId
+ * @param string $locationTypes
  * @return null
  * @throws \Civi\Core\Exception\DBQueryException
  */
-function backfillEmailRange(int $minId, int $maxId, int $paymentInstrumentGroupId)
+function backfillEmailRange(int $minId, int $maxId, int $paymentInstrumentGroupId, string $locationTypes)
 {
   echo "Starting backfill of ach email location types for cid range " . $minId . " to " . $maxId . "\n";
 
@@ -30,7 +31,7 @@ LEFT JOIN civicrm_contribution contrib_newer ON contrib_newer.contact_id = contr
 INNER JOIN civicrm_option_value ov ON ov.value = contrib.payment_instrument_id AND ov.option_group_id = {$paymentInstrumentGroupId}
 WHERE e.contact_id BETWEEN {$minId} AND {$maxId}
   AND e.is_primary = 1
-  AND e.location_type_id = (SELECT id FROM civicrm_location_type WHERE name = 'Home')
+  AND e.location_type_id IN ({$locationTypes})
   AND c.is_deleted = 0
   AND contrib_newer.id IS NULL
   AND LOWER(SUBSTRING_INDEX(ov.name, ' ', 1)) = 'ach'
