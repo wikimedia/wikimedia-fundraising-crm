@@ -743,7 +743,7 @@ END";
           $params['subject'] .= " $incompleteCount contributions need attention";
         }
         if ($this->countOldIncomingFiles()) {
-          $params['subject'] .= $this->countOldIncomingFiles() ." incoming files older than " . self::NUMBER_OF_DAYS_OLD . 'days';
+          $params['subject'] .= ', ' . $this->countOldIncomingFiles() ." incoming files older than " . self::NUMBER_OF_DAYS_OLD . 'days';
         }
 
         $params['html'] = $html;
