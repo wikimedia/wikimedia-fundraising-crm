@@ -333,6 +333,12 @@ abstract class BaseAuditProcessor {
    * @return string Path to the directory
    */
   protected function getIncomingFilesDirectory(): string {
+    $specifiedDirectory = $this->get_runtime_options('incoming_directory');
+    // Checking the path is sort of security - but probably if someone can run this file we
+    // aren't much protected anyway.
+    if ($specifiedDirectory && str_contains($specifiedDirectory, '/tests/') && !str_contains($specifiedDirectory, '..')) {
+      return $specifiedDirectory;
+    }
     $subdir = $this->get_runtime_options('is_completed') ? 'completed' : 'incoming';
     return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . $subdir . DIRECTORY_SEPARATOR;
   }

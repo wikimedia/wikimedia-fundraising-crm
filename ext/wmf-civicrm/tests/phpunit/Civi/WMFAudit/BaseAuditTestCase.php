@@ -23,6 +23,13 @@ class BaseAuditTestCase extends TestCase {
 
   protected string $gateway;
 
+  /**
+   * Nest audit files to parse in the incoming directory layout.
+   *
+   * @var bool
+   */
+  protected bool $useIncomingDirectory = TRUE;
+
   public function setUp(): void {
     $this->setUpWMFEnvironment();
     // This sets the working log directory to the CiviCRM upload directory.
@@ -128,6 +135,7 @@ class BaseAuditTestCase extends TestCase {
     try {
       $result = WMFAudit::parse()
         ->setGateway($this->gateway)
+        ->setIncomingDirectory($this->useIncomingDirectory ? '' : $this->auditFileBaseDirectory)
         ->setFile((string) $fileName)
         ->setSettleMode('queue')
         ->setIsMoveCompletedFile(FALSE)

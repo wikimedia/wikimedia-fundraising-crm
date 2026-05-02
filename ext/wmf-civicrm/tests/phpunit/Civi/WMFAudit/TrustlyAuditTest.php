@@ -19,7 +19,12 @@ class TrustlyAuditTest extends BaseAuditTestCase {
 
   protected string $gateway = 'trustly';
 
-  static protected $loglines;
+  /**
+   * Nest audit files to parse in the incoming directory layout.
+   *
+   * @var bool
+   */
+  protected bool $useIncomingDirectory = FALSE;
 
   public function testFUNFile(): void {
     // Create donation affected by chargeback.
@@ -100,7 +105,7 @@ class TrustlyAuditTest extends BaseAuditTestCase {
     ]);
 
     // Run it twice so the one that is refunded gets a chance to 'take'
-    $this->runAuditBatch('fun_file', 'P11KFUN-3618-20260201120000-20260202120000-0001of0001.csv');
+    $this->runAuditBatch('', 'P11KFUN-3618-20260201120000-20260202120000-0001of0001.csv');
 
     // Also create the two in the file. We know it can't create them but let's at least make sure they settle.
     $this->createTestEntity('Contribution', [
@@ -125,7 +130,7 @@ class TrustlyAuditTest extends BaseAuditTestCase {
       'contribution_extra.backend_processor_txn_id' => '8090016000',
     ]);
 
-    $this->runAuditBatch('fun_file', 'P11KFUN-3618-20260201120000-20260202120000-0001of0001.csv', '999');
+    $this->runAuditBatch('', 'P11KFUN-3618-20260201120000-20260202120000-0001of0001.csv', '999');
     $contribution = Contribution::get(FALSE)
       ->addSelect('contribution_extra.*')
       ->addWhere('contribution_extra.gateway', '=', 'gravy')
@@ -215,9 +220,14 @@ class TrustlyAuditTest extends BaseAuditTestCase {
    * @return Reader
    */
   public function getRows(string $directory, string $fileName): array {
-    $this->setAuditDirectory($directory);
-    // First let's have a process to create some TransactionLog entries.
-    $file = $this->auditFileBaseDirectory . DIRECTORY_SEPARATOR . $directory . DIRECTORY_SEPARATOR . $this->gateway . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR . $fileName;
+    if ($directory) {
+      $this->setAuditDirectory($directory);
+      // First let's have a process to create some TransactionLog entries.
+      $file = $this->auditFileBaseDirectory . DIRECTORY_SEPARATOR . $directory . DIRECTORY_SEPARATOR . $this->gateway . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR . $fileName;
+    }
+    else {
+      $file = $this->auditFileBaseDirectory . DIRECTORY_SEPARATOR . $fileName;
+    }
     try {
       $csv = Reader::from($file, 'r');
     } catch (Exception $e) {

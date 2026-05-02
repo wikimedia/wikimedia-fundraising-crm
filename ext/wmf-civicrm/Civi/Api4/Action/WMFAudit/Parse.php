@@ -19,6 +19,7 @@ use CRM_SmashPig_ContextWrapper;
  * @method $this setIsCompleted(bool $isCompleted)
  * @method $this setIsCheckLogFiles(bool $isCheckLogFiles)
  * @method $this setFile(string $file)
+ * @method $this setIncomingDirectory(string $directory)
  * @method $this setLogSearchPastDays(int $logSearchPastDays)
  * @method $this setLogInterval(int $logInterval)
  * @method $this setFileLimit(?int $fileLimit)
@@ -139,12 +140,24 @@ class Parse extends AbstractAction {
    */
   protected int $offset = 0;
 
+  /**
+   * Directory to look for the incoming file.
+   *
+   * Overrides looking in the path specified by the setting for the file.
+   *
+   * Intended for test use only (we could limit to test environments?)
+   *
+   * @var string
+   */
+  protected string $incomingDirectory = '';
+
   protected function getOptions(): array {
     return [
       'makemissing' => $this->isMakeMissing,
       'recon_complete_count' => 0,
       'file_limit' => $this->fileLimit,
       'file' => $this->file,
+      'incoming_directory' => $this->incomingDirectory,
       'log_search_past_days' => $this->logSearchPastDays,
       'settle_mode' => $this->settleMode,
       'is_save_settlement_transaction' => $this->isSaveSettlementTransaction,
