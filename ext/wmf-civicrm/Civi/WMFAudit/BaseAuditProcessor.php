@@ -4,7 +4,6 @@ namespace Civi\WMFAudit;
 
 use Brick\Math\RoundingMode;
 use Brick\Money\Money;
-use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\WMFAudit;
@@ -1456,21 +1455,14 @@ abstract class BaseAuditProcessor {
           // These are totals - we track them in recordStatistic but then discard.
           continue;
         }
-        $key = $auditRecord['is_negative'] ? 'negative' : 'main';
-        if ($key === 'main' && !empty($auditRecord['message']['transaction_details'])) {
-          $fullRecord = $this->merge_data($auditRecord['message']['transaction_details']['message'], $auditRecord['message']);
-          if (empty($fullRecord['contribution_tracking']) && !empty($fullRecord['contribution_tracking_id'])) {
-            $result = ContributionTracking::get(FALSE)->addWhere('id', '=', $fullRecord['contribution_tracking_id'])->execute()->first();
-            if (!$result) {
-              $this->createContributionTracking($fullRecord['contribution_tracking_id'], $fullRecord['payment_method'] ?? '', $fullRecord['date'] ?? NULL, $fullRecord['language'] ?? NULL, $fullRecord['country'] ?? NULL);
-            }
-          }
-          unset($fullRecord['transaction_details'], $fullRecord['contribution_tracking']);
-          $this->send_queue_message($fullRecord, 'main');
+
+        if ($this->isQueueableWithoutLogLookup($auditRecord)) {
+          $this->queueMissingAuditMessage($auditRecord['message']);
           $this->statistics[$file]['total_queued_from_transaction_log']++;
           $this->echo('%');
         }
         else {
+          $key = $auditRecord['is_negative'] ? 'negative' : 'main';
           $this->missingTransactions[$key][] = $auditRecord['message'];
         }
         if ($this->get_runtime_options('is_stop_on_first_missing')) {
@@ -2030,6 +2022,44 @@ abstract class BaseAuditProcessor {
       $file = $unzippedFile;
     }
     return $file;
+  }
+
+  /**
+   * Is the information adequate to queue without attempting any log diving.
+   *
+   * Ideally this would always be true as we have deprecated looking in the log files.
+   *
+   * @param array $auditRecord
+   *
+   * @return bool
+   */
+  protected function isQueueableWithoutLogLookup(array $auditRecord): bool {
+    return !$auditRecord['is_negative'] && !empty($auditRecord['message']['transaction_details']);
+  }
+
+  /**
+   * Send the missing audit message to the appropriate queue.
+   *
+   * @param array $message
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   */
+  protected function queueMissingAuditMessage(array $message): void {
+    $fullRecord = $this->merge_data($message['transaction_details']['message'], $message);
+    if (empty($fullRecord['contribution_tracking']) && !empty($fullRecord['contribution_tracking_id'])) {
+      $result = ContributionTracking::get(FALSE)
+        ->addWhere('id', '=', $fullRecord['contribution_tracking_id'])
+        ->execute()
+        ->first();
+      if (!$result) {
+        $this->createContributionTracking($fullRecord['contribution_tracking_id'], $fullRecord['payment_method'] ?? '', $fullRecord['date'] ?? NULL, $fullRecord['language'] ?? NULL, $fullRecord['country'] ?? NULL);
+      }
+    }
+    unset($fullRecord['transaction_details'], $fullRecord['contribution_tracking']);
+    $this->send_queue_message($fullRecord, 'main');
   }
 
 }
