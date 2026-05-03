@@ -527,6 +527,7 @@ class Message {
         'label' => 'Gift Source',
         'api_entity' => 'Contribution',
         'api_field' => 'Gift_Data.Campaign',
+        'description' => 'is this actually incoming anywhere or do we just use the default (Online Gift)'
       ],
       'contact_id' => [
         'name' => 'contact_id',

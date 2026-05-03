@@ -71,6 +71,7 @@ class DonationMessageTest extends TestCase implements HeadlessInterface {
       'contribution_extra.original_currency' => 'USD',
       'contribution_extra.gateway' => 'paypal',
       'Gift_Data.is_major_gift' => FALSE,
+      'Gift_Data.Campaign' => 'Online Gift',
     ];
 
     $msg = $original_msg;
