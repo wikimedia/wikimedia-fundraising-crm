@@ -68,14 +68,20 @@ abstract class BaseAuditProcessor {
    */
   abstract protected function get_audit_parser();
 
-  abstract protected function get_log_distilling_grep_string();
+  protected function get_log_distilling_grep_string(): string {
+    return 'Redirecting for transaction:';
+  }
 
-  abstract protected function get_log_line_grep_string($order_id);
+  protected function get_log_line_grep_string(string $order_id): string {
+    return ":$order_id Redirecting for transaction:";
+  }
 
   /**
-   * Create a normalized message from a line in a payments log file
+   * @throws \Civi\WMFException\WMFException
    */
-  abstract protected function parse_log_line($line);
+  protected function parse_log_line(string $logline): array {
+    return $this->parse_json_log_line($logline);
+  }
 
   /**
    * Get some identifier for a given files to let us sort all
@@ -91,11 +97,23 @@ abstract class BaseAuditProcessor {
 
   /**
    * @param string $file
+   *
+   * @return false|int
+   */
+  public function sortByModifiedDate(string $file): int|false {
+    // sort by the modified date to get the most recent files
+    $directory = $this->getIncomingFilesDirectory();
+    return filemtime($directory . '/' . $file);
+  }
+
+  /**
+   * @param string $file
    * @param string $directory
+   * @param bool $gzip
    *
    * @return true
    */
-  protected function moveFile(string $file, string $directory, $gzip = FALSE): bool {
+  protected function moveFile(string $file, string $directory, bool $gzip = FALSE): bool {
     if (!is_dir($directory)) {
       if (!mkdir($directory, 0770)) {
         $message = "Could not make $directory";
@@ -315,6 +333,12 @@ abstract class BaseAuditProcessor {
    * @return string Path to the directory
    */
   protected function getIncomingFilesDirectory(): string {
+    $specifiedDirectory = $this->get_runtime_options('incoming_directory');
+    // Checking the path is sort of security - but probably if someone can run this file we
+    // aren't much protected anyway.
+    if ($specifiedDirectory && str_contains($specifiedDirectory, '/tests/') && !str_contains($specifiedDirectory, '..')) {
+      return $specifiedDirectory;
+    }
     $subdir = $this->get_runtime_options('is_completed') ? 'completed' : 'incoming';
     return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . $subdir . DIRECTORY_SEPARATOR;
   }

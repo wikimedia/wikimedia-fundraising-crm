@@ -26,16 +26,12 @@ class AmazonAuditProcessor extends BaseAuditProcessor {
     return $date;
   }
 
-  protected function get_log_distilling_grep_string() {
+  protected function get_log_distilling_grep_string(): string {
     return 'Got info for Amazon donation: ';
   }
 
-  protected function get_log_line_grep_string($order_id) {
+  protected function get_log_line_grep_string($order_id): string {
     return ":$order_id Got info for Amazon donation: ";
-  }
-
-  protected function parse_log_line($logline) {
-    return $this->parse_json_log_line($logline);
   }
 
   protected function regexForFilesToProcess() {

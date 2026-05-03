@@ -129,6 +129,10 @@ class Resolve extends AbstractAction {
         $this->message['order_id'];
 
       \Civi::Log('wmf')->info($approvalNotNeededLogMessage);
+      if ($latestPaymentDetailResult->getStatus() == FinalStatus::COMPLETE) {
+        $this->addIDsToMessage($latestPaymentDetailResult);
+        $this->sendDonationsQueueMessage($latestPaymentDetailResult);
+      }
       return;
     }
 
@@ -689,21 +693,7 @@ class Resolve extends AbstractAction {
     ]);
     if ($approveResult->isSuccessful()) {
       $newStatus = FinalStatus::COMPLETE;
-      // Some processors (PayPal) don't assign a transaction ID until
-      // after the approval
-      if (empty($this->message['gateway_txn_id'])) {
-        $this->message['gateway_txn_id'] = $approveResult->getGatewayTxnId();
-      }
-      // And other processors have a boatload of other special IDs to copy over
-      if ($approveResult->getBackendProcessor()) {
-        $this->message['backend_processor'] = $approveResult->getBackendProcessor();
-      }
-      if ($approveResult->getBackendProcessorTransactionId()) {
-        $this->message['backend_processor_txn_id'] = $approveResult->getBackendProcessorTransactionId();
-      }
-      if ($approveResult->getPaymentOrchestratorReconciliationId()) {
-        $this->message['payment_orchestrator_reconciliation_id'] = $approveResult->getPaymentOrchestratorReconciliationId();
-      }
+      $this->addIDsToMessage($approveResult);
       $this->sendDonationsQueueMessage($statusResult);
     }
     else {
@@ -731,6 +721,28 @@ class Resolve extends AbstractAction {
     }
     $maxOverridableScore = \Civi::settings()->get('wmf_max_overridable_minfraud_score');
     return ($paymentsFraudRowWithBreakdown['score_breakdown']['minfraud_filter'] <= $maxOverridableScore);
+  }
+
+  /**
+   * @param PaymentProviderExtendedResponse $approveResult
+   * @return void
+   */
+  public function addIDsToMessage(PaymentProviderExtendedResponse $approveResult): void {
+    // Some processors (PayPal) don't assign a transaction ID until
+    // after the approval
+    if (empty($this->message['gateway_txn_id'])) {
+      $this->message['gateway_txn_id'] = $approveResult->getGatewayTxnId();
+    }
+    // And other processors have a boatload of other special IDs to copy over
+    if ($approveResult->getBackendProcessor()) {
+      $this->message['backend_processor'] = $approveResult->getBackendProcessor();
+    }
+    if ($approveResult->getBackendProcessorTransactionId()) {
+      $this->message['backend_processor_txn_id'] = $approveResult->getBackendProcessorTransactionId();
+    }
+    if ($approveResult->getPaymentOrchestratorReconciliationId()) {
+      $this->message['payment_orchestrator_reconciliation_id'] = $approveResult->getPaymentOrchestratorReconciliationId();
+    }
   }
 
 }

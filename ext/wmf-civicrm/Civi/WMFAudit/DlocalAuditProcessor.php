@@ -24,19 +24,6 @@ class DlocalAuditProcessor extends BaseAuditProcessor {
     throw new \Exception("Unparseable reconciliation file name: {$file}");
   }
 
-
-  protected function get_log_distilling_grep_string() {
-    return 'Redirecting for transaction:';
-  }
-
-  protected function get_log_line_grep_string($order_id) {
-    return ":$order_id Redirecting for transaction:";
-  }
-
-  protected function parse_log_line($logline) {
-    return $this->parse_json_log_line($logline);
-  }
-
   protected function regexForFilesToProcess() {
     return '/_report|Settlement|border_/';
   }

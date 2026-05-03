@@ -47,18 +47,6 @@ class TrustlyAuditProcessor extends BaseAuditProcessor {
     return filemtime($directory . '/' . $file);
   }
 
-  protected function get_log_distilling_grep_string() {
-    return 'Redirecting for transaction:';
-  }
-
-  protected function get_log_line_grep_string($order_id) {
-    return ":$order_id Redirecting for transaction:";
-  }
-
-  protected function parse_log_line($line) {
-    return $this->parse_json_log_line($line);
-  }
-
   protected function regexForFilesToProcess(): string {
     return '/P11KFUN/';
   }

@@ -112,11 +112,21 @@ function wmf_civicrm_civicrm_enable() {
  * @throws \CRM_Core_Exception
  * @noinspection PhpUnused
  */
-function wmf_civicrm_civicrm_searchTasks() {
+function wmf_civicrm_civicrm_searchTasks($objectType, &$tasks) {
   if (CRM_Utils_Request::retrieveValue('context', 'String', 'search') === 'search'
     && CRM_Utils_Request::retrieve('qfKey', 'String') === NULL
   ) {
     $_GET['force'] = $_REQUEST['force'] = FALSE;
+  }
+  if ($objectType === 'contribution' && CRM_Core_Permission::check('refund contributions')) {
+    $tasks[] = [
+      'title' => E::ts('Refund'),
+      'class' => 'CRM_Wmf_Form_RefundContribution',
+      'is_single_mode' => TRUE,
+      'name' => E::ts('Refund'),
+      'url' => 'civicrm/refund_contribution',
+      'weight' => 130,
+    ];
   }
 }
 
@@ -657,20 +667,6 @@ function wmf_civicrm_civicrm_links($op, $objectName, $objectId, &$links, &$mask,
 
   if ($objectName === 'Activity') {
     Activity::links($objectId, $links);
-  }
-  if ($objectName === 'Contribution' && $op === 'contribution.selector.row') {
-    if (CRM_Core_Permission::check('refund contributions')) {
-      // Would be nice if $values had the contribution status but it doesn't,
-      // so always add this option.
-      $links[] = [
-        'name' => ts('Refund'),
-        'title' => ts('Refund contribution'),
-        'url' => 'civicrm/refund_contribution',
-        'qs' => "contribution_id=$objectId",
-        'class' => 'crm-popup medium-popup',
-        'weight' => 1,
-      ];
-    }
   }
 }
 
