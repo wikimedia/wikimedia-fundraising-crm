@@ -3,9 +3,6 @@
 
 namespace Civi\Api4\Action\Address;
 
-use Civi;
-use Civi\Api4\Generic\AbstractAction;
-use Civi\Api4\Generic\Result;
 use Civi\Api4\Address;
 use Civi\Api4\CleanBase;
 
@@ -16,14 +13,9 @@ use Civi\Api4\CleanBase;
  * @method array getContactIDs() Set IDs of contacts to clean.
  */
 class Clean extends CleanBase {
-  /**
-   * Phones retrieved for the contacts.
-   *
-   * These are keyed by the contact and ordered primary first.
-   *
-   * @var array
-   */
-  protected $entities = [];
+  protected function getLocationTypeSettingName(): string {
+    return 'deduper_clean_location_types_to_keep_address';
+  }
 
   /**
    * Fetch the addresses for the contacts.

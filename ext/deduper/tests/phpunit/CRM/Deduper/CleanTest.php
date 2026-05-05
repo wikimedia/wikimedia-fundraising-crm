@@ -7,6 +7,7 @@ use Civi\Test\TransactionalInterface;
 use Civi\Test\Api3TestTrait;
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
+use Civi\Api4\LocationType;
 use Civi\Api4\Phone;
 use Civi\Api4\Address;
 
@@ -174,6 +175,51 @@ class CleanTest extends DedupeBaseTestClass {
       array_merge($values, ['location_type_id' => $this->locationTypes['Work']])
     ]);
     $this->checkExactlyOnePrimary($this->ids['contact']['Ponyo'], 2);
+  }
+
+  /**
+   * Test that duplicate emails of location types we want to keep are kept,
+   * while duplicates of other location types are removed.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testCleanDuplicateEmailHandlingKeepingLocationTypes(): void {
+    $this->entity = 'Email';
+    $this->setSetting('deduper_clean_location_types_to_keep_email', ['exclude']);
+    unset(Civi::$statics[\Civi\Api4\Action\Email\Clean::class]);
+    $excludeTypeID = LocationType::save(FALSE)
+      ->setRecords([['name' => 'exclude', 'display_name' => 'Exclude', 'is_active' => TRUE]])
+      ->setMatch(['name'])
+      ->execute()->first()['id'];
+
+    $this->ids['contact']['Ponyo'] = $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Ponyo'])['id'];
+
+    $this->createEntity([
+      'email' => 'ponyo@example.com',
+      'location_type_id' => $this->locationTypes['Home'],
+      'contact_id' => $this->ids['contact']['Ponyo'],
+      'is_primary' => TRUE,
+    ]);
+    // Exclude type duplicate — should be kept.
+    $this->createEntity([
+      'email' => 'ponyo@example.com',
+      'location_type_id' => $excludeTypeID,
+      'contact_id' => $this->ids['contact']['Ponyo'],
+    ]);
+    // Main duplicate — should be removed.
+    $this->createEntity([
+      'email' => 'ponyo@example.com',
+      'location_type_id' => $this->locationTypes['Main'],
+      'contact_id' => $this->ids['contact']['Ponyo'],
+    ]);
+
+    $this->doClean($this->ids['contact']['Ponyo']);
+
+    // Home (primary) + exclude are kept, Main is removed.
+    $this->checkEntities($this->ids['contact']['Ponyo'], [
+      ['email' => 'ponyo@example.com', 'location_type_id' => $this->locationTypes['Home'], 'is_primary' => TRUE],
+      ['email' => 'ponyo@example.com', 'location_type_id' => $excludeTypeID, 'is_primary' => FALSE],
+    ]);
   }
 
   /**
