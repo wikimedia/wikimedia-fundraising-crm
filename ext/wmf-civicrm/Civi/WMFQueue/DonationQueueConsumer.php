@@ -175,12 +175,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     }
     $this->stopAction('verify_and_stage');
 
-    $this->startAction('create_contact');
-    $contact = WMFContact::save(FALSE)
-      ->setMessage($msg)
-      ->execute()->first();
-    $msg['contact_id'] = $contact['id'];
-    $this->stopAction("create_contact");
+    $msg['contact_id'] = $this->saveContact($msg);
 
     // Make new recurring record if necessary
     if ($message->isRecurring()) {
@@ -494,5 +489,20 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    */
   public function getImportTimerName(Message $message): string {
     return 'wmf_civicrm_' . $message->getMessageLoggingDescription() . '_message_import';
+  }
+
+  /**
+   * @param array $msg
+   *
+   * @return int
+   * @throws \CRM_Core_Exception
+   */
+  public function saveContact(array $msg): int {
+    $this->startAction('create_contact');
+    $contact = WMFContact::save(FALSE)
+      ->setMessage($msg)
+      ->execute()->first();
+    $this->stopAction("create_contact");
+    return $contact['id'];
   }
 }
