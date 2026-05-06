@@ -137,4 +137,22 @@ return [
     'description' => 'Needs to account for the longest possible retry delay in the "cadence" setting.',
     'settings_pages' => ['smashpig' => ['weight' => 9]],
   ],
+  'smashpig_suppressed_error_messages' => [
+    'group_name' => 'SmashPig Preferences',
+    'group' => 'smashpig',
+    'name' => 'smashpig_suppressed_error_messages',
+    'type' => 'String',
+    'quick_form_type' => 'Element',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 256,
+      'maxlength' => 256,
+    ],
+    'default' => 'authorization_failed:requires_buyer_authentication',
+    'title' => 'Suppressed error messages',
+    'is_domain' => '1',
+    'is_contact' => 0,
+    'description' => 'Comma separated list of payment error messages which will never trigger an alert',
+    'settings_pages' => ['smashpig' => ['weight' => 10]],
+  ]
 ];

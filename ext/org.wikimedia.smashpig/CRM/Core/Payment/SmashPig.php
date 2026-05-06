@@ -2,6 +2,8 @@
 
 use Civi\Api4\ContributionRecur;
 use Civi\Payment\Exception\PaymentProcessorException;
+use SmashPig\Core\PaymentError;
+use SmashPig\Core\ValidationError;
 use SmashPig\PaymentData\ErrorCode;
 use SmashPig\PaymentData\FinalStatus;
 use SmashPig\PaymentProviders\IRecurringPaymentProfileProvider;
@@ -21,6 +23,12 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
   protected $_mode = NULL;
 
   /**
+   * Normally, a validation error triggers an alert. If the debug message
+   * appears in this list it will not.
+   */
+  protected array $suppressedErrors;
+
+  /**
    * Constructor.
    *
    * @param string $mode
@@ -30,7 +38,7 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    */
   public function __construct($mode, &$paymentProcessor, &$paymentForm = NULL, $force = FALSE) {
     $this->_paymentProcessor = $paymentProcessor;
-
+    $this->suppressedErrors = explode(',', Civi::settings()->get('smashpig_suppressed_error_messages') ?? '');
     // Live or test.
     $this->_mode = $mode;
   }
@@ -106,8 +114,14 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
         // most validation error like below validation errors, where map to tax id or cvv and so on,
         // if failed to categorized as validation error must be some non-general errors, then should get a failmail to alert us to fix it
         if ($error->getErrorCode() == ErrorCode::VALIDATION) {
-          Civi::log('wmf')->alert($message);
-        } else {
+          if ($this->isErrorSuppressed($error)) {
+            Civi::log('wmf')->warning('Suppressed ' . $message);
+          }
+          else {
+            Civi::log('wmf')->alert($message);
+          }
+        }
+        else {
           Civi::log('wmf')->debug($message);
         }
       }
@@ -120,7 +134,11 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
         if ($createPaymentResponse->getRawResponse()) {
           $message .= '. Response: ' . (json_encode($createPaymentResponse->getRawResponse(), JSON_UNESCAPED_SLASHES) ?: 'Response encoding failed');
         }
-        Civi::log('wmf')->alert($message);
+        if ( $this->isErrorSuppressed($error) ) {
+          Civi::log('wmf')->warning('Suppressed ' . $message);
+        } else {
+          Civi::log('wmf')->alert($message);
+        }
       }
       $this->throwException('CreatePayment failed', $createPaymentResponse);
     }
@@ -460,6 +478,15 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
    */
   protected function isProcessorGravy(): bool {
     return $this->_paymentProcessor['name'] === 'gravy';
+  }
+
+  /**
+   * Is the error's debugMessage on the configured list of suppressed error messages?
+   * @param PaymentError|ValidationError $error
+   * @return bool
+   */
+  protected function isErrorSuppressed(PaymentError|ValidationError $error): bool {
+    return in_array($error->getDebugMessage(), $this->suppressedErrors);
   }
 
 }
