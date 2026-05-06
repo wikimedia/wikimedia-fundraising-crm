@@ -174,25 +174,12 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       $message->setContributionTrackingID(empty($msg['contribution_tracking_id']) ? NULL : $msg['contribution_tracking_id']);
     }
     $this->stopAction('verify_and_stage');
-
     $msg['contact_id'] = $this->saveContact($msg);
-
     // Make new recurring record if necessary
     $this->saveContributionRecur($message, $msg);
-
     // Insert the contribution record.
-    $this->startAction('message_contribution_insert');
-    $contribution = $this->importContribution($message, $msg);
-    $this->stopAction('message_contribution_insert');
-
-    if ($message->getContributionTrackingID()
-      && !$message->getRecurringPriorContributionValue('id')) {
-      QueueWrapper::push('contribution-tracking', [
-        'id' => $message->getContributionTrackingID(),
-        'contribution_id' => $contribution['id'],
-      ]);
-      \Civi::log('wmf')->info('wmf_civicrm: Queued update to contribution_tracking for {id}', ['id' => $message->getContributionTrackingID()]);
-    }
+    $contribution = $this->saveContribution($message, $msg);
+    $this->queueContributionTracking($message, $contribution['id']);
 
     // Need to get this full name before ending the timer
     $uniqueTimerName = ImportStatsCollector::getInstance()->getUniqueNamespace($importTimerName);
@@ -516,6 +503,42 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
 
         $recurUpdate->execute();
       }
+    }
+  }
+
+  /**
+   * @param \Civi\WMFQueueMessage\DonationMessage|\Civi\WMFQueueMessage\RecurDonationMessage $message
+   * @param array $msg
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function saveContribution(DonationMessage|RecurDonationMessage $message, array $msg): array {
+    $this->startAction('message_contribution_insert');
+    $contribution = $this->importContribution($message, $msg);
+    $this->stopAction('message_contribution_insert');
+    return $contribution;
+  }
+
+  /**
+   * @param \Civi\WMFQueueMessage\DonationMessage|\Civi\WMFQueueMessage\RecurDonationMessage $message
+   * @param $id
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   */
+  public function queueContributionTracking(DonationMessage|RecurDonationMessage $message, $id): void {
+    if ($message->getContributionTrackingID()
+      && !$message->getRecurringPriorContributionValue('id')) {
+      QueueWrapper::push('contribution-tracking', [
+        'id' => $message->getContributionTrackingID(),
+        'contribution_id' => $id,
+      ]);
+      \Civi::log('wmf')
+        ->info('wmf_civicrm: Queued update to contribution_tracking for {id}', ['id' => $message->getContributionTrackingID()]);
     }
   }
 }
