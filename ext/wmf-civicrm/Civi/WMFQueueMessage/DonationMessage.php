@@ -742,4 +742,15 @@ class DonationMessage extends Message {
     return $transaction->get_unique_id();
   }
 
+  /**
+   * Get the message description for logging strings.
+   *
+   * Used for grafana processing timing messages.
+   *
+   * @return string
+   */
+  public function getMessageLoggingDescription(): string {
+    return $this->isRecurring() ? 'recurring' : 'contribution';
+  }
+
 }

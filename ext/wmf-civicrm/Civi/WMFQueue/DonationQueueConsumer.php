@@ -11,6 +11,7 @@ use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as ContributionRecurHelper;
 use Civi\WMFHelper\PaymentProcessor as PaymentProcessorHelper;
 use Civi\WMFQueueMessage\DonationMessage;
+use Civi\WMFQueueMessage\Message;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use Civi\WMFStatistic\DonationStatsCollector;
 use Civi\WMFStatistic\ImportStatsCollector;
@@ -163,7 +164,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
   private function doImport(array &$msg): array {
     $message = DonationMessage::getWMFMessage($msg);
     $message->setIsPayment(TRUE);
-    $importTimerName = $message->isRecurring() ? 'wmf_civicrm_recurring_message_import' : 'wmf_civicrm_contribution_message_import';
+    $importTimerName = $this->getImportTimerName($message);
     $this->startAction($importTimerName);
     $this->startAction('verify_and_stage');
     $msg = $message->normalize();
@@ -484,5 +485,14 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     catch (\CRM_Core_Exception $e) {
       throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
     }
+  }
+
+  /**
+   * @param \Civi\WMFQueueMessage\Message $message
+   *
+   * @return string
+   */
+  public function getImportTimerName(Message $message): string {
+    return 'wmf_civicrm_' . $message->getMessageLoggingDescription() . '_message_import';
   }
 }
