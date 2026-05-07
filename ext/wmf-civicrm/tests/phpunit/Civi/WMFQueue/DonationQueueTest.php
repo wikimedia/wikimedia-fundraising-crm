@@ -397,7 +397,7 @@ class DonationQueueTest extends BaseQueueTestCase {
     $existing = $this->createContribution(['trxn_id' => 'GLOBALCOLLECT abc']);
     \CRM_Core_DAO::executeQuery('UPDATE wmf_contribution_extra SET gateway = "" WHERE gateway_txn_id = "abc"');
     $this->processDonationMessage(['gateway_txn_id' => 'abc']);
-    $this->assertLoggedAlertThatContains('Message was removed from queue `test` and sent to the damaged message queue');
+    $this->assertLoggedAlertThatContains('Message was removed from queue `test` and sent to the damaged message table');
     $this->assertStringContainsString('Duplicate error - existing contribution record(s) have a matching Transaction ID or Invoice Reference. Contribution record ID(s) are: ' . $existing['id'], $this->getLoggerRecordsAsString());
   }
 
