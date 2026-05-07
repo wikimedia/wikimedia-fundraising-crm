@@ -178,7 +178,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           ->execute()->first();
         \Civi::log('wmf')->info('refund {reversal_trxn_id}: Recorded double-reversal', ['reversal_trxn_id' => $reversalTrxnId]);
         if ($reversedContribution) {
-          throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution is already refunded: {$contribution['id']}");
+          throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution is already refunded: {$reversedContribution['id']}");
         }
         // In some cases a contribution is reversed twice -ie we refund it AND we are pinged with a chargeback.
         // We might get either one first ... but we should record a negative contribution for the second
