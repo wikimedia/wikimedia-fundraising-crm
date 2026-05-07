@@ -59,12 +59,18 @@ class RecurDonationMessage extends DonationMessage {
     try {
       if ($this->getFrequencyUnit()
         && !in_array($this->getFrequencyUnit(), [
-          'day',
-          'week',
+          // 'day',
+          // 'week',
           'month',
           'year',
         ])) {
         throw new WMFException(WMFException::INVALID_RECURRING, "Bad frequency unit: " . $this->getFrequencyUnit());
+      }
+      if ($this->getFrequencyInterval() !== 1) {
+        throw new WMFException(WMFException::INVALID_RECURRING, "Bad frequency interval: " . $this->getFrequencyInterval());
+      }
+      if ($this->getInstallments() !== 0) {
+        throw new WMFException(WMFException::INVALID_RECURRING, "Bad installments: " . $this->getInstallments());
       }
       if (!$this->getSubscriptionID() && !$this->getContributionRecurID() && !$this->getRecurringPaymentToken()) {
         throw new WMFException(WMFException::INVALID_RECURRING, 'Recurring donation, but no subscription ID or recurring payment token found.');
@@ -178,9 +184,18 @@ class RecurDonationMessage extends DonationMessage {
     return NULL;
   }
 
-  public function getFrequencyUnit() {
-    return $this->message['frequency_unit'] ?? NULL;
+  public function getFrequencyUnit(): string {
+    return $this->message['frequency_unit'] ?? 'month';
   }
+
+  public function getFrequencyInterval(): int  {
+    return (int) ($this->message['frequency_interval'] ?? 1);
+  }
+
+  public function getInstallments(): int {
+    return (int) ($this->message['installments'] ?? 0);
+  }
+
 
   public function isInvalidRecurring(): bool {
     return empty($this->message['recurring_payment_token']) && empty($this->message['subscr_id']);

@@ -375,42 +375,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    */
   private function importContributionRecur(RecurDonationMessage $message, array $msg, int $contact_id): void {
     \Civi::log('wmf')->info('wmf_civicrm_import: Attempting to insert new recurring subscription: {recurring_transaction_id}', ['recurring_transaction_id' => $message->getSubscriptionID() ?: $msg['gateway_txn_id']]);
-    $msg['frequency_unit'] = $msg['frequency_unit'] ?? 'month';
-    $msg['frequency_interval'] = isset($msg['frequency_interval']) ? (integer) $msg['frequency_interval'] : 1;
-    $msg['installments'] = isset($msg['installments']) ? (integer) $msg['installments'] : 0;
     $msg['cancel'] = isset($msg['cancel']) ? (integer) $msg['cancel'] : 0;
-
-    // Allowed frequency_units
-    $frequency_units = ['month', 'year'];
-    if (!in_array($msg['frequency_unit'], $frequency_units)) {
-      $error_message = t(
-        'Invalid `frequency_unit` specified [!frequency_unit]. Supported frequency_units: !frequency_units, with the contact_id [!contact_id]',
-        [
-          "!frequency_unit" => $msg['frequency_unit'],
-          "!frequency_units" => implode(', ', $frequency_units),
-          "!contact_id" => $contact_id,
-        ]
-      );
-      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
-    }
-
-    // Frequency interval is only allowed to be 1. FIXME
-    if ($msg['frequency_interval'] !== 1) {
-      $error_message = t(
-        '`frequency_interval` is only allowed to be set to 1, with the contact_id [!contact_id]',
-        ["!contact_id" => $contact_id]
-      );
-      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
-    }
-
-    // Installments is only allowed to be 0.
-    if ($msg['installments'] !== 0) {
-      $error_message = t(
-        '`installments` must be set to 0, with the contact_id [!contact_id]',
-        ["!contact_id" => $contact_id]
-      );
-      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $error_message);
-    }
 
     // For Gravy PayPal transactions, use the recurring_payment_token as the subscription ID
     // instead of the gateway_txn_id. This is a workaround as Gravy only sends us the
@@ -502,9 +467,9 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
         'amount' => $msg['original_gross'],
         'currency' => $msg['original_currency'],
         'financial_type_id:name' => 'Cash',
-        'frequency_unit' => $msg['frequency_unit'],
-        'frequency_interval' => $msg['frequency_interval'],
-        'installments' => $msg['installments'],
+        'frequency_unit' => $message->getFrequencyUnit(),
+        'frequency_interval' => $message->getFrequencyInterval(),
+        'installments' => $message->getInstallments(),
         'start_date' => $message->getDate(),
         'create_date' => $message->getDate(),
         'cancel_date' => $message->getCancelDate(),
