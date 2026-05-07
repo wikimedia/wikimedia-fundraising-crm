@@ -288,7 +288,7 @@ abstract class QueueConsumer extends BaseQueueConsumer {
     try {
       $contribution_tracking_id = $this->generateContributionTracking($tracking);
     }
-    catch (Exception $e) {
+    catch (\Exception $e) {
       throw new WMFException(WMFException::INVALID_MESSAGE, $e->getMessage());
     }
     \Civi::log('wmf')->debug('wmf_civicrm: Newly inserted contribution tracking id: {id}', ['id' => $contribution_tracking_id]);
