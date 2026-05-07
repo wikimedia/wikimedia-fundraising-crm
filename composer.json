@@ -34,7 +34,8 @@
         "wikimedia/composer-merge-plugin": "^2",
         "jackgleeson/stats-collector": "^1.4",
         "ext-json": "*",
-        "ext-zip": "*"
+        "ext-zip": "*",
+        "wikimedia/omnimail-silverpop": "1.31"
     },
     "repositories": [
       {
