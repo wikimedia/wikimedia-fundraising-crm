@@ -84,8 +84,8 @@ class OmnigroupmemberGetTest extends OmnimailBaseTestClass {
       file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
     );
-    copy(__DIR__ . '/Responses/' . $fileName, sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv');
-    fopen(sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv.complete', 'c');
+    copy(__DIR__ . '/Responses/' . $fileName, $this->getDownloadDirectory() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv');
+    fopen($this->getDownloadDirectory() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv.complete', 'c');
     if ($isUpdateSetting) {
       $this->createSetting(array('job' => $job, 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800'));
     }
@@ -108,8 +108,8 @@ class OmnigroupmemberGetTest extends OmnimailBaseTestClass {
       file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
     ];
-    copy(__DIR__ . '/Responses/20170509_noCID - All - Jul 5 2017 06-27-45 AM-no-country.csv', sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM-no-country.csv');
-    fopen(sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM-no-country.csv.complete', 'c');
+    copy(__DIR__ . '/Responses/20170509_noCID - All - Jul 5 2017 06-27-45 AM-no-country.csv', $this->getDownloadDirectory() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM-no-country.csv');
+    fopen($this->getDownloadDirectory() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM-no-country.csv.complete', 'c');
     $this->createSetting(['job' => $job, 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800']);
 
     return $this->getMockRequest($responses);

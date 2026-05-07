@@ -376,10 +376,11 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       file_get_contents(__DIR__ . '/Responses/ExportListResponse.txt'),
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
     ];
+    $downloadDirectory = $this->getDownloadDirectory();
     // Note that the copy-to is the same for all tests - because otherwise we would need
     // the file name altered in the responses (above) too - the file name is data from Acoustic.
-    copy(__DIR__ . '/Responses/' . $fileName, sys_get_temp_dir() . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv');
-    fopen(sys_get_temp_dir() . '/' . $fileName . '.complete', 'c');
+    copy(__DIR__ . '/Responses/' . $fileName, $downloadDirectory . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv');
+    fopen($downloadDirectory . '/' . $fileName . '.complete', 'c');
     if ($isUpdateSetting) {
       $this->createSetting(['job' => $job, 'job_identifier' => 'load', 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800']);
     }

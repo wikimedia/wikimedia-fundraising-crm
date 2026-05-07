@@ -6,6 +6,7 @@ use Civi\Api4\Generic\Result;
 use Civi\Api4\OmnimailJobProgress;
 use GuzzleHttp\Client;
 use League\Csv\Reader;
+use Omnimail\Silverpop\Responses\DownloadResponse;
 
 /**
  *  Class Check.
@@ -103,6 +104,8 @@ class Upload extends AbstractAction {
 
   private bool $mappingFileWasGenerated = FALSE;
 
+  protected string $downLoadDirectory = '';
+
   /**
    * Get the remote database ID.
    *
@@ -113,6 +116,20 @@ class Upload extends AbstractAction {
       $this->databaseID = (int) (\Civi::settings()->get('omnimail_credentials')[$this->getMailProvider()]['database_id'][0] ?? 0);
     }
     return $this->databaseID;
+  }
+
+  /**
+   * @return string
+   */
+  public function getDownloadDirectory(): string {
+    if (!$this->downLoadDirectory) {
+      $directory = ((new DownloadResponse())->getDownloadDirectory()) ?: sys_get_temp_dir();
+      if (str_ends_with($directory , '/')) {
+        $directory  = substr($directory, 0, -1);
+      }
+      $this->downLoadDirectory = $directory;
+    }
+    return $this->downLoadDirectory;
   }
 
   /**
@@ -155,7 +172,7 @@ class Upload extends AbstractAction {
     $reader = Reader::from($this->getCsvFile());
     $reader->setHeaderOffset(0);
     $headers = $reader->getHeader();
-    $temporaryDirectory = sys_get_temp_dir();
+    $temporaryDirectory = $this->getDownloadDirectory();
     $this->mappingFile = $temporaryDirectory. '/' . str_replace('.csv', '.xml', basename($this->getCsvFile()));
     $file = fopen($this->mappingFile, 'wb');
     $isConsent = in_array('CONSENT_STATUS_CODE', $headers);

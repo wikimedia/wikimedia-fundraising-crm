@@ -13,6 +13,7 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use Omnimail\Omnimail;
 use Omnimail\Silverpop\Credentials;
+use Omnimail\Silverpop\Responses\DownloadResponse;
 use PHPUnit\Framework\TestCase;
 use SilverpopConnector\SilverpopRestConnector;
 use SilverpopConnector\SilverpopXmlConnector;
@@ -167,8 +168,8 @@ class OmnimailBaseTestClass extends TestCase {
       file_get_contents(__DIR__ . '/Responses/JobStatusCompleteResponse.txt'),
     ];
     //Raw Recipient Data Export Jul 02 2017 21-46-49 PM 758.zip
-    copy(__DIR__ . '/Responses/' . $fileName, sys_get_temp_dir() . '/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.csv');
-    fopen(sys_get_temp_dir() . '/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.csv.complete', 'c');
+    copy(__DIR__ . '/Responses/' . $fileName, $this->getDownloadDirectory() . '/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.csv');
+    fopen($this->getDownloadDirectory() . '/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295.csv.complete', 'c');
     if ($isUpdateSetting) {
       $this->createSetting(['job' => $job, 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800']);
     }
@@ -198,8 +199,8 @@ class OmnimailBaseTestClass extends TestCase {
       unset($responses[0]);
     }
     //Raw Recipient Data Export Jul 02 2017 21-46-49 PM 758.zip
-    copy(__DIR__ . '/Responses/Web Tracking Data Export Dec 30 2024 00-27-51 AM 901.csv', sys_get_temp_dir() . '/Web Tracking Data Export Dec 30 2024 00-27-51 AM 901.csv');
-    fopen(sys_get_temp_dir() . '/Web Tracking Data Export Dec 30 2024 00-27-51 AM 901.csv.complete', 'c');
+    copy(__DIR__ . '/Responses/Web Tracking Data Export Dec 30 2024 00-27-51 AM 901.csv', $this->getDownloadDirectory() . '/Web Tracking Data Export Dec 30 2024 00-27-51 AM 901.csv');
+    fopen($this->getDownloadDirectory() . '/Web Tracking Data Export Dec 30 2024 00-27-51 AM 901.csv.complete', 'c');
     return $this->getMockRequest($responses);
   }
 
@@ -444,6 +445,18 @@ class OmnimailBaseTestClass extends TestCase {
       'email_primary.email' => 'the_don@example.com',
       'email_primary.email_settings.snooze_date' => $snoozeDate,
     ], 'snoozy');
+  }
+
+
+  /**
+   * @return string
+   */
+  public function getDownloadDirectory(): mixed {
+    $downloadDirectory = (new DownloadResponse())->getDownloadDirectory();
+    if (str_ends_with($downloadDirectory, '/')) {
+      $downloadDirectory = substr($downloadDirectory, 0, -1);
+    }
+    return $downloadDirectory;
   }
 
 }
