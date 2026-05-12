@@ -138,13 +138,15 @@ class CRM_Wmf_Form_RefundContribution extends CRM_Contribute_Form_Task {
       'processorName' => $contribution['contribution_extra.gateway'],
       'amount' => $contribution['contribution_extra.original_amount'],
       'transactionID' => $contribution['trxn_id'],
-      'isFraud' => $isFraud
+      'isFraud' => $isFraud,
     ];
-    $queue->createItem(new \CRM_Queue_Task(
+    $task = new \CRM_Queue_Task(
       'civicrm_api4_queue',
       ['Contribution', 'refundAndMarkIfFraud', $refundParameters],
       'Refund contribution ' . $contribution['trxn_id'],
-    ), ['weight' => 100]);
+    );
+    $task->runAs = ['contactId' => \CRM_Core_Session::getLoggedInContactID()];
+    $queue->createItem($task, ['weight' => 100]);
   }
 
   protected function processorCanRefund($contribution) {
