@@ -72,7 +72,7 @@ abstract class QueueConsumer extends BaseQueueConsumer {
     }
     else {
       \Civi::log('wmf')->alert(
-        'UNHANDLED ERROR. Message was removed from queue `{queue}` and sent to the damaged message queue', [
+        'UNHANDLED ERROR. Message was removed from queue `{queue}` and sent to the damaged message table', [
           'message' => $ex->getMessage(),
           'details' => $logId,
           'original_message' => $ex->getPrevious() ? $ex->getPrevious()->getMessage() : '',
@@ -157,7 +157,7 @@ abstract class QueueConsumer extends BaseQueueConsumer {
 
     if (!$ex->isNoEmail() && !$requeued) {
       \Civi::log('wmf')->alert(
-        'Message was removed from queue `{queue}` and sent to the damaged message queue', [
+        'Message was removed from queue `{queue}` and sent to the damaged message table', [
           'message' => $ex->getMessage(),
           'original_message' => $ex->getPrevious() ? $ex->getPrevious()->getMessage() : '',
           'subject' => 'Removal : of ' . $ex->type . ' from ' . $this->queueName . " " . gethostname() . " " . __CLASS__,
