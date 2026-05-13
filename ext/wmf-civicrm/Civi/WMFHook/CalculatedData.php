@@ -458,8 +458,6 @@ class CalculatedData extends TriggerHook {
         'select_clause' => $this->getSegmentStatusSelect(),
         'option_values' => $this->getDonorStatusOptions(),
       ],
-      // Per https://phabricator.wikimedia.org/T222958#5323233
-      // This is used in emails - and needs to not mix endowments & non-endowments
       'last_donation_currency' => [
         'name' => 'last_donation_currency',
         'column_name' => 'last_donation_currency',
@@ -936,7 +934,6 @@ class CalculatedData extends TriggerHook {
     AND latest.contribution_status_id = 1
     AND latest.total_amount > 0
     AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
-    AND latest.financial_type_id <> $endowmentFinancialType
   LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
 ") .
 

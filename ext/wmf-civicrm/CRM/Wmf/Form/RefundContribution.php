@@ -11,21 +11,23 @@ class CRM_Wmf_Form_RefundContribution extends CRM_Contribute_Form_Task {
 
   const MAX_REFUNDS_TO_PROCESS_SYNCHRONOUSLY = 5;
 
+  public function preProcess(): void {
+    if (!empty($this->_submitValues['id'])) {
+      // Initial load from SearchKit, or submitting this form.
+      // Note that under SearchKit $this->_contributionIds contains ALL the
+      // IDs returned in the search, not the specific IDs selected for the action.
+      $this->ids = explode(',', $this->_submitValues['id']);
+    }
+    parent::preProcess();
+  }
+
   /**
    * Build basic form.
    *
    * @throws CRM_Core_Exception
    */
   public function buildQuickForm(): void {
-    if (!empty($this->_submitValues['id'])) {
-      // Initial load from SearchKit, or submitting this form.
-      // Note that under SearchKit $this->_contributionIds contains ALL the
-      // IDs returned in the search, not the specific IDs selected for the action.
-      $ids = explode(',', $this->_submitValues['id']);
-    } else {
-      // Loaded from individual contact contribution tab or from old contribution search
-      $ids = $this->_contributionIds;
-    }
+    $ids = $this->_contributionIds;
 
     $contributions = Contribution::get(FALSE)
       ->addSelect('*')
