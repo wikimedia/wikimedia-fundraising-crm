@@ -9,6 +9,7 @@ use Civi\Api4\OptionGroup;
 use Civi\Api4\OptionValue;
 use Civi\Api4\LocationType;
 use Civi\Api4\WMFConfig;
+use Civi\Api4\Email;
 use Civi\QueueHelper;
 use Civi\WMFHook\CalculatedData;
 use CRM_Wmf_ExtensionUtil as E;
@@ -4614,7 +4615,39 @@ v.channel IS NULL AND c.id = 131486342;",
     return TRUE;
   }
 
-   /**
+  /**
+   * Find contacts with two emails of the same type and address and merge them with Email::Clean.
+   *
+   * Bug: T425190
+   *
+   * @return bool
+   */
+  public function upgrade_4990(): bool {
+    $maxContactID = CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact');
+    $chunkSize = 100000;
+    for ($minID = 0; $minID <= $maxContactID; $minID += $chunkSize) {
+      $contactIDs = array_column(CRM_Core_DAO::executeQuery('
+        SELECT c.id FROM civicrm_contact c
+        INNER JOIN civicrm_email e1 ON c.id = e1.contact_id
+        INNER JOIN civicrm_email e2 ON c.id = e2.contact_id
+          AND e2.location_type_id = e1.location_type_id
+          AND e2.email = e1.email
+          AND e2.id <> e1.id
+        WHERE c.is_deleted = 0
+          AND c.id BETWEEN %1 AND %2
+        GROUP BY c.id',
+        [1 => [$minID, 'Integer'], 2 => [$minID + $chunkSize - 1, 'Integer']]
+      )->fetchAll(), 'id');
+      if (!empty($contactIDs)) {
+        Email::clean(FALSE)
+          ->setContactIDs($contactIDs)
+          ->execute();
+      }
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
