@@ -125,12 +125,6 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    * exceeded the original amount, and not import it into CiviCRM. (this does
    * have visibility as it results in fail_mail).
    *
-   * The code suggested an intention to record mismatched refunds with a the
-   * difference in the custom fields settlement_usd. However, this returns no
-   * rows. select * from wmf_contribution_extra WHERE settlement_usd IS NOT NULL
-   * LIMIT. It would appear they have been recorded without any record of the
-   * discrepancy, or there were none.
-   *
    * That issue should be addressed (as a separate issue). The methodology for
    * recording the difference needs to be considered e.g T89437 - preferably in
    * conjunction with getting the appropriate method tested within the core
