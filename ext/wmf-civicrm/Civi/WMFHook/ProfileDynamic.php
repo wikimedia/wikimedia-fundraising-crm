@@ -8,9 +8,7 @@ class ProfileDynamic {
 
   /**
    * Add the last original amount to a profile page when it contains
-   * the all_funds_last_donation_date field. There is no all_funds
-   * version of the last original amount or original currency field
-   * available in the Wmf_donor rollup table.
+   * the all_funds_last_donation_date field.
    *
    * @param \CRM_Core_Page $page
    * @return void

@@ -109,6 +109,7 @@ class ContributionTracking {
       'currency',
       'gateway',
       'is_recurring',
+      'landing_page',
       'language',
       'os',
       'os_version',

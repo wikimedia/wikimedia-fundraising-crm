@@ -387,7 +387,7 @@ class CalculatedData extends TriggerHook {
 
     // Put back join fields if needed for other fields, or to ensure there is at least one field present.
     if (empty($this->calculatedFields) || $this->isIncludeTable('latest')) {
-      $this->calculatedFields['last_donation_date'] = $allFields['last_donation_date'];
+      $this->calculatedFields['all_funds_last_donation_date'] = $allFields['all_funds_last_donation_date'];
     }
     if ($this->isIncludeTable('earliest')) {
       $this->calculatedFields['first_donation_date'] = $allFields['first_donation_date'];
@@ -588,60 +588,6 @@ class CalculatedData extends TriggerHook {
         'default_value' => 0,
         'is_view' => 1,
         'select_clause' => "SUM(COALESCE(total_amount, 0)) AS lifetime_including_endowment",
-      ],
-      'lifetime_usd_total' => [
-        'name' => 'lifetime_usd_total',
-        'column_name' => 'lifetime_usd_total',
-        'label' => ts('Lifetime Donations (USD)'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'default_value' => 0,
-        'is_view' => 1,
-        'select_clause' => "SUM(IF(c.financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS lifetime_usd_total",
-      ],
-      'endowment_lifetime_usd_total' => [
-        'name' => 'endowment_lifetime_usd_total',
-        'column_name' => 'endowment_lifetime_usd_total',
-        'label' => ts('Endowment Lifetime Donations (USD)'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'default_value' => 0,
-        'is_view' => 1,
-        'select_clause' => "SUM(IF(c.financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_lifetime_usd_total",
-      ],
-      'last_donation_date' => [
-        'name' => 'last_donation_date',
-        'column_name' => 'last_donation_date',
-        'label' => ts('Last donation date'),
-        'data_type' => 'Date',
-        'html_type' => 'Select Date',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'date_format' => 'M d, yy',
-        'time_format' => 2,
-        'select_clause' => "MAX(IF(c.financial_type_id <> $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS last_donation_date",
-      ],
-      'endowment_last_donation_date' => [
-        'name' => 'endowment_last_donation_date',
-        'column_name' => 'endowment_last_donation_date',
-        'label' => ts('Endowment Last donation date'),
-        'data_type' => 'Date',
-        'html_type' => 'Select Date',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'date_format' => 'M d, yy',
-        'time_format' => 2,
-        'select_clause' => "MAX(IF(c.financial_type_id = $endowmentFinancialType AND total_amount > 0, receive_date, NULL)) AS endowment_last_donation_date",
       ],
       'all_funds_last_donation_date' => [
         'name' => 'all_funds_last_donation_date',
@@ -930,7 +876,7 @@ class CalculatedData extends TriggerHook {
   LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON latest.contact_id = " . ($this->isTriggerContext() ? ' NEW.contact_id' : ' totals.contact_id') . "
-    AND latest.receive_date = totals.last_donation_date
+    AND latest.receive_date = totals.all_funds_last_donation_date
     AND latest.contribution_status_id = 1
     AND latest.total_amount > 0
     AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)

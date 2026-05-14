@@ -210,6 +210,10 @@ class DonationMessage extends Message {
     }
 
     $msg += $this->getSettlementFields() + $this->getCustomFields();
+    // Donations through the donation queue are most likely online gifts unless stated otherwise
+    if (empty($msg['Gift_Data.Campaign'])) {
+      $msg['Gift_Data.Campaign'] = 'Online Gift';
+    }
     if ($this->getOriginalAmount()) {
       // Set is major gift but do not try to calculate on (e.g) cancel messages.
       $msg['Gift_Data.is_major_gift'] = $this->isMajorGift();
@@ -221,7 +225,6 @@ class DonationMessage extends Message {
 
     if ($this->isEndowmentGift()) {
       $msg['Gift_Data.Fund'] = 'Endowment Fund';
-      $msg['Gift_Data.Campaign'] = 'Online Gift';
     }
 
     // set the correct amount fields/data and do exchange rate conversions.
@@ -737,6 +740,17 @@ class DonationMessage extends Message {
     }
     $transaction = WMFTransaction::from_message($this->message);
     return $transaction->get_unique_id();
+  }
+
+  /**
+   * Get the message description for logging strings.
+   *
+   * Used for grafana processing timing messages.
+   *
+   * @return string
+   */
+  public function getMessageLoggingDescription(): string {
+    return $this->isRecurring() ? 'recurring' : 'contribution';
   }
 
 }

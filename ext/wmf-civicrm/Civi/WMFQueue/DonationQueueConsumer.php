@@ -11,6 +11,7 @@ use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as ContributionRecurHelper;
 use Civi\WMFHelper\PaymentProcessor as PaymentProcessorHelper;
 use Civi\WMFQueueMessage\DonationMessage;
+use Civi\WMFQueueMessage\Message;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use Civi\WMFStatistic\DonationStatsCollector;
 use Civi\WMFStatistic\ImportStatsCollector;
@@ -122,10 +123,6 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
         throw new WMFException(WMFException::MISSING_PREDECESSOR, $errorMessage);
       }
     }
-    // Donations through the donation queue are most likely online gifts unless stated otherwise
-    if (empty($message['gift_source'])) {
-      $message['gift_source'] = "Online Gift";
-    }
     // import the contribution here!
     $contribution = $this->doImport($message);
 
@@ -167,7 +164,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
   private function doImport(array &$msg): array {
     $message = DonationMessage::getWMFMessage($msg);
     $message->setIsPayment(TRUE);
-    $importTimerName = $message->isRecurring() ? 'wmf_civicrm_recurring_message_import' : 'wmf_civicrm_contribution_message_import';
+    $importTimerName = $this->getImportTimerName($message);
     $this->startAction($importTimerName);
     $this->startAction('verify_and_stage');
     $msg = $message->normalize();
@@ -177,84 +174,12 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       $message->setContributionTrackingID(empty($msg['contribution_tracking_id']) ? NULL : $msg['contribution_tracking_id']);
     }
     $this->stopAction('verify_and_stage');
-
-    $this->startAction('create_contact');
-    $contact = WMFContact::save(FALSE)
-      ->setMessage($msg)
-      ->execute()->first();
-    $msg['contact_id'] = $contact['id'];
-    $this->stopAction("create_contact");
-
+    $msg['contact_id'] = $this->saveContact($msg);
     // Make new recurring record if necessary
-    if ($message->isRecurring()) {
-      if ($message->getContributionRecurID() && ContributionRecurHelper::gatewayManagesOwnRecurringSchedule($message->getGateway())) {
-        // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
-        ContributionRecurHelper::reactivateIfInactive([
-          'contribution_status_id' => $message->getExistingContributionRecurValue('contribution_status_id'),
-          'id' => $message->getContributionRecurID(),
-        ], $message->getDate());
-      }
-      if (!$message->getContributionRecurID()) {
-        // This logic was copied from the old RecurringQueueConsumer for PayPal subscription payments created before the contribution recur row is created
-        if ($message->isPaypal() && strpos($msg['subscr_id'], 'I-') === FALSE) {
-          \Civi::log('wmf')->notice('recurring: Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.');
-          throw new WMFException(WMFException::MISSING_PREDECESSOR, "Missing the initial recurring record for subscr_id {$msg['subscr_id']}");
-        }
-        \Civi::log('wmf')->info('Creating new contribution_recur record while processing a subscr_payment');
-        $this->startAction('message_contribution_recur_insert');
-        $this->importContributionRecur($message, $msg, $msg['contact_id']);
-        $this->stopAction('message_contribution_recur_insert');
-      }
-      elseif ($message->isPaypal() || $message->isAutoRescue()) {
-        // We are looking at a PayPal or auto-rescue payment
-        // that has come out of the recurring queue.
-        // We need to manage their status and (for PayPal) the next scheduled date.
-        $recurUpdate = ContributionRecur::update(FALSE)
-          ->setValues([
-            'contribution_status_id:name' => 'In Progress',
-          ])
-          ->addWhere('id', '=', $message->getContributionRecurID());
-        if ($message->isPaypal()) {
-          // Other than for PayPal this is done elsewhere, but we want to display
-          // something meaningful in the UI for PayPal.
-          $recurUpdate->addValue('next_sched_contribution_date', \CRM_Core_Payment_Scheduler::getNextContributionDate([
-            'frequency_interval' => $message->getExistingContributionRecurValue('frequency_interval'),
-            'frequency_unit' => $message->getExistingContributionRecurValue('frequency_unit'),
-            'cycle_day' => $message->getExistingContributionRecurValue('cycle_day'),
-          ]));
-        }
-
-        if ($message->isAutoRescue()) {
-          // Processor retry completed successfully
-          Activity::create(FALSE)
-            ->addValue('date', $msg['date'])
-            ->addValue('activity_type_id:name', 'Recurring Processor Retry - Success')
-            ->addValue('status_id:name', 'Completed')
-            ->addValue('subject', 'Successful processor retry with rescue reference: ' . $msg['rescue_reference'])
-            ->addValue('details', 'Rescue reference: ' . $msg['rescue_reference'])
-            ->addValue('source_contact_id', $msg['contact_id'])
-            ->addValue('target_contact_id', $msg['contact_id'])
-            ->addValue('source_record_id', $message->getContributionRecurID())
-            ->execute();
-        }
-
-        $recurUpdate->execute();
-      }
-    }
-
+    $this->saveContributionRecur($message, $msg);
     // Insert the contribution record.
-    $this->startAction('message_contribution_insert');
-    $contribution = $this->importContribution($message, $msg);
-    $this->stopAction('message_contribution_insert');
-
-    if ($message->getContributionTrackingID()
-      && !$message->getRecurringPriorContributionValue('id')) {
-      QueueWrapper::push('contribution-tracking', [
-        'id' => $message->getContributionTrackingID(),
-        'contribution_id' => $contribution['id'],
-      ]);
-      \Civi::log('wmf')->info('wmf_civicrm: Queued update to contribution_tracking for {id}', ['id' => $message->getContributionTrackingID()]);
-    }
+    $contribution = $this->saveContribution($message, $msg);
+    $this->queueContributionTracking($message, $contribution['id']);
 
     // Need to get this full name before ending the timer
     $uniqueTimerName = ImportStatsCollector::getInstance()->getUniqueNamespace($importTimerName);
@@ -487,6 +412,133 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     }
     catch (\CRM_Core_Exception $e) {
       throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
+    }
+  }
+
+  /**
+   * @param \Civi\WMFQueueMessage\Message $message
+   *
+   * @return string
+   */
+  public function getImportTimerName(Message $message): string {
+    return 'wmf_civicrm_' . $message->getMessageLoggingDescription() . '_message_import';
+  }
+
+  /**
+   * @param array $msg
+   *
+   * @return int
+   * @throws \CRM_Core_Exception
+   */
+  public function saveContact(array $msg): int {
+    $this->startAction('create_contact');
+    $contact = WMFContact::save(FALSE)
+      ->setMessage($msg)
+      ->execute()->first();
+    $this->stopAction("create_contact");
+    return $contact['id'];
+  }
+
+  /**
+   * @param \Civi\WMFQueueMessage\DonationMessage|\Civi\WMFQueueMessage\RecurDonationMessage $message
+   * @param array $msg
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function saveContributionRecur(DonationMessage|RecurDonationMessage $message, array $msg): void {
+    if ($message->isRecurring()) {
+      if ($message->getContributionRecurID() && ContributionRecurHelper::gatewayManagesOwnRecurringSchedule($message->getGateway())) {
+        // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
+        ContributionRecurHelper::reactivateIfInactive([
+          'contribution_status_id' => $message->getExistingContributionRecurValue('contribution_status_id'),
+          'id' => $message->getContributionRecurID(),
+        ], $message->getDate());
+      }
+      if (!$message->getContributionRecurID()) {
+        // This logic was copied from the old RecurringQueueConsumer for PayPal subscription payments created before the contribution recur row is created
+        if ($message->isPaypal() && strpos($msg['subscr_id'], 'I-') === FALSE) {
+          \Civi::log('wmf')
+            ->notice('recurring: Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.');
+          throw new WMFException(WMFException::MISSING_PREDECESSOR, "Missing the initial recurring record for subscr_id {$msg['subscr_id']}");
+        }
+        \Civi::log('wmf')->info('Creating new contribution_recur record while processing a subscr_payment');
+        $this->startAction('message_contribution_recur_insert');
+        $this->importContributionRecur($message, $msg, $msg['contact_id']);
+        $this->stopAction('message_contribution_recur_insert');
+      }
+      elseif ($message->isPaypal() || $message->isAutoRescue()) {
+        // We are looking at a PayPal or auto-rescue payment
+        // that has come out of the recurring queue.
+        // We need to manage their status and (for PayPal) the next scheduled date.
+        $recurUpdate = ContributionRecur::update(FALSE)
+          ->setValues([
+            'contribution_status_id:name' => 'In Progress',
+          ])
+          ->addWhere('id', '=', $message->getContributionRecurID());
+        if ($message->isPaypal()) {
+          // Other than for PayPal this is done elsewhere, but we want to display
+          // something meaningful in the UI for PayPal.
+          $recurUpdate->addValue('next_sched_contribution_date', \CRM_Core_Payment_Scheduler::getNextContributionDate([
+            'frequency_interval' => $message->getExistingContributionRecurValue('frequency_interval'),
+            'frequency_unit' => $message->getExistingContributionRecurValue('frequency_unit'),
+            'cycle_day' => $message->getExistingContributionRecurValue('cycle_day'),
+          ]));
+        }
+
+        if ($message->isAutoRescue()) {
+          // Processor retry completed successfully
+          Activity::create(FALSE)
+            ->addValue('date', $msg['date'])
+            ->addValue('activity_type_id:name', 'Recurring Processor Retry - Success')
+            ->addValue('status_id:name', 'Completed')
+            ->addValue('subject', 'Successful processor retry with rescue reference: ' . $msg['rescue_reference'])
+            ->addValue('details', 'Rescue reference: ' . $msg['rescue_reference'])
+            ->addValue('source_contact_id', $msg['contact_id'])
+            ->addValue('target_contact_id', $msg['contact_id'])
+            ->addValue('source_record_id', $message->getContributionRecurID())
+            ->execute();
+        }
+
+        $recurUpdate->execute();
+      }
+    }
+  }
+
+  /**
+   * @param \Civi\WMFQueueMessage\DonationMessage|\Civi\WMFQueueMessage\RecurDonationMessage $message
+   * @param array $msg
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\WMFException\WMFException
+   */
+  public function saveContribution(DonationMessage|RecurDonationMessage $message, array $msg): array {
+    $this->startAction('message_contribution_insert');
+    $contribution = $this->importContribution($message, $msg);
+    $this->stopAction('message_contribution_insert');
+    return $contribution;
+  }
+
+  /**
+   * @param \Civi\WMFQueueMessage\DonationMessage|\Civi\WMFQueueMessage\RecurDonationMessage $message
+   * @param $id
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   */
+  public function queueContributionTracking(DonationMessage|RecurDonationMessage $message, $id): void {
+    if ($message->getContributionTrackingID()
+      && !$message->getRecurringPriorContributionValue('id')) {
+      QueueWrapper::push('contribution-tracking', [
+        'id' => $message->getContributionTrackingID(),
+        'contribution_id' => $id,
+      ]);
+      \Civi::log('wmf')
+        ->info('wmf_civicrm: Queued update to contribution_tracking for {id}', ['id' => $message->getContributionTrackingID()]);
     }
   }
 }

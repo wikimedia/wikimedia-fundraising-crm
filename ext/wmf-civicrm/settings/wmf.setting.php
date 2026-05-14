@@ -121,6 +121,18 @@ return [
     ],
     'settings_pages' => ['wmf-civicrm' => ['weight' => 65]],
   ],
+  'wmf_max_synchronous_refunds' => [
+    'group_name' => 'wmf Settings',
+    'group' => 'wmf',
+    'name' => 'wmf_max_synchronous_refunds',
+    'type' => 'Integer',
+    'default' => 15,
+    'title' => 'Maximum synchronous refunds',
+    'is_domain' => '1',
+    'is_contact' => 0,
+    'description' => 'Process at most this many refunds directly on submitting the refund form.',
+    'help_text' => 'When trying to submit more than this number of refunds, they will be performed in the background by coworker.',
+  ],
   'wmf_save_process_greetings_on_create' => [
     'group_name' => 'wmf Settings',
     'group' => 'wmf',

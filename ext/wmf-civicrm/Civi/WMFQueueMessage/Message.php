@@ -527,6 +527,7 @@ class Message {
         'label' => 'Gift Source',
         'api_entity' => 'Contribution',
         'api_field' => 'Gift_Data.Campaign',
+        'description' => 'is this actually incoming anywhere or do we just use the default (Online Gift)',
       ],
       'contact_id' => [
         'name' => 'contact_id',
@@ -1587,6 +1588,17 @@ class Message {
       return $this->cleanMoney($this->message['fee']);
     }
     return FALSE;
+  }
+
+  /**
+   * Get the message description for logging strings.
+   *
+   * Used for grafana processing timing messages.
+   *
+   * @return string
+   */
+  public function getMessageLoggingDescription(): string {
+    return 'message';
   }
 
 }

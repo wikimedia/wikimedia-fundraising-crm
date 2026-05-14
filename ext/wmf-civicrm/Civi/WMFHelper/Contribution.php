@@ -156,9 +156,9 @@ class Contribution {
     if ($contributionStatus === 'Completed' && !$isRefund) {
       // This is a 'valid' transaction - it's either the latest or no update is required.
       if (
-        !empty($contactLastDonation['wmf_donor.last_donation_date']) &&
+        !empty($contactLastDonation['wmf_donor.all_funds_last_donation_date']) &&
         !empty($contribution->receive_date) &&
-        strtotime($contactLastDonation['wmf_donor.last_donation_date']) === strtotime($contribution->receive_date)
+        strtotime($contactLastDonation['wmf_donor.all_funds_last_donation_date']) === strtotime($contribution->receive_date)
       ) {
         if (!empty($extra['original_currency']) && $contactLastDonation['wmf_donor.last_donation_currency'] !== \CRM_Utils_Array::value('original_currency', $extra)) {
           $params['wmf_donor.last_donation_currency'] = $extra['original_currency'];
@@ -262,7 +262,7 @@ class Contribution {
       ->addSelect(
         'wmf_donor.last_donation_currency',
         'wmf_donor.last_donation_amount',
-        'wmf_donor.last_donation_date',
+        'wmf_donor.all_funds_last_donation_date',
         'wmf_donor.last_donation_usd'
       )
       ->execute()->first();

@@ -4,7 +4,6 @@ namespace Civi\WMFAudit;
 
 use Brick\Math\RoundingMode;
 use Brick\Money\Money;
-use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\WMFAudit;
@@ -1456,21 +1455,14 @@ abstract class BaseAuditProcessor {
           // These are totals - we track them in recordStatistic but then discard.
           continue;
         }
-        $key = $auditRecord['is_negative'] ? 'negative' : 'main';
-        if ($key === 'main' && !empty($auditRecord['message']['transaction_details'])) {
-          $fullRecord = $this->merge_data($auditRecord['message']['transaction_details']['message'], $auditRecord['message']);
-          if (empty($fullRecord['contribution_tracking']) && !empty($fullRecord['contribution_tracking_id'])) {
-            $result = ContributionTracking::get(FALSE)->addWhere('id', '=', $fullRecord['contribution_tracking_id'])->execute()->first();
-            if (!$result) {
-              $this->createContributionTracking($fullRecord['contribution_tracking_id'], $fullRecord['payment_method'] ?? '', $fullRecord['date'] ?? NULL, $fullRecord['language'] ?? NULL, $fullRecord['country'] ?? NULL);
-            }
-          }
-          unset($fullRecord['transaction_details'], $fullRecord['contribution_tracking']);
-          $this->send_queue_message($fullRecord, 'main');
+
+        if ($this->isQueueableWithoutLogLookup($auditRecord)) {
+          $this->queueMissingAuditMessage($auditRecord['message']);
           $this->statistics[$file]['total_queued_from_transaction_log']++;
           $this->echo('%');
         }
         else {
+          $key = $auditRecord['is_negative'] ? 'negative' : 'main';
           $this->missingTransactions[$key][] = $auditRecord['message'];
         }
         if ($this->get_runtime_options('is_stop_on_first_missing')) {
@@ -1500,7 +1492,7 @@ abstract class BaseAuditProcessor {
     if ($type === 'aggregate') {
       $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] ??= Money::zero($transaction['settled_currency']);
       $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] = $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']]->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
-      $this->batches[$file][$transaction['settlement_batch_reference']]['settlement_date'] = date('Ymd', $transaction['settled_date']);
+      $this->setBatchValue($file, $transaction['settlement_batch_reference'], $transaction, ['settlement_date' => date('Ymd', $transaction['settled_date'])]);
       return;
     }
     if (isset($transaction['audit_file_gateway']) && !empty($transaction['settlement_batch_reference'])) {
@@ -1685,21 +1677,7 @@ abstract class BaseAuditProcessor {
    */
   private function addToBatch(array $transaction, string $file): void {
     $batchName = $transaction['settlement_batch_reference'];
-    if (!isset($this->batches[$file][$batchName])) {
-      $this->batches[$file][$batchName] = [
-        'transaction_count' => 0,
-        'settled_total_amount' => Money::zero($transaction['settled_currency']),
-        'settled_fee_amount' => Money::zero($transaction['settled_currency']),
-        'settled_net_amount' => Money::zero($transaction['settled_currency']),
-        'settled_reversal_amount' => Money::zero($transaction['settled_currency']),
-        'settled_donation_amount' => Money::zero($transaction['settled_currency']),
-        'settlement_currency' => $transaction['settled_currency'],
-        'settlement_date' => date('Ymd', $transaction['settled_date']),
-        'settlement_batch_reference' => $batchName,
-        'settlement_gateway' => $transaction['audit_file_gateway'],
-        'status_id:name' => 'Open',
-      ];
-    }
+    $this->ensureBatchExists($file, $batchName, $transaction);
 
     $this->batches[$file][$batchName]['transaction_count']++;
     if (!isset($transaction['settled_total_amount'])) {
@@ -1809,54 +1787,38 @@ abstract class BaseAuditProcessor {
   /**
    * Parse single reconciliation file.
    *
-   * @param string $file Absolute location of the recon file you want to parse
+   * @param string $originalFilePath Absolute location of the recon file you want to parse
    *
    * @return array An array of date loaded from the reconciliation file.
    */
-  protected function parseReconciliationFile(string $file): array {
-    $this->startTiming("Parsing $file");
+  protected function parseReconciliationFile(string $originalFilePath): array {
+    $filePath = $this->decompressFileIfCompressed($originalFilePath);
+    $fileName = basename($filePath);
+    $this->startTiming("Parsing $fileName");
     $records = [];
 
-    // If gzipped, decompress in-place and delete the .gz
-    if (substr($file, -3) === '.gz') {
-      $unzippedFile = substr($file, 0, -3);
-
-      $command = sprintf(
-        'gzip -d %s',
-        escapeshellarg($file)
-      );
-
-      exec($command, $output, $returnCode);
-
-      if ($returnCode !== 0 || !file_exists($unzippedFile)) {
-        $this->logError("Failed to decompress $file", 'FILE_GUNZIP');
-        return [[], $file];
-      }
-
-      $file = $unzippedFile; // switch to decompressed file
-    }
-    $this->statistics[$file] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'fee' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'reversal' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'reversal_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0, 'total_queued_from_transaction_log' => 0];
-
     if ($this instanceof MultipleFileTypeParser) {
-      $this->setFilePath($file);
+      $this->setFilePath($filePath);
     }
     $recon_parser = $this->get_audit_parser();
 
     try {
-      $records = $recon_parser->parseFile($file);
+      $records = $recon_parser->parseFile($filePath);
     }
     catch (\Exception $e) {
       $this->logError(
         "Something went amiss with the recon parser while "
-        . "processing $file: \"{$e->getMessage()}\"",
+        . "processing $originalFilePath: \"{$e->getMessage()}\"",
         'RECON_PARSE_ERROR'
       );
     }
-    $time = $this->stopTiming("Parsing $file");
+
+    $time = $this->stopTiming("Parsing $fileName");
     $this->echo(count($records) . " results found in $time seconds\n");
-    $this->statistics[$file]['total_records'] = count($records);
-    $this->statistics['total_records'] += $this->statistics[$file]['total_records'];
-    return [$records, $file];
+    $this->statistics[$fileName] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'fee' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'reversal' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'reversal_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0, 'total_queued_from_transaction_log' => 0];
+    $this->statistics[$fileName]['total_records'] = count($records);
+    $this->statistics['total_records'] += $this->statistics[$fileName]['total_records'];
+    return [$records, $fileName];
   }
 
   /**
@@ -2019,6 +1981,109 @@ abstract class BaseAuditProcessor {
       }
     }
     return $validBatches;
+  }
+
+  /**
+   * @param string $file
+   *
+   * @return string
+   */
+  public function decompressFileIfCompressed(string $file): string {
+    $output = $returnCode = NULL;
+    // If gzipped, decompress in-place and delete the .gz
+    if (str_ends_with($file, '.gz')) {
+      $unzippedFile = substr($file, 0, -3);
+
+      $command = sprintf(
+        'gzip -d %s',
+        escapeshellarg($file)
+      );
+
+      exec($command, $output, $returnCode);
+
+      if ($returnCode !== 0 || !file_exists($unzippedFile)) {
+        $this->logError("Failed to decompress $file", 'FILE_GUNZIP');
+      }
+      // switch to decompressed file
+      $file = $unzippedFile;
+    }
+    return $file;
+  }
+
+  /**
+   * Is the information adequate to queue without attempting any log diving.
+   *
+   * Ideally this would always be true as we have deprecated looking in the log files.
+   *
+   * @param array $auditRecord
+   *
+   * @return bool
+   */
+  protected function isQueueableWithoutLogLookup(array $auditRecord): bool {
+    return !$auditRecord['is_negative'] && !empty($auditRecord['message']['transaction_details']);
+  }
+
+  /**
+   * Send the missing audit message to the appropriate queue.
+   *
+   * @param array $message
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   * @throws \SmashPig\Core\ConfigurationKeyException
+   * @throws \SmashPig\Core\DataStores\DataStoreException
+   */
+  protected function queueMissingAuditMessage(array $message): void {
+    $fullRecord = $this->merge_data($message['transaction_details']['message'], $message);
+    if (empty($fullRecord['contribution_tracking']) && !empty($fullRecord['contribution_tracking_id'])) {
+      $result = ContributionTracking::get(FALSE)
+        ->addWhere('id', '=', $fullRecord['contribution_tracking_id'])
+        ->execute()
+        ->first();
+      if (!$result) {
+        $this->createContributionTracking($fullRecord['contribution_tracking_id'], $fullRecord['payment_method'] ?? '', $fullRecord['date'] ?? NULL, $fullRecord['language'] ?? NULL, $fullRecord['country'] ?? NULL);
+      }
+    }
+    unset($fullRecord['transaction_details'], $fullRecord['contribution_tracking']);
+    $this->send_queue_message($fullRecord, 'main');
+  }
+
+  /**
+   * @param string $file
+   * @param string $batchName
+   * @param array $transaction
+   *
+   * @return void
+   */
+  public function ensureBatchExists(string $file, string $batchName, array $transaction): void {
+    if (!isset($this->batches[$file][$batchName])) {
+      $this->batches[$file][$batchName] = [
+        'transaction_count' => 0,
+        'settled_total_amount' => Money::zero($transaction['settled_currency']),
+        'settled_fee_amount' => Money::zero($transaction['settled_currency']),
+        'settled_net_amount' => Money::zero($transaction['settled_currency']),
+        'settled_reversal_amount' => Money::zero($transaction['settled_currency']),
+        'settled_donation_amount' => Money::zero($transaction['settled_currency']),
+        'settlement_currency' => $transaction['settled_currency'],
+        'settlement_date' => date('Ymd', $transaction['settled_date']),
+        'settlement_batch_reference' => $batchName,
+        'settlement_gateway' => $transaction['audit_file_gateway'],
+        'status_id:name' => 'Open',
+      ];
+    }
+  }
+
+  /**
+   * @param string $file
+   * @param string $batchName
+   * @param array $transaction
+   * @param array $values
+   *
+   * @return void
+   */
+  public function setBatchValue(string $file, string $batchName, array $transaction, array $values): void {
+    $this->ensureBatchExists($file, $batchName, $transaction);
+    $this->batches[$file][$batchName] = $values + $this->batches[$file][$batchName];
   }
 
 }
