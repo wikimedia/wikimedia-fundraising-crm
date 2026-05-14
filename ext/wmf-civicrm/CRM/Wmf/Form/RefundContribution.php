@@ -9,9 +9,10 @@ use Civi\Api4\Contribution;
  */
 class CRM_Wmf_Form_RefundContribution extends CRM_Contribute_Form_Task {
 
-  const MAX_REFUNDS_TO_PROCESS_SYNCHRONOUSLY = 5;
+  protected int $maxSynchronousRefunds;
 
   public function preProcess(): void {
+    $this->maxSynchronousRefunds = \Civi::settings()->get('wmf_max_synchronous_refunds') ?? 15;
     if (!empty($this->_submitValues['id'])) {
       // Initial load from SearchKit, or submitting this form.
       // Note that under SearchKit $this->_contributionIds contains ALL the
@@ -57,7 +58,7 @@ class CRM_Wmf_Form_RefundContribution extends CRM_Contribute_Form_Task {
       $this->assign('no_go_reason', 'No selected contributions can be refunded');
       return;
     }
-    if ($numberToRefund > self::MAX_REFUNDS_TO_PROCESS_SYNCHRONOUSLY) {
+    if ($numberToRefund > $this->maxSynchronousRefunds) {
       $this->assign('async_message', 'Too many to refund synchronously. Refunds will be processed in the background.');
     }
     $this->assign('to_refund', $toRefund);
@@ -86,7 +87,7 @@ class CRM_Wmf_Form_RefundContribution extends CRM_Contribute_Form_Task {
     $isFraud = $this->getSubmittedValue('is_fraud') ?? FALSE;
     $numberToProcess = count($vars['to_refund']);
     $results = [];
-    if ($numberToProcess > self::MAX_REFUNDS_TO_PROCESS_SYNCHRONOUSLY) {
+    if ($numberToProcess > $this->maxSynchronousRefunds) {
       $queue = \Civi::queue('refund', [
         'type' => 'Sql',
         'runner' => 'task',
