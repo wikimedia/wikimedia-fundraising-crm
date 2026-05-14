@@ -101,16 +101,6 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
       ],
       'wmf_contribution_extra' => [
         'fields' => [
-          'deposit_date' => [
-            'title' => ts('Deposit Date (UTC)'),
-            'default' => FALSE,
-            'no_display' => TRUE,
-          ],
-          'settlement_date' => [
-            'title' => ts('Settlement Date (UTC)'),
-            'default' => FALSE,
-            'no_display' => TRUE,
-          ],
           'original_amount' => [
             'title' => ts('Original Amount'),
             'type' => CRM_Utils_Type::T_MONEY,
@@ -132,16 +122,6 @@ class CRM_Report_Form_Contribute_GatewayReconciliation extends CRM_Report_Form {
           ],
         ],
         'filters' => [
-          'deposit_date' => [
-            'title' => ts('Deposit Date (UTC)'),
-            'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
-            'operatorType' => CRM_Report_Form::OP_DATETIME,
-          ],
-          'settlement_date' => [
-            'title' => ts('Settlement Date (UTC)'),
-            'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
-            'operatorType' => CRM_Report_Form::OP_DATETIME,
-          ],
           'gateway' => [
             'title' => ts('Gateway'),
             'type' => CRM_Utils_Type::T_STRING,
