@@ -402,7 +402,7 @@ class RefundQueueTest extends BaseQueueTestCase {
     // not quite sure why some are zeros not null?
     $this->assertContactValues($contribution['contact_id'], [
       'wmf_donor.lifetime_including_endowment' => NULL,
-      'wmf_donor.last_donation_date' => NULL,
+      'wmf_donor.all_funds_last_donation_date' => NULL,
       'wmf_donor.last_donation_amount' => 0.00,
       'wmf_donor.last_donation_usd' => 0.00,
       'wmf_donor.' . $this->getCurrentFinancialYearTotalFieldName() => NULL,
@@ -448,7 +448,7 @@ class RefundQueueTest extends BaseQueueTestCase {
 
     $this->assertContactValues($this->ids['Contact']['maisy'], [
       'wmf_donor.lifetime_including_endowment' => 40,
-      'wmf_donor.last_donation_date' => "$lastYear-11-01 00:00:00",
+      'wmf_donor.all_funds_last_donation_date' => "$lastYear-11-01 00:00:00",
       'wmf_donor.last_donation_amount' => 50,
       'wmf_donor.last_donation_usd' => 50,
       'wmf_donor.last_donation_currency' => 'USD',
@@ -531,7 +531,7 @@ class RefundQueueTest extends BaseQueueTestCase {
     ]);
     $this->assertContactValues($this->ids['Contact']['default'], [
       'wmf_donor.lifetime_including_endowment' => 41.23,
-      'wmf_donor.last_donation_date' => date('Y-m-d') . ' 04:05:06',
+      'wmf_donor.all_funds_last_donation_date' => date('Y-m-d') . ' 04:05:06',
       'wmf_donor.last_donation_amount' => 1.23,
       'wmf_donor.last_donation_usd' => 1.23,
       'wmf_donor.' . $this->getCurrentFinancialYearTotalFieldName() => 1.23,
@@ -557,7 +557,7 @@ class RefundQueueTest extends BaseQueueTestCase {
     );
     $this->assertContactValues($this->ids['Contact']['default'], [
       'wmf_donor.lifetime_including_endowment' => 40,
-      'wmf_donor.last_donation_date' => date('Y-m-d 00:00:00', strtotime('1 year ago')),
+      'wmf_donor.all_funds_last_donation_date' => date('Y-m-d 00:00:00', strtotime('1 year ago')),
       'wmf_donor.last_donation_usd' => 40,
       'wmf_donor.' . $this->getCurrentFinancialYearTotalFieldName() => 0,
       'wmf_donor.last_donation_currency' => 'NZD',
@@ -842,7 +842,7 @@ class RefundQueueTest extends BaseQueueTestCase {
 
     $this->assertContactValues($this->ids['Contact']['default'], [
       'wmf_donor.lifetime_including_endowment' => 1.23,
-      'wmf_donor.last_donation_date' => date('Y-m-d') . ' 04:05:06',
+      'wmf_donor.all_funds_last_donation_date' => date('Y-m-d') . ' 04:05:06',
       'wmf_donor.last_donation_amount' => 1.23,
       'wmf_donor.last_donation_usd' => 1.23,
       'wmf_donor.' . $this->getCurrentFinancialYearTotalFieldName() => 1.23,

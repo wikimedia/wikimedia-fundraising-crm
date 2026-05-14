@@ -102,7 +102,7 @@ class CRM_Wmf_Upgrader extends CRM_Extension_Upgrader_Base {
    */
   public function postInstall(): void {
     $this->syncGeocoders();
-    /* Add combined index on entity_id and lifetime_usd_total on wmf_donor table.
+    /* Add combined index on entity_id and lifetime_including_endowment on wmf_donor table.
      *
      * In testing this made a significant difference when filtering for donors with
      * giving over x - which is a common usage.

@@ -162,7 +162,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
       'wmf_donor.last_donation_amount' => 20,
       'wmf_donor.last_donation_currency' => 'NZD',
       'wmf_donor.last_donation_usd' => 9,
-      'wmf_donor.last_donation_date' => '2024-07-04 00:00:00',
+      'wmf_donor.all_funds_last_donation_date' => '2024-07-04 00:00:00',
       'wmf_donor.first_donation_usd' => 5,
       'wmf_donor.first_donation_date' => '2013-01-04 00:00:00',
       'wmf_donor.date_of_largest_donation' => '2023-08-04 00:00:00',
@@ -269,8 +269,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    *  - one with an Endowment gift
    *  - one with a cash donation & an endowment gift
    *
-   * We check that all are included in the lifetime calculation but only the cash gist is included
-   * in others (last_ are all foundation only, which is confusing because they are different in Acoustic export).)
+   * We check that all are included in the lifetime calculation and last_ fields.
    *
    * After merging we check the same again.
    *
@@ -321,20 +320,20 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertCount(1, $result['values']['merged']);
     $this->assertContactValues($this->contactID, [
       'wmf_donor.lifetime_including_endowment' => 22,
-      'wmf_donor.last_donation_amount' => 5,
+      'wmf_donor.last_donation_amount' => 7,
       'wmf_donor.last_donation_currency' => 'USD',
-      'wmf_donor.last_donation_usd' => 5,
-      'wmf_donor.last_donation_date' => '2023-01-04 00:00:00',
-      'wmf_donor.total_2024_2025' => 0,
+      'wmf_donor.last_donation_usd' => 7,
+      'wmf_donor.all_funds_last_donation_date' => '2025-01-04 00:00:00',
+      'wmf_donor.total_2024_2025' => 0, //total doesn't include endowment
     ]);
 
     $this->callAPISuccess('Contribution', 'delete', ['id' => $cashJob['id']]);
     $this->assertContactValues($this->contactID, [
       'wmf_donor.lifetime_including_endowment' => 17,
-      'wmf_donor.last_donation_amount' => 0,
-      'wmf_donor.last_donation_currency' => '',
-      'wmf_donor.last_donation_usd' => 0,
-      'wmf_donor.last_donation_date' => '',
+      'wmf_donor.last_donation_amount' => 7,
+      'wmf_donor.last_donation_currency' => 'USD',
+      'wmf_donor.last_donation_usd' => 7,
+      'wmf_donor.all_funds_last_donation_date' => '2025-01-04 00:00:00',
       'wmf_donor.total_2024_2025' => 0,
     ]);
   }

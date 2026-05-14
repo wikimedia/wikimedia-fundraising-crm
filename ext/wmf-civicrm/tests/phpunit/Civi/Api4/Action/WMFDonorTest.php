@@ -62,7 +62,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
    */
   public function testWMFDonorGetFields(): void {
     $fields = WMFDonor::getFields(FALSE)->execute()->indexBy('name');
-    $this->assertNotEmpty($fields['last_donation_date']);
+    $this->assertNotEmpty($fields['all_funds_last_donation_date']);
   }
 
   /**
@@ -72,18 +72,18 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
    */
   public function testWMFDonorGet(): void {
     $this->createDonor();
-    // Select last_donation_date only.
+    // Select all_funds_last_donation_date only.
     $result = WMFDonor::get(FALSE)
-      ->addSelect('last_donation_date')
+      ->addSelect('all_funds_last_donation_date')
       ->addWhere('id', '=', $this->ids['Contact']['donor'])
       ->execute()->first();
-    $this->assertEquals($this->getDate() . ' 00:00:00', $result['last_donation_date']);
+    $this->assertEquals($this->getDate() . ' 00:00:00', $result['all_funds_last_donation_date']);
 
     // Do not specify fields.
     $result = WMFDonor::get(FALSE)
       ->addWhere('id', '=', $this->ids['Contact']['donor'])
       ->execute()->first();
-    $this->assertEquals($this->getDate() . ' 00:00:00', $result['last_donation_date']);
+    $this->assertEquals($this->getDate() . ' 00:00:00', $result['all_funds_last_donation_date']);
 
     // Specify a field that requires an additional join.
     $result = WMFDonor::get(FALSE)
