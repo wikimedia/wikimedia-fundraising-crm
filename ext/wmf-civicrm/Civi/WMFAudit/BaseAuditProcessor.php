@@ -138,7 +138,7 @@ abstract class BaseAuditProcessor {
 
       if ($returnCode !== 0 || !file_exists($tempFile)) {
         @unlink($tempFile);
-        $message = "Unable to gzip $file to $gzFile";
+        $message = "Unable to gzip $file to $gzFile using command $command with code $returnCode and output " . json_encode($output);
         $this->logError($message, 'FILE_GZIP');
         return FALSE;
       }
