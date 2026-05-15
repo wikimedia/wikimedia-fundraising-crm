@@ -1787,7 +1787,7 @@ function _wmf_civicrm_get_stock_fields(): array {
       'html_type' => 'Text',
       'is_active' => 1,
       'is_searchable' => 1,
-      'is_view' => 0,
+      'is_view' => 1,
     ],
     'Stock Value' => [
       'name' => 'Stock Value',
