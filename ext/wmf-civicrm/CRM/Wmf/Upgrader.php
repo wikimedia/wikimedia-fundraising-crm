@@ -4586,6 +4586,34 @@ v.channel IS NULL AND c.id = 131486342;",
     return TRUE;
   }
 
+  /**
+   * Restore description_of_stock field values incorrectly deleted.
+   *
+   * Bug: T426417
+   *
+   * @return bool
+   */
+  public function upgrade_4985(): bool {
+    CRM_Core_DAO::executeQuery("
+      CREATE TEMPORARY TABLE tmp_stock_update AS
+      SELECT log.entity_id, log.description_of_stock
+      FROM log_civicrm_value_1_stock_information_10 log
+      INNER JOIN (
+          SELECT entity_id, MAX(log_id) AS max_log_id
+          FROM log_civicrm_value_1_stock_information_10
+          WHERE description_of_stock IS NOT NULL
+          AND description_of_stock <> ''
+          GROUP BY entity_id
+      ) latest ON latest.entity_id = log.entity_id AND latest.max_log_id = log.log_id
+      INNER JOIN civicrm_contribution c ON c.id = log.entity_id");
+    CRM_Core_DAO::executeQuery("
+      UPDATE civicrm_value_1_stock_information_10 stock
+      INNER JOIN tmp_stock_update src ON src.entity_id = stock.entity_id
+      SET stock.description_of_stock = src.description_of_stock");
+    CRM_Core_DAO::executeQuery("DROP TEMPORARY TABLE tmp_stock_update");
+    return TRUE;
+  }
+
    /**
     * Queue up an API4 update.
     *

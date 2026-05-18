@@ -57,6 +57,7 @@ $settings = [
   'deduper_resolver_phone' => 'preferred_contact',
   'deduper_resolver_address' => 'preferred_contact',
   'deduper_exception_relationship_type_id' => CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_relationship_type WHERE name_a_b = 'Unknown: Shares contact information'"),
+  'deduper_clean_location_types_to_keep_email' => ['achForm', 'ach', 'apple', 'google', 'paypal', 'venmo'],
 
   // Enable smash pig queue.
   'smashpig_recurring_use_queue' => '1',

@@ -100,6 +100,29 @@ abstract class CleanBase extends AbstractAction {
   }
 
   /**
+   * Get setting name of location type names to keep.
+   *
+   * @return string
+   */
+  abstract protected function getLocationTypeSettingName(): string;
+
+  /**
+   * Get location type IDs that should be kept even when they duplicate another entity.
+   *
+   * Ideally we would refactor to use location_type_id:name throughout but for now we just convert here.
+   *
+   * @return array
+   */
+  protected function getLocationTypesToKeep(): array {
+    if (!isset(Civi::$statics[static::class]['locationTypesToKeep'])) {
+      $names = Civi::settings()->get($this->getLocationTypeSettingName());
+      Civi::$statics[static::class]['locationTypesToKeep'] = empty($names) ? [] :
+        \Civi\Api4\LocationType::get(FALSE)->addSelect('id')->addWhere('name', 'IN', $names)->execute()->column('id');
+    }
+    return Civi::$statics[static::class]['locationTypesToKeep'];
+  }
+
+  /**
    * Get contact's emails keyed by location.
    *
    * @param int $contactID
@@ -114,8 +137,10 @@ abstract class CleanBase extends AbstractAction {
         // Treat it as 'one of the other existing types' so re-homing kicks in.
         $entity['location_type_id'] = $locationTypeForUnassigned;
       }
-      $return[$entity['location_type_id'] . ($entity['phone_type_id'] ?? '')][$id] = $entity;
-      $locationTypeForUnassigned = $entity['location_type_id'];
+      if ($entity['is_primary'] || !in_array($entity['location_type_id'], $this->getLocationTypesToKeep(), TRUE)) {
+        $return[$entity['location_type_id'] . ($entity['phone_type_id'] ?? '')][$id] = $entity;
+        $locationTypeForUnassigned = $entity['location_type_id'];
+      }
     }
     return $return;
   }

@@ -3,9 +3,6 @@
 
 namespace Civi\Api4\Action\Phone;
 
-use Civi;
-use Civi\Api4\Generic\AbstractAction;
-use Civi\Api4\Generic\Result;
 use Civi\Api4\Phone;
 use Civi\Api4\CleanBase;
 
@@ -16,14 +13,9 @@ use Civi\Api4\CleanBase;
  * @method array getContactIDs() Set IDs of contacts to clean.
  */
 class Clean extends CleanBase {
-  /**
-   * Phones retrieved for the contacts.
-   *
-   * These are keyed by the contact and ordered primary first.
-   *
-   * @var array
-   */
-  protected $entities = [];
+  protected function getLocationTypeSettingName(): string {
+    return 'deduper_clean_location_types_to_keep_phone';
+  }
 
   /**
    * Fetch the phones for the contacts.
@@ -89,7 +81,7 @@ class Clean extends CleanBase {
   }
 
   /**
-   * Get the values from the email that are worth preserving.
+   * Get the values from the phone that are worth preserving.
    *
    * In these fields 'some data' is better than no date.
    *
@@ -99,10 +91,10 @@ class Clean extends CleanBase {
    */
   protected function getSalientValues($entity): array {
     $salientValues = [];
-    // Email duplicates email address & location, grab any extra detail & delete it.
+    // Phone duplicates email address & location, grab any extra detail & delete it.
     foreach (['phone_ext', 'phone_type_id'] as $key) {
-      if (!empty($email[$key])) {
-        $salientValues[$key] = $email[$key];
+      if (!empty($entity[$key])) {
+        $salientValues[$key] = $entity[$key];
       }
     }
     return $salientValues;

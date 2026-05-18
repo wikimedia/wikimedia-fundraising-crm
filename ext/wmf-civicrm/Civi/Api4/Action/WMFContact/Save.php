@@ -1254,9 +1254,9 @@ class Save extends AbstractAction {
    * @return bool
    */
   protected function getIsLowConfidenceNameSource($primaryEmailType = NULL): bool {
-    $paymentMethodsReturnLowConfidenceName = ['apple', 'google', 'venmo', 'paypal', 'ach'];
+    $paymentMethodsReturnLowConfidenceName = array_map('strtolower', \Civi::settings()->get('deduper_clean_location_types_to_keep_email'));
     // check if currency primary not trusted source, then no need to check first name and last name, otherwise check incoming payment_method.
-    if (!empty($primaryEmailType) && (in_array(strtolower($primaryEmailType), $paymentMethodsReturnLowConfidenceName) || $primaryEmailType === 'achForm')) {
+    if (!empty($primaryEmailType) && in_array(strtolower($primaryEmailType), $paymentMethodsReturnLowConfidenceName)) {
       return true;
     } else {
       if (
@@ -1359,15 +1359,18 @@ class Save extends AbstractAction {
    * @return bool
    */
   private function isEmailSourceTrusted(string $paymentMethod): bool {
-    $pm = strtolower($paymentMethod);
-    if ($pm === '') {
+    if ($paymentMethod === '') {
       return TRUE; // no payment method implies our site/source -> trusted
     }
     // ach email is still from donation form, the billing_email for ach queue msg is the untrusted one,
     // so do not mixed with below 3rd party email source list
     // each entry in this array has a corresponding locationType in locationTypes.mgd.php
     // treat these low confidence as untrusted
-    return !in_array($pm, ['google', 'apple', 'venmo', 'paypal']);
+    $untrustedPaymentMethods = array_diff(
+      array_map('strtolower', \Civi::settings()->get('deduper_clean_location_types_to_keep_email')),
+      ['achform', 'ach']
+    );
+    return !in_array(strtolower($paymentMethod), $untrustedPaymentMethods);
   }
 
   /**
