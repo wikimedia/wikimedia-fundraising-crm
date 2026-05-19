@@ -570,12 +570,11 @@ END";
       ];
       $invalidBatches = 0;
       $html = '';
+      $tableOpenHtml = $this->getTableOpenHtml();
       if (!count($result)) {
         $params['subject'] .= ' no batches able to be generated';
       }
       if (count($result)) {
-
-        $tableOpenHtml = $this->getTableOpenHtml();
         // Start styled table.
         $html = '<html> <h3>The following batches have been generated</h3>';
         if (empty($this->getInvalidBatches()) && empty($this->incompleteRows)) {
