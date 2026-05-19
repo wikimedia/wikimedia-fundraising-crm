@@ -561,15 +561,19 @@ END";
         $hasUploadErrors = TRUE;
       }
     }
-    if (count($result)) {
-      if ($this->emailSummaryAddress) {
-        $params = [
-          'toEmail' => $this->emailSummaryAddress,
-          'subject' => 'Finance batch generated',
-          'from' => \CRM_Core_BAO_Domain::getFromEmail(),
-        ];
 
-        $invalidBatches = 0;
+    if ($this->emailSummaryAddress) {
+      $params = [
+        'toEmail' => $this->emailSummaryAddress,
+        'subject' => 'Finance batch generated',
+        'from' => \CRM_Core_BAO_Domain::getFromEmail(),
+      ];
+      $invalidBatches = 0;
+      $html = '';
+      if (!count($result)) {
+        $params['subject'] .= ' no batches able to be generated';
+      }
+      if (count($result)) {
 
         $tableOpenHtml = $this->getTableOpenHtml();
         // Start styled table.
@@ -607,7 +611,7 @@ END";
           if (!empty(array_filter($batch['validation']))) {
             $invalidBatches++;
           }
-          $currency  = htmlspecialchars($batch['batch']['batch_data.settlement_currency'], ENT_QUOTES, 'UTF-8', $batch['batch']['batch_data.settlement_currency']);
+          $currency = htmlspecialchars($batch['batch']['batch_data.settlement_currency'], ENT_QUOTES, 'UTF-8', $batch['batch']['batch_data.settlement_currency']);
           $discrepancy = $batch['validation']['settled'];
 
           // Base cell styles
@@ -624,11 +628,14 @@ END";
           $batchName = htmlspecialchars($batch['batch']['name'], ENT_QUOTES, 'UTF-8');
           $batchUrl = (string) \Civi::url('backend://civicrm/contribution/settled#?finance_batch=' . $batch['batch']['name'], 'a');
 
-          $settled   = \Civi::format()->money(htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8'), $currency);
-          $journalTotal = \Civi::format()->money(htmlspecialchars($batch['totals']['debit'] + $batch['totals']['credit'] + $batch['totals']['fee'], ENT_QUOTES, 'UTF-8'), $currency);
+          $settled = \Civi::format()
+            ->money(htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8'), $currency);
+          $journalTotal = \Civi::format()
+            ->money(htmlspecialchars($batch['totals']['debit'] + $batch['totals']['credit'] + $batch['totals']['fee'], ENT_QUOTES, 'UTF-8'), $currency);
           $remoteBatch = $batch['remote']['main'] ?? [];
           $usdJournalTotal = $currency === 'USD' ? $journalTotal : $remoteBatch['usd_journal_total'] ?? '';
-          $totalInBatch = \Civi::format()->money(htmlspecialchars($batch['batch']['batch_data.settled_net_amount'] ?? 0, ENT_QUOTES, 'UTF-8'), $currency);
+          $totalInBatch = \Civi::format()
+            ->money(htmlspecialchars($batch['batch']['batch_data.settled_net_amount'] ?? 0, ENT_QUOTES, 'UTF-8'), $currency);
           $numberOfTransactions = $batch['batch']['total'];
           $transactionsUrl = BatchFile::getBatchFileUrl([$batchName], 'details');
           $journalUrl = BatchFile::getBatchFileUrl([$batchName], 'journals');
@@ -677,29 +684,31 @@ END";
           }
           $html .= " </tbody> </table>";
         }
+      }
 
-        $incompleteBatches = Batch::get(FALSE)
-          // Status list will probably grow.
-          ->addWhere('status_id:name', 'IN', ['Open', 'needs_attention'])
-          ->addWhere('mode_id:name', '=', 'Automatic Batch')
-          ->addSelect('*', 'batch_data.*', 'status_id:label')
-          ->execute();
-        if (!empty($incompleteBatches)) {
-          $html .= "<h3>Incomplete batches</h3><p>The following batches are still open, pending a verified total or manual intervention</p>" . $tableOpenHtml;
-          $html .= $this->getTableHeader( ['Batch', 'Created Date', 'Currency', 'Total', 'Count', 'Status', 'Phab']);
-          foreach ($incompleteBatches as $incompleteBatch) {
-            $phabLink = ($incompleteBatch['batch_data.issue_tracker_reference'] ? ('<a href="https://phabricator.wikimedia.org/' . $incompleteBatch['batch_data.issue_tracker_reference'] . '">' . $incompleteBatch['batch_data.issue_tracker_reference'] . '</a>') : '');
-            $html .= "<tr><td>{$incompleteBatch['name']}</td><td>{$incompleteBatch['created_date']}</td><td>{$incompleteBatch['batch_data.settlement_currency']}</td><td>{$incompleteBatch['batch_data.settled_net_amount']}</td><td>{$incompleteBatch['item_count']}</td><td>{$incompleteBatch['status_id:label']}</td>
-              <td>{$phabLink}</td>
-            </tr>";
-          }
-          $html .= "</table>";
-
+      $incompleteBatches = Batch::get(FALSE)
+        // Status list will probably grow.
+        ->addWhere('status_id:name', 'IN', ['Open', 'needs_attention'])
+        ->addWhere('mode_id:name', '=', 'Automatic Batch')
+        ->addSelect('*', 'batch_data.*', 'status_id:label')
+        ->execute();
+      if (!empty($incompleteBatches)) {
+        $html .= "<h3>Incomplete batches</h3><p>The following batches are still open, pending a verified total or manual intervention</p>" . $tableOpenHtml;
+        $html .= $this->getTableHeader( ['Batch', 'Created Date', 'Currency', 'Total', 'Count', 'Status', 'Phab']);
+        foreach ($incompleteBatches as $incompleteBatch) {
+          $phabLink = ($incompleteBatch['batch_data.issue_tracker_reference'] ? ('<a href="https://phabricator.wikimedia.org/' . $incompleteBatch['batch_data.issue_tracker_reference'] . '">' . $incompleteBatch['batch_data.issue_tracker_reference'] . '</a>') : '');
+          $html .= "<tr><td>{$incompleteBatch['name']}</td><td>{$incompleteBatch['created_date']}</td><td>{$incompleteBatch['batch_data.settlement_currency']}</td><td>{$incompleteBatch['batch_data.settled_net_amount']}</td><td>{$incompleteBatch['item_count']}</td><td>{$incompleteBatch['status_id:label']}</td>
+            <td>{$phabLink}</td>
+          </tr>";
         }
-        $html .= $this->renderIncomingFilesHtml();
+        $html .= "</table>";
 
+      }
+      $html .= $this->renderIncomingFilesHtml();
+
+      if ($this->batchSummary) {
         $html .= '<h3>Batch Summary</h3>';
-        $html .= $this->getTableHeader( ['Batch', 'Account Code', 'Account', 'Endowment Amount', 'Annual Fund Amount']);
+        $html .= $this->getTableHeader(['Batch', 'Account Code', 'Account', 'Endowment Amount', 'Annual Fund Amount']);
         foreach ($this->batchSummary as $batchName => $batch) {
           $start = "<tr><td>{$batchName}</td>";
           if (!$batch['annual_fund_fees']->isEqualTo(0)) {
@@ -715,42 +724,42 @@ END";
             $accountName = $this->getAccountName($accountNumber);
             if (!$account['annual_fund']->isEqualTo(0)) {
               $amount = $this->formatAmount($account['annual_fund']);
-              $html.= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td></td><td>{$amount}</td></tr>";
+              $html .= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td></td><td>{$amount}</td></tr>";
             }
             if (!$account['endowment_fund']->isEqualTo(0)) {
               $amount = $this->formatAmount($account['endowment_fund']);
-              $html.= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td>{$amount}</td><td></td></tr>";
+              $html .= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td>{$amount}</td><td></td></tr>";
             }
           }
         }
-        $html.= '</tbody></table>';
-        $html .= '<h3>Log</h3> ' . $tableOpenHtml;
-        foreach ($this->log as $log) {
-          $log = nl2br($log);
-          $html .= "<tr><td>$log</td></tr>";
-        }
+        $html .= '</tbody></table>';
+      }
+      $html .= '<h3>Log</h3> ' . $tableOpenHtml;
+      foreach ($this->log as $log) {
+        $log = nl2br($log);
+        $html .= "<tr><td>$log</td></tr>";
+      }
 
-        $html .= '</table></html>';
+      $html .= '</table></html>';
 
-        if ($invalidBatches) {
-          $params['subject'] .= " {$invalidBatches} need attention";
+      if ($invalidBatches) {
+        $params['subject'] .= " {$invalidBatches} need attention";
+      }
+      if ($this->incompleteRows) {
+        $incompleteCount = 0;
+        foreach ($this->incompleteRows as $batch) {
+          $incompleteCount += count($batch);
         }
-        if ($this->incompleteRows) {
-          $incompleteCount = 0;
-          foreach ($this->incompleteRows as $batch) {
-            $incompleteCount += count($batch);
-          }
-          $params['subject'] .= " $incompleteCount contributions need attention";
-        }
-        if ($this->countOldIncomingFiles()) {
-          $params['subject'] .= ', ' . $this->countOldIncomingFiles() ." incoming files older than " . self::NUMBER_OF_DAYS_OLD . 'days';
-        }
+        $params['subject'] .= " $incompleteCount contributions need attention";
+      }
+      if ($this->countOldIncomingFiles()) {
+        $params['subject'] .= ', ' . $this->countOldIncomingFiles() ." incoming files older than " . self::NUMBER_OF_DAYS_OLD . 'days';
+      }
 
-        $params['html'] = $html;
+      $params['html'] = $html;
 
-        if (!\CRM_Utils_Mail::send($params)) {
-          \Civi::log('wmf')->warning('Summary failed to send to ' . $params['toEmail']);
-        }
+      if (!\CRM_Utils_Mail::send($params)) {
+        \Civi::log('wmf')->warning('Summary failed to send to ' . $params['toEmail']);
       }
     }
   }
