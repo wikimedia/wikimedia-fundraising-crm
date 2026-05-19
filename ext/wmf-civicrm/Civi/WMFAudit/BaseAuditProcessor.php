@@ -122,6 +122,7 @@ abstract class BaseAuditProcessor {
     }
 
     $filename = basename($file);
+    $fileWithPath = $this->getIncomingFilesDirectory() . '/' . $filename;
     $newFile = $directory . '/' . $filename;
     if ($gzip === TRUE) {
 
@@ -130,7 +131,7 @@ abstract class BaseAuditProcessor {
 
       $command = sprintf(
         'gzip -9 -c %s > %s',
-        escapeshellarg($file),
+        escapeshellarg($fileWithPath),
         escapeshellarg($tempFile)
       );
 
@@ -138,7 +139,7 @@ abstract class BaseAuditProcessor {
 
       if ($returnCode !== 0 || !file_exists($tempFile)) {
         @unlink($tempFile);
-        $message = "Unable to gzip $file to $gzFile using command $command with code $returnCode and output " . json_encode($output);
+        $message = "Unable to gzip $fileWithPath to $gzFile using command $command with code $returnCode and output " . json_encode($output);
         $this->logError($message, 'FILE_GZIP');
         return FALSE;
       }
@@ -147,22 +148,22 @@ abstract class BaseAuditProcessor {
       rename($tempFile, $gzFile);
 
       // Remove original only after success
-      if (!unlink($file)) {
-        $message = "Gzip succeeded but failed to delete original $file";
+      if (!unlink($fileWithPath)) {
+        $message = "Gzip succeeded but failed to delete original $fileWithPath";
         $this->logError($message, 'FILE_DELETE');
         return FALSE;
       }
 
-      $this->echo("Gzipped and moved $file to $gzFile");
+      $this->echo("Gzipped and moved $fileWithPath to $gzFile");
       return TRUE;
     }
-    if (!rename($file, $newFile)) {
-      $message = "Unable to move $file to $newFile";
+    if (!rename($fileWithPath, $newFile)) {
+      $message = "Unable to move $fileWithPath to $newFile";
 
       $this->logError($message, 'FILE_PERMS');
       return FALSE;
     }
-    $this->echo("Moved $file to $newFile");
+    $this->echo("Moved $fileWithPath to $newFile");
     return TRUE;
   }
 
@@ -807,7 +808,7 @@ abstract class BaseAuditProcessor {
           $files_by_sort_key[$sort_key][] = $files_directory . '/' . $file;
         }
         elseif ($this->regexForFilesToIgnore() && preg_match($this->regexForFilesToIgnore(), $file)) {
-          $this->moveFile($files_directory . '/' . $file, $this->getIgnoredFilesDirectory(), TRUE);
+          $this->moveFile($file, $this->getIgnoredFilesDirectory(), TRUE);
         }
       }
       closedir($handle);
