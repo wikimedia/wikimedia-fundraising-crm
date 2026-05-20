@@ -70,7 +70,7 @@ function _nextpendingcontribution_get_next_pending_contribution($cid, $value) {
       $value['nextpendingcontribution.receive_date'] = \CRM_Utils_Date::customFormat($receive_date->format('Y-m-d'));
       $value['nextpendingcontribution.financial_type'] = $dao->financial_type;
 
-      $balanceDue = CRM_Core_BAO_FinancialTrxn::getPartialPaymentWithType($dao->id, 'contribution', FALSE, $dao->total_amount);
+      $balanceDue = _nextpendingcontribution_getPartialPaymentWithType($dao->id, 'contribution', FALSE, $dao->total_amount);
       $value['nextpendingcontribution.balance_due'] = \CRM_Utils_Money::format($balanceDue);
     }
   }
@@ -79,6 +79,52 @@ function _nextpendingcontribution_get_next_pending_contribution($cid, $value) {
   }
   return $value;
 }
+
+/**
+ * get partial payment amount.
+ *
+ * This function basically calls CRM_Contribute_BAO_Contribution::getContributionBalance
+ * - just do that. If need be we could have a fn to get the contribution id but
+ * chances are the calling functions already know it anyway.
+ *
+ * @param int $entityId
+ * @param string $entityName
+ * @param int $lineItemTotal
+ *
+ * @return array
+ */
+function _nextpendingcontribution_getPartialPaymentWithType($entityId, $entityName = 'participant', $lineItemTotal = NULL) {
+  $value = NULL;
+  if (empty($entityName)) {
+    return $value;
+  }
+
+  // @todo - deprecate passing in entity & type - just figure out contribution id FIRST
+  if ($entityName == 'participant') {
+    $contributionId = CRM_Core_DAO::getFieldValue('CRM_Event_DAO_ParticipantPayment', $entityId, 'contribution_id', 'participant_id');
+  }
+  elseif ($entityName == 'membership') {
+    $contributionId = CRM_Member_BAO_MembershipPayment::getLatestContributionIDFromLineitemAndFallbackToMembershipPayment($entityId);
+  }
+  else {
+    $contributionId = $entityId;
+  }
+  $financialTypeId = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_Contribution', $contributionId, 'financial_type_id');
+
+  if ($contributionId && $financialTypeId) {
+
+    $paymentVal = CRM_Contribute_BAO_Contribution::getContributionBalance($contributionId, $lineItemTotal);
+    $value = [];
+    if ($paymentVal < 0) {
+      $value['refund_due'] = $paymentVal;
+    }
+    elseif ($paymentVal > 0) {
+      $value['amount_owed'] = $paymentVal;
+    }
+  }
+  return $value;
+}
+
 
 /**
  * Get the name of the soft credits. Returns an empty string when no soft credit are found.
