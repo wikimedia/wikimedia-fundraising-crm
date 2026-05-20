@@ -239,16 +239,19 @@ class DonationMessage extends Message {
         ['old' => $msg['currency'], 'new' => $this->getReportingCurrency()]);
     }
 
-    $msg['original_gross'] = $msg['contribution_extra.original_amount'] = $this->getOriginalAmount();
-    $msg['original_currency'] = $msg['contribution_extra.original_currency'] = $this->getOriginalCurrency();
-    // Note that it possibly makes sense to leave these to the apiPrepare hook,
-    // in \Civi\WMFHook\Contribution, which
-    // covers other imports (e.g via the UI). However, that code currently does not
-    // handle fees.
-    $msg['currency'] = $this->getReportingCurrency();
-    $msg['fee'] = $this->getReportingFeeAmountRounded();
-    $msg['gross'] = $this->getReportingAmountRounded();
-    $msg['net'] = $this->getReportingNetAmountRounded();
+    // Don't convert again if the currency has already been normalized
+    if (empty($msg['contribution_extra.original_amount'])) {
+      $msg['original_gross'] = $msg['contribution_extra.original_amount'] = $this->getOriginalAmount();
+      $msg['original_currency'] = $msg['contribution_extra.original_currency'] = $this->getOriginalCurrency();
+      // Note that it possibly makes sense to leave these to the apiPrepare hook,
+      // in \Civi\WMFHook\Contribution, which
+      // covers other imports (e.g via the UI). However, that code currently does not
+      // handle fees.
+      $msg['currency'] = $this->getReportingCurrency();
+      $msg['fee'] = $this->getReportingFeeAmountRounded();
+      $msg['gross'] = $this->getReportingAmountRounded();
+      $msg['net'] = $this->getReportingNetAmountRounded();
+    }
 
     return $msg;
   }

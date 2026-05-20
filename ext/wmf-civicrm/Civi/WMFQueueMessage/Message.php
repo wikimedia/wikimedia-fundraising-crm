@@ -73,11 +73,7 @@ class Message {
    */
   public function __construct(array $message) {
     if (!isset(\Civi::$statics[static::class]['supportedFields'])) {
-      \Civi::$statics[static::class]['supportedFields'] = [];
-      $messageProperty = ReflectionUtils::getCodeDocs((new \ReflectionProperty($this, 'message')), 'Property');
-      if (isset($messageProperty['shape'])) {
-        \Civi::$statics[static::class]['supportedFields'] = $messageProperty['shape'];
-      }
+      $this->populateSupportedFieldsFromDocBlock();
     }
     $this->supportedFields = \Civi::$statics[static::class]['supportedFields'];
 
@@ -1399,6 +1395,18 @@ class Message {
 
   public function getBackendProcessorTxnID(): ?string {
     return $this->message['backend_processor_txn_id'] ?? NULL;
+  }
+
+  /**
+   * @return void
+   * @throws \ReflectionException
+   */
+  protected function populateSupportedFieldsFromDocBlock(): void {
+    \Civi::$statics[static::class]['supportedFields'] = [];
+    $messageProperty = ReflectionUtils::getCodeDocs((new \ReflectionProperty($this, 'message')), 'Property');
+    if (isset($messageProperty['shape'])) {
+      \Civi::$statics[static::class]['supportedFields'] = $messageProperty['shape'];
+    }
   }
 
   protected function getBackendProcessorParentTxnID(): ?string {
