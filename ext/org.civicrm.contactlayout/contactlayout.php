@@ -106,17 +106,21 @@ function contactlayout_civicrm_pageRun(&$page) {
         uasort($tabs, ['CRM_Utils_Sort', 'cmpFunc']);
         $page->assign('allTabs', $tabs);
       }
-      if (CRM_Core_Permission::check('administer CiviCRM')) {
-        CRM_Core_Region::instance('contact-actions-ribbon')
-          ->add([
-            'markup' => '<li class="crm-contact-summary-edit-layout">
-              <a class="crm-hover-button" title="' . E::ts('Edit Layout', ['escape' => 'htmlattribute']) . '" href="' . CRM_Utils_System::url('civicrm/admin/contactlayout') . '">
-                <i role="img" aria-hidden="true" class="crm-i fa-edit"></i> ' . E::ts('Layout: %1', ['escape' => 'htmlattribute', 1 => $layout['label'] ?? E::ts('System Default')]) .
-            '</a>
-            </li>',
-          ]);
-      }
     }
+  }
+}
+
+function contactlayout_civicrm_summaryActions(&$actions, $contactID) {
+  if (CRM_Core_Permission::check('administer CiviCRM') && $contactID) {
+    $layout = CRM_Contactlayout_BAO_ContactLayout::getLayout($contactID);
+    $actions['otherActions']['contactlayout'] = [
+      'title' => E::ts('Layout: %1', ['1' => $layout['label'] ?? E::ts('System Default')]),
+      'description' => E::ts('Edit Contact Layout'),
+      'weight' => 80,
+      'href' => CRM_Utils_System::url('civicrm/admin/contactlayout'),
+      'ref' => 'contactlayout-edit',
+      'icon' => 'crm-i fa-edit',
+    ];
   }
 }
 
