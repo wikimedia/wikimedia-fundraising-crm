@@ -218,20 +218,22 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
       ->addValue('location_type_id:name', 'Home')
     )->execute()->first()['id'];
 
-    $this->expectException( \CRM_Core_Exception::class );
-    $this->expectExceptionMessage( 'Missing required checksum in e-mail preferences message.' );
     $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($this->contactID);
-    // no email which is required
-    WMFContact::updateCommunicationsPreferences()
-      ->setEmail('bob.roberto+update@test.com')
-      ->setContactID($this->contactID)
-      ->setChecksum($checksum)
-      ->setCountry(null)
-      ->setLanguage(null)
-      ->setSnoozeDate(null)
-      ->setSendEmail(null)
-      ->setEmailChecksum(null)
-      ->execute();
+    // no email checksum while email address different
+    try {
+      WMFContact::updateCommunicationsPreferences()
+        ->setEmail('bob.roberto+update@test.com')
+        ->setContactID($this->contactID)
+        ->setChecksum($checksum)
+        ->setCountry(null)
+        ->setLanguage(null)
+        ->setSnoozeDate(null)
+        ->setSendEmail(null)
+        ->setEmailChecksum(null)
+        ->execute();
+    } catch (\Exception $e) {
+      $this->fail('An unexpected exception was thrown: ' . $e->getMessage());
+    }
   }
 
   public function testChecksumMismatch() {
