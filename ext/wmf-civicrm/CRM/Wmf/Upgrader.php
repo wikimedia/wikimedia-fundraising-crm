@@ -11,7 +11,7 @@ use Civi\Api4\LocationType;
 use Civi\Api4\WMFConfig;
 use Civi\Api4\Email;
 use Civi\Api4\Contact;
-use \Civi\Api4\WMFDonor;
+use Civi\Api4\WMFDonor;
 use Civi\QueueHelper;
 use Civi\WMFHook\CalculatedData;
 use CRM_Wmf_ExtensionUtil as E;
@@ -4684,6 +4684,39 @@ v.channel IS NULL AND c.id = 131486342;",
         ->addValue('last_donation_usd', TRUE)
         ->addWhere('id', 'IN', $chunk)
         ->execute();
+    }
+    return TRUE;
+  }
+
+  /**
+   * Delete contents of thank you emails (annual and one time) where sent more than 3 months ago
+   *
+   * This is just an intermediate step, in the future we will store only a few details for each receipt.
+   *
+   * Bug: T421558
+   *
+   * @return bool
+   */
+  public function upgrade_5000(): bool {
+    $activityTypes = OptionValue::get(FALSE)
+      ->addSelect('value')
+      ->addWhere('option_group_id:name', '=', 'activity_type')
+      ->addWhere('name', 'IN', ['Thank you email', 'wmf_eoy_receipt_sent'])
+      ->execute()->column('value');
+    $activityTypeIDsList = implode(',', $activityTypes);
+    $maxId = CRM_Core_DAO::singleValueQuery("
+      SELECT MAX(id) FROM civicrm_activity
+      WHERE activity_date_time < DATE_SUB(NOW(), INTERVAL 3 MONTH)");
+    $minId = CRM_Core_DAO::singleValueQuery("
+      SELECT MIN(id) FROM civicrm_activity
+      WHERE activity_type_id IN ({$activityTypeIDsList})");
+    for ($min = $minId; $min <= $maxId; $min += 100000) {
+      CRM_Core_DAO::executeQuery("
+        UPDATE civicrm_activity
+        SET details = NULL
+        WHERE id BETWEEN {$min} AND " . ($min + 99999) . "
+        AND activity_type_id IN ({$activityTypeIDsList})
+        AND activity_date_time < DATE_SUB(NOW(), INTERVAL 3 MONTH)");
     }
     return TRUE;
   }
