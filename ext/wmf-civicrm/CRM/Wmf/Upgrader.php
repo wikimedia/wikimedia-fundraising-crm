@@ -10,6 +10,8 @@ use Civi\Api4\OptionValue;
 use Civi\Api4\LocationType;
 use Civi\Api4\WMFConfig;
 use Civi\Api4\Email;
+use Civi\Api4\Contact;
+use \Civi\Api4\WMFDonor;
 use Civi\QueueHelper;
 use Civi\WMFHook\CalculatedData;
 use CRM_Wmf_ExtensionUtil as E;
@@ -4643,6 +4645,45 @@ v.channel IS NULL AND c.id = 131486342;",
           ->setContactIDs($contactIDs)
           ->execute();
       }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Find contacts whose most recent donation is endowment
+   * and update their last_donation_currency, last_donation_amount and last_donation_usd fields.
+   *
+   * Triggers were updated on 5/14, so contacts modified before 2026-05-15 09:00:00 definitely covers all.
+   *
+   * Bug: T426189
+   *
+   * @return bool
+   */
+  public function upgrade_4995(): bool {
+    $contactIds = Contact::get(FALSE)
+      ->addSelect('id')
+      ->addWhere('modified_date', '<', '2026-05-15 09:00:00')
+      ->addJoin('Contribution AS endowment', 'INNER',
+        ['id', '=', 'endowment.contact_id'],
+        ['endowment.financial_type_id:name', '=', '"Endowment Gift"'],
+        ['endowment.contribution_status_id:name', '=', '"Completed"']
+      )
+      ->addJoin('Contribution AS non_endowment', 'EXCLUDE',
+        ['id', '=', 'non_endowment.contact_id'],
+        ['non_endowment.financial_type_id:name', 'IN', ['Cash', 'Chargeback Reversal', 'Donation', 'Recurring Gift', 'Recurring Gift - Cash', 'Refund Reversal', 'Reversal Reversal', 'Stock']],
+        ['non_endowment.contribution_status_id:name', '=', '"Completed"'],
+        ['non_endowment.receive_date', '>', 'endowment.receive_date']
+      )
+      ->addGroupBy('id')
+      ->execute()
+      ->column('id');
+    foreach (array_chunk($contactIds, 10000) as $chunk) {
+      WMFDonor::update(FALSE)
+        ->addValue('last_donation_currency', TRUE)
+        ->addValue('last_donation_amount', TRUE)
+        ->addValue('last_donation_usd', TRUE)
+        ->addWhere('id', 'IN', $chunk)
+        ->execute();
     }
     return TRUE;
   }
