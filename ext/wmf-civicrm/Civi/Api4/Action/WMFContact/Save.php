@@ -436,29 +436,21 @@ class Save extends AbstractAction {
     // This winds up being a list of permitted fields to update. The approach of
     // filtering out some fields here probably persists more because we
     // have not been brave enough to change historical code than an underlying reason.
-    // Here we have tended to discard incoming names on update - why??
-    // The latest cut only discards them if we have reason to think it might be poor quality.
-    if ((empty($existingContact['first_name']) && empty($existingContact['last_name']))
-      || (!$this->getIsLowConfidenceNameSource()
-        && !empty($this->message['first_name'])
-        && !empty($this->message['last_name'])
-      )
-    ) {
-      // When new name fields only differ from old name fields in case, only update
-      // when the new case is better than the old case
-      foreach(['first_name', 'last_name'] as $field) {
-        if (!empty($this->message[$field])) {
-          $sameExceptForCase = (strcasecmp($existingContact[$field] ?? '', $this->message[$field]) === 0);
-          if ($sameExceptForCase) {
-            if (\Civi\WMFHelper\Name::isBetterCapitalization(
-              $existingContact[$field], $this->message[$field]
-            )) {
-              $updateFields[] = $field;
-            }
-          }
-          else {
+    $incomingHighConfidence = !$this->getIsLowConfidenceNameSource();
+    $existingLowConfidence = $existingContact['email_primary.location_type_id:name'] && $this->getIsLowConfidenceNameSource($existingContact['email_primary.location_type_id:name']);
+    foreach (['first_name', 'last_name'] as $field) {
+      if (!empty($this->message[$field]) && (empty($existingContact[$field]) || $existingLowConfidence || $incomingHighConfidence)) {
+        // When new name fields only differ from old name fields in case, only update
+        // when the new case is better than the old case
+        $sameExceptForCase = (strcasecmp($existingContact[$field] ?? '', $this->message[$field]) === 0);
+        if ($sameExceptForCase) {
+          if (\Civi\WMFHelper\Name::isBetterCapitalization(
+            $existingContact[$field], $this->message[$field]
+          )) {
             $updateFields[] = $field;
           }
+        } else {
+          $updateFields[] = $field;
         }
       }
     }
@@ -904,7 +896,7 @@ class Save extends AbstractAction {
       $contact = Contact::get(FALSE)
         ->addWhere('id', '=', $msg['contact_id'])
         ->addWhere('is_deleted', '=', FALSE)
-        ->addSelect('first_name', 'last_name')->execute()->first();
+        ->addSelect('first_name', 'last_name', 'email_primary.location_type_id:name')->execute()->first();
       if (!$contact) {
         $mergedTo = Contact::getMergedTo(FALSE)
           ->setContactId($msg['contact_id'])->execute()->first();
@@ -912,7 +904,7 @@ class Save extends AbstractAction {
           $contact = Contact::get(FALSE)
             ->addWhere('id', '=', $mergedTo['id'])
             ->addWhere('is_deleted', '=', FALSE)
-            ->addSelect('first_name', 'last_name')->execute()->first();
+            ->addSelect('first_name', 'last_name', 'email_primary.location_type_id:name')->execute()->first();
         }
       }
       if ($contact) {
@@ -980,6 +972,7 @@ class Save extends AbstractAction {
 
     // Fallback to external identifier field
     $matches = Contact::get(FALSE)
+      ->addSelect('*', 'email_primary.location_type_id:name')
       ->addWhere($external_identifier_field, '=', $msg[$external_identifier_field])
       ->execute()->first();
 
@@ -991,7 +984,7 @@ class Save extends AbstractAction {
    */
   private function matchVenmoByPhone(array $msg): ?array {
     $matches = Contact::get(FALSE)
-      ->addSelect('*', 'External_Identifiers.venmo_user_name')
+      ->addSelect('*', 'External_Identifiers.venmo_user_name', 'email_primary.location_type_id:name')
       ->addWhere('phone_primary.phone_data.phone_source', '=', 'Venmo')
       ->addWhere('phone_primary.phone', '=', $msg['phone'])
       ->addOrderBy('id')  // get the oldest contact if multiple matches exist
@@ -1009,7 +1002,7 @@ class Save extends AbstractAction {
    */
   private function matchVenmoByEmail(array $msg, array $externalIdentifiers): ?array {
     $matches = Contact::get(FALSE)
-      ->addSelect('*', 'External_Identifiers.venmo_user_name')
+      ->addSelect('*', 'External_Identifiers.venmo_user_name', 'email_primary.location_type_id:name')
       ->addJoin('Email AS email')
       ->addWhere('is_deleted', '=', 0)
       ->addWhere('is_deceased', '=', 0)
@@ -1030,16 +1023,17 @@ class Save extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   private function matchByBillingEmail(array $msg): ?array {
-    $matches = Email::get(FALSE)
-      ->addWhere('contact_id.is_deleted', '=', 0)
-      ->addWhere('contact_id.is_deceased', '=', 0)
-      ->addWhere('email', '=', $msg['billing_email'])
-      ->addWhere('location_type_id:name', '=', 'ach')
-      ->setSelect(['contact_id', 'contact_id.first_name', 'contact_id.last_name'])
-      ->setOrderBy(['contact_id' => 'ASC'])
+    $matches = Contact::get(FALSE)
+      ->addSelect('id', 'first_name', 'last_name', 'email_primary.location_type_id:name')
+      ->addJoin('Email AS email')
+      ->addWhere('is_deleted', '=', 0)
+      ->addWhere('is_deceased', '=', 0)
+      ->addWhere('email.email', '=', $msg['billing_email'])
+      ->addWhere('email.location_type_id:name', '=', 'ach')
+      ->addOrderBy('id', 'ASC')
       ->execute();
 
-    return (count($matches) === 1) ? $this->keyAsContact($matches->first()) : NULL;
+    return (count($matches) === 1) ? $matches->first() : NULL;
   }
 
   /**
@@ -1053,12 +1047,13 @@ class Save extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   private function matchByEmail(array $msg): ?array {
-    $matches = Email::get(FALSE)
-      ->addWhere('contact_id.is_deleted', '=', 0)
-      ->addWhere('contact_id.is_deceased', '=', 0)
-      ->addWhere('email', '=', $msg['email'])
-      ->setSelect(['contact_id', 'contact_id.first_name', 'contact_id.last_name', 'location_type_id:name', 'is_primary'])
-      ->setOrderBy(['contact_id' => 'ASC'])
+    $matches = Contact::get(FALSE)
+      ->addSelect('id', 'first_name', 'last_name', 'email_primary.location_type_id:name', 'email.location_type_id:name', 'email.is_primary')
+      ->addJoin('Email AS email')
+      ->addWhere('is_deleted', '=', 0)
+      ->addWhere('is_deceased', '=', 0)
+      ->addWhere('email.email', '=', $msg['email'])
+      ->addOrderBy('id', 'ASC')
       ->execute();
 
     if (count($matches) === 0) {
@@ -1072,15 +1067,15 @@ class Save extends AbstractAction {
 
     foreach ($matches as $candidate) {
       $isNameMatch = $this->isNameMatch($candidate, $msg);
-      $isPrimary = $candidate['is_primary'];
-      $isLowConfidence = $this->getIsLowConfidenceNameSource($candidate['location_type_id:name']);
+      $isPrimary = $candidate['email.is_primary'];
+      $isLowConfidence = $this->getIsLowConfidenceNameSource($candidate['email.location_type_id:name']);
       $isLocationMatch = strcasecmp(
         $msg['payment_method'] == 'ach' ? 'achForm' : $msg['payment_method'],
-        $candidate['location_type_id:name']) === 0;
+        $candidate['email.location_type_id:name']) === 0;
 
       // 1) primary email + name
       if ($isNameMatch && $isPrimary) {
-        return $this->keyAsContact($candidate);
+        return $candidate;
       }
 
       // 2) email + name
@@ -1106,24 +1101,24 @@ class Save extends AbstractAction {
 
     // Apply fallback priority
     if (!empty($nameMatches)) {
-      return $this->keyAsContact($nameMatches[0]);
+      return $nameMatches[0];
     }
     if (!empty($primaryLowConfidence)) {
-      return $this->keyAsContact($primaryLowConfidence[0]);
+      return $primaryLowConfidence[0];
     }
     if (!empty($locationMatches)) {
-      return $this->keyAsContact($locationMatches[0]);
+      return $locationMatches[0];
     }
     if (!empty($lowConfidence)) {
-      return $this->keyAsContact($lowConfidence[0]);
+      return $lowConfidence[0];
     }
 
     return NULL;
   }
 
   private function isNameMatch(array $candidate, array $msg): bool {
-    return strcasecmp($candidate['contact_id.first_name'] ?? '', $msg['first_name']) === 0
-      && strcasecmp($candidate['contact_id.last_name'] ?? '', $msg['last_name']) === 0;
+    return strcasecmp($candidate['first_name'] ?? '', $msg['first_name']) === 0
+      && strcasecmp($candidate['last_name'] ?? '', $msg['last_name']) === 0;
   }
 
   /**
@@ -1138,21 +1133,21 @@ class Save extends AbstractAction {
       }
     }
 
-    $matches = Address::get(FALSE)
-      ->addWhere('city', '=', $msg['city'])
-      ->addWhere('postal_code', '=', $msg['postal_code'])
-      ->addWhere('street_address', '=', $msg['street_address'])
-      ->addWhere('contact_id.first_name', '=', $msg['first_name'])
-      ->addWhere('contact_id.last_name', '=', $msg['last_name'])
-      ->addWhere('contact_id.is_deleted', '=', 0)
-      ->addWhere('contact_id.is_deceased', '=', 0)
-      ->addWhere('is_primary', '=', TRUE)
-      ->setSelect(['contact_id', 'contact_id.first_name', 'contact_id.last_name'])
+    $matches = Contact::get(FALSE)
+      ->addSelect('id', 'first_name', 'last_name', 'email_primary.location_type_id:name')
+      ->addJoin('Address AS address')
+      ->addWhere('is_deleted', '=', 0)
+      ->addWhere('is_deceased', '=', 0)
+      ->addWhere('first_name', '=', $msg['first_name'])
+      ->addWhere('last_name', '=', $msg['last_name'])
+      ->addWhere('address.city', '=', $msg['city'])
+      ->addWhere('address.postal_code', '=', $msg['postal_code'])
+      ->addWhere('address.street_address', '=', $msg['street_address'])
+      ->addWhere('address.is_primary', '=', TRUE)
       ->setLimit(1)
-      ->setOrderBy(['contact_id' => 'ASC'])
+      ->addOrderBy('id', 'ASC')
       ->execute();
-
-    return (count($matches) === 1) ? $this->keyAsContact($matches->first()) : NULL;
+    return (count($matches) === 1) ? $matches->first() : NULL;
   }
 
   /**
@@ -1327,29 +1322,6 @@ class Save extends AbstractAction {
       }
     }
     return $externalIdentifierFields;
-  }
-
-  /**
-   * Reformat an array from another entity as a contact array.
-   *
-   * e.g an email array of ['contact_id' => 5, 'contact_id.first_name' => 'Tinkerbell']
-   * will be swapped to ['id' => 5, 'first_name' => 'Tinkerbell']
-   *
-   * @param array $result
-   *
-   * @return array
-   */
-  private function keyAsContact(array $result): array {
-    $contact = [];
-    foreach ($result as $key => $value) {
-      if ($key === 'contact_id') {
-        $contact['id'] = $value;
-      }
-      elseif ($key !== 'id') {
-        $contact[substr($key, 11)] = $value;
-      }
-    }
-    return $contact;
   }
 
   /**

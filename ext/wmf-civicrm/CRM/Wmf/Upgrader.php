@@ -9,6 +9,9 @@ use Civi\Api4\OptionGroup;
 use Civi\Api4\OptionValue;
 use Civi\Api4\LocationType;
 use Civi\Api4\WMFConfig;
+use Civi\Api4\Email;
+use Civi\Api4\Contact;
+use Civi\Api4\WMFDonor;
 use Civi\QueueHelper;
 use Civi\WMFHook\CalculatedData;
 use CRM_Wmf_ExtensionUtil as E;
@@ -4614,7 +4617,111 @@ v.channel IS NULL AND c.id = 131486342;",
     return TRUE;
   }
 
-   /**
+  /**
+   * Find contacts with two emails of the same type and address and merge them with Email::Clean.
+   *
+   * Bug: T425190
+   *
+   * @return bool
+   */
+  public function upgrade_4990(): bool {
+    $maxContactID = CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact');
+    $chunkSize = 100000;
+    for ($minID = 0; $minID <= $maxContactID; $minID += $chunkSize) {
+      $contactIDs = array_column(CRM_Core_DAO::executeQuery('
+        SELECT c.id FROM civicrm_contact c
+        INNER JOIN civicrm_email e1 ON c.id = e1.contact_id
+        INNER JOIN civicrm_email e2 ON c.id = e2.contact_id
+          AND e2.location_type_id = e1.location_type_id
+          AND e2.email = e1.email
+          AND e2.id <> e1.id
+        WHERE c.is_deleted = 0
+          AND c.id BETWEEN %1 AND %2
+        GROUP BY c.id',
+        [1 => [$minID, 'Integer'], 2 => [$minID + $chunkSize - 1, 'Integer']]
+      )->fetchAll(), 'id');
+      if (!empty($contactIDs)) {
+        Email::clean(FALSE)
+          ->setContactIDs($contactIDs)
+          ->execute();
+      }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Find contacts whose most recent donation is endowment
+   * and update their last_donation_currency, last_donation_amount and last_donation_usd fields.
+   *
+   * Triggers were updated on 5/14, so contacts modified before 2026-05-15 09:00:00 definitely covers all.
+   *
+   * Bug: T426189
+   *
+   * @return bool
+   */
+  public function upgrade_4995(): bool {
+    $contactIds = Contact::get(FALSE)
+      ->addSelect('id')
+      ->addWhere('modified_date', '<', '2026-05-15 09:00:00')
+      ->addJoin('Contribution AS endowment', 'INNER',
+        ['id', '=', 'endowment.contact_id'],
+        ['endowment.financial_type_id:name', '=', '"Endowment Gift"'],
+        ['endowment.contribution_status_id:name', '=', '"Completed"']
+      )
+      ->addJoin('Contribution AS non_endowment', 'EXCLUDE',
+        ['id', '=', 'non_endowment.contact_id'],
+        ['non_endowment.financial_type_id:name', 'IN', ['Cash', 'Chargeback Reversal', 'Donation', 'Recurring Gift', 'Recurring Gift - Cash', 'Refund Reversal', 'Reversal Reversal', 'Stock']],
+        ['non_endowment.contribution_status_id:name', '=', '"Completed"'],
+        ['non_endowment.receive_date', '>', 'endowment.receive_date']
+      )
+      ->addGroupBy('id')
+      ->execute()
+      ->column('id');
+    foreach (array_chunk($contactIds, 10000) as $chunk) {
+      WMFDonor::update(FALSE)
+        ->addValue('last_donation_currency', TRUE)
+        ->addValue('last_donation_amount', TRUE)
+        ->addValue('last_donation_usd', TRUE)
+        ->addWhere('id', 'IN', $chunk)
+        ->execute();
+    }
+    return TRUE;
+  }
+
+  /**
+   * Delete contents of thank you emails (annual and one time) where sent more than 3 months ago
+   *
+   * This is just an intermediate step, in the future we will store only a few details for each receipt.
+   *
+   * Bug: T421558
+   *
+   * @return bool
+   */
+  public function upgrade_5000(): bool {
+    $activityTypes = OptionValue::get(FALSE)
+      ->addSelect('value')
+      ->addWhere('option_group_id:name', '=', 'activity_type')
+      ->addWhere('name', 'IN', ['Thank you email', 'wmf_eoy_receipt_sent'])
+      ->execute()->column('value');
+    $activityTypeIDsList = implode(',', $activityTypes);
+    $maxId = CRM_Core_DAO::singleValueQuery("
+      SELECT MAX(id) FROM civicrm_activity
+      WHERE activity_date_time < DATE_SUB(NOW(), INTERVAL 3 MONTH)");
+    $minId = CRM_Core_DAO::singleValueQuery("
+      SELECT MIN(id) FROM civicrm_activity
+      WHERE activity_type_id IN ({$activityTypeIDsList})");
+    for ($min = $minId; $min <= $maxId; $min += 100000) {
+      CRM_Core_DAO::executeQuery("
+        UPDATE civicrm_activity
+        SET details = NULL
+        WHERE id BETWEEN {$min} AND " . ($min + 99999) . "
+        AND activity_type_id IN ({$activityTypeIDsList})
+        AND activity_date_time < DATE_SUB(NOW(), INTERVAL 3 MONTH)");
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

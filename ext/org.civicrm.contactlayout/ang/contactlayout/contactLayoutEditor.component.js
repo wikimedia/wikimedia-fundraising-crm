@@ -25,11 +25,20 @@
       let newLayoutCount = 0;
       const profileEntities = [{entity_name: "contact_1", entity_type: "IndividualModel"}];
       const allBlocks = [];
+      // Default icons if missing from the database
       const CONTACT_ICONS = {
         Individual: 'crm-i fa-user',
         Organization: 'crm-i fa-building',
         Household: 'crm-i fa-home'
       };
+      // Prefer icons from the database; fallback on the defaults.
+      vars.contactTypes.forEach(type => {
+        if (type.name in CONTACT_ICONS && type.icon) {
+          CONTACT_ICONS[type.name] = `crm-i ${type.icon}`;
+        } else if (type.name in CONTACT_ICONS) {
+          type.icon = CONTACT_ICONS[type.name].split(' ')[1];
+        }
+      });
 
       // Determines if the given block can be used for the current layout's contact type
       $scope.checkBlockValidity = function(block) {
@@ -102,7 +111,7 @@
       };
 
       $scope.selectableSubTypes = function(contactType) {
-        const typeId = vars.contactTypes.filter(type => type.name === contactType)[0].id;
+        const typeId = vars.contactTypes.find(type => type.name === contactType).id;
         return vars.contactTypes.filter(type => type.parent_id === typeId);
       };
 

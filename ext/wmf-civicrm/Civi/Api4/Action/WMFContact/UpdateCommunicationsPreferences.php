@@ -419,9 +419,13 @@ class UpdateCommunicationsPreferences extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   function sendVerificationEmail(array $contact): void {
-    // should have email_checksum passed in to send verification email
+    // If we are missing the required checksum (e.g., older queue items),
+    // log a warning and skip verification rather than crashing
+    // since this might queue before our email updated which old email overwritten already.
     if ( empty($this->emailChecksum) ) {
-      throw new \CRM_Core_Exception('Missing required checksum in e-mail preferences message.');
+      $oldEmail = $contact['email.email'] ?? 'unknown';
+      \Civi::log('wmf')->warning("Attempt to update contact $this->contactID's email from $oldEmail to $this->email, while missing required checksum in queue message. Skipping verification email.");
+      return;
     }
     // unique checksum for validation
     $unexpiredChecksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($this->contactID, null, 'inf');

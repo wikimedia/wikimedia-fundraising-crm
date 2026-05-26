@@ -207,14 +207,14 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
   private function importContribution(DonationMessage $message, array $msg): array {
     $contribution = [
       'contact_id' => $msg['contact_id'],
-      'total_amount' => $msg['gross'],
+      'total_amount' => $message->getReportingAmountRounded(),
       'financial_type_id' => $msg['financial_type_id'],
       'payment_instrument_id' => $msg['payment_instrument_id'],
-      'fee_amount' => $msg['fee'],
-      'net_amount' => $msg['net'],
+      'fee_amount' => $message->getReportingFeeAmountRounded(),
+      'net_amount' => $message->getReportingNetAmountRounded(),
       'trxn_id' => $msg['trxn_id'],
       'receive_date' => $message->getDate(),
-      'currency' => $msg['currency'],
+      'currency' => $message->getReportingCurrency(),
       'contribution_recur_id' => $message->getContributionRecurID(),
       'debug' => TRUE,
       'invoice_id' => $message->getInvoiceID(),
