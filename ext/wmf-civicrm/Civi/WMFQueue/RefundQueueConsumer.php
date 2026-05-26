@@ -53,17 +53,24 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       // add activity to record refund reason (e.g. why do we get chargeback),
       // currently only adyen has this field, need to ask gr4vy if they can also pass it back
       if (!empty($reason)) {
-        // Log the refund reason to activity
-        Activity::create(FALSE)
-          ->addValue('date', $message['date'])
-          ->addValue('activity_type_id:name', 'Refund')
-          ->addValue('subject', ts('Refund Reason'))
-          ->addValue('status_id:name', 'Completed')
-          ->addValue('details', $contributionStatus . ' reason: ' . $message['reason'])
-          ->addValue('source_contact_id', $originalContribution['contact_id'])
-          ->addValue('target_contact_id', $originalContribution['contact_id'])
-          ->addValue('source_record_id', $originalContribution['id'])
-          ->execute();
+        // Check if activity already exists
+        $existingActivity = Activity::get(FALSE)
+          ->addWhere('activity_type_id:name', '=', 'Refund')
+          ->addWhere('source_record_id', '=', $originalContribution['id'])
+          ->setLimit(1)->execute()->first();
+        if ($existingActivity === NULL) {
+          // Log the refund reason to activity
+          Activity::create(FALSE)
+            ->addValue('date', $message['date'])
+            ->addValue('activity_type_id:name', 'Refund')
+            ->addValue('subject', ts('Refund Reason'))
+            ->addValue('status_id:name', 'Completed')
+            ->addValue('details', $contributionStatus . ' reason: ' . $message['reason'])
+            ->addValue('source_contact_id', $originalContribution['contact_id'])
+            ->addValue('target_contact_id', $originalContribution['contact_id'])
+            ->addValue('source_record_id', $originalContribution['id'])
+            ->execute();
+        }
       }
       // Some chargebacks for ACH and SEPA are retryable, don't cancel the recurrings
       if (!$this->isRetryableChargeback($reason)) {

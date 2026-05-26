@@ -11,6 +11,7 @@
     {foreach $to_refund as $contribution}
       <tr>
         <td>{$contribution.display_name}</td>
+        <td>{$contribution.invoice_id}</td>
         <td>{$contribution.trxn_id}</td>
         <td>{$contribution.original_currency} {$contribution.original_amount}</td>
         <td>{$contribution.receive_date}</td>
@@ -23,6 +24,7 @@
       {foreach $not_to_refund as $contribution}
         <tr>
           <td>{$contribution.display_name}</td>
+          <td>{$contribution.invoice_id}</td>
           <td>{$contribution.trxn_id}</td>
           <td>{$contribution.original_currency} {$contribution.original_amount}</td>
           <td>{$contribution.receive_date}</td>

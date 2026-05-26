@@ -7,6 +7,7 @@ use Civi\Api4\Activity;
 use Civi\Api4\Contact;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\MessageTemplate;
 use Civi\Api4\WorkflowMessage;
 
 /**
@@ -107,11 +108,12 @@ class Send extends AbstractAction {
         'source_contact_id' => $this->activitySourceContactID ??
             \CRM_Core_Session::getLoggedInContactID() ??
             $this->contactID,
-        'subject' => $this->workflow . ' message: ' . $rendered['subject'],
+        'subject' => self::getWorkflowTemplateTitle($this->workflow) . ': ' . $rendered['subject'],
         'details' => $details,
         'activity_type_id:name' => 'Email',
         'activity_date_time' => 'now',
         'source_record_id' => $this->activitySourceRecordID,
+        'Email.Workflow' => $this->workflow,
       ])->execute();
     }
 
@@ -120,6 +122,17 @@ class Send extends AbstractAction {
     }
     $result[$this->contactID]['from'] = $params['from'];
     $result[$this->contactID]['send_successful'] = $success;
+  }
+
+  protected static function getWorkflowTemplateTitle(string $workflow): string {
+    if (!isset(\Civi::$statics[__CLASS__]['workflow_titles'][$workflow])) {
+      \Civi::$statics[__CLASS__]['workflow_titles'][$workflow] = MessageTemplate::get(FALSE)
+        ->addWhere('workflow_name', '=', $workflow)
+        ->addWhere('is_default', '=', TRUE)
+        ->addSelect('msg_title')
+        ->execute()->first()['msg_title'] ?? $workflow;
+    }
+    return \Civi::$statics[__CLASS__]['workflow_titles'][$workflow];
   }
 
   /**

@@ -2,6 +2,8 @@
 
 namespace Civi\Api4\Action\Contribution;
 
+use Civi\API\Exception\UnauthorizedException;
+use Civi\Api4\Activity;
 use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
@@ -24,7 +26,11 @@ class RefundAndMarkIfFraud extends AbstractAction {
   protected $contributionID;
   protected $isFraud;
 
-  public function _run(Result $result) {
+  /**
+   * @throws \CRM_Core_Exception
+   * @throws UnauthorizedException
+   */
+  public function _run(Result $result): void {
     $processor = PaymentProcessor::get(FALSE)
       ->addWhere('name', '=', $this->processorName)
       ->addWhere('is_test', '=', FALSE)
@@ -38,22 +44,8 @@ class RefundAndMarkIfFraud extends AbstractAction {
       ->setTransactionID($this->transactionID)
       ->execute();
     if ($refundResult['refund_status'] === 'Completed') {
-      $updateCall = Contribution::update(FALSE)
-        ->addWhere('id', '=', $this->contributionID)
-        ->addValue('cancel_date', date('Y-m-d H:i:s'))
-        ->addValue('contribution_status_id:name', 'Refunded');
-      if ($this->isFraud) {
-        $updateCall->addValue('cancel_reason', 'fraud');
-      }
-      if ($refundResult['processor_id']) {
-        if ($this->processorName === 'gravy') {
-          $fieldName = 'payment_orchestrator_reversal_id';
-        } else {
-          $fieldName = 'backend_processor_reversal_id';
-        }
-        $updateCall->addValue("contribution_extra.$fieldName", $refundResult['processor_id']);
-      }
-      $updateCall->execute();
+      $this->markContributionRefunded($refundResult['processor_id']);
+      $this->addRefundActivity($refundResult['processor_id']);
     }
     $result[] = $refundResult;
   }
@@ -63,5 +55,54 @@ class RefundAndMarkIfFraud extends AbstractAction {
    */
   public function getPermissions(): array {
     return ['refund contributions'];
+  }
+
+  /**
+   * @param string|null $processorRefundID
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function markContributionRefunded(?string $processorRefundID): void {
+    $updateCall = Contribution::update(FALSE)
+      ->addWhere('id', '=', $this->contributionID)
+      ->addValue('cancel_date', date('Y-m-d H:i:s'))
+      ->addValue('contribution_status_id:name', 'Refunded');
+    if ($this->isFraud) {
+      $updateCall->addValue('cancel_reason', 'fraud');
+    }
+    if ($processorRefundID) {
+      if ($this->processorName === 'gravy') {
+        $fieldName = 'payment_orchestrator_reversal_id';
+      }
+      else {
+        $fieldName = 'backend_processor_reversal_id';
+      }
+      $updateCall->addValue("contribution_extra.$fieldName", $processorRefundID);
+    }
+    $updateCall->execute();
+  }
+
+  protected function addRefundActivity(?string $processorRefundID): void {
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('id', '=', $this->contributionID)
+      ->setSelect(['contact_id, invoice_id'])
+      ->execute()->first();
+    $contactID = $contribution['contact_id'];
+    $details = "Contribution with merchant reference {$contribution['invoice_id']} " .
+      "and $this->processorName transaction ID $this->transactionID was refunded.";
+    if ($processorRefundID) {
+      $details .= " The gateway refund ID was $processorRefundID.";
+    }
+    if ($this->isFraud) {
+      $details .= " The transaction was also marked as fraudulent.";
+    }
+    Activity::create(FALSE)
+      ->addValue('activity_type_id:name', 'Refund')
+      ->addValue('source_record_id', $this->contributionID)
+      ->addValue('source_contact_id', \CRM_Core_Session::getLoggedInContactID() ?? $contactID)
+      ->addValue('target_contact_id', $contactID)
+      ->addValue('subject', 'Contribution was refunded')
+      ->addValue('details', $details)
+      ->execute();
   }
 }
