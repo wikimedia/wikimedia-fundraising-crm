@@ -85,7 +85,7 @@ class RefundAndMarkIfFraud extends AbstractAction {
   protected function addRefundActivity(?string $processorRefundID): void {
     $contribution = Contribution::get(FALSE)
       ->addWhere('id', '=', $this->contributionID)
-      ->setSelect(['contact_id, invoice_id'])
+      ->setSelect(['contact_id', 'invoice_id'])
       ->execute()->first();
     $contactID = $contribution['contact_id'];
     $details = "Contribution with merchant reference {$contribution['invoice_id']} " .
