@@ -176,6 +176,8 @@ class GenerateBatch extends AbstractAction {
                       'batch_data.exchange_rate_source' => 'Intacct',
                       'batch_data.remote_url_' . $journal['remote_descriptor'] => $remote['url'],
                       'batch_data.remote_identifier_' . $journal['remote_descriptor'] => $remote['txn_number'],
+                      'batch_data.amount_journaled_to_endowment' => $this->batchSummary[$batch['name']]['endowment_transfer']->getAmount(),
+                      'status_id:name' => 'Exported',
                     ])
                     ->execute();
                 }
@@ -190,13 +192,6 @@ class GenerateBatch extends AbstractAction {
               $result[$index]['upload_errors'] = 'journal upload failed';
             }
           }
-        }
-        if (empty($errors)) {
-          Batch::update(FALSE)
-            ->addWhere('name', '=', $batch['name'])
-            ->addValue('status_id:name', 'Exported')
-            ->addValue('batch_data.amount_journaled_to_endowment', (string) $this->batchSummary[$batch['name']]['endowment_transfer']->getAmount())
-            ->execute();
         }
       }
       else {
