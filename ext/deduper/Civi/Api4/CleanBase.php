@@ -137,10 +137,8 @@ abstract class CleanBase extends AbstractAction {
         // Treat it as 'one of the other existing types' so re-homing kicks in.
         $entity['location_type_id'] = $locationTypeForUnassigned;
       }
-      if ($entity['is_primary'] || !in_array($entity['location_type_id'], $this->getLocationTypesToKeep(), TRUE)) {
-        $return[$entity['location_type_id'] . ($entity['phone_type_id'] ?? '')][$id] = $entity;
-        $locationTypeForUnassigned = $entity['location_type_id'];
-      }
+      $return[$entity['location_type_id'] . ($entity['phone_type_id'] ?? '')][$id] = $entity;
+      $locationTypeForUnassigned = $entity['location_type_id'];
     }
     return $return;
   }
@@ -186,7 +184,7 @@ abstract class CleanBase extends AbstractAction {
                 }
                 $this->idsToDelete[] = $entity['id'];
               }
-              elseif ($this->hasSalientData($entity)) {
+              elseif ($this->hasSalientData($entity) && !in_array($entity['location_type_id'], $this->getLocationTypesToKeep(), TRUE)) {
                 $this->idsToRelocate[$contactID][$entityKey] = $entity;
               }
             }
@@ -195,21 +193,24 @@ abstract class CleanBase extends AbstractAction {
             // We have altered keeper (augmented it with detail from another address) so we save the update.
             $this->update($keeper['id'], $keeper);
           }
+          if (!in_array($keeper['location_type_id'], $this->getLocationTypesToKeep(), TRUE)) {
+            $this->setEntityToBeDeletedIfEquivalentAlreadyBeingKept($contactID, $keeper);
+          }
         }
         else {
-          foreach($entities as $entity) {
+          $singleEntity = reset($entities);
+          if (!$singleEntity['is_primary'] && in_array($singleEntity['location_type_id'], $this->getLocationTypesToKeep(), TRUE)) {
+            continue;
+          }
+          foreach ($entities as $entity) {
             if (!$this->hasSalientData($entity)) {
               // Deleting empty entities pre-merge prevents them overwriting good entities.
               $this->idsToDelete[] = $entity['id'];
             }
             else {
-              $keeper = $entity;
+              $this->setEntityToBeDeletedIfEquivalentAlreadyBeingKept($contactID, $entity);
             }
           }
-        }
-
-        if (!empty($keeper)) {
-          $this->setEntityToBeDeletedIfEquivalentAlreadyBeingKept($contactID, $keeper);
         }
       }
     }

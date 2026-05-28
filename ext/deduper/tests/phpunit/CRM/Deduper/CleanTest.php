@@ -178,47 +178,90 @@ class CleanTest extends DedupeBaseTestClass {
   }
 
   /**
-   * Test that duplicate emails of location types we want to keep are kept,
+   * Test that entities of location types we want to keep are kept,
    * while duplicates of other location types are removed.
    *
+   * @dataProvider getLocationEntityData
    * @throws \CRM_Core_Exception
    */
-  public function testCleanDuplicateEmailHandlingKeepingLocationTypes(): void {
-    $this->entity = 'Email';
-    $this->setSetting('deduper_clean_location_types_to_keep_email', ['exclude']);
-    unset(Civi::$statics[\Civi\Api4\Action\Email\Clean::class]);
-    $excludeTypeID = LocationType::save(FALSE)
-      ->setRecords([['name' => 'exclude', 'display_name' => 'Exclude', 'is_active' => TRUE]])
-      ->setMatch(['name'])
-      ->execute()->first()['id'];
+  public function testCleanDuplicateWithKeptLocationTypes(string $entity, array $values): void {
+    $excludeTypeID = $this->setUpWithKeptLocationType($entity);
+    $contactID = $this->ids['contact']['Ponyo'];
 
-    $this->ids['contact']['Ponyo'] = $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Ponyo'])['id'];
-
-    $this->createEntity([
-      'email' => 'ponyo@example.com',
-      'location_type_id' => $this->locationTypes['Home'],
-      'contact_id' => $this->ids['contact']['Ponyo'],
-      'is_primary' => TRUE,
-    ]);
+    $this->createEntity(array_merge($values, ['location_type_id' => $this->locationTypes['Home'], 'contact_id' => $contactID, 'is_primary' => TRUE]));
     // Exclude type duplicate — should be kept.
-    $this->createEntity([
-      'email' => 'ponyo@example.com',
-      'location_type_id' => $excludeTypeID,
-      'contact_id' => $this->ids['contact']['Ponyo'],
-    ]);
+    $this->createEntity(array_merge($values, ['location_type_id' => $excludeTypeID, 'contact_id' => $contactID]));
     // Main duplicate — should be removed.
-    $this->createEntity([
-      'email' => 'ponyo@example.com',
-      'location_type_id' => $this->locationTypes['Main'],
-      'contact_id' => $this->ids['contact']['Ponyo'],
-    ]);
+    $this->createEntity(array_merge($values, ['location_type_id' => $this->locationTypes['Main'], 'contact_id' => $contactID]));
 
-    $this->doClean($this->ids['contact']['Ponyo']);
+    $this->doClean($contactID);
 
     // Home (primary) + exclude are kept, Main is removed.
-    $this->checkEntities($this->ids['contact']['Ponyo'], [
-      ['email' => 'ponyo@example.com', 'location_type_id' => $this->locationTypes['Home'], 'is_primary' => TRUE],
-      ['email' => 'ponyo@example.com', 'location_type_id' => $excludeTypeID, 'is_primary' => FALSE],
+    $this->checkEntities($contactID, [
+      array_merge($values, ['location_type_id' => $this->locationTypes['Home'], 'is_primary' => TRUE]),
+      array_merge($values, ['location_type_id' => $excludeTypeID, 'is_primary' => FALSE]),
+    ]);
+  }
+
+  /**
+   * Two identical entities of the same kept location type — duplicate should be removed.
+   *
+   * @dataProvider getLocationEntityData
+   * @throws \CRM_Core_Exception
+   */
+  public function testCleanDuplicateSameValueSameKeptLocationType(string $entity, array $values): void {
+    $excludeTypeID = $this->setUpWithKeptLocationType($entity);
+    $contactID = $this->ids['contact']['Ponyo'];
+
+    $this->createEntity(array_merge($values, ['location_type_id' => $excludeTypeID, 'contact_id' => $contactID, 'is_primary' => TRUE]));
+    $this->createEntity(array_merge($values, ['location_type_id' => $excludeTypeID, 'contact_id' => $contactID]));
+
+    $this->doClean($contactID);
+
+    $this->checkEntities($contactID, [
+      array_merge($values, ['location_type_id' => $excludeTypeID, 'is_primary' => TRUE]),
+    ]);
+  }
+
+  /**
+   * Two different entities of the same kept location type — both should be left alone.
+   *
+   * @dataProvider getLocationEntityData
+   * @throws \CRM_Core_Exception
+   */
+  public function testCleanDuplicateDifferentValueSameKeptLocationType(string $entity, array $values, array $secondaryValues): void {
+    $excludeTypeID = $this->setUpWithKeptLocationType($entity);
+    $contactID = $this->ids['contact']['Ponyo'];
+
+    $this->createEntity(array_merge($values, ['location_type_id' => $excludeTypeID, 'contact_id' => $contactID, 'is_primary' => TRUE]));
+    $this->createEntity(array_merge($secondaryValues, ['location_type_id' => $excludeTypeID, 'contact_id' => $contactID]));
+
+    $this->doClean($contactID);
+
+    $this->checkEntities($contactID, [
+      array_merge($values, ['location_type_id' => $excludeTypeID, 'is_primary' => TRUE]),
+      array_merge($secondaryValues, ['location_type_id' => $excludeTypeID, 'is_primary' => FALSE]),
+    ]);
+  }
+
+  /**
+   * A kept-type entity matching the primary of a different location type should not be deleted.
+   *
+   * @dataProvider getLocationEntityData
+   * @throws \CRM_Core_Exception
+   */
+  public function testCleanKeptLocationTypeNotDeletedWhenMatchesPrimary(string $entity, array $values): void {
+    $excludeTypeID = $this->setUpWithKeptLocationType($entity);
+    $contactID = $this->ids['contact']['Ponyo'];
+
+    $this->createEntity(array_merge($values, ['location_type_id' => $this->locationTypes['Home'], 'contact_id' => $contactID, 'is_primary' => TRUE]));
+    $this->createEntity(array_merge($values, ['location_type_id' => $excludeTypeID, 'contact_id' => $contactID]));
+
+    $this->doClean($contactID);
+
+    $this->checkEntities($contactID, [
+      array_merge($values, ['location_type_id' => $this->locationTypes['Home'], 'is_primary' => TRUE]),
+      array_merge($values, ['location_type_id' => $excludeTypeID, 'is_primary' => FALSE]),
     ]);
   }
 
@@ -230,9 +273,32 @@ class CleanTest extends DedupeBaseTestClass {
   public function getLocationEntityData(): array {
     return [
       ['Address', ['street_address' => '10 Downing Street'], ['street_address' => '10 Sesame Street']],
-      ['Phone', ['phone' => '555-666', 'phone_type_id' => 1], ['phone' => '666-777']],
+      ['Phone', ['phone' => '555-666', 'phone_type_id' => 1], ['phone' => '666-777', 'phone_type_id' => 1]],
       ['Email', ['email' => 'ponyo@example.com'], ['email' => 'totoro@example.com']],
     ];
+  }
+
+  /**
+   * Set up the 'exclude' kept-location-type and a Ponyo contact.
+   *
+   * @return int The ID of the 'exclude' location type.
+   * @throws \CRM_Core_Exception
+   */
+  protected function setUpWithKeptLocationType(string $entity): int {
+    $this->entity = $entity;
+    $this->setSetting('deduper_clean_location_types_to_keep_' . strtolower($entity), ['exclude']);
+    $cleanClasses = [
+      'Email'   => \Civi\Api4\Action\Email\Clean::class,
+      'Phone'   => \Civi\Api4\Action\Phone\Clean::class,
+      'Address' => \Civi\Api4\Action\Address\Clean::class,
+    ];
+    unset(Civi::$statics[$cleanClasses[$entity]]);
+    $excludeTypeID = LocationType::save(FALSE)
+      ->setRecords([['name' => 'exclude', 'display_name' => 'Exclude', 'is_active' => TRUE]])
+      ->setMatch(['name'])
+      ->execute()->first()['id'];
+    $this->ids['contact']['Ponyo'] = $this->callAPISuccess('Contact', 'create', ['contact_type' => 'Individual', 'first_name' => 'Ponyo'])['id'];
+    return $excludeTypeID;
   }
 
   /**
