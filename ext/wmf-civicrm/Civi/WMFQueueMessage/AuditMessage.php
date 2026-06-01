@@ -855,8 +855,13 @@ class AuditMessage extends DonationMessage {
         2 => [$this->getBackendProcessor(), 'String'],
       ]);
     }
-    return (bool) \CRM_Core_DAO::singleValueQuery('SELECT id FROM wmf_contribution_extra WHERE backend_processor_txn_id = %1 AND backend_processor = %2', [
-      1 => [$this->message['capture_id'], 'String'],
+    if ($this->getAuthID() === $this->getCaptureID()) {
+      // For Adyen we don't have a pattern we are trying to find that looks like this.
+      return FALSE;
+    }
+    return (bool) \CRM_Core_DAO::singleValueQuery('
+      SELECT id FROM wmf_contribution_extra WHERE backend_processor_txn_id <> %1 AND backend_processor = %2', [
+      1 => [$this->message['auth_id'], 'String'],
       2 => [$this->getBackendProcessor(), 'String'],
     ]);
   }
