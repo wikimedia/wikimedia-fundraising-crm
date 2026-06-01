@@ -621,6 +621,50 @@ class RecurringQueueTest extends BaseQueueTestCase {
     $this->assertEquals('Cancelled', $recur_record['contribution_status_id:name']);
   }
 
+/**
+   * Test processing a Gravy Pix recurring cancel message.
+   */
+  public function testRecurringCancelGravyPixMessage(): void {
+    // Create a Gravy Pix recurring signup to have something to cancel
+    $signupMessage = $this->processRecurringSignup([
+      'gateway' => 'gravy',
+      'payment_method' => 'pix',
+      'subscr_id' => '59768919-afbc-473a-914a-ea34e916ce8f',
+    ]);
+
+    // Now process the cancellation message using your sample data
+    $cancelMessage = [
+      'gateway' => 'gravy',
+      'txn_type' => 'subscr_cancel',
+      'subscr_id' => '59768919-afbc-473a-914a-ea34e916ce8f',
+      'payment_method' => 'pix',
+      'date' => 1780163470,
+      'cancel_date' => 1780163470,
+      'recurring' => '1',
+      'raw_response' => [
+        'type' => 'payment-method',
+        'id' => '59768919-afbc-473a-914a-ea34e916ce8f',
+        'method' => 'pix',
+        'status' => 'succeeded',
+        'created_at' => '2026-05-30 17:51:10Z',
+        'updated_at' => '2026-05-30 17:51:10Z',
+        'external_identifier' => NULL,
+      ],
+    ];
+
+    $this->processMessage($cancelMessage);
+
+    // Verify the cancellation was processed correctly
+    $recur_record = $this->getContributionRecurForMessage($signupMessage);
+    $this->assertEquals('59768919-afbc-473a-914a-ea34e916ce8f', $recur_record['trxn_id']);
+    $this->assertEquals('(auto) User Cancelled via Gateway', $recur_record['cancel_reason']);
+    $this->assertEquals('2026-05-30 17:51:10', $recur_record['cancel_date']);
+    $this->assertEquals('2026-05-30 17:51:10', $recur_record['end_date']);
+    $this->assertNotEmpty($recur_record['payment_processor_id']);
+    $this->assertEmpty($recur_record['failure_retry_date']);
+    $this->assertEquals('Cancelled', $recur_record['contribution_status_id:name']);
+  }
+
   /**
    * Test processing a Gravy PayPal recurring cancel message with the token.
    */
