@@ -1,0 +1,11 @@
+<div af-fieldset="">
+  <div class="af-container af-layout-inline">
+    <af-field name="contact_id" defn="{label: 'Donor', input_attrs: {}}" />
+    <af-field name="receive_date" defn="{input_type: 'Select', search_range: true, input_attrs: {}}" />
+    <af-field name="contribution_settlement.settlement_batch_reference" defn="{label: 'Batch Reference', input_attrs: {}}" />
+    <af-field name="total_amount" />
+    <af-field name="Contribution_ContributionSoft_contribution_id_01.contact_id.display_name" defn="{label: 'Banking Institution', input_attrs: {}}" />
+    <af-field name="contribution_extra.backend_processor" defn="{label: 'Backend Processor', input_attrs: {}}" />
+  </div>
+  <crm-search-display-table search-name="Chariot_contributions" display-name="Chariot_contributions"></crm-search-display-table>
+</div>
