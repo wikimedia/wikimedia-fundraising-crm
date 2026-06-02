@@ -6,7 +6,6 @@ use Brick\Money\Exception\MoneyMismatchException;
 use Brick\Money\Exception\UnknownCurrencyException;
 use Brick\Money\Money;
 use Civi\Api4\Batch;
-use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\FinanceIntegration;
@@ -140,12 +139,15 @@ class GenerateBatch extends AbstractAction {
           $this->log('Batch has missing GL data & hence not closed ' . $batch['name']);
         }
         elseif ($this->outputMethod === 'api') {
-          $errors = [];
+          $journalsToUpload = [];
+          $successFullUploads = 0;
+          foreach ($record['csv'] as $journal) {
+            if ($journal['is_journal']) {
+              $journalsToUpload[] = $journal;
+            }
+          }
           try {
-            foreach ($record['csv'] as $journal) {
-              if (!$journal['is_journal'] || !empty($errors)) {
-                continue;
-              }
+            foreach ($journalsToUpload as $journal) {
               $this->log('Journal being pushed to the staging ' . $journal['instance'] . 'version of Intacct via the api : ' . $batch['name'] . $journal['suffix']);
               $apiOutcome = FinanceIntegration::pushJournal(FALSE)
                 ->setJournalFile($journal['file'])
@@ -154,11 +156,13 @@ class GenerateBatch extends AbstractAction {
                 ->setBatchName($batch['name'] . $journal['suffix'])
                 ->setBatchDescriptionPrefix($batch['batch_data.settlement_gateway'])
                 ->execute();
-              $record['is_uploaded'] = TRUE;
-              $this->log('Journal successfully pushed to Intacct with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
+              $this->log('Journal ' . $batch['name'] . $journal['suffix'] . ' successfully pushed to Intacct ' . $journal['instance'] . ' instance with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
               foreach ($apiOutcome as $apiBatch) {
                 if ($apiBatch['status'] === 'Valid Remotely') {
-                  $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct and is now being closed (status set to Exported)');
+                  $successFullUploads++;
+                  $record['is_uploaded'] = $successFullUploads === count($journalsToUpload);
+                  $statusUpdate = $record['is_uploaded'] ? ['status_id:name' => 'Exported'] : [];
+                  $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct ' . ($record['is_uploaded'] ? ' and is now being closed (status set to Exported)' : ''));
                   $remote = [
                     'url' => $apiBatch['url'],
                     'id' => $apiBatch['remote_journal_id'],
@@ -177,8 +181,7 @@ class GenerateBatch extends AbstractAction {
                       'batch_data.remote_url_' . $journal['remote_descriptor'] => $remote['url'],
                       'batch_data.remote_identifier_' . $journal['remote_descriptor'] => $remote['txn_number'],
                       'batch_data.amount_journaled_to_endowment' => (string) $this->batchSummary[$batch['name']]['endowment_transfer']->getAmount(),
-                      'status_id:name' => 'Exported',
-                    ])
+                    ] + $statusUpdate)
                     ->execute();
                 }
                 $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['txn_number'] . '</a>');
@@ -187,8 +190,7 @@ class GenerateBatch extends AbstractAction {
           }
           catch (\Exception $e) {
             $this->log('failed to upload to Intacct with error ' . $e->getMessage());
-            $errors[] = $e->getMessage();
-              foreach ($result as $index => $row) {
+            foreach ($result as $index => $row) {
               $result[$index]['upload_errors'] = 'journal upload failed';
             }
           }

@@ -2,11 +2,15 @@
 
 namespace Civi\WMFAudit;
 
-use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Batch;
-use Civi\Api4\Contribution;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\WMFAudit;
+use Civi\FinanceIntegration\Connection;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Response;
 
 /**
  * @group Adyen
@@ -15,7 +19,17 @@ use Civi\Api4\WMFAudit;
 class GenerateBatchTest extends BaseAuditTestCase {
   protected string $gateway = '';
 
+  /**
+   * @var \GuzzleHttp\Client
+   */
+  private Client $mockApiClient;
+
+  private array $container = [];
+
+  private array $webResponses = [];
+
   public function tearDown():void {
+    Connection::resetTestClient();
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'adyen_33%')
       ->execute();
@@ -78,6 +92,54 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $this->assertEquals('60.00', (string) $row['CREDIT'], 'Expected grouped credit to equal sum of donation amounts');
     $this->assertEquals('0.00', (string) $row['DEBIT'], 'Expected donations to be credit-only in this dataset');
     $this->assertSame(3, $this->memoCount($row), 'Expected MEMO count to equal number of contributions grouped');
+  }
+
+  /**
+   * Test that an endowment journal is generated.
+   *
+   * @return void
+   */
+  public function testEndowmentJournal(): void {
+    $prefix = 'adyen_333';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-01-20';
+
+    // Mobile Banner / Desktop Banner / Other Banner => all map to ACCT_NO 43481 in getAccountClause().
+    $this->createContribution([
+      'financial_type_id:name' => 'Endowment Gift',
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $this->createContribution([
+      'Gift_Data.Channel' => 'Desktop Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 20.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $this->addBatchWebResponses();
+    // Endowment batch from main instance.
+    $this->addBatchWebResponses('10.00');
+    // Endowment batch to main instance.
+    $this->addBatchWebResponses('10.00');
+
+    $this->runGenerateWithGuzzle($batchName, $currency, $settlementDate, 30, 2, $prefix);
+    $batch = Batch::get(FALSE)
+      ->addSelect('*', 'status_id:name', 'batch_data.*')
+      ->addWhere('name', '=', 'adyen_333_USD')
+      ->execute()->single();
+    $this->assertEquals('Exported', $batch['status_id:name']);
+    $this->assertEquals('https://example.org', $batch['batch_data.remote_url_endowment_instance']);
+    $this->assertEquals('https://example.org', $batch['batch_data.remote_url_to_endowment']);
+    $this->assertEquals('https://example.org', $batch['batch_data.remote_url_main']);
   }
 
   public function testSameGlCodeDoesNotGroupAcrossDifferentFunds(): void {
@@ -261,6 +323,110 @@ class GenerateBatchTest extends BaseAuditTestCase {
       ->setIsDryRun(TRUE)
       ->setIsOutputRows(TRUE)
       ->execute();
+  }
+
+  /**
+   * @param string $batchName
+   * @param string $currency
+   * @param string $settlementDate
+   * @param string $prefix
+   *
+   * @return \Civi\Api4\Generic\Result
+   */
+  public function runGenerateWithGuzzle(string $batchName, string $currency, string $settlementDate, float $amount, $itemCount, string $prefix): Result {
+    // Batch expected totals must match what GenerateBatch will compute, or it flags discrepancy.
+    $this->createBatch($batchName, $currency, $settlementDate, $amount, $itemCount);
+    try {
+      $this->container = [];
+      $history = Middleware::history($this->container);
+      $handlerStack = HandlerStack::create(
+        new MockHandler($this->webResponses)
+      );
+      $handlerStack->push($history);
+      $this->mockApiClient = new Client([
+        'handler' => $handlerStack,
+      ]);
+      Connection::setTestClient($this->mockApiClient);
+      $connection = $this->createMock(Connection::class);
+      $connection
+        ->method('getApiClient')
+        ->willReturn($this->mockApiClient);
+      return WMFAudit::generateBatch(FALSE)
+        ->setBatchPrefix($prefix)
+        ->setIsDryRun(FALSE)
+        ->setIsOutputRows(TRUE)
+        ->setIsOutputCsv(TRUE)
+        ->setOutputMethod('api')
+        ->execute();
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail($e->getMessage());
+    }
+  }
+
+  /**
+   * @param array $result
+   *
+   * @return void
+   */
+  public function addWebResponse(array $result, $meta = []): void {
+    $this->webResponses[] = new Response(200,
+      ['Content-Type' => 'application/json'],
+      json_encode([
+        'ia::result' => $result,
+        'ia::meta' => $meta,
+      ]
+    ));
+  }
+
+  /**
+   * @param string $total
+   *
+   * @return void
+   */
+  public function addBatchWebResponses($total = '30.00'): void {
+    // First https call is to check for existing journal - empty result works.
+    $this->addWebResponse([]);
+    // Second call is posting our new journal - the id is returned.
+    $this->addWebResponse(['id' => 123]);
+    // Third & fourth are to get the details of the journal to check it is valid and matches.
+    $this->addWebResponse([['id' => 123, 'webURL' => 'https://example.org']], ['totalCount' => 1]);
+    $this->addWebResponse([
+      'txnNumber' => 456,
+      'lines' => [
+        [
+          'id' => '1001',
+          'txnType' => 'Debit',
+          'txnAmount' => $total,
+          'journalEntry.id' => '123456',
+          'currency' => ['txnCurrency' => 'USD', 'exchangeRate' => 1],
+        ],
+        [
+          'id' => '1002',
+          'txnType' => 'Credit',
+          'txnAmount' => $total,
+          'journalEntry.id' => '123456',
+          'currency' => ['txnCurrency' => 'USD', 'exchangeRate' => 1],
+        ],
+      ],
+    ]);
+    // Get existing lines response.
+    $this->addWebResponse([
+      [
+        'id' => '1001',
+        'txnType' => 'Debit',
+        'txnAmount' => $total,
+        'journalEntry.id' => '123456',
+        'currency' => ['txnCurrency' => 'USD', 'exchangeRate' => 1],
+      ],
+      [
+        'id' => '1002',
+        'txnType' => 'Credit',
+        'txnAmount' => $total,
+        'journalEntry.id' => '123456',
+        'currency' => ['txnCurrency' => 'USD', 'exchangeRate' => 1],
+      ],
+    ]);
   }
 
 }
