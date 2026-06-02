@@ -176,7 +176,7 @@ class GenerateBatch extends AbstractAction {
                       'batch_data.exchange_rate_source' => 'Intacct',
                       'batch_data.remote_url_' . $journal['remote_descriptor'] => $remote['url'],
                       'batch_data.remote_identifier_' . $journal['remote_descriptor'] => $remote['txn_number'],
-                      'batch_data.amount_journaled_to_endowment' => $this->batchSummary[$batch['name']]['endowment_transfer']->getAmount(),
+                      'batch_data.amount_journaled_to_endowment' => (string) $this->batchSummary[$batch['name']]['endowment_transfer']->getAmount(),
                       'status_id:name' => 'Exported',
                     ])
                     ->execute();
