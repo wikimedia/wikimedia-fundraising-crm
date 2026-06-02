@@ -94,7 +94,7 @@ class OandaRetrieverTest extends TestCase implements HookInterface, Transactiona
         ]
       )
       ->willReturn(
-        new Response(200, ['x-rate-limit-remaining' => 144], $jsonResponse)
+        new Response(200, ['x-rate-limit-remaining' => '144'], $jsonResponse)
       );
     $retriever = new OandaRetriever(
       $this->client,
