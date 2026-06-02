@@ -8751,12 +8751,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "da54998df5a28a56568754f9f44772d4beb7f281"
+                "reference": "871acfae613c40fae5bb56014d51f55a58a34275"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/da54998df5a28a56568754f9f44772d4beb7f281",
-                "reference": "da54998df5a28a56568754f9f44772d4beb7f281",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/871acfae613c40fae5bb56014d51f55a58a34275",
+                "reference": "871acfae613c40fae5bb56014d51f55a58a34275",
                 "shasum": ""
             },
             "require": {
@@ -8847,7 +8847,7 @@
             "support": {
                 "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.2.4.11"
             },
-            "time": "2026-05-20T22:17:00+00:00"
+            "time": "2026-05-28T16:39:09+00:00"
         },
         {
             "name": "willdurand/geocoder",
