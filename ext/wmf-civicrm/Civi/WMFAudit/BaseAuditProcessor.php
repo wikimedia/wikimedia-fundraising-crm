@@ -342,29 +342,28 @@ abstract class BaseAuditProcessor {
     if ($this->incomingDirectory) {
       return $this->incomingDirectory;
     }
-    $specifiedDirectory = $this->get_runtime_options('incoming_directory');
-    if (str_contains((string) $specifiedDirectory, '..')) {
+    $specifiedDirectory = rtrim((string) $this->get_runtime_options('incoming_directory'), DIRECTORY_SEPARATOR);
+    if (str_contains($specifiedDirectory, '..')) {
       throw new \CRM_Core_Exception('Directory may not contain ".."' . $specifiedDirectory);
     }
-    $specifiedRealPath = $specifiedDirectory ? realpath($specifiedDirectory) : '';
-    $auditRootRealPath = realpath(\Civi::settings()->get('wmf_audit_directory_audit'));
-    if (!$auditRootRealPath) {
+    $auditRoot = rtrim((string) \Civi::settings()->get('wmf_audit_directory_audit'), DIRECTORY_SEPARATOR);
+    if (!$auditRoot) {
       throw new \CRM_Core_Exception('Audit path not set - set it using wmf-cv Setting:set wmf_audit_directory_audit=yourpath');
     }
     // Checking the path is sort of security - but probably if someone can run this file we
     // aren't much protected anyway.
     if ($specifiedDirectory) {
-      $this->echo('Looking in your specified directory ' . $specifiedRealPath);
-      if (str_contains($specifiedRealPath, '/tests/')
-        || str_starts_with($specifiedRealPath, $auditRootRealPath)
+      $this->echo('Looking in your specified directory ' . $specifiedDirectory);
+      if (str_contains($specifiedDirectory, '/tests/')
+        || str_starts_with($specifiedDirectory, $auditRoot)
       ) {
-        $this->incomingDirectory = $specifiedRealPath;
+        $this->incomingDirectory = $specifiedDirectory;
         return $this->incomingDirectory;
       }
-      throw new \CRM_Core_Exception('Directory must be in /tests/ or within ' . $auditRootRealPath . DIRECTORY_SEPARATOR);
+      throw new \CRM_Core_Exception('Directory must be in /tests/ or within ' . $auditRoot . DIRECTORY_SEPARATOR);
     }
-    $subdir = $this->get_runtime_options('is_completed') ? 'completed' : 'incoming';
-    $this->incomingDirectory = $auditRootRealPath . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . $subdir . DIRECTORY_SEPARATOR;
+    $subdirectory = $this->get_runtime_options('is_completed') ? 'completed' : 'incoming';
+    $this->incomingDirectory = $auditRoot . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . $subdirectory . DIRECTORY_SEPARATOR;
     return $this->incomingDirectory;
   }
 
