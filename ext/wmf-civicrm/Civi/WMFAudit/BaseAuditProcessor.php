@@ -331,16 +331,26 @@ abstract class BaseAuditProcessor {
    * Returns the configurable path to the recon files
    *
    * @return string Path to the directory
+   * @throws \CRM_Core_Exception
    */
   protected function getIncomingFilesDirectory(): string {
     $specifiedDirectory = $this->get_runtime_options('incoming_directory');
+    $specifiedRealPath = $specifiedDirectory ? realpath($specifiedDirectory) : '';
+    $auditRootRealPath = realpath(\Civi::settings()->get('wmf_audit_directory_audit'));
+    if (!$auditRootRealPath) {
+      throw new \CRM_Core_Exception('Audit path not set - set it using wmf-cv Setting:set wmf_audit_directory_audit=yourpath');
+    }
     // Checking the path is sort of security - but probably if someone can run this file we
     // aren't much protected anyway.
-    if ($specifiedDirectory && str_contains($specifiedDirectory, '/tests/') && !str_contains($specifiedDirectory, '..')) {
+    if ($specifiedDirectory
+      && !str_contains($specifiedDirectory, '..')
+      && (str_contains($specifiedDirectory, '/tests/')
+        || str_starts_with($specifiedRealPath, $auditRootRealPath . DIRECTORY_SEPARATOR)
+      )) {
       return $specifiedDirectory;
     }
     $subdir = $this->get_runtime_options('is_completed') ? 'completed' : 'incoming';
-    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . $subdir . DIRECTORY_SEPARATOR;
+    return $auditRootRealPath . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . $subdir . DIRECTORY_SEPARATOR;
   }
 
   /**
@@ -786,13 +796,17 @@ abstract class BaseAuditProcessor {
    *
    * @return array
    *   Full paths to the files to reconcile.
+   * @throws \CRM_Core_Exception
    */
   protected function getReconciliationFiles(): array {
     $files_directory = $this->getIncomingFilesDirectory();
     $fileFromCommandLine = $this->get_runtime_options('file');
     if ($fileFromCommandLine) {
-      return [$files_directory . DIRECTORY_SEPARATOR . $fileFromCommandLine];
+      $file = $files_directory . DIRECTORY_SEPARATOR . $fileFromCommandLine;
+      $this->echo('Processing file specified with --file ' . $file);
+      return [$file];
     }
+    $this->echo('Processing files in ' . $files_directory);
     //foreach file in the directory, if it matches our pattern, add it to the array.
     $files_by_sort_key = [];
     if ($handle = opendir($files_directory)) {
