@@ -54,6 +54,11 @@ abstract class BaseAuditProcessor {
    */
   protected int $fileLimit = 3;
 
+  /**
+   * @var string
+   */
+  private string $incomingDirectory = '';
+
   public function __construct($options) {
     $this->options = $options;
     if (is_numeric($options['file_limit'])) {
@@ -334,6 +339,9 @@ abstract class BaseAuditProcessor {
    * @throws \CRM_Core_Exception
    */
   protected function getIncomingFilesDirectory(): string {
+    if ($this->incomingDirectory) {
+      return $this->incomingDirectory;
+    }
     $specifiedDirectory = $this->get_runtime_options('incoming_directory');
     if (str_contains((string) $specifiedDirectory, '..')) {
       throw new \CRM_Core_Exception('Directory may not contain ".."' . $specifiedDirectory);
@@ -348,14 +356,16 @@ abstract class BaseAuditProcessor {
     if ($specifiedDirectory) {
       $this->echo('Looking in your specified directory ' . $specifiedRealPath);
       if (str_contains($specifiedRealPath, '/tests/')
-        || str_starts_with($specifiedRealPath, $auditRootRealPath . DIRECTORY_SEPARATOR)
+        || str_starts_with($specifiedRealPath, $auditRootRealPath)
       ) {
-        return $specifiedRealPath;
+        $this->incomingDirectory = $specifiedRealPath;
+        return $this->incomingDirectory;
       }
       throw new \CRM_Core_Exception('Directory must be in /tests/ or within ' . $auditRootRealPath . DIRECTORY_SEPARATOR);
     }
     $subdir = $this->get_runtime_options('is_completed') ? 'completed' : 'incoming';
-    return $auditRootRealPath . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . $subdir . DIRECTORY_SEPARATOR;
+    $this->incomingDirectory = $auditRootRealPath . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . $subdir . DIRECTORY_SEPARATOR;
+    return $this->incomingDirectory;
   }
 
   /**
@@ -364,7 +374,7 @@ abstract class BaseAuditProcessor {
    * @return string Path to the directory
    */
   protected function getCompletedFilesDirectory(): string {
-    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'completed' . DIRECTORY_SEPARATOR;
+    return str_replace($this->getIncomingFilesDirectory(), 'incoming', 'completed') . DIRECTORY_SEPARATOR;
   }
 
   /**
@@ -373,7 +383,7 @@ abstract class BaseAuditProcessor {
    * @return string Path to the directory
    */
   protected function getIgnoredFilesDirectory(): string {
-    return \Civi::settings()->get('wmf_audit_directory_audit') . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . 'ignored' . DIRECTORY_SEPARATOR;
+    return str_replace($this->getIncomingFilesDirectory(), 'incoming', 'ignored') . DIRECTORY_SEPARATOR;
   }
 
   /**
@@ -832,6 +842,7 @@ abstract class BaseAuditProcessor {
       }
       closedir($handle);
       krsort($files_by_sort_key);
+      $this->echo(count($files_by_sort_key) . ' files found');
       // now flatten it
       $files = [];
 
