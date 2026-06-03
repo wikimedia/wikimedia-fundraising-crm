@@ -335,6 +335,9 @@ abstract class BaseAuditProcessor {
    */
   protected function getIncomingFilesDirectory(): string {
     $specifiedDirectory = $this->get_runtime_options('incoming_directory');
+    if (str_contains((string) $specifiedDirectory, '..')) {
+      throw new \CRM_Core_Exception('Directory may not contain ".."' . $specifiedDirectory);
+    }
     $specifiedRealPath = $specifiedDirectory ? realpath($specifiedDirectory) : '';
     $auditRootRealPath = realpath(\Civi::settings()->get('wmf_audit_directory_audit'));
     if (!$auditRootRealPath) {
@@ -342,12 +345,14 @@ abstract class BaseAuditProcessor {
     }
     // Checking the path is sort of security - but probably if someone can run this file we
     // aren't much protected anyway.
-    if ($specifiedDirectory
-      && !str_contains($specifiedDirectory, '..')
-      && (str_contains($specifiedDirectory, '/tests/')
+    if ($specifiedDirectory) {
+      $this->echo('Looking in your specified directory ' . $specifiedRealPath);
+      if (str_contains($specifiedRealPath, '/tests/')
         || str_starts_with($specifiedRealPath, $auditRootRealPath . DIRECTORY_SEPARATOR)
-      )) {
-      return $specifiedDirectory;
+      ) {
+        return $specifiedRealPath;
+      }
+      throw new \CRM_Core_Exception('Directory must be in /tests/ or within ' . $auditRootRealPath . DIRECTORY_SEPARATOR);
     }
     $subdir = $this->get_runtime_options('is_completed') ? 'completed' : 'incoming';
     return $auditRootRealPath . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . $subdir . DIRECTORY_SEPARATOR;
