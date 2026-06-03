@@ -81,11 +81,13 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
     $fields = ContributionTracking::getFields(FALSE)->execute()->indexBy('name');
     $truncated = $msg;
     foreach ($fields as $name => $field) {
-      if (isset($field['input_attrs']['maxlength']) && isset($msg[$name])) {
-        $truncated[$name] = substr($msg[$name], 0, $field['input_attrs']['maxlength']);
-      }
-      if ($name === 'amount') {
-        $truncated[$name] = min($msg[$name], self::MAX_AMOUNT);
+      if (isset($msg[$name])) {
+        if (isset($field['input_attrs']['maxlength'])) {
+          $truncated[$name] = substr($msg[$name], 0, $field['input_attrs']['maxlength']);
+        }
+        if ($name === 'amount') {
+          $truncated[$name] = min($msg[$name], self::MAX_AMOUNT);
+        }
       }
     }
     return $truncated;
