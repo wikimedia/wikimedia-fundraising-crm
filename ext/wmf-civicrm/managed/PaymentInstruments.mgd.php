@@ -70,6 +70,7 @@ $instruments = [
   'Credit Card: Visa Debit' => 'Credit Card: Visa Debit',
   'Credit Card: MasterCard Debit' => 'Credit Card: MasterCard Debit',
   'Credit Card: Diners' => 'Credit Card: Diners',
+  'DAFpay' => 'DAFpay',
   'Direct Debit' => 'Direct Debit',
   'Enets' => 'Enets',
   'EPS' => 'EPS',
