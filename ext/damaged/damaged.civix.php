@@ -89,6 +89,7 @@ class CRM_Damaged_ExtensionUtil {
 
 use CRM_Damaged_ExtensionUtil as E;
 
+pathload()->addSearchDir(__DIR__ . '/mixin/lib');
 spl_autoload_register('_damaged_civix_class_loader', TRUE, TRUE);
 
 function _damaged_civix_class_loader($class) {
