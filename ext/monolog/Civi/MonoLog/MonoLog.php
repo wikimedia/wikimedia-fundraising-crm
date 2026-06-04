@@ -54,7 +54,7 @@ class MonoLog extends \Psr\Log\AbstractLogger {
    * this to silently crash. It needs to match the parent declaration which
    * unlike the array parameter doesn't have it for some reason.
    */
-  public function log($level, $message, array $context = array()) {
+  public function log($level, string|\Stringable $message, array $context = array()): void {
     $this->logger->log($level, $message, $context);
   }
 
