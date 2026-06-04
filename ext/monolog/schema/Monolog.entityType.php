@@ -32,10 +32,10 @@ return [
     ],
     'name' => [
       'title' => E::ts('Unique name'),
-      'sql_type' => 'varchar(16)',
+      'sql_type' => 'varchar(32)',
       'input_type' => 'Text',
       'input_attrs' => [
-        'size' => '16',
+        'size' => '32',
       ],
     ],
     'channel' => [
