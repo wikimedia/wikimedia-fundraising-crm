@@ -142,7 +142,7 @@
         ],
         i18n: {
           doneBtn: ts('Ok'),
-          stepNums: ['<i class="crm-i fa-info"></i>']
+          stepNums: ['<i class="crm-i fa-info" role="img" aria-hidden="true"></i>']
         }
       });
     }
@@ -224,7 +224,7 @@
         hopscotch.startTour({
           id: 'preview-tour-step-' + currentStep,
           steps: [step],
-          i18n: {stepNums: [step.icon ? '<i class="crm-i ' + step.icon + '"></i>' : currentStep + 1]}
+          i18n: {stepNums: [step.icon ? '<i class="crm-i ' + step.icon + '" role="img" aria-hidden="true"></i>' : currentStep + 1]}
         });
       }
     }
@@ -319,7 +319,7 @@
 
   function updateIcon() {
     var val = $('.civitutorial-step').eq(currentStep).find('[name=icon]').val(),
-      icon = val ? '<i class="crm-i ' + val + '"></i>' : '';
+      icon = val ? '<i class="crm-i ' + val + '" role="img" aria-hidden="true"></i>' : '';
     $('.civitutorial-step').eq(currentStep).find('.civitutorial-step-icon').html(icon);
     $('.hopscotch-bubble-number').html(icon || currentStep+1);
   }

@@ -127,7 +127,7 @@
 
     // Place icons in the step number circle if provided
     tutorial.i18n.stepNums = _.map(tutorial.steps, function(step, i) {
-      return step.icon ? '<i class="crm-i ' + step.icon + '"></i>' : i + 1;
+      return step.icon ? '<i class="crm-i ' + step.icon + '" role="img" aria-hidden="true"></i>' : i + 1;
     });
 
     hopscotch.startTour(tutorial);
@@ -150,7 +150,7 @@
           ],
           i18n: {
             doneBtn: ts('Got it'),
-            stepNums: ['<i class="crm-i fa-info"></i>']
+            stepNums: ['<i class="crm-i fa-info" role="img" aria-hidden="true"></i>']
           }
         });
       }, 200);

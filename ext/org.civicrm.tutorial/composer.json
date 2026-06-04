@@ -1,0 +1,5 @@
+{
+    "name": "civicrm/tutorial",
+    "type": "civicrm-ext",
+    "description": "Provides walkthrough tutorials for using CiviCRM screens."
+}
