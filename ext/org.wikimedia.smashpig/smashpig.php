@@ -60,4 +60,3 @@ function smashpig_civicrm_navigationMenu(&$menu) {
   ]);
   _smashpig_civix_navigationMenu($menu);
 }
-
