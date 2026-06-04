@@ -73,6 +73,8 @@ class AuditMessage extends DonationMessage {
    */
   protected array $message;
 
+  protected string $gatewayAccountString = '';
+
   protected bool $isRestrictToSupportedFields = FALSE;
   protected bool $isLogUnsupportedFields = TRUE;
   protected bool $isLogUnavailableFields = TRUE;
@@ -218,6 +220,7 @@ class AuditMessage extends DonationMessage {
     $message['settled_currency'] = $this->getSettlementCurrency();
     $message['settled_date'] = $this->getSettlementTimeStamp();
     $message['gateway'] = $this->getGateway();
+    $message['gateway_account'] = $this->getGatewayAccount();
     $message['gateway_txn_id'] = $this->getGatewayTxnId();
     if ($this->isGravyTrustly() && $this->getContributionRecurID()) {
       // Determining that the gateway should be treated as trustly means that the
@@ -688,6 +691,13 @@ class AuditMessage extends DonationMessage {
     return $gateway;
   }
 
+  public function getGatewayAccount(): string {
+    if ($this->gatewayAccountString) {
+      return $this->gatewayAccountString;
+    }
+    return $this->message['gateway_account'] ?? '';
+  }
+
   public function getParentTransactionGateway(): string {
     return trim($this->message['gateway']);
   }
@@ -703,7 +713,7 @@ class AuditMessage extends DonationMessage {
   }
 
   public function getAuditFileGateway(): string {
-    return $this->message['audit_file_gateway'] ?? '';
+    return $this->message['audit_file_gateway'] . $this->gatewayAccountString;
   }
 
   /**
@@ -1064,6 +1074,11 @@ class AuditMessage extends DonationMessage {
       ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorParentTxnID() ?: $this->getBackendProcessorTxnID())
       ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
       ->execute()->first();
+  }
+
+  public function setGatewayAccountString(string $gatewayAccountString): self {
+    $this->gatewayAccountString = $gatewayAccountString;
+    return $this;
   }
 
 }

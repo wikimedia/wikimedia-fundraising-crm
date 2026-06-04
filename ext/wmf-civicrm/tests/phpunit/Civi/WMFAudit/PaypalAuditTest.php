@@ -25,7 +25,7 @@ class PaypalAuditTest extends BaseAuditTestCase {
 
   public function tearDown(): void {
     Batch::delete(FALSE)
-      ->addWhere('name', 'LIKE', 'paypal_202601%')
+      ->addWhere('name', 'LIKE', 'paypal%_202601%')
       ->execute();
     $transactions = [
       '1V551844CE5526421',
@@ -129,6 +129,23 @@ class PaypalAuditTest extends BaseAuditTestCase {
       ->addWhere('contribution_extra.gateway_txn_id', '=', '8MV64')
       ->execute()->single();
     $this->assertEquals('BRL', $contribution['contribution_extra.original_currency']);
+  }
+
+  public function testSTLFileWithGatewayAccountString(): void {
+    $this->useIncomingDirectory = FALSE;
+    $this->runAuditBatch('stl_file', 'STL-20260106.01.009.csv', '20260106', 'frup');
+
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('contribution_extra.*', 'contribution_settlement.*')
+      ->addWhere('contribution_extra.gateway', '=', 'paypal')
+      ->addWhere('contribution_extra.gateway_txn_id', '=', '8MV64')
+      ->execute()->single();
+    $this->assertEquals('paypalfrup_20260106_BRL', $contribution['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals('frup', $contribution['contribution_extra.gateway_account']);
+    // Check batch exists.
+    Batch::get(FALSE)
+      ->addWhere('name', '=', 'paypalfrup_20260106_BRL')
+      ->execute()->single();
   }
 
   /**

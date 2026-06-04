@@ -75,6 +75,17 @@ class BaseAuditTestCase extends TestCase {
   }
 
   /**
+   * @return void
+   */
+  public function processQueues(): void {
+    $this->processDonationsQueue();
+    $this->processContributionTrackingQueue();
+    $this->processRefundQueue();
+    $this->processSettleQueue();
+    $this->processContributionTrackingQueue();
+  }
+
+  /**
    * Create a temporary directory and return the name
    *
    * @return string|boolean directory path if creation was successful, or false
@@ -132,12 +143,13 @@ class BaseAuditTestCase extends TestCase {
   /**
    * Run the audit process.
    */
-  protected function runAuditor($fileName = NULL): Result {
+  protected function runAuditor($fileName = NULL, string $gatewayAccountString = ''): Result {
     try {
       $result = WMFAudit::parse()
         ->setGateway($this->gateway)
         ->setIncomingDirectory($this->useIncomingDirectory ? '' : $this->auditFileBaseDirectory)
         ->setFile((string) $fileName)
+        ->setGatewayAccountString($gatewayAccountString)
         ->setSettleMode('queue')
         ->setIsMoveCompletedFile(FALSE)
         ->execute();
@@ -172,16 +184,11 @@ class BaseAuditTestCase extends TestCase {
    *
    * @return array
    */
-  public function runAuditBatch(string $directory, string $fileName, string $batchName = ''): array {
+  public function runAuditBatch(string $directory, string $fileName, string $batchName = '', string $gatewayAccountString = ''): array {
     $this->prepareForAuditProcessing($directory, $fileName);
 
-    $auditResult['batch'] = $this->runAuditor($fileName);
-    $this->processDonationsQueue();
-    $this->processContributionTrackingQueue();
-    $this->processRefundQueue();
-    $this->processSettleQueue();
-
-    $this->processContributionTrackingQueue();
+    $auditResult['batch'] = $this->runAuditor($fileName, $gatewayAccountString);
+    $this->processQueues();
     if ($batchName) {
       try {
         $auditResult['validate'] = WMFAudit::generateBatch(FALSE)

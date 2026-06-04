@@ -11,6 +11,7 @@ use CRM_SmashPig_ContextWrapper;
 /**
  * @method string getGateway()
  * @method $this setGateway(string $gateway)
+ * @method $this setGatewayAccountString(string $gatewayAccountString)
  * @method $this setIsMakeMissing(bool $isMakeMissing)
  * @method $this setSettleMode(string $settleMode)
  * @method $this setIsStopOnFirstMissing(bool $isStopOnFirstMissing)
@@ -151,6 +152,21 @@ class Parse extends AbstractAction {
    */
   protected string $incomingDirectory = '';
 
+  /**
+   * Gateway account string
+   *
+   * This is added into the batch name.
+   *
+   * For example, we have the batch paypal_20260101_USD
+   * and paypalfrup_20260101_USD
+   *
+   * So when parsing the fundraise up paypal files we pass in the incoming
+   * directory and the gatewayAccountString as part of the job.
+   *
+   * @var string
+   */
+  protected string $gatewayAccountString = '';
+
   protected function getOptions(): array {
     return [
       'makemissing' => $this->isMakeMissing,
@@ -168,6 +184,7 @@ class Parse extends AbstractAction {
       'row_limit' => $this->rowLimit,
       'row_offset' => $this->offset,
       'is_check_log_files' => $this->isCheckLogFiles,
+      'gateway_account' => $this->gatewayAccountString,
     ];
   }
 
@@ -183,6 +200,13 @@ class Parse extends AbstractAction {
     }
     if (($this->offset || $this->rowLimit) && !$this->file) {
       throw new \CRM_Core_Exception('offset and rowLimit only valid when parsing a specific file');
+    }
+    if ($this->gatewayAccountString && !$this->incomingDirectory) {
+      throw new \CRM_Core_Exception('gatewayAccountString is intended to be used when pointing to a non-standard incoming directory');
+    }
+    if ($this->incomingDirectory && !$this->gatewayAccountString && !str_contains($this->incomingDirectory, 'tests')) {
+      throw new \CRM_Core_Exception('Incoming directory & gatewayAccountString are expected to be used together '
+        . '- ie the main paypal files are in the paypal directory but fundraise up ones need both directory and string passed (because we do not want them processed to the same batch as the main paypal)');
     }
     \CRM_SmashPig_ContextWrapper::createContext($this->gateway . '_audit', $this->gateway);
     \CRM_SmashPig_ContextWrapper::setMessageSource(
