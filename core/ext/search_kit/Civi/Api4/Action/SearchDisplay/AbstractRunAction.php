@@ -135,6 +135,15 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
     $this->_apiParams['checkPermissions'] = $this->savedSearch['api_params']['checkPermissions'] = empty($this->display['acl_bypass']);
     $this->display['settings']['columns'] ??= [];
 
+    // Get auto columns
+    if ('auto' === ($this->display['settings']['columnMode'] ?? NULL)) {
+      $defaultDisplay = \Civi\Api4\SearchDisplay::getDefault(FALSE)
+        ->setSavedSearch($this->savedSearch)
+        ->setType($this->display['type'])
+        ->execute()->single();
+      $this->display['settings']['columns'] = $defaultDisplay['settings']['columns'];
+    }
+
     $this->processResult($result);
   }
 
@@ -239,7 +248,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
             $out['links'] = $links;
           }
         }
-        elseif (!empty($column['editable']) && !$column['rewrite'] && empty($settings['editableRow']['disable'])) {
+        elseif (!empty($column['editable']) && empty($settings['editableRow']['disable'])) {
           $edit = $this->formatEditableColumn($column, $data);
           if ($edit) {
             // When internally processing an inline-edit, get all metadata
@@ -384,7 +393,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
    * @param int|null $index
    * @return array
    */
-  protected function getCssStyles(array $styleRules, array $data, ?int $index = NULL) {
+  protected function getCssStyles(array $styleRules, array $data, ?int $index = NULL): array {
     $classes = [];
     foreach ($styleRules as $clause) {
       $cssClass = $clause[0] ?? '';
@@ -596,7 +605,17 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
     ];
 
     foreach ($column['subsearch']['filters'] as $filterSetting) {
-      $out['subsearch']['filters'][$filterSetting['subsearch_field']] = $data[$filterSetting['parent_field']] ?? NULL;
+      // Use parent_field from column data
+      if (isset($filterSetting['parent_field'])) {
+        $value = $data[$filterSetting['parent_field']] ?? NULL;
+      }
+      // Use fixed value
+      else {
+        $value = $filterSetting['value'] ?? NULL;
+      }
+      if (isset($value)) {
+        $out['subsearch']['filters'][$filterSetting['subsearch_field']] = $value;
+      }
     }
 
     return $out;
@@ -1013,8 +1032,8 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       try {
         $this->tasks = SearchDisplay::getSearchTasks()
           ->setCheckPermissions($this->getCheckPermissions())
-          ->setSavedSearch($this->getSavedSearch())
-          ->setDisplay($this->getDisplay())
+          ->setSavedSearch($this->getSavedSearchParam())
+          ->setDisplay($this->getDisplayParam())
           ->execute()
           ->indexBy('name');
       }
@@ -1330,7 +1349,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
         break;
 
       case 'Money':
-        $currencyField = $this->getCurrencyField($key);
+        $currencyField = $this->getCurrencyField($key) ?? '';
         $currency = is_string($data[$currencyField] ?? NULL) ? $data[$currencyField] : NULL;
         $formatted = \Civi::format()->money($rawValue, $currency);
         break;
@@ -1552,9 +1571,14 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
         $field = $clause['fields'][$fieldAlias];
         if (!empty($field['input_attrs']['control_field']) && strpos($fieldAlias, ':')) {
           $prefix = substr($fieldAlias, 0, strrpos($fieldAlias, $field['name']));
-          // Don't need to add the field if a suffixed version already exists
-          if (!$this->getSelectExpression($prefix . $field['input_attrs']['control_field'] . ':label')) {
-            $this->addSelectExpression($prefix . $field['input_attrs']['control_field']);
+          $controlField = $prefix . $field['input_attrs']['control_field'];
+          if (
+            // Don't need to add the field if a suffixed version already exists
+            !array_intersect(array_keys($this->getSelectClause()), ["$controlField:label", "$controlField:name"]) &&
+            // Don't add if it would cause aggregation problems
+            !$this->canAggregate($controlField)
+          ) {
+            $this->addSelectExpression($controlField);
           }
         }
       }
@@ -1662,6 +1686,8 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
   }
 
   /**
+   * Add an expression to the select clause.
+   *
    * @param string $expr
    */
   protected function addSelectExpression(string $expr):void {
@@ -1804,6 +1830,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       // If not found, check if this is a subsearch embedded within another display
       if (!$afform['searchDisplay']) {
         $displayTags = array_column(Display::getDisplayTypes(['name']), 'name');
+        $displayTags[] = 'crm-search-display';
         $displays = \CRM_Utils_Array::findAll(
           $afform['layout'],
          fn($element) => isset($element['#tag']) && in_array($element['#tag'], $displayTags, TRUE)

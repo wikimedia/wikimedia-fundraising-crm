@@ -84,7 +84,7 @@ class CRM_Custom_Form_Group extends CRM_Admin_Form {
       $errors['title'] = ts('Custom group \'%1\' already exists in Database.', [1 => $title]);
     }
 
-    if (empty($fields['is_multiple']) && $fields['style'] == 'Tab with table') {
+    if ($self->_isGroupEmpty && empty($fields['is_multiple']) && $fields['style'] == 'Tab with table') {
       $errors['style'] = ts("Display Style 'Tab with table' is only supported for multiple-record custom field sets.");
     }
 
@@ -270,7 +270,10 @@ class CRM_Custom_Form_Group extends CRM_Admin_Form {
       // Because select2
       $params['extends_entity_column_value'] = explode(',', $params['extends_entity_column_value']);
     }
-    $params['overrideFKConstraint'] = 0;
+    // Don't submit value from disabled form control
+    if (!$this->_isGroupEmpty) {
+      unset($params['is_multiple']);
+    }
     if ($this->_action & CRM_Core_Action::UPDATE) {
       $params['id'] = $this->_id;
       if ($this->_values['extends'] != $params['extends']) {
@@ -286,12 +289,6 @@ class CRM_Custom_Form_Group extends CRM_Admin_Form {
         }
         CRM_Contact_BAO_ContactType::deleteCustomRowsOfSubtype($this->_id, $subtypesToBeRemoved, $subtypesToPreserve);
       }
-    }
-    elseif ($this->_action & CRM_Core_Action::ADD) {
-      //new custom set , so lets set the created_id
-      $session = CRM_Core_Session::singleton();
-      $params['created_id'] = $session->get('userID');
-      $params['created_date'] = date('YmdHis');
     }
 
     $result = civicrm_api3('CustomGroup', 'create', $params);

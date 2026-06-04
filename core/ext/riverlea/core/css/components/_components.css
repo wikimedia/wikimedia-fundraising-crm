@@ -220,7 +220,7 @@ table.advmultiselect {
   box-shadow: none;
   border-radius: var(--crm-l-radius);
 }
-.crm-container .panel-body:before, #bootstrap-theme .panel-body:after {
+.crm-container .panel-body:before, .crm-container .panel-body:after {
   display: table;
   content: " ";
 }
@@ -370,7 +370,7 @@ table.advmultiselect {
 }
 .crm-container #civicrm-footer .status.crm-error {
   background-color: var(--crm-danger-color);
-  color: var(--danger-text);
+  color: var(--crm-danger-text-color);
 }
 #civicrm-footer .status a {
   color: inherit;
@@ -402,7 +402,7 @@ p.crm-upgrade-large-text {
   color: var(--crm-alert-success-text-color);
 }
 .crm-upgrade-box-inner a {
-  color: var(--link) !important  /* vs inline */;
+  color: var(--crm-link-color) !important  /* vs inline */;
 }
 p.crm-upgrade-large-text:first-of-type {
   font-size: var(--crm-l-reg-1);
@@ -417,36 +417,6 @@ p.crm-upgrade-large-text:first-of-type {
   color: var(--crm-alert-success-text-color);
   grid-column: 1;
   grid-row: 1 / span 3;
-}
-
-/* Upgrade extensions runner */
-
-#crm-queue-runner-progress {
-  width: 100%;
-  background: var(--crm-layer2-bg-color);
-}
-#crm-queue-runner-desc {
-  background: var(--crm-layer1-bg-color);
-  padding: var(--crm-padding-reg);
-  margin-block: var(--crm-l-reg);
-  border-radius: var(--crm-l-radius);
-  display: inline-flex;
-  flex-direction: row-reverse;
-  justify-content: space-between;
-  align-items: center;
-}
-#crm-queue-runner-buttonset {
-  position: inherit !important;
-}
-#crm-queue-runner-buttonset button {
-  background: transparent;
-  height: inherit;
-  padding: 0 0 0 var(--crm-l-reg);
-  color: var(--crm-text-color);
-}
-#crm-queue-runner-buttonset button:hover,
-#crm-queue-runner-buttonset button:focus {
-  color: var(--crm-text-color);
 }
 
 /* Community message */
@@ -489,6 +459,75 @@ div.civicrm-community-messages a.civicrm-community-message-dismiss::before {
 }
 .crm-status-box-outer.status-error .crm-status-box-inner {
   background: var(--crm-danger-color);
+}
+
+/* Labels */
+
+.crm-container .label-primary,
+.crm-container .label-warning,
+.crm-container .label-success,
+.crm-container .label-default,
+.crm-container .label-info,
+.crm-container .label-danger {
+  display: inline;
+  padding: var(--crm-btn-padding-block) var(--crm-btn-padding-inline);
+  font-weight: normal;
+  color: var(--crm-text-light-color);
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: var(--crm-l-radius);
+}
+.crm-container .label-default {
+  background: var(--crm-c-darkest);
+  color: var(--crm-text-light-color);
+}
+.crm-container .label-default[href]:hover,
+.crm-container .label-default[href]:focus {
+  background: color-mix(in srgb, var(--crm-c-darkest) 87.5%, var(--crm-paper) 12.5%);
+}
+.crm-container .label-primary {
+  background: var(--crm-primary-color);
+  color: var(--crm-primary-text-color);
+}
+.crm-container .label-primary[href]:hover,
+.crm-container .label-primary[href]:focus {
+  background: var(--crm-primary-hover-color);
+}
+.crm-container .label-success {
+  background: var(--crm-success-color);
+  color: var(--crm-success-text-color);
+}
+.crm-container .label-success[href]:hover,
+.crm-container .label-success[href]:focus {
+  background: color-mix(in srgb, var(--crm-success-color) 87.5%, var(--crm-ink) 12.5%);
+}
+.crm-container .label-info {
+  background: var(--crm-info-color);
+  color: var(--crm-info-text-color);
+}
+.crm-container .label-info[href]:hover,
+.crm-container .label-info[href]:focus {
+  background: color-mix(in srgb, var(--crm-info-color) 87.5%, var(--crm-ink) 12.5%);
+}
+.crm-container .label-warning {
+  background: var(--crm-warning-color);
+  color: var(--crm-warning-text-color);
+}
+.crm-container .label-warning[href]:hover,
+.crm-container .label-warning[href]:focus {
+  background: color-mix(in srgb, var(--crm-warning-color) 87.5%, var(--crm-ink) 12.5%);
+}
+.crm-container .label-danger {
+  background: var(--crm-danger-color);
+  color: var(--crm-danger-text-color);
+}
+.crm-container .label-danger[href]:hover,
+.crm-container .label-danger[href]:focus {
+  background: color-mix(in srgb, var(--crm-danger-color) 87.5%, var(--crm-ink) 12.5%);
+}
+.crm-container span.label + span.label {
+  margin-left: var(--crm-flex-gap);
 }
 
 /* Background regions */

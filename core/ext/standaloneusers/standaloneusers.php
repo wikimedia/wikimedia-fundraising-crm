@@ -15,6 +15,31 @@ function standaloneusers_civicrm_alterBundle(CRM_Core_Resources_Bundle $bundle) 
   // This adds a few styles that only need apply to standalone, mainly
   // providing a default style for login/password reset type pages.
   $bundle->addStyleFile('standaloneusers', 'css/standalone.css');
+
+  // Add favicon
+  $faviconId = Civi::settings()->get('standalone_favicon');
+  if ($faviconId) {
+    $faviconFile = \Civi\Api4\File::get(FALSE)
+      ->addWhere('id', '=', $faviconId)
+      ->addSelect('url', 'mime_type')
+      ->execute()->first();
+  }
+  if (isset($faviconFile)) {
+    $faviconUrl = $faviconFile['url'];
+    $faviconType = $faviconFile['mime_type'];
+  }
+  else {
+    $faviconUrl = CRM_Core_Config::singleton()->resourceBase . 'i/logo_lg.png';
+    $faviconType = 'image/png';
+  }
+  $markup = sprintf(
+    '<link rel="icon" href="%s" type="%s">',
+    htmlspecialchars($faviconUrl),
+    htmlspecialchars($faviconType)
+  );
+  $bundle->addMarkup($markup, [
+    'region' => 'html-header',
+  ]);
 }
 
 /**
@@ -130,4 +155,6 @@ function standaloneusers_civicrm_alterSettingsMetaData(&$settings) {
 
   // below-cms-menu doesn't make sense on Standalone
   unset($settings['menubar_position']['options']['below-cms-menu']);
+  // Standalone has no CMS menu to replace; rename option accordingly.
+  $settings['menubar_position']['options']['over-cms-menu'] = ts('Top of screen');
 }

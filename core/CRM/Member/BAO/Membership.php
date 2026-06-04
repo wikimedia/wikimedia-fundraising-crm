@@ -306,6 +306,7 @@ class CRM_Member_BAO_Membership extends CRM_Member_DAO_Membership {
     // unavailable through apiv3.
     // once we are rid of direct calls to the BAO::create from core
     // we will deprecate this stuff into the v3 api.
+    // API4 doesn't pass in "version" - we explicitly pass it in for API4 Membership - see MembershipSaveTrait
     if (($params['version'] ?? 0) !== 4) {
       if (isset($ids['membership'])) {
         $latestContributionID = CRM_Member_BAO_MembershipPayment::getLatestContributionIDFromLineitemAndFallbackToMembershipPayment($membership->id);
@@ -756,6 +757,11 @@ INNER JOIN  civicrm_membership_type type ON ( type.id = membership.membership_ty
    * @throws \CRM_Core_Exception
    */
   public static function getContactMembership($contactID, $memType, $isTest, $membershipId = NULL, $onlySameParentOrg = FALSE) {
+    // $contactID needs to be set.
+    if (!$contactID) {
+      return FALSE;
+    }
+
     //check for owner membership id, if it exists update that membership instead: CRM-15992
     if ($membershipId) {
       CRM_Core_Error::deprecatedWarning('passing in membership ID is deprecated');
@@ -1134,14 +1140,15 @@ AND civicrm_membership.is_test = %2";
    * @return int
    *   contribution page id
    */
-  public static function getContributionPageId($membershipID) {
+  public static function getContributionPageId(int $membershipID) {
     $query = "
 SELECT c.contribution_page_id as pageID
-  FROM civicrm_membership_payment mp, civicrm_contribution c
- WHERE mp.contribution_id = c.id
-   AND c.contribution_page_id IS NOT NULL
-   AND mp.membership_id = " . CRM_Utils_Type::escape($membershipID, 'Integer')
-      . " ORDER BY mp.id DESC";
+  FROM civicrm_line_item line
+   INNER JOIN civicrm_contribution c ON c.id = line.contribution_id
+    AND entity_table = 'civicrm_membership'
+ WHERE c.contribution_page_id IS NOT NULL
+   AND line.entity_id = " . CRM_Utils_Type::escape($membershipID, 'Integer')
+      . " ORDER BY line.id DESC";
 
     return CRM_Core_DAO::singleValueQuery($query);
   }
@@ -1491,8 +1498,14 @@ WHERE  civicrm_membership.contact_id = civicrm_contact.id
         ->addWhere('contribution_recur_id.contribution_status_id:name', '!=', 'Cancelled')
         ->execute()->first();
       if (isset($membership['contribution_recur_id'])) {
-        $paymentObject = CRM_Financial_BAO_PaymentProcessor::getPaymentProcessorForRecurringContribution($membership['contribution_recur_id']);
-        $supportsCancel[$cacheKeyString] = $paymentObject->supports('cancelRecurring');
+        try {
+          $paymentObject = CRM_Financial_BAO_PaymentProcessor::getPaymentProcessorForRecurringContribution($membership['contribution_recur_id']);
+          $supportsCancel[$cacheKeyString] = $paymentObject->supports('cancelRecurring');
+        }
+        catch (CRM_Core_Exception $e) {
+          // An error could be thrown because the payment processor id on the contribution recur can be NULL.
+          // This happens with CiviSepa.
+        }
       }
     }
     return $supportsCancel[$cacheKeyString];
@@ -1769,19 +1782,15 @@ INNER JOIN  civicrm_contact contact ON ( contact.id = membership.contact_id AND 
    * @throws \CRM_Core_Exception
    */
   protected static function hasExistingInheritedMembership($params) {
-    $currentMemberships = \Civi\Api4\Membership::get(FALSE)
+    $membershipGet = \Civi\Api4\Membership::get(FALSE)
       ->addJoin('MembershipStatus AS membership_status', 'LEFT')
       ->addWhere('membership_status.is_current_member', '=', TRUE)
-      ->addWhere('contact_id', '=', $params['contact_id'])
-      ->execute();
+      ->addWhere('contact_id', '=', $params['contact_id']);
+    if (!empty($params['owner_membership_id'])) {
+      $membershipGet->addWhere('owner_membership_id', '=', $params['owner_membership_id']);
+    }
+    $currentMemberships = $membershipGet->execute();
     foreach ($currentMemberships as $membership) {
-      if (!empty($membership['owner_membership_id'])
-        && $membership['membership_type_id'] === $params['membership_type_id']
-        && (int) $params['owner_membership_id'] !== (int) $membership['owner_membership_id']
-      ) {
-        // Inheriting it from another contact, don't update here.
-        return TRUE;
-      }
       if (self::matchesRequiredMembership($params, $membership)) {
         return TRUE;
       }
@@ -2058,10 +2067,12 @@ WHERE {$whereClause}";
    * @param array $params
    *   Array of submitted params.
    *
+   * @deprecated use Order api
+   *
    * @return CRM_Contribute_BAO_Contribution
    * @throws \CRM_Core_Exception
    */
-  public static function recordMembershipContribution(&$params) {
+  public static function recordMembershipContribution($params) {
     $contributionParams = [];
     $config = CRM_Core_Config::singleton();
     $contributionParams['currency'] = $config->defaultCurrency;
@@ -2133,9 +2144,6 @@ WHERE {$whereClause}";
         CRM_Contribute_BAO_ContributionSoft::add($contributionSoftParams);
       }
     }
-
-    // store contribution id
-    $params['contribution_id'] = $contribution->id;
 
     return $contribution;
   }
@@ -2391,7 +2399,6 @@ WHERE {$whereClause}";
           'priority_id' => 2,
           'activity_date_time' => CRM_Utils_Time::date('Y-m-d H:i:s'),
           'is_auto' => 0,
-          'is_current_revision' => 1,
           'is_deleted' => 0,
         ];
         civicrm_api3('activity', 'create', $activityParam);

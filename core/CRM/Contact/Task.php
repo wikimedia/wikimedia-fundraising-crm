@@ -246,6 +246,8 @@ class CRM_Contact_Task extends CRM_Core_Task {
         self::$_tasks[self::ADD_EVENT] = [
           'title' => ts('Register participants for event'),
           'class' => 'CRM_Event_Form_Task_Register',
+          'url' => 'civicrm/task/register-participants',
+          'icon' => 'fa-calendar-plus-o',
         ];
       }
 
@@ -329,7 +331,7 @@ class CRM_Contact_Task extends CRM_Core_Task {
   public static function getTask($value) {
     self::tasks();
 
-    if (empty(self::$_tasks[$value])) {
+    if (!$value || empty(self::$_tasks[$value])) {
       // make it the print task by default
       $value = self::TASK_PRINT;
     }

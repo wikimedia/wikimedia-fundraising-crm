@@ -642,11 +642,13 @@ if (!CRM.vars) CRM.vars = {};
         data = [data];
       }
       data.forEach((item) => {
-        links.push({
-          path: item.quickEdit.path,
-          icon: 'fa-pencil',
-          title: ts('Edit %1', {1: item.quickEdit.title}),
-        });
+        if (item.quickEdit?.path) {
+          links.push({
+            path: item.quickEdit.path,
+            icon: 'fa-pencil',
+            title: ts('Edit %1', {1: item.quickEdit.title}),
+          });
+        }
       });
       return links;
     }
@@ -1295,11 +1297,11 @@ if (!CRM.vars) CRM.vars = {};
       $('form[data-warn-changes] :input', e.target).each(function() {
         $(this).data('crm-initial-value', $(this).is(':checkbox, :radio') ? $(this).prop('checked') : $(this).val());
       });
-      $('textarea.crm-form-wysiwyg', e.target).each(function() {
-        if ($(this).hasClass("collapsed")) {
-          CRM.wysiwyg.createCollapsed(this);
+      e.target.querySelectorAll('textarea.crm-form-wysiwyg').forEach((el) => {
+        if (el.classList.contains('collapsed')) {
+          CRM.wysiwyg.createCollapsed(el);
         } else {
-          CRM.wysiwyg.create(this);
+          CRM.wysiwyg.create(el);
         }
       });
       // Submit once handlers
@@ -1810,19 +1812,16 @@ if (!CRM.vars) CRM.vars = {};
 
       // Handle clear button for form elements
       .on('click', 'a.crm-clear-link', function() {
-        $(this).css({visibility: 'hidden'}).siblings('.crm-form-radio:checked').prop('checked', false).trigger('change', ['crmClear']);
-        $(this).closest('.crm-multiple-checkbox-radio-options').find('.crm-form-radio:checked').prop('checked', false).trigger('change', ['crmClear']);
+        $(this).css({visibility: 'hidden'}).parent().find('.crm-form-radio:checked').prop('checked', false).trigger('change', ['crmClear']);
         $(this).siblings('input:text').val('').trigger('change', ['crmClear']);
         return false;
       })
       .on('change keyup', 'input.crm-form-radio:checked, input[allowclear=1]', function(e, context) {
         if (context !== 'crmClear' && ($(this).is(':checked') || ($(this).is('[allowclear=1]') && $(this).val()))) {
-          $(this).siblings('.crm-clear-link').css({visibility: ''});
-          $(this).closest('.crm-multiple-checkbox-radio-options').find('.crm-clear-link').css({visibility: ''});
+          $(this).add($(this).parent('.crm-option-label-pair')).siblings('.crm-clear-link').css({visibility: ''});
         }
         if (context !== 'crmClear' && $(this).is('[allowclear=1]') && $(this).val() === '') {
-          $(this).siblings('.crm-clear-link').css({visibility: 'hidden'});
-          $(this).closest('.crm-multiple-checkbox-radio-options').find('.crm-clear-link').css({visibility: 'hidden'});
+          $(this).add($(this).parent('.crm-option-label-pair')).siblings('.crm-clear-link').css({visibility: 'hidden'});
         }
       })
 
@@ -2200,5 +2199,39 @@ if (!CRM.vars) CRM.vars = {};
 
     return html;
   };
+
+  CRM.utils.createButton = (label, btnClass = null, icon = null, clickHandler = null, href = null, target = null, type = 'button') => {
+    const button = document.createElement('button');
+
+    button.type = type;
+
+    button.classList.add('btn');
+    if (btnClass) {
+      button.classList.add(btnClass);
+    }
+
+    button.innerText = label;
+
+    if (icon) {
+      const i = document.createElement('i');
+      i.classList.add('crm-i', icon);
+      i.role = 'img';
+      i.ariaHidden = true;
+      button.prepend(i);
+    }
+
+    if (clickHandler) {
+      button.onclick = clickHandler;
+    }
+    if (href) {
+      button.href = href;
+    }
+    if (target) {
+      button.target = target;
+    }
+
+    return button;
+  };
+
 
 })(jQuery, _);

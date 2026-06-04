@@ -376,6 +376,7 @@ class CRM_Contact_BAO_Group extends CRM_Contact_DAO_Group implements HookInterfa
    * @return bool
    */
   public static function setIsActive($id, $isActive) {
+    unset(Civi::$statics[__CLASS__ . '::filterActiveGroups']);
     return CRM_Core_DAO::setFieldValue('CRM_Contact_DAO_Group', $id, 'is_active', $isActive);
   }
 
@@ -866,7 +867,11 @@ class CRM_Contact_BAO_Group extends CRM_Contact_DAO_Group implements HookInterfa
    * @param string $spacer
    * @param bool $titleOnly
    * @param bool $public
-   *
+   * @param string $textFormat
+   *   Preferred encoding for the title/description
+   *   - 'plain' for plain text. (Ex: "Bill & Ted's >est Adventure")
+   *   - 'html' for HTML entities. (Ex: "Bill &amp; Ted's &gt;est Adventure")
+   *   - 'html-ish' for partial HTML entities (Ex: "Bill & Ted's &gt;est Adventure") [DEPRECATED]
    * @return array
    */
   public static function getGroupsHierarchy(
@@ -874,11 +879,14 @@ class CRM_Contact_BAO_Group extends CRM_Contact_DAO_Group implements HookInterfa
     $parents = NULL,
     $spacer = '<span class="child-indent"></span>',
     $titleOnly = FALSE,
-    $public = FALSE
+    $public = FALSE,
+    string $textFormat = 'html-ish'
   ) {
     if (empty($groupIDs)) {
       return [];
     }
+
+    // TODO: Emit a warning if someone requests $textFormat==='html-ish'. This not a sensible format for display. (Or transmission or storage, but storage has massive inertia...)
 
     $groupIdString = '(' . implode(',', array_keys($groupIDs)) . ')';
     // <span class="child-icon"></span>
@@ -912,22 +920,25 @@ WHERE  id IN $groupIdString
     // $tree contains the child nodes based on their parent_id.
     $roots = [];
     $tree = [];
+    $codex = CRM_Utils_API_HTMLInputCoder::singleton();
     while ($dao->fetch()) {
-      $title = $dao->title;
-      $description = $dao->description;
+      $title = $codex->transcode('title', $dao->title, $textFormat);
+      $description = $codex->transcode('description', $dao->description, $textFormat);
       if ($public) {
-        $title = $dao->frontend_title;
-        $description = $dao->frontend_description;
+        $title = $codex->transcode('frontend_title', $dao->frontend_title, $textFormat);
+        $description = $codex->transcode('frontend_description', $dao->frontend_description, $textFormat);
       }
       if ($dao->parents) {
         $parentArray = explode(',', $dao->parents);
         $parent = self::filterActiveGroups($parentArray);
-        $tree[$parent][] = [
-          'id' => $dao->id,
-          'title' => empty($dao->saved_search_id) ? $title : '* ' . $title,
-          'visibility' => $dao->visibility,
-          'description' => $description,
-        ];
+        if ($parent) {
+          $tree[$parent][] = [
+            'id' => $dao->id,
+            'title' => empty($dao->saved_search_id) ? $title : '* ' . $title,
+            'visibility' => $dao->visibility,
+            'description' => $description,
+          ];
+        }
       }
       else {
         $roots[] = [
@@ -1235,24 +1246,48 @@ WHERE {$whereClause}";
    * @param array $parentArray
    *   Array of group Ids.
    *
-   * @return int
+   * @return int|null
+   *   The first active parent group ID, or NULL if none are active.
    */
-  public static function filterActiveGroups($parentArray) {
-    if (count($parentArray) >= 1) {
-      $result = civicrm_api3('Group', 'get', [
-        'id' => ['IN' => $parentArray],
-        'is_active' => TRUE,
-        'return' => 'id',
-      ]);
-      $activeParentGroupIDs = CRM_Utils_Array::collect('id', $result['values']);
-      foreach ($parentArray as $key => $groupID) {
-        if (!array_key_exists($groupID, $activeParentGroupIDs)) {
-          unset($parentArray[$key]);
-        }
+  public static function filterActiveGroups($parentArray): ?int {
+    if (!isset(Civi::$statics[__METHOD__])) {
+      Civi::$statics[__METHOD__] = [];
+    }
+    $activeGroupCache = &Civi::$statics[__METHOD__];
+
+    if (count($parentArray) < 1) {
+      return NULL;
+    }
+
+    $parentArray = array_map('intval', $parentArray);
+    $missingIDs = [];
+    foreach ($parentArray as $groupID) {
+      if (!array_key_exists($groupID, $activeGroupCache)) {
+        $missingIDs[$groupID] = $groupID;
       }
     }
 
-    return reset($parentArray);
+    if ($missingIDs) {
+      $result = Group::get(FALSE)
+        ->addSelect('id')
+        ->addWhere('id', 'IN', array_values($missingIDs))
+        ->addWhere('is_active', '=', TRUE)
+        ->execute();
+
+      $activeParentGroupIDs = $result->column('id', 'id');
+
+      foreach ($missingIDs as $groupID) {
+        $activeGroupCache[$groupID] = !empty($activeParentGroupIDs[$groupID]);
+      }
+    }
+
+    foreach ($parentArray as $groupID) {
+      if (!empty($activeGroupCache[$groupID])) {
+        return $groupID;
+      }
+    }
+
+    return NULL;
   }
 
   /**
@@ -1284,6 +1319,7 @@ WHERE {$whereClause}";
    * @param \Civi\Core\Event\PostEvent $event
    */
   public static function self_hook_civicrm_post(\Civi\Core\Event\PostEvent $event) {
+    unset(Civi::$statics[__CLASS__ . '::filterActiveGroups']);
     /** @var CRM_Contact_DAO_Group $group */
     $group = $event->object;
     if (in_array($event->action, ['create', 'edit'])) {
