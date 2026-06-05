@@ -4722,6 +4722,33 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Link the Prospect Stage custom field to its option group on dev installs.
+   *
+   * The Stage field was previously in CustomGroups without the linked option group..
+   * This will link the option group from the new mgd to the existing custom field.
+   * Does nothing on prod, because the option group is already linked.
+   *
+   *  Bug: T386961
+   *
+   * @return bool
+   */
+  public function upgrade_5005(): bool {
+    \CRM_Core_ManagedEntities::singleton(TRUE)->reconcile();
+    $optionGroupID = OptionGroup::get(FALSE)
+      ->addSelect('id')
+      ->addWhere('name', '=', 'stage_20080616181942')
+      ->execute()->first()['id'] ?? NULL;
+    if ($optionGroupID) {
+      CustomField::update(FALSE)
+        ->addWhere('name', '=', 'Stage')
+        ->addWhere('custom_group_id.name', '=', 'Prospect')
+        ->setValues(['option_group_id' => $optionGroupID])
+        ->execute();
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
