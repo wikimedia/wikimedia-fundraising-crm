@@ -2385,7 +2385,7 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertEquals($existingContact['id'], $contribution['contact_id']);
     $activity = Activity::get(FALSE)
       ->addWhere('source_contact_id', '=', $this->ids['Contact']['existing'])
-      ->addWhere('target_contact_id', '=', $contribution['contact_id'])
+      ->addWhere('target_contact_id', 'CONTAINS', [$contribution['contact_id']])
       ->addWhere('source_record_id', '=', $contribution['id'])
       ->addWhere('activity_type_id:name', '=', 'Contact referral')
       ->execute()
