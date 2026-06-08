@@ -17,6 +17,7 @@ use Civi\WMFStatistic\DonationStatsCollector;
 use Civi\WMFStatistic\ImportStatsCollector;
 use Civi\WMFStatistic\PrometheusReporter;
 use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
+use CRM_Wmf_ExtensionUtil as E;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
@@ -319,7 +320,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       $gateway_subscr_id = $msg['gateway_txn_id'];
     }
     else {
-      $error_message = t(
+      $error_message = E::ts(
         '`trxn_id` must be set and not empty, with the contact_id [!contact_id]',
         ["!contact_id" => $contact_id]
       );
