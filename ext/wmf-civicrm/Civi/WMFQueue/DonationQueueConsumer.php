@@ -388,8 +388,8 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
         $extra_recurring_params['contribution_recur_smashpig.payment_service_id'] = $msg['payment_service_id'];
       }
 
-      if (!empty($msg['country'])) {
-        $extra_recurring_params['contribution_recur_smashpig.original_country:abbr'] = $msg['country'];
+      if (!empty($msg['url_country']) || !empty($msg['country'])) {
+        $extra_recurring_params['contribution_recur_smashpig.original_country:abbr'] = !empty($msg['url_country']) ? $msg['url_country'] : $msg['country'];
       }
 
       $insert_params = [
