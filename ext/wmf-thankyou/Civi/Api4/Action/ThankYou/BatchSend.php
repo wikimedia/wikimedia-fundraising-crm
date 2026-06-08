@@ -515,7 +515,7 @@ EOT;
     }
 
     $activity = Activity::get(FALSE)
-      ->addWhere('target_contact_id', '=', $mailingData['contact_id'])
+      ->addWhere('target_contact_id', 'CONTAINS', $mailingData['contact_id'])
       ->addWhere('activity_type_id:name', '=', 'Double Opt-In')
       ->addWhere('status_id:name', '=', 'Completed')
       ->addWhere('subject', '=', $mailingData['email'])
