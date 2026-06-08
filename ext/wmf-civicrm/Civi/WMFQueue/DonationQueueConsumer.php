@@ -328,6 +328,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     }
 
     $msg['cycle_day'] = (int) (gmdate('j', $msg['date']));
+    $msg['frequency_interval'] = $message->getFrequencyInterval();
 
     $next_sched_contribution = \CRM_Core_Payment_Scheduler::getNextContributionDate($msg);
     try {
