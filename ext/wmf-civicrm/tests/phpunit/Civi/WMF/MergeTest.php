@@ -712,6 +712,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * @param bool $isReverse
    *
    * @dataProvider isReverse
+   * @throws \CRM_Core_Exception
    */
   public function testBatchMergeConflictOptIn(bool $isReverse) {
     $this->breedGenerousDuck('first_duck', ['Communication.opt_in' => 1], !$isReverse);
@@ -719,7 +720,10 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
     $result = $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
     $this->assertCount(0, $result['values']['skipped'], 'skipped count is wrong');
     $this->assertCount(1, $result['values']['merged'], 'merged count is wrong');
-    $contact = $this->callAPISuccessGetSingle('Contact', ['id' => $this->ids['Contact']['first_duck'], 'return' => 'Communication.opt_in', 'version' => 4]);
+    $contact = Contact::get(FALSE)
+      ->addWhere('id',  '=', $this->ids['Contact']['first_duck'])
+      ->addSelect('Communication.opt_in')
+      ->execute()->single();
     $this->assertEquals($isReverse ? 0 : 1, $contact['Communication.opt_in']);
   }
 
