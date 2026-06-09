@@ -6,11 +6,11 @@ use SmashPig\Core\PaymentError;
 use SmashPig\Core\ValidationError;
 use SmashPig\PaymentData\ErrorCode;
 use SmashPig\PaymentData\FinalStatus;
+use SmashPig\PaymentProviders\IDeleteRecurringPaymentTokenProvider;
 use SmashPig\PaymentProviders\IRecurringPaymentProfileProvider;
 use SmashPig\PaymentProviders\IRefundablePaymentProvider;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
 use SmashPig\PaymentProviders\Responses\CreatePaymentResponse;
-use SmashPig\PaymentProviders\Responses\ApprovePaymentResponse;
 use SmashPig\PaymentProviders\Responses\PaymentProviderExtendedResponse;
 use SmashPig\PaymentProviders\Responses\PaymentProviderResponse;
 use SmashPig\PaymentProviders\Responses\RefundPaymentResponse;
@@ -423,6 +423,10 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
   public function cancelSubscription(&$message = '', $params = []): bool {
     $recurringPayment = ContributionRecur::get(FALSE)
       ->addWhere('id', '=', $params->getContributionRecurID())
+      ->setSelect([
+        'trxn_id',
+        'payment_token_id.token',
+      ])
       ->execute()
       ->first();
     $this->setContext();
@@ -433,16 +437,23 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
     } catch (CRM_Core_Exception $ex) {
       $provider = PaymentProviderFactory::getDefaultProvider();
     }
-    if ($provider instanceof IRecurringPaymentProfileProvider) {
-      $result = $provider->cancelSubscription(['subscr_id' => $recurringPayment['trxn_id']]);
+    $message = ts('Sent subscription cancel request to processor');
+
+    if ($provider instanceof IDeleteRecurringPaymentTokenProvider) {
+      return $provider->deleteRecurringPaymentToken([
+        'recurring_payment_token' => $recurringPayment['payment_token_id.token'],
+      ]);
+    } elseif ($provider instanceof IRecurringPaymentProfileProvider) {
+      $result = $provider->cancelSubscription([
+        'subscr_id' => $recurringPayment['trxn_id']
+      ]);
       if ($result->hasErrors()) {
         $message = 'Error sending cancel request to processor: ' . $result->getErrors()[0]->getDebugMessage();
-      } else {
-        $message = ts('Sent subscription cancel request to processor');
       }
       return $result->isSuccessful();
+    } else {
+      return TRUE;
     }
-    return TRUE;
   }
 
   /**
