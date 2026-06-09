@@ -25,6 +25,13 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
    */
   protected $processorName = 'testSmashPig';
 
+  /**
+   * Ids of payment processors created by getPaymentProcessorID().
+   *
+   * @var int[]
+   */
+  private static $createdProcessorIds = [];
+
   protected $maxContactID;
 
   protected int $maxContributionID;
@@ -130,9 +137,6 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
         if ($recurring) {
           $this->cleanupRecurringContributions(array_keys($recurring));
         }
-        PaymentProcessor::delete(FALSE)
-          ->addWhere('id', 'IN', $this->ids['PaymentProcessor'])
-          ->execute();
       }
       else {
         try {
@@ -146,6 +150,16 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
     // Ensure cleanup has been done!
     $this->assertEquals($this->maxContactID, $this->maxContactID = \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact'));
     parent::tearDown();
+  }
+
+  public static function tearDownAfterClass(): void {
+    if (self::$createdProcessorIds) {
+      PaymentProcessor::delete(FALSE)
+        ->addWhere('id', 'IN', self::$createdProcessorIds)
+        ->execute();
+      self::$createdProcessorIds = [];
+    }
+    parent::tearDownAfterClass();
   }
 
   /**
@@ -177,7 +191,9 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
     if ($existing) {
       return $existing['id'];
     }
-    return $this->createPaymentProcessor($name)['id'];
+    $id = $this->createPaymentProcessor($name)['id'];
+    self::$createdProcessorIds[] = $id;
+    return $id;
   }
 
   /**
