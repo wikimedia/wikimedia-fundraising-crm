@@ -1836,6 +1836,7 @@ class DonationQueueTest extends BaseQueueTestCase {
       'recurring' => 1,
       'recurring_payment_token' => mt_rand(),
       'initial_scheme_transaction_id' => 'FlargBlarg12345',
+      'payment_service_id' => 'test-service-uuid-1234',
       'user_ip' => '123.232.232',
     ];
     $this->processMessage($msg, 'Donation', 'test');
@@ -1843,6 +1844,7 @@ class DonationQueueTest extends BaseQueueTestCase {
     $recurRecord = ContributionRecur::get(FALSE)
       ->addSelect('contribution_recur_smashpig.initial_scheme_transaction_id')
       ->addSelect('contribution_recur_smashpig.original_country:abbr')
+      ->addSelect('contribution_recur_smashpig.payment_service_id')
       ->addWhere('id', '=', $contribution['contribution_recur_id'])
       ->execute()
       ->first();
@@ -1853,6 +1855,10 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertEquals(
       'US',
       $recurRecord['contribution_recur_smashpig.original_country:abbr']
+    );
+    $this->assertEquals(
+      'test-service-uuid-1234',
+      $recurRecord['contribution_recur_smashpig.payment_service_id']
     );
   }
 
