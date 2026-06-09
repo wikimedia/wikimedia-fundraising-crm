@@ -13,12 +13,21 @@
     <url desc="Documentation">https://lab.civicrm.org/extensions/tutorial/-/blob/master/README.md</url>
     <url desc="Licensing">https://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
-  <releaseDate>2024-03-15</releaseDate>
-  <version>1.6</version>
+  <releaseDate>2026-06-01</releaseDate>
+  <version>1.7</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.29</ver>
+    <ver>6.0</ver>
   </compatibility>
+  <smarty_compatibility>
+    <ver>5.0</ver>
+  </smarty_compatibility>
+  <php_compatibility>
+    <ver>8.1</ver>
+    <ver>8.2</ver>
+    <ver>8.3</ver>
+    <ver>8.4</ver>
+  </php_compatibility>
   <comments>Support this extension by donating to CiviCRM!</comments>
   <classloader>
     <psr4 prefix="Civi\" path="Civi"/>
@@ -26,6 +35,9 @@
   </classloader>
   <civix>
     <namespace>CRM/Tutorial</namespace>
-    <format>23.02.1</format>
+    <format>25.10.2</format>
   </civix>
+  <mixins>
+    <mixin>scan-classes@1.0.0</mixin>
+  </mixins>
 </extension>

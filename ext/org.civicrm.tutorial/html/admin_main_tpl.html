@@ -1,7 +1,7 @@
 <div id="civitutorial-admin-buttons">
-  <button id="civitutorial-admin-save" <% if (saved) { %> disabled="disabled" <% } %>><i class="crm-i fa-check"></i></button>
-  <button type="button" id="civitutorial-admin-delete" <% if (domain || !id) { %> disabled="disabled" <% } %>><i class="crm-i fa-trash"></i></button>
-  <button type="button" id="civitutorial-admin-close"><i class="crm-i fa-close"></i></button>
+  <button id="civitutorial-admin-save" <% if (saved) { %> disabled="disabled" <% } %>><i class="crm-i fa-check" role="img" aria-hidden="true"></i></button>
+  <button type="button" id="civitutorial-admin-delete" <% if (domain || !id) { %> disabled="disabled" <% } %>><i class="crm-i fa-trash" role="img" aria-hidden="true"></i></button>
+  <button type="button" id="civitutorial-admin-close"><i class="crm-i fa-close" role="img" aria-hidden="true"></i></button>
 </div>
 <h4><%- source ? ts('Tutorial From %1', {1: source}) : ts('Custom Tutorial') %></h4>
 <div id="civitutorial-admin-top">
@@ -28,4 +28,4 @@
 </div>
 <div id="civitutorial-steps"></div>
 <br />
-<button type="button" id="civitutorial-add-step"><i class="crm-i fa-plus"></i> <%- ts('Add Step') %></button>
+<button type="button" id="civitutorial-add-step"><i class="crm-i fa-plus" role="img" aria-hidden="true"></i> <%- ts('Add Step') %></button>

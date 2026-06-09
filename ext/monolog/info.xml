@@ -18,8 +18,7 @@
   <version>1.0</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>5.82</ver>
-    <ver>6.0</ver>
+    <ver>6.10</ver>
   </compatibility>
   <smarty_compatibility>
     <ver>5.0</ver>
@@ -37,11 +36,12 @@
   </classloader>
   <civix>
     <namespace>CRM/Monolog</namespace>
-    <format>25.01.1</format>
+    <format>25.10.2</format>
   </civix>
   <mixins>
-    <mixin>mgd-php@1.0.0</mixin>
-    <mixin>entity-types-php@1.0.0</mixin>
+    <mixin>mgd-php@2.0.0</mixin>
+    <mixin>entity-types-php@2.0.0</mixin>
+    <mixin>scan-classes@1.0.0</mixin>
   </mixins>
-  <upgrader>CRM_Monolog_Upgrader</upgrader>
+  <upgrader>CiviMix\Schema\Monolog\AutomaticUpgrader</upgrader>
 </extension>

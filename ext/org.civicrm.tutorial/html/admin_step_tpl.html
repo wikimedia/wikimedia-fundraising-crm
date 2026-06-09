@@ -1,8 +1,8 @@
 <div class="civitutorial-step">
   <h5 class="civitutorial-step-title">
-    <div class="civitutorial-step-icon"><% if(icon) { %><i class="crm-i <%= icon %>"></i><% } %></div>
+    <div class="civitutorial-step-icon"><% if(icon) { %><i class="crm-i <%= icon %>" role="img" aria-hidden="true"></i><% } %></div>
     <div contenteditable="true" class="crm-editable-enabled" placeholder="<%- ts('No title') %>" name="title"><%= title %></div>
-    <i class="crm-i fa-window-close-o civitutorial-step-remove"></i>
+    <i class="crm-i fa-window-close-o civitutorial-step-remove" role="img" aria-hidden="true"></i>
   </h5>
   <div class="civitutorial-step-content">
     <div>
@@ -25,7 +25,7 @@
     <div>
       <label><%- ts('Icon') %></label>
       <input name="icon" class="crm-form-text crm-icon-picker" allowclear="1" value="<%= icon %>" />
-      <a class="crm-hover-button crm-clear-link" <% if(!icon) { %>style="visibility:hidden;"<% } %>><i class="crm-i fa-times"></i></a>
+      <a class="crm-hover-button crm-clear-link" <% if(!icon) { %>style="visibility:hidden;"<% } %>><i class="crm-i fa-times" role="img" aria-hidden="true"></i></a>
     </div>
   </div>
 </div>

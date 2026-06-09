@@ -249,11 +249,12 @@ class Contact {
   public static function getGatewayContactID(): int {
     $gateway = 'Payment Processor Fee Bucket';
     if (!isset(\Civi::$statics[__CLASS__][$gateway])) {
-      \Civi::$statics[__CLASS__][$gateway] = (int) \Civi\Api4\Contact::get(FALSE)
+      $contact = \Civi\Api4\Contact::get(FALSE)
         ->addSelect('id')
         ->addWhere('contact_type', '=', 'Organization')
         ->addWhere('organization_name', '=', $gateway)
-        ->execute()->first()['id'] ?? NULL;
+        ->execute()->first() ?? [];
+      \Civi::$statics[__CLASS__][$gateway] = (int) $contact['id'] ?? NULL;
     }
     if (!\Civi::$statics[__CLASS__][$gateway]) {
       \Civi::$statics[__CLASS__][$gateway] = (int) \Civi\Api4\Contact::create(FALSE)

@@ -307,6 +307,7 @@ return [
       'extends' => 'Contribution',
       'style' => 'Inline',
       'is_active' => 1,
+      'table_name' => 'civicrm_value_1_stock_information_10',
       // Setting weight here is a bit hit & miss but one day the api
       // will do the right thing...
       'weight' => 1,
@@ -864,7 +865,7 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'is_searchable' => 1,
       'note_columns' => 60,
       'note_rows' => 4,
-      // "option_group_id":"32",
+      'option_group_id.name' => 'stage_20080616181942',
     ],
     'On_Hold' => [
       'name' => 'On_Hold',

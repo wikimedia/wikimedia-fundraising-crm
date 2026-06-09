@@ -17,6 +17,7 @@ use Civi\WMFStatistic\DonationStatsCollector;
 use Civi\WMFStatistic\ImportStatsCollector;
 use Civi\WMFStatistic\PrometheusReporter;
 use Civi\WMFStatistic\Queue2civicrmTrxnCounter;
+use CRM_Wmf_ExtensionUtil as E;
 use SmashPig\Core\DataStores\PendingDatabase;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\UtcDate;
@@ -319,7 +320,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       $gateway_subscr_id = $msg['gateway_txn_id'];
     }
     else {
-      $error_message = t(
+      $error_message = E::ts(
         '`trxn_id` must be set and not empty, with the contact_id [!contact_id]',
         ["!contact_id" => $contact_id]
       );
@@ -327,6 +328,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     }
 
     $msg['cycle_day'] = (int) (gmdate('j', $msg['date']));
+    $msg['frequency_interval'] = $message->getFrequencyInterval();
 
     $next_sched_contribution = \CRM_Core_Payment_Scheduler::getNextContributionDate($msg);
     try {
@@ -380,6 +382,10 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
 
       if (!empty($msg['initial_scheme_transaction_id'])) {
         $extra_recurring_params['contribution_recur_smashpig.initial_scheme_transaction_id'] = $msg['initial_scheme_transaction_id'];
+      }
+
+      if (!empty($msg['payment_service_id'])) {
+        $extra_recurring_params['contribution_recur_smashpig.payment_service_id'] = $msg['payment_service_id'];
       }
 
       if (!empty($msg['country'])) {

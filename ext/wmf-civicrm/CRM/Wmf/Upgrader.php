@@ -11,6 +11,7 @@ use Civi\Api4\LocationType;
 use Civi\Api4\WMFConfig;
 use Civi\Api4\Email;
 use Civi\Api4\Contact;
+use Civi\Api4\Activity;
 use Civi\Api4\WMFDonor;
 use Civi\QueueHelper;
 use Civi\WMFHook\CalculatedData;
@@ -4717,6 +4718,93 @@ v.channel IS NULL AND c.id = 131486342;",
         WHERE id BETWEEN {$min} AND " . ($min + 99999) . "
         AND activity_type_id IN ({$activityTypeIDsList})
         AND activity_date_time < DATE_SUB(NOW(), INTERVAL 3 MONTH)");
+    }
+    return TRUE;
+  }
+
+  /**
+   * Link the Prospect Stage custom field to its option group on dev installs.
+   *
+   * The Stage field was previously in CustomGroups without the linked option group..
+   * This will link the option group from the new mgd to the existing custom field.
+   * Does nothing on prod, because the option group is already linked.
+   *
+   *  Bug: T386961
+   *
+   * @return bool
+   */
+  public function upgrade_5005(): bool {
+    \CRM_Core_ManagedEntities::singleton(TRUE)->reconcile();
+    $optionGroupID = OptionGroup::get(FALSE)
+      ->addSelect('id')
+      ->addWhere('name', '=', 'stage_20080616181942')
+      ->execute()->first()['id'] ?? NULL;
+    if ($optionGroupID) {
+      CustomField::update(FALSE)
+        ->addWhere('name', '=', 'Stage')
+        ->addWhere('custom_group_id.name', '=', 'Prospect')
+        ->setValues(['option_group_id' => $optionGroupID])
+        ->execute();
+    }
+    return TRUE;
+  }
+
+  /**
+   * Backfill Prospect MG Stage Change activities for contacts with a current stage.
+   *
+   *  Bug: T386961
+   *
+   * @return bool
+   */
+  public function upgrade_5010(): bool {
+    // These contact ids are in the logs as the log_user_id but are now deleted/merged.
+    $deletedStaffContactIds = [
+      34488457 => 34448858,
+      21041858 => 64711375,
+      46364655 => 64711375,
+      28019671 => 11863262,
+    ];
+    $optionValues = OptionValue::get(FALSE)
+      ->addSelect('value', 'label')
+      ->addWhere('option_group_id:name', '=', 'stage_20080616181942')
+      ->execute()->indexBy('value');
+    $contactIDs = Contact::get(FALSE)
+      ->addSelect('id')
+      ->addWhere('Prospect.Stage', 'IS NOT EMPTY')
+      ->addJoin(
+        'Activity AS Contact_ActivityContact_Activity_01',
+        'EXCLUDE',
+        'ActivityContact',
+        ['id', '=', 'Contact_ActivityContact_Activity_01.contact_id'],
+        ['Contact_ActivityContact_Activity_01.record_type_id:name', '=', '"Activity Targets"'],
+        ['Contact_ActivityContact_Activity_01.activity_type_id:name', '=', '"MG Stage Change"']
+      )
+      ->execute()->column('id');
+    foreach ($contactIDs as $contactID) {
+      $dao = CRM_Core_DAO::executeQuery("
+        SELECT stage, log_date, log_user_id FROM log_civicrm_value_1_prospect_5
+        WHERE entity_id = {$contactID}
+        ORDER BY log_date ASC");
+      $previousStage = NULL;
+      while ($dao->fetch()) {
+        $newStage = $dao->stage ?: NULL;
+        // Some older values are stored as 'declined' which must have been changed, but no current values.
+        $newStage = ($newStage === 'declined') ? 'Disqualified' : $newStage;
+        if ($newStage !== $previousStage) {
+          $previousLabel = $optionValues[$previousStage]['label'] ?? 'None';
+          $newLabel = $optionValues[$newStage]['label'] ?? 'None';
+          $sourceContactID = $deletedStaffContactIds[$dao->log_user_id] ?? $dao->log_user_id ?? $contactID;
+          Activity::create(FALSE)
+            ->addValue('target_contact_id', $contactID)
+            ->addValue('source_contact_id', $sourceContactID)
+            ->addValue('activity_type_id:name', 'MG Stage Change')
+            ->addValue('activity_date_time', $dao->log_date)
+            ->addValue('MG_Stage.Changed_to', $newStage)
+            ->addValue('subject', 'From ' . $previousLabel . ' to ' . $newLabel)
+            ->execute();
+          $previousStage = $newStage;
+        }
+      }
     }
     return TRUE;
   }
