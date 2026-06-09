@@ -207,7 +207,7 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
       ->execute();
   }
 
-  public function testMissingEmailChecksumWhenEmailUpdate() {
+  public function testMissingEmailChecksumWhenEmailUpdate(): void {
     $this->contactID = Contact::create(FALSE)->setValues([
       'first_name' => 'Bob',
       'last_name' => 'McTest',
@@ -221,7 +221,7 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
     $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($this->contactID);
     // no email checksum while email address different
     try {
-      WMFContact::updateCommunicationsPreferences()
+      $result = WMFContact::updateCommunicationsPreferences()
         ->setEmail('bob.roberto+update@test.com')
         ->setContactID($this->contactID)
         ->setChecksum($checksum)
@@ -230,8 +230,13 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
         ->setSnoozeDate(null)
         ->setSendEmail(null)
         ->setEmailChecksum(null)
-        ->execute();
-    } catch (\Exception $e) {
+        ->execute()->first();
+      // This is a bit of a dummy check to avoid it complaining "This test did not perform any assertions"
+      // It would be better to check the outcome, but we don't return something in this scenario and
+      // perhaps that's right not to.
+      $this->assertIsArray($result);
+    }
+    catch (\Exception $e) {
       $this->fail('An unexpected exception was thrown: ' . $e->getMessage());
     }
   }
