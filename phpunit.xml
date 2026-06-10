@@ -3,6 +3,11 @@
   xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.6/phpunit.xsd"
   bootstrap="bootstrap-phpunit.php"
   printerClass="clagiordano\PhpunitResultPrinter\ResultPrinter"
+  convertErrorsToExceptions="true"
+  convertNoticesToExceptions="true"
+  convertWarningsToExceptions="true"
+  convertDeprecationsToExceptions="true"
+  failOnWarning="true"
   backupGlobals="false">
   <php>
     <env name="PHPUNIT_PRETTY_PRINT_PROGRESS" value="true" />
