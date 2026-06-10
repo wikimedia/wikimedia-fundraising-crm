@@ -20,8 +20,12 @@ use SmashPig\Core\Helpers\Base62Helper;
 class AdyenAuditTest extends BaseAuditTestCase {
   protected string $gateway = 'adyen';
 
-  public function setUp(): void {
-    parent::setUp();
+  /**
+   * Create two settled donations that the refund/chargeback audit files match
+   * against. Only needed by those tests, so created on demand rather than in
+   * setUp.
+   */
+  protected function createExistingDonationsFixture(): void {
     $msg = [
       'contribution_tracking_id' => 92598312,
       'currency' => 'USD',
@@ -48,8 +52,29 @@ class AdyenAuditTest extends BaseAuditTestCase {
       'payment_submethod' => 'visa',
     ];
     $this->processMessage($msg, 'Donation', 'test');
+    $this->ids['ContributionTracking'][] = 92598312;
+    $this->ids['ContributionTracking'][] = 92598318;
+  }
 
-    // Fake refunded transaction
+  /**
+   * Create the recurring contribution tracking record that the recur audit
+   * files match against. Only needed by the recur tests.
+   */
+  protected function createRecurContributionTrackingFixture(): void {
+    $contributionTrackingID = 82431234;
+    $this->createContributionTracking([
+      'id' => $contributionTrackingID,
+      'utm_campaign' => 'adyen_audit',
+    ]);
+    $this->processContributionTrackingQueue();
+    $this->ids['ContributionTracking'][] = $contributionTrackingID;
+  }
+
+  /**
+   * Create the refunded contribution used by
+   * testAlreadyRefundedTransactionIsSkipped.
+   */
+  protected function createRefundedContribution(): void {
     $msg = [
       'contribution_tracking_id' => 1004,
       'invoice_id' => 1004.0,
@@ -64,18 +89,6 @@ class AdyenAuditTest extends BaseAuditTestCase {
     ];
     $this->processMessage($msg, 'Donation', 'test');
     $this->ids['Contribution']['for_refund'] = $this->getContributionForMessage($msg)['id'];
-
-    $contributionTrackingID = 82431234;
-    $this->createContributionTracking([
-      'id' => $contributionTrackingID,
-      'utm_campaign' => 'adyen_audit',
-    ]);
-    $this->processContributionTrackingQueue();
-    $this->ids['ContributionTracking'] = array_keys(
-      (array) ContributionTracking::get(FALSE)
-      ->addWhere('id', '>=', $contributionTrackingID)
-      ->execute()->indexBy('id'));
-    // Dunno where this pops up from but...
     $this->ids['ContributionTracking'][] = 1004;
   }
 
@@ -122,106 +135,111 @@ class AdyenAuditTest extends BaseAuditTestCase {
   public function auditTestProvider(): array {
     return [
       'donations' => [
-        __DIR__ . '/data/Adyen/donation_recur/',
         [
-          'donations' => [
-            [
-              'utm_source' => 'B2021_0730_nlNL_m_p2_sm_twin2_optIn1.no-LP.rrtbt.rtbt_ideal',
-              'utm_medium' => 'sitenotice',
-              'utm_campaign' => 'C2017_nlNL_m_FR',
-              'date' => 1487484651,
-              'gateway' => 'adyen',
-              'invoice_id' => '82431234.1',
-              'gateway_txn_id' => '5364893193133131',
-              'type' => 'donation',
-              'backend_processor_txn_id' => '5364893193133131',
-              'capture_id' => '5364893193155555',
-              'auth_id' => '5364893193133131',
-              'gross' => '2.35',
-              'settled_gross' => '0.76',
-              'settled_currency' => 'USD',
-              'payment_method' => 'rtbt',
-              'payment_submethod' => 'rtbt_ideal',
-              'country' => 'NL',
-              'first_name' => 'Bob',
-              'gateway_account' => 'WikimediaDonations',
-              'language' => 'nl',
-              'last_name' => 'Mouse',
-              'recurring' => '1',
-              'recurring_payment_token' => '82431234.1',
-              'user_ip' => '127.0.0.1',
-              'opt_in' => '1',
-              'order_id' => '82431234.1',
-              'contribution_tracking_id' => '82431234',
-              'processor_contact_id' => '82431234.1',
-              'audit_file_gateway' => 'adyen',
-              'backend_processor' => 'adyen',
-              'settlement_batch_reference' => 'adyen_2_USD',
-              'exchange_rate' => '1',
-              'original_currency' => 'EUR',
-              'currency' => 'EUR',
-              'original_total_amount' => 2.35,
-              'settled_fee_amount' => -0.24,
-              'fee' => 0.24,
-              'original_fee_amount' => '-0.24',
-              'original_net_amount' => '2.11',
-              'settled_net_amount' => '0.76',
-              'settled_total_amount' => '1.00',
-              'settled_date' => NULL,
+          'path' => __DIR__ . '/data/Adyen/donation_recur/',
+          'fixtures' => ['createRecurContributionTrackingFixture'],
+          'expected' => [
+            'donations' => [
+              [
+                'utm_source' => 'B2021_0730_nlNL_m_p2_sm_twin2_optIn1.no-LP.rrtbt.rtbt_ideal',
+                'utm_medium' => 'sitenotice',
+                'utm_campaign' => 'C2017_nlNL_m_FR',
+                'date' => 1487484651,
+                'gateway' => 'adyen',
+                'invoice_id' => '82431234.1',
+                'gateway_txn_id' => '5364893193133131',
+                'type' => 'donation',
+                'backend_processor_txn_id' => '5364893193133131',
+                'capture_id' => '5364893193155555',
+                'auth_id' => '5364893193133131',
+                'gross' => '2.35',
+                'settled_gross' => '0.76',
+                'settled_currency' => 'USD',
+                'payment_method' => 'rtbt',
+                'payment_submethod' => 'rtbt_ideal',
+                'country' => 'NL',
+                'first_name' => 'Bob',
+                'gateway_account' => 'WikimediaDonations',
+                'language' => 'nl',
+                'last_name' => 'Mouse',
+                'recurring' => '1',
+                'recurring_payment_token' => '82431234.1',
+                'user_ip' => '127.0.0.1',
+                'opt_in' => '1',
+                'order_id' => '82431234.1',
+                'contribution_tracking_id' => '82431234',
+                'processor_contact_id' => '82431234.1',
+                'audit_file_gateway' => 'adyen',
+                'backend_processor' => 'adyen',
+                'settlement_batch_reference' => 'adyen_2_USD',
+                'exchange_rate' => '1',
+                'original_currency' => 'EUR',
+                'currency' => 'EUR',
+                'original_total_amount' => 2.35,
+                'settled_fee_amount' => -0.24,
+                'fee' => 0.24,
+                'original_fee_amount' => '-0.24',
+                'original_net_amount' => '2.11',
+                'settled_net_amount' => '0.76',
+                'settled_total_amount' => '1.00',
+                'settled_date' => NULL,
+              ],
             ],
           ],
         ],
       ],
       'donation_new' => [
-        __DIR__ . '/data/Adyen/donation_new/',
         [
-          'donations' => [
-            [
-              'contribution_tracking_id' => '43992337',
-              'city' => 'asdf',
-              'country' => 'US',
-              'currency' => 'USD',
-              'date' => 1487484651,
-              'email' => 'mouse@wikimedia.org',
-              'first_name' => 'asdf',
-              'gateway' => 'adyen',
-              'gateway_account' => 'TestMerchant',
-              'gateway_txn_id' => '5364893193133131',
-              'type' => 'donation',
-              'backend_processor_txn_id' => '5364893193133131',
-              'capture_id' => '5555593193155555',
-              'auth_id' => '5364893193133131',
-              'gross' => '1.00',
-              'invoice_id' => '43992337.0',
-              'language' => 'en',
-              'last_name' => 'asdff',
-              'order_id' => '43992337.0',
-              'payment_method' => 'cc',
-              'payment_submethod' => 'visa',
-              'postal_code' => '11111',
-              'recurring' => '',
-              'state_province' => 'AK',
-              'street_address' => 'asdf',
-              'user_ip' => '77.177.177.77',
-              'utm_campaign' => 'C13_en.wikipedia.org',
-              'utm_medium' => 'sidebar',
-              'utm_source' => '..cc',
-              'settled_gross' => '0.76',
-              'settled_currency' => 'USD',
-              'tracking_date' => '2017-02-19 06:10:51',
-              'audit_file_gateway' => 'adyen',
-              'backend_processor' => 'adyen',
-              'settlement_batch_reference' => 'adyen_2_USD',
-              'exchange_rate' => '1',
-              'original_currency' => 'USD',
-              'original_total_amount' => 1,
-              'settled_fee_amount' => -0.24,
-              'original_fee_amount' => -0.24,
-              'fee' => 0.24,
-              'original_net_amount' => 0.76,
-              'settled_net_amount' => 0.76,
-              'settled_total_amount' => 1,
-              'settled_date' => NULL,
+          'path' => __DIR__ . '/data/Adyen/donation_new/',
+          'expected' => [
+            'donations' => [
+              [
+                'contribution_tracking_id' => '43992337',
+                'city' => 'asdf',
+                'country' => 'US',
+                'currency' => 'USD',
+                'date' => 1487484651,
+                'email' => 'mouse@wikimedia.org',
+                'first_name' => 'asdf',
+                'gateway' => 'adyen',
+                'gateway_account' => 'TestMerchant',
+                'gateway_txn_id' => '5364893193133131',
+                'type' => 'donation',
+                'backend_processor_txn_id' => '5364893193133131',
+                'capture_id' => '5555593193155555',
+                'auth_id' => '5364893193133131',
+                'gross' => '1.00',
+                'invoice_id' => '43992337.0',
+                'language' => 'en',
+                'last_name' => 'asdff',
+                'order_id' => '43992337.0',
+                'payment_method' => 'cc',
+                'payment_submethod' => 'visa',
+                'postal_code' => '11111',
+                'recurring' => '',
+                'state_province' => 'AK',
+                'street_address' => 'asdf',
+                'user_ip' => '77.177.177.77',
+                'utm_campaign' => 'C13_en.wikipedia.org',
+                'utm_medium' => 'sidebar',
+                'utm_source' => '..cc',
+                'settled_gross' => '0.76',
+                'settled_currency' => 'USD',
+                'tracking_date' => '2017-02-19 06:10:51',
+                'audit_file_gateway' => 'adyen',
+                'backend_processor' => 'adyen',
+                'settlement_batch_reference' => 'adyen_2_USD',
+                'exchange_rate' => '1',
+                'original_currency' => 'USD',
+                'original_total_amount' => 1,
+                'settled_fee_amount' => -0.24,
+                'original_fee_amount' => -0.24,
+                'fee' => 0.24,
+                'original_net_amount' => 0.76,
+                'settled_net_amount' => 0.76,
+                'settled_total_amount' => 1,
+                'settled_date' => NULL,
+              ],
             ],
           ],
         ],
@@ -230,108 +248,116 @@ class AdyenAuditTest extends BaseAuditTestCase {
       // payment_submethod. We should take the submethod from the
       // audit parser.
       'donation_ideal' => [
-        __DIR__ . '/data/Adyen/donation_ideal/',
         [
-          'donations' => [
-            [
-              'type' => 'donation',
-              'contribution_tracking_id' => '80188432',
-              'country' => 'NL',
-              'currency' => 'EUR',
-              'original_currency' => 'EUR',
-              'date' => 1582488844,
-              'email' => 'testy@wikimedia.org',
-              'fee' => 0.25,
-              'original_fee_amount' => -0.25,
-              'first_name' => 'Testy',
-              'gateway' => 'adyen',
-              'gateway_account' => 'TestMerchant',
-              'gateway_txn_id' => '1515876691993221',
-              'backend_processor_txn_id' => '1515876691993221',
-              'capture_id' => '151587669155555',
-              'auth_id' => '1515876691993221',
-              'gross' => '5.35',
-              'original_total_amount' => 5.35,
-              'invoice_id' => '80188432.1',
-              'language' => 'nl',
-              'last_name' => 'McTest',
-              'order_id' => '80188432.1',
-              'payment_method' => 'rtbt',
-              'payment_submethod' => 'rtbt_ideal',
-              'recurring' => '',
-              'user_ip' => '123.45.67.89',
-              'utm_campaign' => 'C1920_Email1',
-              'utm_medium' => 'email',
-              'utm_source' => 'sp1234567.default~default~JimmyQuote~default~control.rtbt.rtbt_ideal',
-              'settled_gross' => '5.43',
-              'settled_currency' => 'USD',
-              'opt_in' => '0',
-              'tracking_date' => '2020-02-23 20:14:04',
-              'audit_file_gateway' => 'adyen',
-              'backend_processor' => 'adyen',
-              'settlement_batch_reference' => 'adyen_630_USD',
-              'exchange_rate' => '1.0656568',
-              'settled_fee_amount' => -0.27,
-              'original_net_amount' => 5.1,
-              'settled_net_amount' => 5.43,
-              'settled_total_amount' => 5.7,
-              'settled_date' => NULL,
+          'path' => __DIR__ . '/data/Adyen/donation_ideal/',
+          'expected' => [
+            'donations' => [
+              [
+                'type' => 'donation',
+                'contribution_tracking_id' => '80188432',
+                'country' => 'NL',
+                'currency' => 'EUR',
+                'original_currency' => 'EUR',
+                'date' => 1582488844,
+                'email' => 'testy@wikimedia.org',
+                'fee' => 0.25,
+                'original_fee_amount' => -0.25,
+                'first_name' => 'Testy',
+                'gateway' => 'adyen',
+                'gateway_account' => 'TestMerchant',
+                'gateway_txn_id' => '1515876691993221',
+                'backend_processor_txn_id' => '1515876691993221',
+                'capture_id' => '151587669155555',
+                'auth_id' => '1515876691993221',
+                'gross' => '5.35',
+                'original_total_amount' => 5.35,
+                'invoice_id' => '80188432.1',
+                'language' => 'nl',
+                'last_name' => 'McTest',
+                'order_id' => '80188432.1',
+                'payment_method' => 'rtbt',
+                'payment_submethod' => 'rtbt_ideal',
+                'recurring' => '',
+                'user_ip' => '123.45.67.89',
+                'utm_campaign' => 'C1920_Email1',
+                'utm_medium' => 'email',
+                'utm_source' => 'sp1234567.default~default~JimmyQuote~default~control.rtbt.rtbt_ideal',
+                'settled_gross' => '5.43',
+                'settled_currency' => 'USD',
+                'opt_in' => '0',
+                'tracking_date' => '2020-02-23 20:14:04',
+                'audit_file_gateway' => 'adyen',
+                'backend_processor' => 'adyen',
+                'settlement_batch_reference' => 'adyen_630_USD',
+                'exchange_rate' => '1.0656568',
+                'settled_fee_amount' => -0.27,
+                'original_net_amount' => 5.1,
+                'settled_net_amount' => 5.43,
+                'settled_total_amount' => 5.7,
+                'settled_date' => NULL,
+              ],
             ],
           ],
         ],
       ],
       'refund' => [
-        __DIR__ . '/data/Adyen/refund/',
         [
-          'refund' => [
-            [
-              'date' => 1455128736,
-              'gateway' => 'adyen',
-              'gateway_parent_id' => '4522268860022701',
-              'gateway_refund_id' => '4522268869855336',
-              'gross' => '1.00',
-              'gross_currency' => 'USD',
-              'type' => 'refund',
-              'settlement_batch_reference' => 'adyen_3_USD',
-              'settled_total_amount' => -1,
-              'settled_fee_amount' => 0,
-              'settled_net_amount' => -1,
-              'settled_currency' => 'USD',
-              'original_currency' => 'USD',
-              'settled_date' => null,
-              'original_net_amount' => -1,
-              'original_fee_amount' => 0,
-              'original_total_amount' => -1,
-              'backend_processor_reversal_id' => '4522268869855336',
-              'payment_orchestrator_reversal_id' => NULL,
+          'path' => __DIR__ . '/data/Adyen/refund/',
+          'fixtures' => ['createExistingDonationsFixture'],
+          'expected' => [
+            'refund' => [
+              [
+                'date' => 1455128736,
+                'gateway' => 'adyen',
+                'gateway_parent_id' => '4522268860022701',
+                'gateway_refund_id' => '4522268869855336',
+                'gross' => '1.00',
+                'gross_currency' => 'USD',
+                'type' => 'refund',
+                'settlement_batch_reference' => 'adyen_3_USD',
+                'settled_total_amount' => -1,
+                'settled_fee_amount' => 0,
+                'settled_net_amount' => -1,
+                'settled_currency' => 'USD',
+                'original_currency' => 'USD',
+                'settled_date' => null,
+                'original_net_amount' => -1,
+                'original_fee_amount' => 0,
+                'original_total_amount' => -1,
+                'backend_processor_reversal_id' => '4522268869855336',
+                'payment_orchestrator_reversal_id' => NULL,
+              ],
             ],
           ],
         ],
       ],
       'chargeback' => [
-        __DIR__ . '/data/Adyen/chargeback/',
         [
-          'refund' => [
-            [
-              'date' => 1455128736,
-              'gateway' => 'adyen',
-              'gateway_parent_id' => '4555568860022701',
-              'gateway_refund_id' => '4555568869855336',
-              'gross' => '1.00',
-              'gross_currency' => 'USD',
-              'type' => 'chargeback',
-              'settlement_batch_reference' => 'adyen_3_USD',
-              'settled_total_amount' => -1,
-              'settled_fee_amount' => -2,
-              'settled_net_amount' => -3,
-              'settled_currency' => 'USD',
-              'original_currency' => 'USD',
-              'settled_date' => null,
-              'original_net_amount' => -3,
-              'original_fee_amount' => -2,
-              'original_total_amount' => -1,
-              'backend_processor_reversal_id' => '4555568869855336',
-              'payment_orchestrator_reversal_id' => NULL,
+          'path' => __DIR__ . '/data/Adyen/chargeback/',
+          'fixtures' => ['createExistingDonationsFixture'],
+          'expected' => [
+            'refund' => [
+              [
+                'date' => 1455128736,
+                'gateway' => 'adyen',
+                'gateway_parent_id' => '4555568860022701',
+                'gateway_refund_id' => '4555568869855336',
+                'gross' => '1.00',
+                'gross_currency' => 'USD',
+                'type' => 'chargeback',
+                'settlement_batch_reference' => 'adyen_3_USD',
+                'settled_total_amount' => -1,
+                'settled_fee_amount' => -2,
+                'settled_net_amount' => -3,
+                'settled_currency' => 'USD',
+                'original_currency' => 'USD',
+                'settled_date' => null,
+                'original_net_amount' => -3,
+                'original_fee_amount' => -2,
+                'original_total_amount' => -1,
+                'backend_processor_reversal_id' => '4555568869855336',
+                'payment_orchestrator_reversal_id' => NULL,
+              ],
             ],
           ],
         ],
@@ -364,12 +390,15 @@ class AdyenAuditTest extends BaseAuditTestCase {
    * @dataProvider auditTestProvider
    * @throws \Exception
    */
-  public function testParseFiles($path, $expectedMessages) {
-    $this->setSetting('wmf_audit_directory_audit', $path);
+  public function testParseFiles(array $case) {
+    foreach ($case['fixtures'] ?? [] as $fixture) {
+      $this->$fixture();
+    }
+    $this->setSetting('wmf_audit_directory_audit', $case['path']);
 
     $this->runAuditor();
 
-    $this->assertMessages($expectedMessages);
+    $this->assertMessages($case['expected']);
   }
 
   /**
@@ -416,6 +445,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testSubsequentRecur(): void {
+    $this->createRecurContributionTrackingFixture();
     $this->setAuditDirectory('donation_recur');
     $this->runAuditor();
     $this->processDonationsQueue();
@@ -766,8 +796,9 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ->addWhere('id', '=', 43992337)
       ->execute());
 
-    $this->testParseFiles(__DIR__ . '/data/Adyen/donation_new/',
-      [
+    $this->testParseFiles([
+      'path' => __DIR__ . '/data/Adyen/donation_new/',
+      'expected' => [
         'donations' => [
           [
             'contribution_tracking_id' => 43992337,
@@ -817,8 +848,8 @@ class AdyenAuditTest extends BaseAuditTestCase {
             'settled_date' => NULL,
           ],
         ],
-      ]
-    );
+      ],
+    ]);
     $this->processContributionTrackingQueue();
     $tracking = ContributionTracking::get(FALSE)
       ->addWhere('id', '=', 43992337)
@@ -980,6 +1011,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
    * @throws \CRM_Core_Exception
    */
   public function testAlreadyRefundedTransactionIsSkipped(): void {
+    $this->createRefundedContribution();
     Contribution::update(FALSE)
       ->addValue('contribution_status_id:name', 'Refunded')
       ->addWhere('id', '=', $this->ids['Contribution']['for_refund'])
