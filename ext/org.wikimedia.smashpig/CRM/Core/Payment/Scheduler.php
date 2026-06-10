@@ -23,7 +23,7 @@ class CRM_Core_Payment_Scheduler {
     while (gmdate('Y-m-d', $triggered_for_date) >= gmdate('Y-m-d', $scheduled_date_stamp) && ($added < $frequency_interval)) {
       // this will happen at least once.
       $scheduled_date_stamp = self::incrementDateToTargetDay(
-        $scheduled_date_stamp, $record['frequency_unit'] ?: 'month', $cycle_day
+        $scheduled_date_stamp, ($record['frequency_unit'] ?? NULL) ?: 'month', $cycle_day
       );
       $added += 1;
     }

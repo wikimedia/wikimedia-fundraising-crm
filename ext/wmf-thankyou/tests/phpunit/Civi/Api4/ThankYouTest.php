@@ -534,7 +534,6 @@ class ThankYouTest extends TestCase {
       'contact_id' => $this->ids['Contact'][$key],
       'financial_type_id' => 'Donation',
       'total_amount' => 60,
-      'custom_' . $fieldMapping['total_usd'] => 60,
       'custom_' . $fieldMapping['original_amount'] => 60,
       'custom_' . $fieldMapping['original_currency'] => 'USD',
       'currency' => 'USD',
