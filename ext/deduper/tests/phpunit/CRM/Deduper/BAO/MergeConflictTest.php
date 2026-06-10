@@ -29,6 +29,31 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
   use EntityTrait;
 
   /**
+   * Set up the headless environment, including a custom group on Email.
+   *
+   * The 'test_email' custom field is created here rather than in
+   * testEmailHasCustomDataConflict where it would put
+   * the schema change inside the transaction.
+   *
+   * @return \Civi\Test\CiviEnvBuilder
+   * @throws \CRM_Extension_Exception_ParseException
+   * @throws \CRM_Core_Exception
+   */
+  public function setUpHeadless() {
+    return \Civi\Test::headless()
+      ->installMe(__DIR__)
+      ->callback(function () {
+        \Civi\Api4\CustomGroup::create(FALSE)
+          ->setValues(['extends' => 'Email', 'name' => 'test_email', 'title' => 'Email test data'])
+          ->execute();
+        \Civi\Api4\CustomField::create(FALSE)
+          ->setValues(['custom_group_id:name' => 'test_email', 'name' => 'date', 'label' => 'test email field', 'html_type' => 'Date'])
+          ->execute();
+      }, 'deduperEmailCustomGroup')
+      ->apply();
+  }
+
+  /**
    * Setup for class.
    */
   public function setUp(): void {
@@ -125,8 +150,6 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @dataProvider booleanDataProvider
    */
   public function testEmailHasCustomDataConflict(bool $isReverse): void {
-    $this->createTestEntity('CustomGroup', ['extends' => 'Email', 'name' => 'test_email', 'title' => 'Email test data'], 'test_email');
-    $this->createTestEntity('CustomField', ['custom_group_id:name' => 'test_email', 'name' => 'date', 'label' => 'test email field', 'html_type' => 'Date'], 'test_email');
     $this->createDuplicateDonors([['email_primary.test_email.date' => '2022-01-01'], ['email_primary.test_email.date' => '2022-01-02']]);
     $this->doMerge($isReverse);
   }
