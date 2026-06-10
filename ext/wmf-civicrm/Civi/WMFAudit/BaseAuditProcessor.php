@@ -1434,8 +1434,10 @@ abstract class BaseAuditProcessor {
       if ($offset && $rowNumber < $offset) {
         continue;
       }
+      // Intersperse any string to differentiate between (e.g.) main paypal account & fundraise up.
       $auditRecord = WMFAudit::audit(FALSE)
         ->setValues($transaction)
+        ->setGatewayAccountString((string) $this->get_runtime_options('gateway_account'))
         ->setProcessSettlement($this->get_runtime_options('settle_mode'))
         ->setIsSaveSettlementTransaction($this->get_runtime_options('is_save_settlement_transaction'))
         ->execute()->single();
@@ -2065,6 +2067,11 @@ abstract class BaseAuditProcessor {
    */
   protected function queueMissingAuditMessage(array $message): void {
     $fullRecord = $this->merge_data($message['transaction_details']['message'], $message);
+    if ($this->get_runtime_options('gateway_account')) {
+      // So for fundraise up this would be passed in as part of the audit job and this would be
+      // more reliable that the contribution tracking record...
+      $fullRecord['gateway_account'] = $this->get_runtime_options('gateway_account');
+    }
     if (empty($fullRecord['contribution_tracking']) && !empty($fullRecord['contribution_tracking_id'])) {
       $result = ContributionTracking::get(FALSE)
         ->addWhere('id', '=', $fullRecord['contribution_tracking_id'])

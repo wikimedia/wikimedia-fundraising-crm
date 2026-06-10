@@ -17,6 +17,7 @@ use SmashPig\Core\DataStores\QueueWrapper;
  *
  * @method $this setValues(array $values)
  * @method $this setProcessSettlement(string $actionToTake)
+ * @method $this setGatewayAccountString(string $gatewayAccountString)
  * @method $this setIsSaveSettlementTransaction(bool $isSaveSettlementTransaction)
  */
 class Audit extends AbstractAction {
@@ -48,6 +49,21 @@ class Audit extends AbstractAction {
   protected bool $isSaveSettlementTransaction = FALSE;
 
   /**
+   * Gateway account string
+   *
+   * This is added into the batch name.
+   *
+   * For example, we have the batch paypal_20260101_USD
+   * and paypalfrup_20260101_USD
+   *
+   * So when parsing the fundraise up paypal files we pass in the incoming
+   * directory and the gatewayAccountString as part of the job.
+   *
+   * @var string
+   */
+  protected string $gatewayAccountString = '';
+
+  /**
    * This function updates the settled transaction with new fee & currency conversion data.
    *
    * @param \Civi\Api4\Generic\Result $result
@@ -57,6 +73,7 @@ class Audit extends AbstractAction {
    */
   public function _run(Result $result): void {
     $message = new AuditMessage($this->values);
+    $message->setGatewayAccountString($this->gatewayAccountString);
     // @todo - won't need this forever....
     // but repair before we try to find them.
     $this->repairOlderGravyTransactions($message);

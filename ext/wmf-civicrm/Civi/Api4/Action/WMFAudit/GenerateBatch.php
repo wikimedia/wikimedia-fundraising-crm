@@ -893,6 +893,7 @@ END";
       'adyen' => ['main' => 'V01670', 'endowment' => 'V04988'],
       'braintree' => ['main' => 'V05089', 'endowment' => 'V04991'],
       'paypal' => ['main' => 'V00282', 'endowment' => 'V04989'],
+      'paypalfrup' => ['main' => 'V05040', 'endowment' => 'V05001'],
       'dlocal' => ['main' => 'V04134', 'endowment' => 'V04990'],
       'engage' => ['main' => 'V01948', 'endowment' => 'V04993'],
       'stripe' => ['main' => 'V04137', 'endowment' => 'V04994'],
