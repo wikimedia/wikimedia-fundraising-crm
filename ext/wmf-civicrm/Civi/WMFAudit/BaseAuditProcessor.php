@@ -373,7 +373,7 @@ abstract class BaseAuditProcessor {
    * @return string Path to the directory
    */
   protected function getCompletedFilesDirectory(): string {
-    return str_replace($this->getIncomingFilesDirectory(), 'incoming', 'completed') . DIRECTORY_SEPARATOR;
+    return str_replace('incoming', 'completed', $this->getIncomingFilesDirectory()) . DIRECTORY_SEPARATOR;
   }
 
   /**
@@ -382,7 +382,7 @@ abstract class BaseAuditProcessor {
    * @return string Path to the directory
    */
   protected function getIgnoredFilesDirectory(): string {
-    return str_replace($this->getIncomingFilesDirectory(), 'incoming', 'ignored') . DIRECTORY_SEPARATOR;
+    return str_replace('incoming', 'ignored', $this->getIncomingFilesDirectory()) . DIRECTORY_SEPARATOR;
   }
 
   /**
