@@ -78,7 +78,10 @@ class QuickForm {
         $mainCid = $form->getTemplateVars('main_cid');
         $otherCid = $form->getTemplateVars('other_cid');
         $doubleOptInActivities = \Civi\Api4\Activity::get(FALSE)
-          ->addWhere('target_contact_id', 'IN', [$mainCid, $otherCid])
+          ->addClause('OR',
+            ['target_contact_id', 'CONTAINS', $mainCid],
+            ['target_contact_id', 'CONTAINS', $otherCid],
+          )
           ->addWhere('activity_type_id:name', '=', 'Double Opt-In')
           ->addWhere('status_id:name', '=', 'Completed')
           ->addSelect('subject', 'target_contact_id')
