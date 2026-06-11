@@ -185,6 +185,17 @@ function _afform_hook_civicrm_angularModules($e) {
   foreach ($afforms as $afform) {
     $e->angularModules[$afform['module_name']]['requires'] = $dependencyMapper->autoReq($afform);
   }
+
+  // Ensure Afform requires all modules that provide input types
+  foreach (\Civi\Afform\Utils::getInputTypes() as $inputType) {
+    if (isset($inputType['module']) && $inputType['module'] !== 'af' && !in_array($inputType['module'], $e->angularModules['af']['requires'])) {
+      $e->angularModules['af']['requires'][] = $inputType['module'];
+    }
+    // Require admin_module if specified
+    if (isset($inputType['admin_module'], $e->angularModules['afGuiEditor']) && $inputType['admin_module'] !== 'afGuiEditor' && !in_array($inputType['admin_module'], $e->angularModules['afGuiEditor']['requires'])) {
+      $e->angularModules['afGuiEditor']['requires'][] = $inputType['admin_module'];
+    }
+  }
 }
 
 /**
@@ -442,6 +453,11 @@ function afform_civicrm_post($op, $entityName, $id, $object, $params) {
   if ($entityName === 'CustomGroup' || $entityName === 'CustomField') {
     if (!\CRM_Core_Config::isUpgradeMode()) {
       _afform_clear();
+      // Adding a new custom field to an empty field group may auto-generate afforms with menu routes.
+      // @see Civi\Api4\Action\CustomGroup\GetAfforms::getCustomGroupAfforms
+      if ($op === 'create' && $entityName === 'CustomField') {
+        // \CRM_Core_Menu::store();
+      }
     }
   }
 }
@@ -528,13 +544,16 @@ function afform_shortcode_content($content, $atts, $args, $context) {
       'where' => [['name', '=', $atts['name']]],
     ])->first();
     if ($afform) {
-      Civi::service('angularjs.loader')->addModules($afform['module_name']);
-      $content = "
-        <div class='crm-container' id='bootstrap-theme'>
-          <crm-angular-js modules='{$afform['module_name']}'>
-            <{$afform['directive_name']}></{$afform['directive_name']}>
-          </crm-angular-js>
-        </div>";
+      // NOTE: we are relying on WP to fulfill bootstrap CSS
+      \Civi::service('angularjs.loader')->addModules($afform['module_name']);
+
+      $blockMarkup = \CRM_Core_Smarty::singleton()->fetchWith('afform/InlineAfform.tpl', [
+        'block' => [
+          'module' => $afform['module_name'],
+          'directive' => $afform['directive_name'],
+        ],
+      ]);
+      $content = "<div class='crm-container'>{$blockMarkup}</div>";
     }
   }
   return $content;

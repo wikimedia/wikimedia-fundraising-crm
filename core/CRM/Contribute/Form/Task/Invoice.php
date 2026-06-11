@@ -16,6 +16,7 @@
  */
 
 use Civi\Api4\Contact;
+use Civi\Api4\ContributionPage;
 use Civi\Api4\Email;
 
 /**
@@ -237,7 +238,7 @@ class CRM_Contribute_Form_Task_Invoice extends CRM_Contribute_Form_Task {
   /**
    * Process the PDf and email with activity and attachment on click of Print Invoices.
    *
-   * @param array $contribIDs
+   * @param array $contributionIDs
    *   Contribution Id.
    * @param array $params
    *   Associated array of submitted values.
@@ -246,7 +247,11 @@ class CRM_Contribute_Form_Task_Invoice extends CRM_Contribute_Form_Task {
    *
    * @throws \CRM_Core_Exception
    */
-  public static function printPDF($contribIDs, &$params, $contactIds) {
+  public static function printPDF(array $contributionIDs, $params, $contactIds) {
+    if (empty($contributionIDs)) {
+      CRM_Core_Error::deprecatedWarning('calling this function with no IDs is deprecated');
+      return [];
+    }
     // get all the details needed to generate a invoice
     $messageInvoice = [];
     $isCreatePDF = FALSE;
@@ -257,7 +262,7 @@ class CRM_Contribute_Form_Task_Invoice extends CRM_Contribute_Form_Task {
     }
 
     $invoiceTemplate = CRM_Core_Smarty::singleton();
-    $invoiceElements = self::getElements($contribIDs, $params, $contactIds, $isCreatePDF);
+    $invoiceElements = self::getElements($contributionIDs, $params, $contactIds, $isCreatePDF);
     $elementDetails = $invoiceElements['details'];
     $excludedContactIDs = $invoiceElements['excludeContactIds'];
     $suppressedEmails = $isCreatePDF ? NULL : $invoiceElements['suppressedEmails'];
@@ -330,6 +335,11 @@ class CRM_Contribute_Form_Task_Invoice extends CRM_Contribute_Form_Task {
       // to email the invoice
       $mailDetails = [];
       $values = [];
+      $contributionPage = $contribution->contribution_page_id ? ContributionPage::get(FALSE)
+        ->addWhere('id', '=', $contribution->contribution_page_id)
+        ->execute()->single() : FALSE;
+      $title = $contributionPage ? $contributionPage['frontend_title'] : '';
+
       if ($component === 'event') {
         $daoName = 'CRM_Event_DAO_Event';
         $pageId = $eventID;
@@ -345,25 +355,13 @@ class CRM_Contribute_Form_Task_Invoice extends CRM_Contribute_Form_Task {
 
         $title = $mailDetails[$eventID]['title'] ?? NULL;
       }
-      elseif ($component === 'contribute') {
-        $daoName = 'CRM_Contribute_DAO_ContributionPage';
-        $pageId = $contribution->contribution_page_id;
-        $mailElements = [
-          'title',
-          'receipt_from_name',
-          'receipt_from_email',
-          'cc_receipt',
-          'bcc_receipt',
-        ];
-        CRM_Core_DAO::commonRetrieveAll($daoName, 'id', $pageId, $mailDetails, $mailElements);
-
-        $values['title'] = $mailDetails[$contribution->contribution_page_id]['title'] ?? NULL;
-        $values['receipt_from_name'] = $mailDetails[$contribution->contribution_page_id]['receipt_from_name'] ?? NULL;
-        $values['receipt_from_email'] = $mailDetails[$contribution->contribution_page_id]['receipt_from_email'] ?? NULL;
-        $values['cc_receipt'] = $mailDetails[$contribution->contribution_page_id]['cc_receipt'] ?? NULL;
-        $values['bcc_receipt'] = $mailDetails[$contribution->contribution_page_id]['bcc_receipt'] ?? NULL;
-
-        $title = $mailDetails[$contribution->contribution_page_id]['title'] ?? NULL;
+      if ($contributionPage) {
+        // These might not be used now.
+        $values['title'] = $title;
+        $values['receipt_from_name'] = $contributionPage['receipt_from_name'] ?: NULL;
+        $values['receipt_from_email'] = $contributionPage['receipt_from_email'] ?: NULL;
+        $values['cc_receipt'] = $contributionPage['cc_receipt'] ?: NULL;
+        $values['bcc_receipt'] = $contributionPage['bcc_receipt'] ?: NULL;
       }
 
       $config = CRM_Core_Config::singleton();
@@ -477,11 +475,11 @@ class CRM_Contribute_Form_Task_Invoice extends CRM_Contribute_Form_Task {
       elseif ($component === 'contribute') {
         $email = CRM_Contact_BAO_Contact::getPrimaryEmail($contribution->contact_id);
 
-        $sendTemplateParams['tplParams'] = array_merge($tplParams, ['email_comment' => $params['email_comment']]);
+        $sendTemplateParams['tplParams'] = $tplParams;
         $sendTemplateParams['from'] = $fromEmailAddress;
         $sendTemplateParams['toEmail'] = $email;
-        $sendTemplateParams['cc'] = $values['cc_receipt'] ?? NULL;
-        $sendTemplateParams['bcc'] = $values['bcc_receipt'] ?? NULL;
+        $sendTemplateParams['cc'] = $contributionPage ? $contributionPage['cc_receipt'] : NULL;
+        $sendTemplateParams['bcc'] = $contributionPage ? $contributionPage['bcc_receipt'] : NULL;
 
         [$sent, $subject, $message, $html] = CRM_Core_BAO_MessageTemplate::sendTemplate($sendTemplateParams);
         // functions call for adding activity with attachment
@@ -551,10 +549,6 @@ class CRM_Contribute_Form_Task_Invoice extends CRM_Contribute_Form_Task {
    * @throws \CRM_Core_Exception
    */
   private static function getElements(array $contributionIDs, array $params, $contactIds, bool $isCreatePDF): array {
-    if (empty($contributionIDs)) {
-      CRM_Core_Error::deprecatedWarning('calling this function with no IDs is deprecated');
-      return [];
-    }
 
     $rows = [];
     $lines = \Civi\Api4\LineItem::get(FALSE)

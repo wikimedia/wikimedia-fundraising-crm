@@ -488,15 +488,27 @@ class CRM_Extension_Mapper {
   /**
    * Get a list of all installed modules, including enabled and disabled ones
    *
+   * @param bool $fresh
+   *   Force new results?
+   *
    * @return CRM_Core_Module[]
    */
-  public function getModules() {
+  public function getModules($fresh = FALSE) {
+    if ($this->cache && !$fresh) {
+      $cached = $this->cache->get($this->cacheKey . '_modules');
+      if (is_array($cached)) {
+        return $cached;
+      }
+    }
     $result = [];
     $dao = new CRM_Core_DAO_Extension();
     $dao->type = 'module';
     $dao->find();
     while ($dao->fetch()) {
       $result[] = new CRM_Core_Module($dao->full_name, $dao->is_active, $dao->label);
+    }
+    if ($this->cache) {
+      $this->cache->set($this->cacheKey . '_modules', $result);
     }
     return $result;
   }
@@ -542,6 +554,7 @@ class CRM_Extension_Mapper {
     $this->infos = [];
     $this->moduleExtensions = NULL;
     if ($this->cache) {
+      $this->cache->delete($this->cacheKey . '_modules');
       $this->cache->delete($this->cacheKey . '_moduleFiles');
     }
     // FIXME: How can code so code wrong be so right?
@@ -556,16 +569,25 @@ class CRM_Extension_Mapper {
    *
    * @param CRM_Extension_Info $remoteExtensionInfo
    * @param array $localExtensionInfo
+   * @param bool $extensionDirectoryWritable
    *
    * @return string
    */
-  public function getUpgradeLink($remoteExtensionInfo, $localExtensionInfo) {
+  public function getUpgradeLink($remoteExtensionInfo, $localExtensionInfo, $extensionDirectoryWritable) {
     if (!empty($remoteExtensionInfo) && version_compare($localExtensionInfo['version'] ?? '', $remoteExtensionInfo->version, '<')) {
-      return ts('Version %1 is installed. <a %2>Upgrade to version %3</a>.', [
-        1 => $localExtensionInfo['version'],
-        2 => 'href="' . CRM_Utils_System::url('civicrm/admin/extensions', "action=update&id={$localExtensionInfo['key']}&key={$localExtensionInfo['key']}") . '"',
-        3 => $remoteExtensionInfo->version,
-      ]);
+      if ($extensionDirectoryWritable) {
+        return ts('Version %1 is installed. <a %2>Upgrade to version %3</a>.', [
+          1 => $localExtensionInfo['version'],
+          2 => 'href="' . CRM_Utils_System::url('civicrm/admin/extensions', "action=update&id={$localExtensionInfo['key']}&key={$localExtensionInfo['key']}") . '"',
+          3 => $remoteExtensionInfo->version,
+        ]);
+      }
+      else {
+        return ts('Version %1 is installed. <strong>Version %2 available</strong>.', [
+          1 => $localExtensionInfo['version'],
+          2 => $remoteExtensionInfo->version,
+        ]);
+      }
     }
   }
 

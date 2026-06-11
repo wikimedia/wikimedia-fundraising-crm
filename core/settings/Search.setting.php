@@ -217,6 +217,9 @@ return [
     'is_contact' => 0,
     'help_text' => ts("Which fields can be searched on in the menubar quicksearch box?"),
     'settings_pages' => ['search' => ['section' => 'autocomplete', 'weight' => 90]],
+    'on_change' => [
+      ['CRM_Core_BAO_Navigation', 'flushCache'],
+    ],
   ],
   'autocomplete_displays' => [
     'group_name' => 'Search Preferences',

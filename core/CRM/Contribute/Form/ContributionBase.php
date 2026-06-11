@@ -390,6 +390,8 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
    * @throws \Exception
    */
   public function preProcess() {
+    // Get form field values.
+    $this->_params = $this->controller->exportValues('Main');
 
     // current contribution page id
     $this->getContributionPageID();
@@ -720,6 +722,12 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     if ($this->isFormSupportsNonMembershipContributions()) {
       return (int) $this->getContributionPageValue('financial_type_id');
     }
+    // If even tho we have a membership price set no membership has been selected
+    // so use the Contribution Page value
+    // see dev/core#6496
+    if (empty($this->getFirstSelectedMembershipType())) {
+      return (int) $this->getContributionPageValue('financial_type_id');
+    }
     return (int) $this->getFirstSelectedMembershipType()['financial_type_id'];
   }
 
@@ -796,9 +804,6 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     $priceSetId = $this->getPriceSetID();
     // get price info
     if ($priceSetId) {
-      if ($form->_action & CRM_Core_Action::UPDATE) {
-        $form->_values['line_items'] = CRM_Price_BAO_LineItem::getLineItems($form->_id, 'contribution');
-      }
       $form->_priceSet = $this->order->getPriceSetMetadata();
       $this->setPriceFieldMetaData($this->order->getPriceFieldsMetadata());
       $form->set('priceSet', $form->_priceSet);
@@ -854,6 +859,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     $this->assign('trxn_id', $this->_params['trxn_id'] ?? NULL);
     $this->assign('amount_level', str_replace(CRM_Core_DAO::VALUE_SEPARATOR, ' ', $this->order->getAmountLevel()));
     $this->assign('amount', $this->getMainContributionAmount() > 0 ? CRM_Utils_Money::format($this->getMainContributionAmount(), NULL, NULL, TRUE) : NULL);
+    $this->assign('payment_amount', $this->getSubmittedValue('total_amount'));
 
     $isRecurEnabled = isset($this->_values['is_recur']) && !empty($this->_paymentProcessor['is_recur']);
     $this->assign('is_recur_enabled', $isRecurEnabled);
@@ -1259,8 +1265,13 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
    * Arguably the form should start to build $this->_params in the pre-process main page & use that array consistently throughout.
    */
   protected function setRecurringMembershipParams() {
+    if ($this->getExistingContributionID()) {
+      // Existing contribution so not adding recur.
+      return;
+    }
     $priceFieldId = array_key_first($this->_values['fee']);
     // Why is this an array in CRM_Contribute_Form_Contribution_Main::submit and a string in CRM_Contribute_Form_Contribution_Confirm::preProcess()?
+    // Preferred approach is $this->getSubmittedValue("price_{$priceFieldId}") anyway
     if (is_array($this->_params["price_{$priceFieldId}"])) {
       $priceFieldValue = array_key_first($this->_params["price_{$priceFieldId}"]);
     }
@@ -1511,6 +1522,26 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
   }
 
   /**
+   * Get the value for a field relating to the existing contribution for which a payment is being made.
+   *
+   * @param string $fieldName
+   *
+   * @return mixed
+   * @throws \CRM_Core_Exception
+   */
+  protected function getExistingContributionValue(string $fieldName) {
+    if ($this->isDefined('ExistingContribution')) {
+      return $this->lookup('ExistingContribution', $fieldName);
+    }
+    $id = $this->getExistingContributionID();
+    if ($id) {
+      $this->define('Contribution', 'ExistingContribution', ['id' => $id]);
+      return $this->lookup('ExistingContribution', $fieldName);
+    }
+    return NULL;
+  }
+
+  /**
    * @return int|bool
    */
   protected function getProductID() {
@@ -1647,7 +1678,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
           if ($membershipType->find(TRUE)) {
             // CRM-14051 - membership_type.relationship_type_id is a CTRL-A padded string w one or more ID values.
             // Convert to comma separated list.
-            $inheritedRelTypes = implode(',', CRM_Utils_Array::explodePadded($membershipType->relationship_type_id));
+            $inheritedRelTypes = implode(',', CRM_Utils_Array::explodePadded($membershipType->relationship_type_id) ?? []);
             $permContacts = CRM_Contact_BAO_Relationship::getPermissionedContacts($this->getAuthenticatedContactID(), $membershipType->relationship_type_id);
             if (array_key_exists($membership->contact_id, $permContacts)) {
               $this->_membershipContactID = $membership->contact_id;

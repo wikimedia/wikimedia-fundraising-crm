@@ -162,6 +162,10 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
       $ids = (array) ($this->args[$entityName] ?? []);
 
       $entity = $this->_formDataModel->getEntity($entityName);
+      if (!$entity['type']) {
+        // E.g. the 'extra' entity.
+        continue;
+      }
       $this->_entityIds[$entityName] = [];
       $idField = CoreUtil::getIdFieldName($entity['type']);
 
@@ -406,8 +410,8 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
     return ($afEntity['security'] === 'FBAC' || \CRM_Core_Permission::check('access uploaded files'));
   }
 
-  protected static function getFileFields($entityName, $entityFields): array {
-    if (!$entityFields) {
+  protected static function getFileFields(?string $entityName, array $entityFields): array {
+    if (!$entityFields || !$entityName) {
       return [];
     }
     return civicrm_api4($entityName, 'getFields', [
@@ -635,6 +639,9 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
           $item = array_merge(($val ?? []), $idData);
           $combined[$name][$idx] = $item;
         }
+        else {
+          $combined[$name][$idx] = $val;
+        }
       }
     }
     return $combined;
@@ -668,7 +675,7 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
           }
         }
         // Only accept joins set on the form
-        $values['joins'] = array_intersect_key($values['joins'] ?? [], $entity['joins']);
+        $values['joins'] = array_intersect_key($values['joins'] ?? [], $entity['joins'] ?? []);
         foreach ($values['joins'] as $joinEntity => &$joinValues) {
           // Only accept values from join fields on the form
           $idField = CoreUtil::getIdFieldName($joinEntity);

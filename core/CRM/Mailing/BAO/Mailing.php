@@ -922,46 +922,6 @@ ORDER BY   civicrm_email.is_bulkmail DESC
   }
 
   /**
-   * Return a list of group names for this mailing.  Does not work with
-   * prior-mailing targets.
-   *
-   * @deprecated since 5.71 will be removed around 5.77
-   *
-   * @return array
-   *   Names of groups receiving this mailing
-   */
-  public function &getGroupNames() {
-    CRM_Core_Error::deprecatedWarning('unused function');
-    if (!isset($this->id)) {
-      return [];
-    }
-
-    /*
-    This bypasses permissions to maintain compatibility with the SQL it replaced.  This should ideally not bypass
-    permissions in the future, but it's called by some extensions during mail processing, when cron isn't necessarily
-    called with a logged-in user.
-     */
-    $mailingGroups = MailingGroup::get(FALSE)
-      ->addSelect('group.title', 'group.frontend_title')
-      ->addJoin('Group AS group', 'LEFT', ['entity_id', '=', 'group.id'])
-      ->addWhere('mailing_id', '=', $this->id)
-      ->addWhere('entity_table', '=', 'civicrm_group')
-      ->addWhere('group_type', '=', 'Include')
-      ->execute();
-
-    $groupNames = [];
-
-    foreach ($mailingGroups as $mg) {
-      $name = $mg['group.frontend_title'] ?? $mg['group.title'];
-      if ($name) {
-        $groupNames[] = $name;
-      }
-    }
-
-    return $groupNames;
-  }
-
-  /**
    * Add the mailings.
    *
    * @param array $params
@@ -974,9 +934,6 @@ ORDER BY   civicrm_email.is_bulkmail DESC
 
     if (!empty($params['check_permissions']) && CRM_Mailing_Info::workflowEnabled()) {
       $params = self::processWorkflowPermissions($params);
-    }
-    if (!$id) {
-      $params['domain_id'] ??= CRM_Core_Config::domainID();
     }
     if (
       ((!$id && empty($params['replyto_email'])) || !isset($params['replyto_email'])) &&
@@ -1915,40 +1872,6 @@ LEFT JOIN civicrm_mailing_group g ON g.mailing_id   = m.id
       // Delete all file attachments
       CRM_Core_BAO_File::deleteEntityFile('civicrm_mailing', $event->id);
     }
-  }
-
-  /**
-   * @deprecated
-   *   This is used by CiviMail but will be made redundant by FlexMailer/TokenProcessor.
-   * @return array
-   */
-  public function getReturnProperties() {
-    $tokens = &$this->getTokens();
-    CRM_Core_Error::deprecatedWarning('function no longer called - use flexmailer');
-    $properties = [];
-    if (isset($tokens['html'], $tokens['html']['contact'])
-    ) {
-      $properties = array_merge($properties, $tokens['html']['contact']);
-    }
-
-    if (isset($tokens['text'], $tokens['text']['contact'])
-    ) {
-      $properties = array_merge($properties, $tokens['text']['contact']);
-    }
-
-    if (isset($tokens['subject'], $tokens['subject']['contact'])
-    ) {
-      $properties = array_merge($properties, $tokens['subject']['contact']);
-    }
-
-    $returnProperties = [];
-    $returnProperties['display_name'] = $returnProperties['contact_id'] = $returnProperties['hash'] = 1;
-
-    foreach ($properties as $p) {
-      $returnProperties[$p] = 1;
-    }
-
-    return $returnProperties;
   }
 
   /**

@@ -14,7 +14,7 @@ return [
       'checkPermissions' => FALSE,
       'values' => [
         'name' => 'cli_std_out_logger',
-        'type' => '*',
+        'type' => 'std_err',
         'channel' => 'default',
         'is_default' => TRUE,
         'is_active' => TRUE,

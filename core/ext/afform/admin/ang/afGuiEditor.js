@@ -214,8 +214,8 @@
             where: [['api_entity', 'IS NOT NULL'], ['api_params', 'IS NOT NULL'], ['is_template', '=', false]],
             join: [['SearchDisplay AS display', 'LEFT', ['id', '=', 'display.saved_search_id']]],
             orderBy: {'label':'ASC'}
-          }).then(function(searches) {
-            searches.forEach(search => {
+          }).then((searches) => {
+            searches.forEach((search) => {
               // Add default display for each search (track searchNames in a var to just add once per search)
               if (!searchNames.includes(search.name)) {
                 searchNames.push(search.name);
@@ -447,10 +447,10 @@
       };
     });
 
-  $(function() {
+  $(() => {
     // Shoehorn in a non-angular widget for picking icons
     $('#crm-container').append('<div style="display:none"><input id="af-gui-icon-picker"></div>');
-    CRM.loadScript(CRM.config.resourceBase + 'js/jquery/jquery.crmIconPicker.js').then(function() {
+    CRM.loadScript(CRM.config.resourceBase + 'js/jquery/jquery.crmIconPicker.js').then(() => {
       $('#af-gui-icon-picker').crmIconPicker();
     });
     // Add css classes while dragging
@@ -486,13 +486,13 @@
         $scope.menu = {};
         element
           .on('show.bs.dropdown', function() {
-            $scope.$apply(function() {
+            $scope.$apply(() => {
               $scope.menu.open = true;
               element.closest('#afGuiEditor-canvas').addClass('af-gui-menu-open');
             });
           })
           .on('hidden.bs.dropdown', function() {
-            $scope.$apply(function() {
+            $scope.$apply(() => {
               $scope.menu.open = false;
               element.closest('#afGuiEditor-canvas').removeClass('af-gui-menu-open');
             });

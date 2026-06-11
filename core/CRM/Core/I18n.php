@@ -247,7 +247,7 @@ class CRM_Core_I18n {
   public static function getFormatLocales(): array {
     $values = CRM_Core_OptionValue::getValues(['name' => 'languages'], $optionValues, 'label', TRUE);
     $return = [];
-    $return[NULL] = ts('Inherit from language');
+    $return[''] = ts('Inherit from language');
     foreach ($values as $value) {
       $return[$value['name']] = $value['label'];
     }
@@ -274,7 +274,9 @@ class CRM_Core_I18n {
     else {
       $codes = $settings->get('uiLanguages');
       if (!$codes) {
-        $codes = [$settings->get('lcMessages')];
+        $codes = $settings->get('lcMessages') ? [$settings->get('lcMessages')] : [];
+        // This ^^^ seems tighter, but if it proves regressive, then consider:
+        // $codes = [$settings->get('lcMessages') ?? ''];
       }
     }
     return $justCodes ? $codes
@@ -296,8 +298,8 @@ class CRM_Core_I18n {
     for ($i = 1; $i < func_num_args(); $i++) {
       $arg = func_get_arg($i);
       if (is_array($arg)) {
-        foreach ($arg as $aarg) {
-          $tr['%' . ++$p] = $aarg;
+        foreach ($arg as $key => $aarg) {
+          $tr['%' . $key] = $aarg;
         }
       }
       else {

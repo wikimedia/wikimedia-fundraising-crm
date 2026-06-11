@@ -4,7 +4,8 @@
   angular.module('afGuiEditor').component('afGuiTokenSelect', {
     bindings: {
       model: '<',
-      field: '@'
+      field: '@',
+      noSubmissionTokens: '@',
     },
     require: {
       editor: '^afGuiEditor'
@@ -21,39 +22,42 @@
         });
       };
 
-      this.insertToken = function(key) {
-        ctrl.model[ctrl.field] = (ctrl.model[ctrl.field] || '') + '[' + key + ']';
+      this.insertToken = (key) => {
+        const token = '[' + key + ']';
+        let value = getModelValue();
+        if (value.length) {
+          value += ' ';
+        }
+        value += token;
+        setModelValue(value);
       };
 
-      this.getTokens = function() {
-        const tokens = ctrl.editor.getEntities().reduce((tokens, entity) => {
-          const entityMeta = ctrl.editor.meta.entities[entity.type];
-          if (entityMeta.submissionTokens) {
-            entityMeta.submissionTokens.forEach((submissionToken) => {
-              const description = submissionToken.description ?? '';
-              tokens.push({
-                id: entity.name + '.0.' + submissionToken.token,
-                text: entity.label + ' ' + submissionToken.label,
-                description: description
-              });
-            });
-          } else {
-            tokens.push({id: entity.name + '.0.id', text: entity.label + ' ' + ts('ID')});
-          }
-          return tokens;
-        }, []);
-        tokens.push({id: 'token', text: ts('Submission JWT')});
-        return {
-          results: tokens
-        };
+      const getModelValue = () => {
+        // If using getter/setter factory
+        if (typeof this.model === 'function') {
+          return this.model(this.field)() || '';
+        }
+        return this.model[this.field] || '';
       };
+
+      const setModelValue = (value) => {
+        // If using getter/setter factory
+        if (typeof this.model === 'function') {
+          this.model(this.field)(value);
+        } else {
+          this.model[this.field] = value;
+        }
+      };
+
+      this.getTokens = () => ({
+        results: this.editor.getTokens(!this.noSubmissionTokens),
+      });
 
       this.tokenSelectSettings = {
         data: this.getTokens,
         // The crm-action-menu icon doesn't show without a placeholder
         placeholder: ' ',
       };
-
     }
   });
 
