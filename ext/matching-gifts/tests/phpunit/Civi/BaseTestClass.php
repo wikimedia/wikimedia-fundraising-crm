@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @group MatchingGifts
  */
-class BaseTestClass extends TestCase {
+abstract class BaseTestClass extends TestCase {
 
   /**
    * @var array
