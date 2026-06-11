@@ -61,7 +61,7 @@ class ActivitySpecProvider extends \Civi\Core\Service\AutoService implements Gen
       $field->setInputAttrs(['multiple' => TRUE]);
       $field->setDataType('Integer');
       $field->setSerialize(\CRM_Core_DAO::SERIALIZE_COMMA);
-      $field->setOperators(['=', '!=', 'CONTAINS', 'NOT CONTAINS', 'CONTAINS ONE OF', 'NOT CONTAINS ONE OF', 'IS NULL', 'IS NOT NULL']);
+      $field->setOperators(['=', '!=', 'IN', 'NOT IN', 'CONTAINS', 'NOT CONTAINS', 'CONTAINS ONE OF', 'NOT CONTAINS ONE OF', 'IS NULL', 'IS NOT NULL']);
       $field->addSqlFilter([__CLASS__, 'getActivityContactFilterSql']);
       $field->setSqlRenderer([__CLASS__, 'renderSqlForActivityContactIds']);
       $spec->addFieldSpec($field);
@@ -76,7 +76,7 @@ class ActivitySpecProvider extends \Civi\Core\Service\AutoService implements Gen
       $field->setInputAttrs(['multiple' => TRUE]);
       $field->setDataType('Integer');
       $field->setSerialize(\CRM_Core_DAO::SERIALIZE_COMMA);
-      $field->setOperators(['=', '!=', 'CONTAINS', 'NOT CONTAINS', 'CONTAINS ONE OF', 'NOT CONTAINS ONE OF', 'IS NULL', 'IS NOT NULL']);
+      $field->setOperators(['=', '!=', 'IN', 'NOT IN', 'CONTAINS', 'NOT CONTAINS', 'CONTAINS ONE OF', 'NOT CONTAINS ONE OF', 'IS NULL', 'IS NOT NULL']);
       $field->addSqlFilter([__CLASS__, 'getActivityContactFilterSql']);
       $field->setSqlRenderer([__CLASS__, 'renderSqlForActivityContactIds']);
       $spec->addFieldSpec($field);
