@@ -354,6 +354,45 @@ class RecurringQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * Test a monthly convert signup stores the Gravy payment_service_id.
+   *
+   * The payment_service_id identifies the payment service connection used
+   * at Gravy for the original authorization, so that subsequent recurring
+   * charges route through the same backend processor.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecurringSignupStoresPaymentServiceId(): void {
+    $subscr_id = mt_rand();
+    $contributionTrackingRecordID = $this->addContributionTrackingRecord();
+    $this->processDonationMessage([
+      'gateway' => 'gravy',
+      'gross' => 400,
+      'original_gross' => 400,
+      'original_currency' => 'CAD',
+      'contribution_tracking_id' => $contributionTrackingRecordID,
+    ]);
+    $this->processContributionTrackingQueue();
+
+    $this->processRecurringSignup([
+      'gateway' => 'gravy',
+      'gateway_txn_id' => $subscr_id,
+      'recurring_payment_token' => mt_rand(),
+      'user_ip' => '1.1.1.1',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'payment_service_id' => '725322ad-198d-484d-b66c-e6ff44712108',
+      'contribution_tracking_id' => $contributionTrackingRecordID,
+    ]);
+
+    $contributionRecur = ContributionRecur::get(FALSE)
+      ->addWhere('trxn_id', '=', 'RECURRING GRAVY ' . $subscr_id)
+      ->addSelect('contribution_recur_smashpig.payment_service_id')
+      ->execute()->single();
+    $this->assertEquals('725322ad-198d-484d-b66c-e6ff44712108', $contributionRecur['contribution_recur_smashpig.payment_service_id']);
+  }
+
+  /**
    * Test that the notification email is sent when a donation is a monthly convert
    *
    * @throws \CRM_Core_Exception
