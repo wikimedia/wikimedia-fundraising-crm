@@ -4852,6 +4852,43 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Add the 'Reason for MG Stage change' custom field on existing installs.
+   *
+   * Bug: T386961
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5030(): bool {
+    $stage = CustomField::get(FALSE)
+      ->addSelect('weight', 'custom_group_id')
+      ->addWhere('name', '=', 'Stage')
+      ->addWhere('custom_group_id.name', '=', 'Prospect')
+      ->execute()->first();
+    $exists = (bool) CustomField::get(FALSE)
+      ->addWhere('name', '=', 'Stage_Change_Reason')
+      ->addWhere('custom_group_id.name', '=', 'Prospect')
+      ->execute()->first();
+    if ($exists || !$stage) {
+      return TRUE;
+    }
+    CustomField::create(FALSE)
+      ->setValues([
+        'custom_group_id' => $stage['custom_group_id'],
+        'name' => 'Stage_Change_Reason',
+        'label' => 'Reason for MG Stage change',
+        'data_type' => 'Memo',
+        'html_type' => 'TextArea',
+        'is_searchable' => FALSE,
+        'note_columns' => 60,
+        'note_rows' => 2,
+        'weight' => $stage['weight'] + 1,
+      ])
+      ->execute();
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

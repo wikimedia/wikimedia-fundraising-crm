@@ -867,6 +867,15 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'note_rows' => 4,
       'option_group_id.name' => 'stage_20080616181942',
     ],
+    'Stage_Change_Reason' => [
+      'name' => 'Stage_Change_Reason',
+      'label' => 'Reason for MG Stage change',
+      'data_type' => 'Memo',
+      'html_type' => 'TextArea',
+      'is_searchable' => 0,
+      'note_columns' => 60,
+      'note_rows' => 2,
+    ],
     'On_Hold' => [
       'name' => 'On_Hold',
       'label' => 'On Hold',

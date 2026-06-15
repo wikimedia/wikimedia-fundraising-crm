@@ -19,6 +19,7 @@ use Civi\WMFHook\Data;
 use Civi\Api4\MessageTemplate;
 use Civi\WMFHelper\Language;
 use Civi\WMFHook\PreferencesLink;
+use Civi\WMFHook\ProspectTab;
 use Civi\WMFStatistic\PrometheusReporter;
 
 // phpcs:enable
@@ -52,6 +53,9 @@ function wmf_civicrm_civicrm_config(&$config) {
   });
 
   $dispatcher->addListener('civi.api.prepare', ['Civi\WMFHook\Contribution', 'apiPrepare']);
+
+  $dispatcher->addListener('hook_civicrm_pre::Individual', ['Civi\WMFHook\Contact', 'pre']);
+  $dispatcher->addListener('hook_civicrm_pre::Organization', ['Civi\WMFHook\Contact', 'pre']);
 }
 
 /**
@@ -535,6 +539,7 @@ function wmf_civicrm_civicrm_tabset($tabsetName, &$tabs, $context) {
  */
 function wmf_civicrm_civicrm_pageRun(CRM_Core_Page $page) {
   PreferencesLink::pageRun($page);
+  ProspectTab::pageRun($page);
   $pageClass = get_class($page);
   // Pages to load the ContributionTracking Module into - loading into the summary page because of the contribution view popup
   $ctPages = ['CRM_Contact_Page_View_Summary', 'CRM_Contribute_Page_Tab'];
