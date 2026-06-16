@@ -258,7 +258,7 @@ class Contact {
         ->addWhere('contact_type', '=', 'Organization')
         ->addWhere('organization_name', '=', $gateway)
         ->execute()->first() ?? [];
-      \Civi::$statics[__CLASS__][$gateway] = (int) $contact['id'] ?? NULL;
+      \Civi::$statics[__CLASS__][$gateway] = $contact['id'] ?? NULL;
     }
     if (!\Civi::$statics[__CLASS__][$gateway]) {
       \Civi::$statics[__CLASS__][$gateway] = (int) \Civi\Api4\Contact::create(FALSE)

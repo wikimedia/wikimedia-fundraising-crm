@@ -1466,9 +1466,7 @@ abstract class BaseAuditProcessor {
               'fee_amount' => -$auditRecord['message']['settled_fee_amount'],
               'contribution_settlement.settled_fee_amount' => $auditRecord['message']['settled_fee_amount'],
               'source' => $auditRecord['message']['settlement_batch_reference'] . ' fee ' . -$auditRecord['message']['settled_fee_amount'],
-              // We record this fee transaction against the anonymous contact
-              // I thought about going with a specific contact but triggers already exclude
-              // the anonymous contact
+              // We record this fee transaction against the gateway contact.
               'contact_id' => \Civi\WMFHelper\Contact::getGatewayContactID(),
               // fee is unique within a batch but description might be date specific.
               'trxn_id' => strtoupper($auditRecord['message']['audit_file_gateway']) . ' ' . $auditRecord['message']['gateway_txn_id'],
