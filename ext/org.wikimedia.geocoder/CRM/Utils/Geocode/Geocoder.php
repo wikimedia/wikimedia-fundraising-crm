@@ -221,7 +221,7 @@ class CRM_Utils_Geocode_Geocoder {
     // filter out unrelated keys
     $keysToRetain = array_fill_keys($addressFields, 1);
     unset($keysToRetain['country_id'], $keysToRetain['state_province_id'], $keysToRetain['county_id']);
-    $keysToRetain['country'] = $keysToRetain['state_province_id'] = $keysToRetain['county'];
+    $keysToRetain['country'] = $keysToRetain['state_province'] = $keysToRetain['county'] = 1;
     $addressValues = array_intersect_key($addressValues, $keysToRetain);
 
     return $addressValues;
@@ -311,7 +311,7 @@ class CRM_Utils_Geocode_Geocoder {
     if (empty($geocoder['required_fields'])) {
       $keysToRetain = self::getAddressFields();
       unset($keysToRetain['country_id'], $keysToRetain['state_province_id'], $keysToRetain['county_id']);
-      $keysToRetain['country'] = $keysToRetain['state_province_id'] = $keysToRetain['county'] = 1;
+      $keysToRetain['country'] = $keysToRetain['state_province'] = $keysToRetain['county'] = 1;
       return array_keys($keysToRetain);
 
     }
@@ -494,7 +494,7 @@ class CRM_Utils_Geocode_Geocoder {
     geocoder_civicrm_geo_managed($entities);
     $rekeyed = [];
     foreach ($entities as $entity) {
-      $rekeyed[$entity['name']] = CRM_Utils_Array::value('metadata', $entity, []);
+      $rekeyed[$entity['name']] = $entity['metadata'] ?? [];
     }
     return $rekeyed;
   }
@@ -509,7 +509,7 @@ class CRM_Utils_Geocode_Geocoder {
    * @return string|array
    */
   protected static function getProviderArgument($geocoder) {
-    return CRM_Utils_Array::value('argument', $geocoder);
+    return $geocoder['argument'] ?? NULL;
   }
 
   /**
