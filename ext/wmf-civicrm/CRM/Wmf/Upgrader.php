@@ -13,6 +13,8 @@ use Civi\Api4\Email;
 use Civi\Api4\Contact;
 use Civi\Api4\Activity;
 use Civi\Api4\WMFDonor;
+use Civi\Api4\Address;
+use Civi\Api4\Country;
 use Civi\QueueHelper;
 use Civi\WMFHook\CalculatedData;
 use CRM_Wmf_ExtensionUtil as E;
@@ -4805,6 +4807,37 @@ v.channel IS NULL AND c.id = 131486342;",
           $previousStage = $newStage;
         }
       }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Backfill missing state on US addresses that have a postal_code.
+   *
+   * Bug: T397493
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5020(): bool {
+    $usCountryID = Country::get(FALSE)
+      ->addSelect('id')
+      ->addWhere('iso_code', '=', 'US')
+      ->execute()
+      ->first()['id'];
+
+    $addresses = Address::get(FALSE)
+      ->addSelect('id', 'postal_code', 'city')
+      ->addWhere('country_id', '=', $usCountryID)
+      ->addWhere('postal_code', 'IS NOT EMPTY')
+      ->addWhere('state_province_id', 'IS EMPTY')
+      ->execute();
+
+    foreach ($addresses as $address) {
+      Address::update(FALSE)
+        ->addWhere('id', '=', $address['id'])
+        ->addValue('country_id', $usCountryID)
+        ->execute();
     }
     return TRUE;
   }
