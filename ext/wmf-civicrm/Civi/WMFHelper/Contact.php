@@ -4,6 +4,7 @@ namespace Civi\WMFHelper;
 
 use Civi;
 use Civi\Api4\ContributionSoft;
+use CRM_Wmf_ExtensionUtil as E;
 
 class Contact {
 
@@ -36,14 +37,17 @@ class Contact {
       $contacts = \Civi\Api4\Contact::get(FALSE)
         ->addWhere('contact_type', '=', 'Organization')
         ->addWhere('organization_name', '=', $organizationName)
-        ->addSelect('id', 'organization_name')->execute();
+        ->addSelect('id', 'organization_name', 'address_primary.street_address', 'address_primary.postal_code')->execute();
       if (count($contacts) === 1) {
         Civi::$statics['wmf_contact']['organization'][$organizationName]['id'] = $contacts->first()['id'];
       }
       elseif (count($contacts) > 1) {
         throw new \CRM_Core_Exception(
-          ts("Found more than one organization named: %1. Please merge them or rename one.",
-            [1 => $organizationName]));
+          E::ts("Found more than one organization named: %1. Please merge them or rename one.",
+            [1 => $organizationName]),
+          'multiple_found',
+          ['contacts' => $contacts]
+        );
       }
       else {
         \Civi::$statics['wmf_contact']['organization'][$organizationName]['id'] = FALSE;
@@ -254,7 +258,7 @@ class Contact {
         ->addWhere('contact_type', '=', 'Organization')
         ->addWhere('organization_name', '=', $gateway)
         ->execute()->first() ?? [];
-      \Civi::$statics[__CLASS__][$gateway] = (int) $contact['id'] ?? NULL;
+      \Civi::$statics[__CLASS__][$gateway] = $contact['id'] ?? NULL;
     }
     if (!\Civi::$statics[__CLASS__][$gateway]) {
       \Civi::$statics[__CLASS__][$gateway] = (int) \Civi\Api4\Contact::create(FALSE)
