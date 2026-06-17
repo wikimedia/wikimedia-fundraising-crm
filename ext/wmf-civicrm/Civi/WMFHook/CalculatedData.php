@@ -320,7 +320,7 @@ class CalculatedData extends TriggerHook {
       $oldSql = str_replace('NEW.', 'OLD.', $sql);
       $updateOldSQL = ' IF ' . $requiredClausesForOldClause
         . ' AND (NEW.contact_id <> OLD.contact_id) THEN'
-        . $oldSql . ' END IF; ';
+        . $oldSql . " END IF;\n";
 
       $deleteSql = ' IF ' . $requiredClausesForOldClause . ' THEN' . $oldSql . ' END IF; ';
 
@@ -858,14 +858,14 @@ class CalculatedData extends TriggerHook {
 
     FROM (
       SELECT\n " . (!$this->isTriggerContext() ? ' c.contact_id,' : '')
-      . implode(', ', $this->getTotalsFieldSelects()) . "
+      . implode(",\n", $this->getTotalsFieldSelects()) . "
       FROM civicrm_contribution c
       USE INDEX(FK_civicrm_contribution_contact_id)
         LEFT JOIN civicrm_contribution_recur annual_recur
            ON annual_recur.id = c.contribution_recur_id
            AND annual_recur.frequency_unit = 'year'
            -- contribution_status_id != cancelled?
-      WHERE " . ($this->isTriggerContext() ? ' c.contact_id = NEW.contact_id ' : $this->getWhereClause()) . "
+      WHERE " . ($this->isTriggerContext() ? ' c.contact_id = NEW.contact_id' : $this->getWhereClause()) . "
         AND c.contribution_status_id = 1
         AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)"
       . (!$this->isTriggerContext() ? ' GROUP BY contact_id ' : '') . "
@@ -963,7 +963,7 @@ class CalculatedData extends TriggerHook {
   protected function getSegmentSelect(): string {
     if (!$this->segmentSelectSQL) {
       $options = $this->getDonorSegmentOptions();
-      $this->segmentSelectSQL = ' CASE ';
+      $this->segmentSelectSQL = "\nCASE";
       foreach ($options as $option) {
         if (!empty($option['sql_select'])) {
           $this->segmentSelectSQL .= "\n" . $option['sql_select'] . ' THEN ' . $option['value'] . "\n";
