@@ -8,6 +8,7 @@ return [
     'type' => 'String',
     'is_domain' => 1,
     'is_contact' => 0,
+    'default' => 'smtp://localhost:25',
     'title' => E::ts('Symfony DSN'),
     'help_text' => 'see https://symfony.com/doc/current/mailer.html',
     'html_type' => 'text',
