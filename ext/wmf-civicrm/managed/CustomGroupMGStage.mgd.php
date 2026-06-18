@@ -212,6 +212,7 @@ return [
         'name' => 'MG_Stage',
         'title' => 'MG Stage',
         'extends' => 'Activity',
+        'extends_entity_column_value' => [223],
         'weight' => 56,
         'created_date' => '2026-05-29 18:58:26',
       ],
