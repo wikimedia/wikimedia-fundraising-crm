@@ -4843,6 +4843,15 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Create or update PaymentAttempt table from entityType.
+   */
+  public function upgrade_5025() {
+    E::schema()->createEntityTable('schema/PaymentAttempt.entityType.php');
+    E::schema()->createEntityTable('schema/PaymentAttemptLabel.entityType.php');
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
