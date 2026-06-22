@@ -130,23 +130,6 @@ class BaseQueueTestCase extends TestCase implements HeadlessInterface {
    *
    * @return array
    */
-  protected function getRecurringEOTMessage(array $values = []): array {
-    $message = $this->loadMessage('recurring_eot');
-    $contributionTrackingID = mt_rand();
-    $message += [
-      'gateway_txn_id' => mt_rand(),
-      'order_id' => "$contributionTrackingID.1",
-      'contribution_tracking_id' => $contributionTrackingID,
-    ];
-    return array_merge($message, $values);
-  }
-
-
-  /**
-   * @param array $values
-   *
-   * @return array
-   */
   public function getRefundMessage(array $values = []): array {
     $donation_message = $this->getDonationMessage([], []);
     return array_merge($this->loadMessage('refund'),

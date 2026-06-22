@@ -117,9 +117,9 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         $previousContribution = self::getPreviousContribution($recurringPayment);
         // run a small query to double-check the recurring status
         $recurStatus = self::getRecurStatus($recurringPayment['id']);
-        if ($recurStatus === 'Cancelled') {
+        if (in_array($recurStatus, ['Cancelled', 'Failed'])) {
           Civi::log('wmf')
-            ->info('No need to charge this one since recurring row '. $recurringPayment['id'] . ' is cancelled');
+            ->info('No need to charge this one since recurring row '. $recurringPayment['id'] . ' is ' . $recurStatus);
           continue;
         }
         if ($recurStatus === 'Processing') {
@@ -279,18 +279,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       )->addWhere(
         'payment_processor_id', 'IN', array_keys($this->smashPigProcessors)
       )->addWhere(
-        'contribution_status_id:name',
-        'IN',
-        [
-          'Pending',
-          'Overdue',
-          'In Progress',
-          'Failing',
-          // @todo - remove Completed once our In Progress payments
-          // all have an IN Progress status. Ditto Failed vs Failing.
-          'Completed',
-          'Failed',
-        ]
+        'contribution_status_id:name', 'IN', ['Pending', 'Overdue', 'In Progress', 'Failing']
       )->addWhere(
       // T335152 if cancel date not null, means it has been cancelled before
         'cancel_date', 'IS NULL'
@@ -546,9 +535,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       }
     }
     if ($cancelRecurringDonation) {
-      // @todo note the core terminology would moe accurately set this to Failed
-      // leaving cancelled for something where a user or staff member made a choice.
-      $params['contribution_status_id:name'] = 'Cancelled';
+      $params['contribution_status_id:name'] = 'Failed';
       $params['cancel_date'] = UtcDate::getUtcDatabaseString();
     }
     ContributionRecur::update(FALSE)
@@ -806,14 +793,7 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $result = civicrm_api3('ContributionRecur', 'get', [
       'id' => ['!=' => $recurringID],
       'contact_id' => $contactID,
-      'contribution_status_id' => [
-        'IN' => [
-          'Pending',
-          'Overdue',
-          'In Progress',
-          'Failing' // hmm this isn't very active.
-        ],
-      ],
+      'contribution_status_id' => ['IN' => ['Pending', 'Overdue', 'In Progress', 'Failing']],
       'payment_token_id' => ['IS NOT NULL' => TRUE],
     ]);
 

@@ -58,8 +58,8 @@ class ContributionRecur {
   }
 
   /**
-   * If recur record is in an 'inactive' status (currently defined as Completed,
-   * Cancelled, or Failed), reactivate it.
+   * If a recur record is Completed, Cancelled, Failing or Failed,
+   * reset it to In Progress and wipe cancel_date, end_date and cancel_reason..
    *
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
@@ -68,13 +68,14 @@ class ContributionRecur {
     if (in_array($recur_record['contribution_status_id'], self::getInactiveStatusIds())) {
       \Civi::log('wmf')->info("Reactivating contribution_recur with id " . $recur_record['id']);
       // If a donor cancels immediately after a payment is sent, the payment may be imported after
-      // the cancel message. The 'cancel_date' where condition ensures we don't uncancel those.
+      // the cancel message. The 'cancel_date' where condition ensures we don't uncancel those
+      // while cancel_date is null allows for failing recurrings that are not yet cancelled.
       \Civi\Api4\ContributionRecur::update(FALSE)
         ->addWhere('id', '=', $recur_record['id'])
-        ->addWhere('cancel_date', '<', $contributionDate)
+        ->addClause('OR', ['cancel_date', '<', $contributionDate], ['cancel_date', 'IS NULL'])
         ->setValues([
           'cancel_date' => NULL,
-          'cancel_reason' => '',
+          'cancel_reason' => NULL,
           'end_date' => NULL,
           'contribution_status_id:name' => 'In Progress',
         ])->execute();
@@ -84,7 +85,9 @@ class ContributionRecur {
   protected static function getInactiveStatusIds(): array {
     if (self::$inactiveStatuses === NULL) {
       $statuses = [];
-      foreach (\CRM_Contribute_BAO_ContributionRecur::getInactiveStatuses() as $status) {
+      $statusNames = \CRM_Contribute_BAO_ContributionRecur::getInactiveStatuses();
+      $statusNames[] = 'Failing';
+      foreach ($statusNames as $status) {
         $statuses[] = CRM_Core_PseudoConstant::getKey(
           'CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $status
         );

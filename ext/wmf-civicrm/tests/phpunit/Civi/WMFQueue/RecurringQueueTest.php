@@ -296,6 +296,18 @@ class RecurringQueueTest extends BaseQueueTestCase {
     $this->assertNotEmpty($contributionRecur['payment_processor_id']);
     $this->assertEmpty($contributionRecur['failure_retry_date']);
     $this->assertEquals('In Progress', $contributionRecur['contribution_status_id:name']);
+
+    ContributionRecur::update(FALSE)
+      ->addWhere('id', '=', $contributionRecur['id'])
+      ->addValue('contribution_status_id:name', 'Failing')
+      ->addValue('cancel_date', NULL)
+      ->execute();
+    // Use a fresh gateway_txn_id so this is a new payment, not a duplicate of
+    // the one imported above (which would be skipped before reactivation).
+    $values['gateway_txn_id'] = mt_rand();
+    $this->processRecurringPaymentMessage($values);
+    $contributionRecur = $this->getContributionRecurForMessage($values);
+    $this->assertEquals('In Progress', $contributionRecur['contribution_status_id:name']);
   }
 
   /**
@@ -520,19 +532,6 @@ class RecurringQueueTest extends BaseQueueTestCase {
     $rows = $this->getDamagedRows($signupMessage);
     $this->assertCount(1, $rows, 'No rows in damaged db for deadlock');
     $this->assertNotNull($rows[0]['retry_date'], 'Damaged message should have a retry date');
-  }
-
-  /**
-   * Test deadlock results in re-queuing in function that expires recurring contributions.
-   */
-  public function testHandleDeadlocksInEOTMessage(): void {
-    $subscr_id = mt_rand();
-    $values = ['subscr_id' => $subscr_id];
-    $this->processRecurringSignup($values);
-    $values['source_enqueued_time'] = time();
-    $message = $this->getRecurringEOTMessage($values);
-    $this->processMessage($message, 'RecurDeadlock');
-    $this->assertDamagedRowExists($message);
   }
 
   /**
@@ -771,21 +770,6 @@ class RecurringQueueTest extends BaseQueueTestCase {
     $this->assertEquals(1, $contributionRecur['failure_count']);
     $this->assertEquals('2024-05-27 10:00:00', $contributionRecur['failure_retry_date']);
     $this->assertEquals('Failing', $contributionRecur['contribution_status_id:name']);
-  }
-
-  /**
-   * Test processing EOT (end of term) message from paypal.
-   */
-  public function testRecurringEOTPaypalMessage(): void {
-    $signupMessage = $this->processRecurringSignup();
-    $this->processMessage($this->getRecurringEOTMessage(['subscr_id' => $signupMessage['subscr_id']]));
-    $contributionRecur = $this->getContributionRecurForMessage($signupMessage);
-    $this->assertEquals('(auto) Expiration notification', $contributionRecur['cancel_reason']);
-    $this->assertEquals(date('Y-m-d'), date('Y-m-d', strtotime($contributionRecur['end_date'])));
-    $this->assertNotEmpty($contributionRecur['payment_processor_id']);
-    $this->assertEmpty($contributionRecur['failure_retry_date']);
-    $this->assertEmpty($contributionRecur['next_sched_contribution_date']);
-    $this->assertEquals('Completed', $contributionRecur['contribution_status_id:name']);
   }
 
   /**

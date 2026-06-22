@@ -478,18 +478,22 @@ class EOYEmailTest extends TestCase {
 
   /**
    * Test that we don't include cancellation instructions for
-   * donors whose donation is already cancelled.
+   * donors whose donation is already cancelled or failed.
    *
    * @throws \CRM_Core_Exception
    */
   public function testSendWithRecurringDonationsCancelled(): void {
-    $this->setUpContactsSharingEmail();
-    ContributionRecur::update(FALSE)
-      ->addWhere('id', 'IN', $this->ids['ContributionRecur'])
-      ->addValue('contribution_status_id:name', 'Cancelled')
-      ->execute();
-    $mailing = $this->send();
-    $this->assertDoesNotMatchRegularExpression('/Cancel_or_change_recurring_giving/', $mailing['html']);
+    [$contactID] = $this->setUpContactsSharingEmail();
+    foreach (['Cancelled', 'Failed'] as $status) {
+      ContributionRecur::update(FALSE)
+        ->addWhere('id', 'IN', $this->ids['ContributionRecur'])
+        ->addValue('contribution_status_id:name', $status)
+        ->addValue('cancel_date', '2018-06-01 10:00:00')
+        ->execute();
+      $this->resetMailTracking();
+      $mailing = $this->send(2018, $contactID);
+      $this->assertDoesNotMatchRegularExpression('/Cancel_or_change_recurring_giving/', $mailing['html']);
+    }
   }
 
   /**

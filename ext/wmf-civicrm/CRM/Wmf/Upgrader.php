@@ -4889,6 +4889,88 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Change past recurrings with status Completed to Cancelled or Cancelled to Failed based on cancel reason.
+   *
+   * Also backfill the previous cancel reason for EOT cancels from Paypal where we overwrote
+   * the actual cancel reason with the generic EOT one.
+   * Update the cancel_date to the log date and set end_date to NULL.
+   * There are a small number of these that have a gap of more than 2 months between the
+   * original cancel and the log date, but only 52 and checking a few shows they were
+   * actually cancelled at the earlier date, so update is correct.
+   *
+   * Bug: T429806
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5035(): bool {
+    CRM_Core_DAO::executeQuery("
+        CREATE TEMPORARY TABLE tmp_recur_cancel_reason AS
+        SELECT id, cancel_reason, log_date
+        FROM (
+          SELECT
+            l.id,
+            l.cancel_reason,
+            l.log_date,
+            ROW_NUMBER() OVER (PARTITION BY l.id ORDER BY l.log_date DESC) AS rn
+           FROM log_civicrm_contribution_recur l
+           INNER JOIN civicrm_contribution_recur cr ON cr.id = l.id
+           WHERE l.cancel_reason IS NOT NULL
+             AND l.cancel_reason != ''
+             AND l.cancel_reason != '(auto) Expiration notification'
+             AND cr.contribution_status_id IN (1, 3)
+             AND cr.cancel_reason = '(auto) Expiration notification'
+        ) ranked
+        WHERE rn = 1
+      ");
+
+    CRM_Core_DAO::executeQuery("
+        UPDATE civicrm_contribution_recur cr
+        INNER JOIN tmp_recur_cancel_reason chosen
+        ON chosen.id = cr.id
+        SET cr.cancel_reason = chosen.cancel_reason,
+        cr.contribution_status_id = 3,
+        cr.cancel_date = chosen.log_date,
+        cr.end_date = NULL
+      ");
+
+    CRM_Core_DAO::executeQuery('DROP TEMPORARY TABLE IF EXISTS tmp_recur_cancel_reason');
+
+    $reasons = [
+      [
+        'from' => 1, // Completed
+        'to' => 3, // Cancelled
+        'reasons' => [
+          ['=', '(auto) backfilled automated cancel'],
+          ['=', '(auto) backfilled automated Expiration notification'],
+          ['=', '(auto) Expiration notification'],
+        ],
+      ],
+      [
+        'from' => 3, // Cancelled
+        'to' => 4, // Failed
+        'reasons' => [
+          ['=', '(auto) maximum failures reached'],
+          ['=', '(auto) un-retryable card decline reason code'],
+          ['=', 'Automatically cancelled for inactivity'],
+          ['LIKE', 'Failed: %'],
+          ['LIKE', 'Payment cannot be rescued: %'],
+        ],
+      ],
+    ];
+
+    foreach ($reasons as $reason) {
+      foreach ($reason['reasons'] as [$operator, $cancelReason]) {
+        CRM_Core_DAO::executeQuery('UPDATE civicrm_contribution_recur
+          SET contribution_status_id = ' . $reason['to'] . '
+          WHERE contribution_status_id = ' . $reason['from'] . '
+            AND cancel_reason ' . $operator . ' "' . $cancelReason . '"');
+      }
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

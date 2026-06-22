@@ -82,7 +82,7 @@ class CancelInactivesTest extends TestCase {
       ->addSelect('contribution_status_id:name', 'cancel_reason', 'cancel_date')->execute()->first();
 
     $this->assertEquals('Automatically cancelled for inactivity', $contributionRecur['cancel_reason']);
-    $this->assertEquals('Cancelled', $contributionRecur['contribution_status_id:name']);
+    $this->assertEquals('Failed', $contributionRecur['contribution_status_id:name']);
   }
 
 }

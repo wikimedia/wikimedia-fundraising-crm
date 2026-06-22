@@ -364,6 +364,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         'cancel_reason' => 'Automatically cancelling because we received a chargeback',
         // We add this to satisfy a check in the common message normalization function.
         'payment_instrument_id' => $firstContribution['payment_instrument_id'],
+        'contribution_status_id:name' => 'Cancelled',
       ];
       QueueWrapper::push('recurring', $message);
     }

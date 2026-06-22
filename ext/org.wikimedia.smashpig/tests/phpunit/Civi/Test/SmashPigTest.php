@@ -1101,7 +1101,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
    * @dataProvider failDataProvider
    */
   public function testPaymentFails(
-    array $cadence, int $failureCount, int $expectedDelay, bool $isCancelled = FALSE
+    array $cadence, int $failureCount, int $expectedDelay, bool $isFailed = FALSE
   ) {
     $contact = $this->createContact();
     $token = $this->createToken($contact['id']);
@@ -1131,7 +1131,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $newContributionRecur = civicrm_api3('ContributionRecur', 'getsingle', [
       'id' => $contributionRecur['id'],
     ]);
-    if (!$isCancelled) {
+    if (!$isFailed) {
       $expectedRetryDate = UtcDate::getUtcTimestamp("+$expectedDelay days");
     $retryDate = UtcDate::getUtcTimestamp(
       $newContributionRecur['next_sched_contribution_date']
@@ -1140,7 +1140,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
 
     }
     $this->assertEquals(
-      $isCancelled ? 'Cancelled' : 'Failing',
+      $isFailed ? 'Failed' : 'Failing',
       \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
     );
     $this->assertEquals($failureCount + 1, $newContributionRecur['failure_count']);
@@ -1179,7 +1179,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $this->assertEquals('(auto) un-retryable card decline reason code', $newContributionRecur['cancel_reason']);
     $this->assertLessThan(100, abs($cancelDate - $expectedCancelDate));
     $this->assertEquals(
-      'Cancelled',
+      'Failed',
       \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
     );
   }
@@ -1242,7 +1242,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $this->assertEquals('Payment cannot be rescued: Issuer Suspected Fraud', $newContributionRecur['cancel_reason']);
     $this->assertLessThan(100, abs($cancelDate - $expectedCancelDate));
     $this->assertEquals(
-      'Cancelled',
+      'Failed',
       \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $newContributionRecur['contribution_status_id'])
     );
   }
@@ -1426,9 +1426,9 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'id' => $contributionRecur['id'],
     ]);
 
-    // check the recurring record is now set as Cancelled
+    // check the recurring record is now set as Failed
     $this->assertEquals(
-      'Cancelled',
+      'Failed',
       \CRM_Core_PseudoConstant::getName(
         'CRM_Contribute_BAO_ContributionRecur',
         'contribution_status_id',
@@ -1513,7 +1513,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     ]);
     $this->assertEquals('(auto) un-retryable card decline reason code', $checkContributionRecur['cancel_reason']);
     $this->assertEquals(
-      'Cancelled',
+      'Failed',
       \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $checkContributionRecur['contribution_status_id'])
     );
 
@@ -1565,10 +1565,10 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $contributionRecur = $this->createContributionRecur($token);
     $statuses = \CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
     $failedStatus = \CRM_Utils_Array::key('Failed', $statuses);
-    $cancelledStatus = \CRM_Utils_Array::key('Cancelled', $statuses);
+    $failingStatus = \CRM_Utils_Array::key('Failing', $statuses);
     civicrm_api3('ContributionRecur', 'create', [
       'id' => $contributionRecur['id'],
-      'contribution_status_id' => $failedStatus,
+      'contribution_status_id' => $failingStatus,
       'failure_count' => 2,
     ]);
     $this->createContribution($contributionRecur);
@@ -1600,7 +1600,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $this->assertEquals('(auto) maximum failures reached', $newContributionRecur['cancel_reason']);
     $this->assertLessThan(100, abs($cancelDate - $expectedCancelDate));
     $this->assertEquals(
-      $cancelledStatus, $newContributionRecur['contribution_status_id']
+      $failedStatus, $newContributionRecur['contribution_status_id']
     );
     $this->assertEquals('3', $newContributionRecur['failure_count']);
   }

@@ -105,7 +105,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     }
 
     if ($message->getContributionRecurID() && RecurHelper::gatewayManagesOwnRecurringSchedule($msg['gateway'])) {
-      // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
+      // If parent record is mistakenly marked as Completed, Cancelled, Failing or Failed, reactivate it
       // @todo - confirm this duplicates the processing that happens once this
       // is pushed to the donation queue & remove from here.
       RecurHelper::reactivateIfInactive([
@@ -479,17 +479,20 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       ->execute()
       ->first()['contribution_status_id:name'];
 
-    if ($status === 'Cancelled') {
+    if (in_array($status, ['Cancelled', 'Failed'])) {
       return;
     }
 
     try {
       $date = $message->getCancelDate() ?? date('Ymd H:i:s');
+      // Currently, these message are either from Paypal subscr_cancel (so Cancelled),
+      // from other payment processors autorescue (so Failed) or from cancelRecurringOnChargeback (status is set to Cancelled).
+      // If others were processed here, we may need to update the below to differentiate Cancelled from Failed.
       $update_params = [
         'id' => $message->getContributionRecurID(),
         'cancel_date' => $date,
         'cancel_reason' => $message->getCancelReason() ?? '(auto) User Cancelled via Gateway',
-        'contribution_status_id:name' => 'Cancelled',
+        'contribution_status_id:name' => $message->getMessageStatus() ?? ($message->isAutoRescue() ? 'Failed' : 'Cancelled'),
         'end_date' => $date,
       ];
       if ($message->isAutoRescue()) {
@@ -528,46 +531,31 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   }
 
   /**
-   * Process an expired subscription.
+   * Process an expired subscription message from Paypal.
    *
-   * Based on the reviewing the resulting records we can see that no
-   * recurrings have the status (auto) Expiration notification without having a
-   * cancel_date. In each case the cancel_date precedes the end date - it seems
-   * that we receive this notification from paypal after some other type of
-   * cancellation has already been received. I WAS going to suggest we ALSO set
-   * cancel_date in this call but that seems unnecessary given the 100% overlap
-   * seemingly with already cancelled recurrings.
+   * It appears we only receive these from Paypal when a subscription has previously been
+   * cancelled or failed. We get these a month later when the donor is no longer supposed
+   * to be subscribed to whatever they are paying for, which is of course irrelevant for us,
+   * so we just log if we get one of these where the subscription is still active.
+   * We don't have any record of this happening in the last 2+ years.
    *
    * @param array $msg
    *
    * @throws \Civi\WMFException\WMFException
    */
   protected function importSubscriptionExpired($msg) {
-    // ensure we have a record of the subscription
-    if (empty($msg['contribution_recur_id'])) {
-      // PayPal has recently been sending lots of invalid cancel and fail notifications
-      // Revert this patch when that's resolved
-      return;
-      // throw new WMFException(WMFException::INVALID_RECURRING, 'Subscription account does not exist');
+    if (!empty($msg['contribution_recur_id'])) {
+      $contributionRecur = ContributionRecur::get(FALSE)
+        ->addWhere('id', '=', $msg['contribution_recur_id'])
+        ->addWhere('contribution_status_id:name', 'NOT IN', ['Failed', 'Cancelled', 'Completed'])
+        ->execute()->first();
+      if ($contributionRecur) {
+        Civi::log('wmf')->error(
+          'recurring: Received a Paypal End of Term message for a recurring contribution that was still active, but no action taken. Subscriber id: {subscriber_id}, Recurring contribution id: {recurring_id}',
+          ['subscriber_id' => $msg['subscr_id'], 'recurring_id' => $msg['contribution_recur_id']]
+        );
+      }
     }
-
-    try {
-      // See function comment block for discussion.
-      $params = [
-        'id' => $msg['contribution_recur_id'],
-        'end_date' => 'now',
-        'contribution_status_id:name' => 'Completed',
-        'cancel_reason' => '(auto) Expiration notification',
-        'next_sched_contribution_date' => NULL,
-        'failure_retry_date' => NULL,
-      ];
-
-      $this->updateContributionRecurWithErrorHandling($params);
-    }
-    catch (\CRM_Core_Exception $e) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem updating the subscription for EOT for subscription id: %subscr_id' . print_r($msg['subscr_id'], TRUE) . ": " . $e->getMessage());
-    }
-    Civi::log('wmf')->notice('recurring: Successfully ended subscription for subscriber id: {subscriber_id}', ['subscriber_id' => $msg['subscr_id']]);
   }
 
   /**
@@ -598,10 +586,10 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       ->addSelect('contribution_status_id:name')
       ->execute()->first()['contribution_status_id:name'];
 
-    if ($currentStatus === 'Cancelled') {
+    if (in_array($currentStatus, ['Cancelled', 'Failed'])) {
       Civi::log('wmf')->notice(
-        'Skipped recorded failed payment for subscription id: {subscriber_id} on an already-cancelled subscription',
-        ['subscriber_id' => $msg['subscr_id']]
+        'Skipped recorded failed payment for subscription id: {subscriber_id} on an already-{currentStatus} subscription',
+        ['subscriber_id' => $msg['subscr_id'], 'currentStatus' => $currentStatus]
       );
       return;
     }

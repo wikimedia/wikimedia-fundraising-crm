@@ -38,7 +38,7 @@ class SendSecondRecurringFailureEmail extends AbstractAction {
     // Exclude donors who are snoozed; we use snooze to suppress the 2nd email if the donor responds to the first failure email.
     $recurringQuery = ContributionRecur::get(FALSE)
       ->addSelect('id', 'contact_id')
-      ->addWhere('contribution_status_id:name', '=', 'Cancelled')
+      ->addWhere('contribution_status_id:name', '=', 'Failed')
       ->addWhere('cancel_date', 'BETWEEN', ["now -$this->maxdays days","now -$this->days days "])
       ->addJoin(
         'Activity AS first',
@@ -69,16 +69,8 @@ class SendSecondRecurringFailureEmail extends AbstractAction {
       $recurringCheck = ContributionRecur::get(FALSE)
         ->addSelect('id')
         ->addWhere('contact_id','=',$recurringContribution['contact_id'])
-        ->addWhere(
-          'contribution_status_id:name',
-          'IN',
-          [
-            'Pending',
-            'Overdue',
-            'In Progress',
-            'Failing'
-          ]
-        )->execute()->count();
+        ->addWhere('contribution_status_id:name', 'IN', ['Pending', 'Overdue', 'In Progress', 'Failing'])
+        ->execute()->count();
 
       if ($recurringCheck > 0) {
         continue;

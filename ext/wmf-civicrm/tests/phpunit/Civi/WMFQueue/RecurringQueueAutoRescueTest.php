@@ -154,7 +154,7 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
       ->execute()
       ->first();
 
-    $this->assertEquals('Cancelled', $updatedRecur['contribution_status_id:name']);
+    $this->assertEquals('Failed', $updatedRecur['contribution_status_id:name']);
   }
 
   /**
@@ -210,7 +210,7 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
       ->addWhere('id', '=', $recur['id'])
       ->execute()
       ->first();
-    $this->assertEquals('Cancelled', $updatedRecur['contribution_status_id:name']);
+    $this->assertEquals('Failed', $updatedRecur['contribution_status_id:name']);
 
     // Verify that the rescue reference was cleared
     $this->assertEquals('', $updatedRecur['contribution_recur_smashpig.rescue_reference']);
@@ -319,7 +319,7 @@ class RecurringQueueAutoRescueTest extends BaseQueueTestCase {
       ->addWhere('id', '=', $recur1['id'])
       ->execute()
       ->first();
-    $this->assertEquals('Cancelled', $updatedRecur1['contribution_status_id:name']);
+    $this->assertEquals('Failed', $updatedRecur1['contribution_status_id:name']);
     // Verify that the rescue reference was cleared
     $this->assertEquals('', $updatedRecur1['contribution_recur_smashpig.rescue_reference']);
 

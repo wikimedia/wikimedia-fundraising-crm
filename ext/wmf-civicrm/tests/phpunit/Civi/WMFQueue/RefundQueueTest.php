@@ -315,6 +315,7 @@ class RefundQueueTest extends BaseQueueTestCase {
         'contribution_recur_id' => $recurRecord['id'],
         'txn_type' => 'subscr_cancel',
         'cancel_reason' => 'Automatically cancelling because we received a chargeback',
+        'contribution_status_id:name' => 'Cancelled',
       ],
       $cancelMessage
     );
