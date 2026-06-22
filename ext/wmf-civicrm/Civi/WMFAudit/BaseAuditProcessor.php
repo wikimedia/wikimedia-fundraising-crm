@@ -620,7 +620,11 @@ abstract class BaseAuditProcessor {
     }
 
     $recon_file_stats = [];
-    foreach ($this->getReconciliationFiles() as $file) {
+    $files = $this->getReconciliationFiles();
+    if (empty($files)) {
+      return;
+    }
+    foreach ($files as $file) {
       //parse the recon files into something relatively reasonable.
       [$parsed, $file] = $this->parseReconciliationFile($file);
       if (empty($parsed)) {
