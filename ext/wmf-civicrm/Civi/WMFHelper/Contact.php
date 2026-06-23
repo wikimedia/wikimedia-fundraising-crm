@@ -4,6 +4,7 @@ namespace Civi\WMFHelper;
 
 use Civi;
 use Civi\Api4\ContributionSoft;
+use Civi\WMFException\DuplicateContactException;
 use CRM_Wmf_ExtensionUtil as E;
 
 class Contact {
@@ -42,11 +43,11 @@ class Contact {
         Civi::$statics['wmf_contact']['organization'][$organizationName]['id'] = $contacts->first()['id'];
       }
       elseif (count($contacts) > 1) {
-        throw new \CRM_Core_Exception(
+        throw new DuplicateContactException(
           E::ts("Found more than one organization named: %1. Please merge them or rename one.",
             [1 => $organizationName]),
           'multiple_found',
-          ['contacts' => $contacts]
+          ['contacts' => $contacts, 'criteria' => ['organization_name' => $organizationName]]
         );
       }
       else {
