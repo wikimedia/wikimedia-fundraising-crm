@@ -189,6 +189,26 @@ function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermission
         'continueOnError' => TRUE,
       ],
     ];
+    $tasks['PaymentAttempt']['label'] = [
+      'title' => ts('Label as fraud'),
+      'entity' => 'PaymentAttempt',
+      'description' => ts('Manually label an attempt as fraud.'),
+      'icon' => 'fa-thumbs-o-down',
+      // Use get + chain to label
+      'apiBatch' => [
+        'action' => 'get',
+        'params' => [
+          'select' => ['order_id'],
+          'chain' => [
+            ['PaymentAttempt', 'label', ['orderID' => '$order_id', 'isFraud' => 1]],
+          ],
+        ],
+        'confirmMsg' => E::ts('Label %1 %2 as fraud?'),
+        'runMsg' => E::ts('Labeling %1 %2 as fraud...'),
+        'successMsg' => E::ts('Successfully labeled %1 %2 as fraud.'),
+        'errorMsg' => E::ts('An error occurred while attempting to label %1 %2 as fraud.'),
+      ],
+    ];
   }
 }
 
