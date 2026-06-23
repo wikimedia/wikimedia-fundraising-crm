@@ -344,6 +344,7 @@ function wmf_civicrm_civicrm_alterLogTables(array &$logTableSpec) {
     'civicrm_contribution_tracking',
     // wmf_donor contains calculated data only.
     'wmf_donor',
+    'civicrm_payment_attempts',
   ];
   foreach ($tablesNotToLog as $noLoggingTable) {
     if (isset($logTableSpec[$noLoggingTable])) {
