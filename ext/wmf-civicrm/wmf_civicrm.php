@@ -19,6 +19,7 @@ use Civi\WMFHook\Data;
 use Civi\Api4\MessageTemplate;
 use Civi\WMFHelper\Language;
 use Civi\WMFHook\PreferencesLink;
+use Civi\WMFHook\ProspectTab;
 use Civi\WMFStatistic\PrometheusReporter;
 
 // phpcs:enable
@@ -52,6 +53,9 @@ function wmf_civicrm_civicrm_config(&$config) {
   });
 
   $dispatcher->addListener('civi.api.prepare', ['Civi\WMFHook\Contribution', 'apiPrepare']);
+
+  $dispatcher->addListener('hook_civicrm_pre::Individual', ['Civi\WMFHook\Contact', 'pre']);
+  $dispatcher->addListener('hook_civicrm_pre::Organization', ['Civi\WMFHook\Contact', 'pre']);
 }
 
 /**
@@ -189,6 +193,26 @@ function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermission
         'continueOnError' => TRUE,
       ],
     ];
+    $tasks['PaymentAttempt']['label'] = [
+      'title' => ts('Label as fraud'),
+      'entity' => 'PaymentAttempt',
+      'description' => ts('Manually label an attempt as fraud.'),
+      'icon' => 'fa-thumbs-o-down',
+      // Use get + chain to label
+      'apiBatch' => [
+        'action' => 'get',
+        'params' => [
+          'select' => ['order_id'],
+          'chain' => [
+            ['PaymentAttempt', 'label', ['orderID' => '$order_id', 'isFraud' => 1]],
+          ],
+        ],
+        'confirmMsg' => E::ts('Label %1 %2 as fraud?'),
+        'runMsg' => E::ts('Labeling %1 %2 as fraud...'),
+        'successMsg' => E::ts('Successfully labeled %1 %2 as fraud.'),
+        'errorMsg' => E::ts('An error occurred while attempting to label %1 %2 as fraud.'),
+      ],
+    ];
   }
 }
 
@@ -324,6 +348,7 @@ function wmf_civicrm_civicrm_alterLogTables(array &$logTableSpec) {
     'civicrm_contribution_tracking',
     // wmf_donor contains calculated data only.
     'wmf_donor',
+    'civicrm_payment_attempts',
   ];
   foreach ($tablesNotToLog as $noLoggingTable) {
     if (isset($logTableSpec[$noLoggingTable])) {
@@ -514,6 +539,7 @@ function wmf_civicrm_civicrm_tabset($tabsetName, &$tabs, $context) {
  */
 function wmf_civicrm_civicrm_pageRun(CRM_Core_Page $page) {
   PreferencesLink::pageRun($page);
+  ProspectTab::pageRun($page);
   $pageClass = get_class($page);
   // Pages to load the ContributionTracking Module into - loading into the summary page because of the contribution view popup
   $ctPages = ['CRM_Contact_Page_View_Summary', 'CRM_Contribute_Page_Tab'];

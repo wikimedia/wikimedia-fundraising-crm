@@ -99,7 +99,7 @@ function monolog_civicrm_navigationMenu(&$menu) {
   _monolog_civix_insert_navigation_menu($menu, 'Administer/Customize Data and Screens/Monolog', [
     'label' => E::ts('Configured Monologs'),
     'name' => 'monolog_search',
-    'url' => 'civicrm/search#/display/Monolog%20configuration/Monologs',
+    'url' => 'civicrm/search#/display/Monolog%20configuration',
     'permission' => 'administer CiviCRM system',
     'operator' => 'OR',
     'separator' => 0,

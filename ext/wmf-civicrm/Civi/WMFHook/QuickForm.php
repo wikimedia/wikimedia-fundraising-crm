@@ -22,6 +22,10 @@ class QuickForm {
         self::buildFormContributionForm($form);
         break;
 
+      case 'CRM_Custom_Form_CustomDataByType':
+        self::buildFormCustomData($form);
+        break;
+
       case 'CRM_Contribute_Form_CancelSubscription':
         if ($form->elementExists('cancel_reason')) {
           $form->removeElement('cancel_reason');
@@ -78,7 +82,10 @@ class QuickForm {
         $mainCid = $form->getTemplateVars('main_cid');
         $otherCid = $form->getTemplateVars('other_cid');
         $doubleOptInActivities = \Civi\Api4\Activity::get(FALSE)
-          ->addWhere('target_contact_id', 'IN', [$mainCid, $otherCid])
+          ->addClause('OR',
+            ['target_contact_id', 'CONTAINS', $mainCid],
+            ['target_contact_id', 'CONTAINS', $otherCid],
+          )
           ->addWhere('activity_type_id:name', '=', 'Double Opt-In')
           ->addWhere('status_id:name', '=', 'Completed')
           ->addSelect('subject', 'target_contact_id')
@@ -158,6 +165,37 @@ class QuickForm {
    */
   protected static function buildFormContributionForm(CRM_Core_Form $form): void {
     \CRM_Core_Resources::singleton()->addScript(self::getSourceJS());
+  }
+
+  /**
+   * Keep the 'MG Stage change rationale' field read-only until the MG Stage is
+   * changed, so a rationale is only entered alongside an actual stage change.
+   *
+   * @param CRM_Core_Form $form
+   */
+  protected static function buildFormCustomData(CRM_Core_Form $form): void {
+    foreach ($form->getTemplateVars('groupTree') ?? [] as $group) {
+      if (($group['name'] ?? NULL) !== 'Prospect') {
+        continue;
+      }
+      $elements = [];
+      foreach ($group['fields'] as $field) {
+        if (in_array($field['name'], ['Stage', 'Stage_Change_Reason'], TRUE)) {
+          $elements[$field['name']] = $field['element_name'];
+        }
+      }
+      if (isset($elements['Stage'], $elements['Stage_Change_Reason'])) {
+        \CRM_Core_Resources::singleton()->addScript(
+          "CRM.$(function($) {
+            const rationale = $('#{$elements['Stage_Change_Reason']}');
+            rationale.prop('readonly', true);
+            $('#{$elements['Stage']}').on('change', function() {
+              rationale.prop('readonly', false).val('').trigger('change');
+            });
+          });"
+        );
+      }
+    }
   }
 
   protected static function isDoubleOptInForm(CRM_Activity_Form_Activity $form): bool {
