@@ -92,7 +92,9 @@ class GetDonorSummary extends AbstractAction {
 
     // The donor portal will show a list of all active recurring contributions with links to manage them.
     $recurringContributions = $this->getRecurringContributions($contactIDList, TRUE);
-    $inactiveRecurringContributions = $this->getRecurringContributions($contactIDList, FALSE, count($recurringContributions) !== 0);
+    // Get the most recent of the start dates or 60 days, which is oldest we want to include for recently cancelled if there is an active recurring.
+    $cancelDateAfter = $recurringContributions ? max(date('Y-m-d H:i:s', strtotime('-60 days')), ...array_column($recurringContributions, 'start_date')) : NULL;
+    $inactiveRecurringContributions = $this->getRecurringContributions($contactIDList, FALSE, $cancelDateAfter);
     $recurringContributions = array_merge($recurringContributions, $inactiveRecurringContributions);
 
     $result[] = [
@@ -120,10 +122,10 @@ class GetDonorSummary extends AbstractAction {
    *
    * @param array $contactIDList
    * @param bool $active
-   * @param bool $getRecentInactiveRecurring flag to fetch recently (within 60 days) deactivated recurring
+   * @param string|null $cancelDateAfter only get recurrings with a start date after
    * @return array
    */
-  protected function getRecurringContributions(array $contactIDList, bool $active, bool $getRecentInactiveRecurring = FALSE): array {
+  protected function getRecurringContributions(array $contactIDList, bool $active, ?string $cancelDateAfter = NULL): array {
     $statusList = $active ?
       ['In Progress', 'Pending', 'Failing', 'Processing', 'Overdue'] :
       ['Completed', 'Failed', 'Cancelled'];
@@ -143,12 +145,13 @@ class GetDonorSummary extends AbstractAction {
         'contribution_status_id:name',
         'payment_processor_id:name',
         'contribution_recur_smashpig.original_country:abbr',
-        'MAX(contribution.receive_date) AS last_contribution_date'
+        'MAX(contribution.receive_date) AS last_contribution_date',
+        'start_date'
       )->addGroupBy('id');
     if (!$active) {
       $get->setLimit(1);
-      if ($getRecentInactiveRecurring) {
-        $get->addWhere('cancel_date', '>=', 'ending_60.day');
+      if ($cancelDateAfter) {
+        $get->addWhere('cancel_date', '>', $cancelDateAfter);
       }
     }
     // Under API4, a LEFT JOIN is a bit different from raw SQL. When no recurring contribution exists, it
