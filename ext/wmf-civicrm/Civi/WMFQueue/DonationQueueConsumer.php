@@ -456,7 +456,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
   public function saveContributionRecur(DonationMessage|RecurDonationMessage $message, array $msg): void {
     if ($message->isRecurring()) {
       if ($message->getContributionRecurID() && ContributionRecurHelper::gatewayManagesOwnRecurringSchedule($message->getGateway())) {
-        // If parent record is mistakenly marked as Completed, Cancelled, or Failed, reactivate it
+        // If parent record is mistakenly marked as Completed, Cancelled, Failing, or Failed, reactivate it
         ContributionRecurHelper::reactivateIfInactive([
           'contribution_status_id' => $message->getExistingContributionRecurValue('contribution_status_id'),
           'id' => $message->getContributionRecurID(),

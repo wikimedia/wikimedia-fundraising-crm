@@ -640,7 +640,7 @@ function wmf_civicrm_civicrm_links($op, $objectName, $objectId, &$links, &$mask,
       ->addWhere('id', '=', $objectId)
       ->execute()->first();
     if (CRM_Core_Permission::check('edit contributions')) {
-      if (in_array($recur['contribution_status_id:name'], ['Cancelled', 'Completed'])) {
+      if ($recur['contribution_status_id:name'] === 'Cancelled') {
         $links[] = [
           'name' => ts('Edit Reason'),
           'title' => ts('Edit Cancellation Reason'),
@@ -651,7 +651,7 @@ function wmf_civicrm_civicrm_links($op, $objectName, $objectId, &$links, &$mask,
         ];
       }
     }
-    if (in_array($recur['contribution_status_id:name'],['Cancelled', 'Failed'])) {
+    if ($recur['contribution_status_id:name'] === 'Failed') {
       $links[] = [
         'name' => ts('Send 1st Failure Email'),
         'title' => ts('Send 1st Failure Email'),

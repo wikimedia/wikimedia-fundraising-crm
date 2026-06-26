@@ -383,7 +383,7 @@ class EOYThankYou extends GenericWorkflowMessage {
   }
 
   /**
-   * Get bool for whether a recurring was cancelled this year
+   * Get bool for whether a recurring was cancelled or failed this year
    *
    * @throws \CRM_Core_Exception
    */
@@ -392,7 +392,7 @@ class EOYThankYou extends GenericWorkflowMessage {
       $recurringCount = ContributionRecur::get(FALSE)
         ->addSelect('count')
         ->addWhere('contact_id', 'IN', $this->getContactIDs())
-        ->addWhere('contribution_status_id:name', 'IN', ['Cancelled'])
+        ->addWhere('contribution_status_id:name', 'IN', ['Cancelled', 'Failed'])
         ->addWhere('cancel_date', 'BETWEEN', [
           $this->getYear() . '-01-01 10:00:00',
           'now',

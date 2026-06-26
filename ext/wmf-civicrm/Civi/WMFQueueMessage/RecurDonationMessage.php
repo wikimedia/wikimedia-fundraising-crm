@@ -325,6 +325,10 @@ class RecurDonationMessage extends DonationMessage {
     return $this->message['cancel_reason'] ?? NULL;
   }
 
+  public function getMessageStatus(): ?string {
+    return $this->message['contribution_status_id:name'] ?? NULL;
+  }
+
   /**
    * Get the formatted cancel date.
    *
