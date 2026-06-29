@@ -87,7 +87,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
-   * Test the insanity that is donor segmentation..
+   * Test the insanity that is donor segmentation.
    *
    * @throws \CRM_Core_Exception
    */
@@ -120,10 +120,10 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
    */
   public function testWMFDonorGetAnnualRecurSegments(): void {
     $this->createDonor(['total_amount' => 2]);
-    $annualDonationDate = date('Y-m-d', strtotime('-8 months'));
-    $monthlyDonationDate = date('Y-m-d', strtotime('-7 months'));
-    $thirtySixMonthsAgoDate = date('Y-m-d', strtotime('-36 months'));
-    $todayDate = date('Y-m-d', strtotime('now'));
+    $annualDonationDate = date('Y-m-d', strtotime('-8 months', strtotime($this->currentDate)));
+    $monthlyDonationDate = date('Y-m-d', strtotime('-7 months', strtotime($this->currentDate)));
+    $thirtySixMonthsAgoDate = date('Y-m-d', strtotime('-36 months', strtotime($this->currentDate)));
+    $todayDate = $this->currentDate;
 
     $this->createTestEntity('ContributionRecur', [
       'contact_id' => $this->ids['Contact']['donor'],
@@ -445,7 +445,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     foreach ($annualContributionRecurs as $name => $recur) {
       ContributionRecur::update(FALSE)
         ->addValue('contribution_status_id', $recur['status'])
-        ->addValue('cancel_date', $recur['cancel_date'] ? date('Y-m-d', strtotime($recur['cancel_date'])) : NULL)
+        ->addValue('cancel_date', $recur['cancel_date'] ? date('Y-m-d', strtotime($recur['cancel_date'], strtotime($this->currentDate))) : NULL)
         ->addWhere('id', '=', $this->ids['ContributionRecur'][$name])
         ->execute();
     }
