@@ -626,6 +626,45 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
+   * last_otg_donation_date only gives non-recurring donations.
+   *
+   * One contact with an otg, a monthly recurring and an annual recurring
+   * contribution on distinct dates, read in the trigger context.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorLastDonationDates(): void {
+    $this->createIndividual([], 'donor');
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['donor'],
+      'receive_date' => '2023-03-01',
+      'total_amount' => 10,
+      'financial_type_id:name' => 'Donation',
+    ], 'otg');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['donor'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'start_date' => '2023-09-01',
+    ], 'month');
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['donor'],
+      'contribution_recur_id' => $this->ids['ContributionRecur']['month'],
+      'receive_date' => '2023-09-01',
+      'total_amount' => 10,
+      'financial_type_id:name' => 'Donation',
+    ], 'month');
+
+    $donor = Contact::get(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['donor'])
+      ->addSelect('wmf_donor.last_otg_donation_date')
+      ->execute()->first();
+
+    $this->assertEquals('2023-03-01 00:00:00', $donor['wmf_donor.last_otg_donation_date']);
+  }
+
+  /**
    * first_donation_was_recur reflects the earliest donation.
    *
    * Covers the three options: contribution directly linked by
