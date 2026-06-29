@@ -132,6 +132,10 @@ class CalculatedData extends TriggerHook {
         'significantFields' => ['contribution_status_id', 'total_amount', 'contact_id', 'receive_date', 'currency', 'financial_type_id'],
         'getSelectSQL' => 'getContributionSelectSQL',
       ],
+      'civicrm_contribution_recur' => [
+        'significantFields' => ['contribution_status_id', 'contact_id', 'frequency_unit', 'start_date', 'next_sched_contribution_date'],
+        'getSelectSQL' => 'getRecurringSelectSQL',
+      ],
     ];
   }
 
@@ -394,11 +398,7 @@ class CalculatedData extends TriggerHook {
 
     $updateClauses = $requiredClauses;
     if ($tableName === 'civicrm_contribution_recur') {
-      $processingID = \Civi\Api4\OptionValue::get(FALSE)
-        ->addSelect('value')
-        ->addWhere('option_group_id:name', '=', 'contribution_recur_status')
-        ->addWhere('name', '=', 'Processing')
-        ->execute()->first()['value'] ?? NULL;
+      $processingID = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Processing');
       // For updates, don't recalculate while processing each recurring, only after processing finishes.
       $updateClauses[] = "(NEW.contribution_status_id <> $processingID)";
     }
@@ -966,8 +966,38 @@ class CalculatedData extends TriggerHook {
         ];
       }
     }
+    $contributionRecurFields = [
+      'donor_status_recur_month' => [
+        'name' => 'donor_status_recur_month',
+        'column_name' => 'donor_status_recur_month',
+        'label' => ts('Donor Status: Monthly Recurring'),
+        'data_type' => 'Int',
+        'default_value' => 100,
+        'html_type' => 'Select',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+        'select_clause' => $this->getRecurringDonorStatusSelect('month'),
+        'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_recur_month'),
+      ],
+      'donor_status_recur_year' => [
+        'name' => 'donor_status_recur_year',
+        'column_name' => 'donor_status_recur_year',
+        'label' => ts('Donor Status: Annual Recurring'),
+        'data_type' => 'Int',
+        'default_value' => 100,
+        'html_type' => 'Select',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+        'select_clause' => $this->getRecurringDonorStatusSelect('year'),
+        'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_recur_year'),
+      ],
+    ];
+
     $this->calculatedFields = [
       'civicrm_contribution' => $contributionFields,
+      'civicrm_contribution_recur' => $contributionRecurFields,
     ];
 
     return array_merge(...array_values($this->calculatedFields));
@@ -1008,6 +1038,35 @@ class CalculatedData extends TriggerHook {
     }
     $method = self::getTriggerTables()[$this->getTableName()]['getSelectSQL'];
     return $this->$method();
+  }
+
+  /**
+   * Get the string to select the wmf donor data for the recurring contribution table.
+   *
+   * @return string
+   */
+  protected function getRecurringSelectSQL(): string {
+    $innerColumns = $this->getTotalsFieldSelects();
+    if ($this->isTriggerContext()) {
+      $from = "FROM civicrm_contribution_recur c
+        WHERE c.contact_id = NEW.contact_id";
+      $entityID = 'NEW.contact_id';
+    }
+    else {
+      // Add c.contact_id manually outside trigger context as we don't have NEW.contact_id to group by
+      array_unshift($innerColumns, 'c.contact_id');
+      $from = "FROM civicrm_contribution_recur c
+        WHERE " . $this->getWhereClause() . "
+        GROUP BY c.contact_id";
+      $entityID = 'totals.contact_id';
+    }
+    return "SELECT $entityID as entity_id,
+      " . implode(",\n      ", $this->getSelectsAggregate()) . "
+      FROM (
+        SELECT " . implode(",\n        ", $innerColumns) . "
+        $from
+      ) as totals
+      GROUP BY $entityID";
   }
 
   /**
@@ -1260,6 +1319,10 @@ class CalculatedData extends TriggerHook {
       case 'donor_status_overall':
       case 'donor_status_otg':
         return $this->donorStatusOptions[$field] = $this->getOverallOTGDonorStatusOptions($field);
+      case 'donor_status_recur_month':
+        return $this->donorStatusOptions[$field] = $this->getRecurringDonorStatusOptions('month');
+      case 'donor_status_recur_year':
+        return $this->donorStatusOptions[$field] = $this->getRecurringDonorStatusOptions('year');
       default:
         return $this->donorStatusOptions[$field] = [];
     }
@@ -1405,6 +1468,93 @@ class CalculatedData extends TriggerHook {
       }
     }
     return $details;
+  }
+
+  /**
+   * Get the options for the annual and monthly recurring donor status fields.
+   *
+   * Ref
+   * https://docs.google.com/spreadsheets/d/17Pc1tIvqol6XJhuu97RlOfwy_Avbb9MEaRwhy2F529I/edit?usp=sharing
+   *
+   * @param string $field
+   * @return array[]
+   * @throws \CRM_Core_Exception
+   */
+  protected function getRecurringDonorStatusOptions(string $frequencyUnit): array {
+    $frequency = $frequencyUnit === 'year' ? 'annual' : 'monthly';
+    return [
+      10 => [
+        'label' => 'Active',
+        'description' => "Has an active {$frequency} recurring donation",
+        'value' => 10,
+        'name' => 'active',
+      ],
+      20 => [
+        'label' => 'New',
+        'description' => "First year as {$frequency} recurring donor",
+        'value' => 20,
+        'name' => 'new',
+      ],
+      30 => [
+        'label' => 'Paused',
+        'description' => "All non-cancelled {$frequency} recurring donations paused",
+        'value' => 30,
+        'name' => 'paused',
+      ],
+      40 => [
+        'label' => 'Failing',
+        'description' => "Has {$frequency} recurring donations in failing flow",
+        'value' => 40,
+        'name' => 'failing',
+      ],
+      50 => [
+        'label' => 'Failed',
+        'description' => "Has {$frequency} recurring donation that has failed because we couldn't process the payment",
+        'value' => 50,
+        'name' => 'failed',
+      ],
+      60 => [
+        'label' => 'Cancelled',
+        'description' => "Has {$frequency} recurring donation that was cancelled per donor request",
+        'value' => 60,
+        'name' => 'cancelled',
+      ],
+      100 => [
+        'label' => 'Never',
+        'description' => "Has never made a {$frequency} recurring donation",
+        'value' => 100,
+        'name' => 'never',
+      ],
+    ];
+  }
+
+  /**
+   * Get the select clause for the recurring donor statuses.
+   *
+   * @param string $frequencyUnit
+   * @return string
+   */
+  protected function getRecurringDonorStatusSelect(string $frequencyUnit): string {
+    $s = array_flip(\CRM_Core_PseudoConstant::get(
+      'CRM_Contribute_BAO_ContributionRecur',
+      'contribution_status_id',
+      ['labelColumn' => 'name']
+    ));
+    return "CASE
+      -- Paused status (30), no scheduled payments in the next $frequencyUnit
+      WHEN MIN(CASE WHEN c.contribution_status_id IN ({$s['Pending']},{$s['In Progress']},{$s['Processing']}) AND c.frequency_unit = '$frequencyUnit'
+              THEN c.next_sched_contribution_date > DATE_ADD(NOW(), INTERVAL 1 $frequencyUnit)
+         END) = 1 THEN 30
+      -- Active Status (10) Has an active recurring and was already a recurring donor prior to this financial year
+      WHEN MAX(c.contribution_status_id IN ({$s['Pending']},{$s['In Progress']},{$s['Processing']}) AND c.frequency_unit = '$frequencyUnit') = 1
+       AND MAX(c.start_date < '{$this->getFinancialYearStartDateTime()}' AND c.frequency_unit = '$frequencyUnit') = 1 THEN 10
+       -- New(20) has an active recurring and no recurrings of this frequency started before this year (or they would have been snagged in 10 above)
+      WHEN MAX(c.contribution_status_id IN ({$s['Pending']},{$s['In Progress']},{$s['Processing']}) AND c.frequency_unit = '$frequencyUnit') = 1 THEN 20
+      WHEN MAX(c.contribution_status_id = {$s['Failing']} AND c.frequency_unit = '$frequencyUnit') = 1 THEN 40
+      WHEN MAX(c.contribution_status_id = {$s['Failed']} AND c.frequency_unit = '$frequencyUnit') = 1 THEN 50
+      WHEN MAX(c.contribution_status_id IN ({$s['Cancelled']},{$s['Completed']}) AND c.frequency_unit = '$frequencyUnit') = 1 THEN 60
+      ELSE 100
+      END AS donor_status_recur_$frequencyUnit";
   }
 
   /**

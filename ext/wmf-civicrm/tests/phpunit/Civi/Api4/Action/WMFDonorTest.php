@@ -267,6 +267,151 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
+   * Add an active annual and monthly recurring contribution for the donor.
+   *
+   * Both are In Progress and started well before the current financial year, so
+   * each gets an Active/10 recurring donor status.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function createActiveRecurringContributions(): void {
+    $startDate = date('Y-m-d', strtotime('-2 years', strtotime($this->currentDate)));
+    foreach (['year', 'month'] as $frequency) {
+      $this->createTestEntity('ContributionRecur', [
+        'contact_id' => $this->ids['Contact']['donor'],
+        'frequency_unit' => $frequency,
+        'frequency_interval' => 1,
+        'amount' => 10,
+        'contribution_status_id' => 5,
+        'start_date' => $startDate,
+      ], $frequency);
+    }
+  }
+
+  /**
+   * Test the recurring source table's status fields calculate through get.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorGetRecurStatuses(): void {
+    $this->createDonor();
+    $this->createActiveRecurringContributions();
+
+    $result = WMFDonor::get(FALSE)
+      ->addSelect('donor_status_recur_year', 'donor_status_recur_year:label', 'donor_status_recur_month')
+      ->addWhere('id', '=', $this->ids['Contact']['donor'])
+      ->execute()->first();
+
+    $this->assertEquals(10, $result['donor_status_recur_year']);
+    $this->assertEquals(10, $result['donor_status_recur_month']);
+    $this->assertEquals('Active', $result['donor_status_recur_year:label']);
+  }
+
+  /**
+   * A get selecting recur fields for a contact with a contribution but no
+   * recurring should return the default values for the recur fields.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorGetRecurDefaultsWithContribution(): void {
+    $this->createDonor();
+
+    $row = WMFDonor::get(FALSE)
+      ->addSelect('lifetime_including_endowment', 'donor_status_recur_month', 'donor_status_recur_year')
+      ->addWhere('id', '=', $this->ids['Contact']['donor'])
+      ->execute()->first();
+
+    $this->assertEquals(20000, $row['lifetime_including_endowment']);
+    $this->assertEquals(100, $row['donor_status_recur_month']);
+    $this->assertEquals(100, $row['donor_status_recur_year']);
+  }
+
+  /**
+   * Test that a get spanning both source tables merges into a single row.
+   *
+   * lifetime_including_endowment comes from civicrm_contribution and
+   * donor_status_recur_year from civicrm_contribution_recur, so a single row holding
+   * both proves the per-table selects are merged by contact.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorGetAcrossSourceTables(): void {
+    $this->createDonor();
+    $this->createActiveRecurringContributions();
+
+    $result = WMFDonor::get(FALSE)
+      ->addSelect('lifetime_including_endowment', 'donor_status_recur_year')
+      ->addWhere('id', '=', $this->ids['Contact']['donor'])
+      ->execute();
+
+    $this->assertCount(1, $result);
+    $row = $result->first();
+    $this->assertEquals(20000, $row['lifetime_including_endowment']);
+    $this->assertEquals(10, $row['donor_status_recur_year']);
+  }
+
+  /**
+   * Test that an update writes both source tables' columns to wmf_donor.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorUpdateRecurStatuses(): void {
+    $this->createDonor();
+    $this->createActiveRecurringContributions();
+    $this->clearWMFDonorData();
+
+    WMFDonor::update(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['donor'])
+      ->setValues(['*' => TRUE])
+      ->execute();
+
+    $donor = Contact::get(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['donor'])
+      ->addSelect('wmf_donor.donor_status_recur_year', 'wmf_donor.donor_status_recur_month', 'wmf_donor.lifetime_including_endowment')
+      ->execute()->first();
+
+    $this->assertEquals(10, $donor['wmf_donor.donor_status_recur_year']);
+    $this->assertEquals(10, $donor['wmf_donor.donor_status_recur_month']);
+    $this->assertEquals(20000, $donor['wmf_donor.lifetime_including_endowment']);
+  }
+
+  /**
+   * A recur switching frequency_unit moves its status between the recur fields.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorRecurFrequencyUnitChange(): void {
+    $this->createIndividual([], 'donor');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['donor'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id' => 5,
+      'start_date' => date('Y-m-d', strtotime('-2 years', strtotime($this->currentDate))),
+    ], 'recur');
+
+    $donor = Contact::get(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['donor'])
+      ->addSelect('wmf_donor.donor_status_recur_month', 'wmf_donor.donor_status_recur_year')
+      ->execute()->first();
+    $this->assertEquals(10, $donor['wmf_donor.donor_status_recur_month']);
+    $this->assertEquals(100, $donor['wmf_donor.donor_status_recur_year']);
+
+    ContributionRecur::update(FALSE)
+      ->addValue('frequency_unit', 'year')
+      ->addWhere('id', '=', $this->ids['ContributionRecur']['recur'])
+      ->execute();
+
+    $donor = Contact::get(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['donor'])
+      ->addSelect('wmf_donor.donor_status_recur_month', 'wmf_donor.donor_status_recur_year')
+      ->execute()->first();
+    $this->assertEquals(100, $donor['wmf_donor.donor_status_recur_month']);
+    $this->assertEquals(10, $donor['wmf_donor.donor_status_recur_year']);
+  }
+
+  /**
    * Test donor_segment_overall and years_consecutive across several giving patterns.
    *
    * Each scenario is
@@ -560,6 +705,58 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     $this->assertTrue($rows[$this->ids['Contact']['ppmc']]['wmf_donor.first_donation_was_recur'], 'PPMC first donation should be recurring.');
     $this->assertFalse($rows[$this->ids['Contact']['first_onetime']]['wmf_donor.first_donation_was_recur'], 'A one-time first donation should not be recurring.');
     $this->assertNull($rows[$this->ids['Contact']['no_donations']]['wmf_donor.first_donation_was_recur'], 'A donor with no donations should be NULL.');
+  }
+
+  /**
+   * Test every branch of the recurring donor status calculation.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorRecurStatusBranches(): void {
+    $beforeFinancialYear = date('Y-m-d', strtotime('-2 years', strtotime($this->currentDate)));
+    $thisFinancialYear = $this->currentDate;
+    $soon = date('Y-m-d', strtotime('+1 week', strtotime($this->currentDate)));
+    $paused = date('Y-m-d', strtotime('+6 months', strtotime($this->currentDate)));
+
+    $scenarios = [
+      // Active status, started before this financial year.
+      'active' => [10, [['In Progress', $beforeFinancialYear, $soon]]],
+      // Active status, but only started this financial year.
+      'new' => [20, [['In Progress', $thisFinancialYear, $soon]]],
+      // Every active recurring is scheduled beyond a month out.
+      'all_paused' => [30, [['In Progress', $beforeFinancialYear, $paused], ['In Progress', $beforeFinancialYear, $paused]]],
+      // One paused among active ones stays Active, not Paused.
+      'one_of_many_paused' => [10, [['In Progress', $beforeFinancialYear, $paused], ['In Progress', $beforeFinancialYear, $soon]]],
+      'failing' => [40, [['Failing', $beforeFinancialYear, NULL]]],
+      'failed' => [50, [['Failed', $beforeFinancialYear, NULL]]],
+      'cancelled' => [60, [['Cancelled', $beforeFinancialYear, NULL]]],
+    ];
+
+    foreach ($scenarios as $name => [$expected, $recurs]) {
+      $this->createIndividual([], $name);
+      foreach ($recurs as $index => [$status, $startDate, $nextScheduled]) {
+        $this->createTestEntity('ContributionRecur', [
+          'contact_id' => $this->ids['Contact'][$name],
+          'frequency_unit' => 'month',
+          'frequency_interval' => 1,
+          'amount' => 10,
+          'contribution_status_id:name' => $status,
+          'start_date' => $startDate,
+          'next_sched_contribution_date' => $nextScheduled,
+        ], $name . '_' . $index);
+      }
+    }
+
+    $rows = (array) WMFDonor::get(FALSE)
+      ->addSelect('donor_status_recur_month')
+      ->addWhere('id', 'IN', array_values($this->ids['Contact']))
+      ->execute()->indexBy('id');
+
+    foreach ($scenarios as $name => [$expected]) {
+      $contactID = $this->ids['Contact'][$name];
+      $this->assertArrayHasKey($contactID, $rows, "No row returned for the '$name' scenario.");
+      $this->assertEquals($expected, $rows[$contactID]['donor_status_recur_month'], "Wrong donor_status_recur_month for the '$name' scenario.");
+    }
   }
 
   /**
