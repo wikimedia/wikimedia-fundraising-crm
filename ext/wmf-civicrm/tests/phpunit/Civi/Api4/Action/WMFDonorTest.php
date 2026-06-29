@@ -267,6 +267,302 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
+   * Test donor_segment_overall and years_consecutive across several giving patterns.
+   *
+   * Each scenario is
+   * [contributions (receive_date => amount), expected segment, expected years_consecutive].
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorSegmentAndConsecutiveYears(): void {
+    $scenarios = [
+      // A single year: segment from that one year, streak of 1.
+      'single_year' => [['2023-09-01' => 1500], 300, 1],
+      // Four consecutive years: the streak counts all four, but the segment window
+      // is only the last three, so the older $20,000 (FY2020) is excluded -> 400.
+      'four_consecutive' => [['2020-09-01' => 20000, '2021-09-01' => 500, '2022-09-01' => 500, '2023-09-01' => 500], 400, 4],
+      // Gap at FY2020 ends the streak at 3; window FY2021-2023 -> 300.
+      'gap_breaks_streak' => [['2019-09-01' => 20000, '2021-09-01' => 500, '2022-09-01' => 500, '2023-01-01' => 750, '2024-01-01' => 750], 300, 3],
+      // The peak can be any year in the window, not just the last.
+      'peak_in_window' => [['2021-09-01' => 100, '2022-09-01' => 12000, '2023-09-01' => 100], 100, 3],
+    ];
+
+    foreach ($scenarios as $name => [$contributions]) {
+      $this->createIndividual([], $name);
+      foreach ($contributions as $date => $amount) {
+        $this->createTestEntity('Contribution', [
+          'contact_id' => $this->ids['Contact'][$name],
+          'receive_date' => $date,
+          'total_amount' => $amount,
+          'financial_type_id:name' => 'Donation',
+        ], $name . '_' . $date);
+      }
+    }
+
+    $rows = Contact::get(FALSE)
+      ->addWhere('id', 'IN', array_values($this->ids['Contact']))
+      ->addSelect('id', 'wmf_donor.donor_segment_overall', 'wmf_donor.years_consecutive')
+      ->execute()->indexBy('id');
+
+    foreach ($scenarios as $name => [, $expectedSegment, $expectedStreak]) {
+      $contactID = $this->ids['Contact'][$name];
+      $this->assertEquals($expectedSegment, $rows[$contactID]['wmf_donor.donor_segment_overall'], "Wrong donor_segment_overall for '$name'.");
+      $this->assertEquals($expectedStreak, $rows[$contactID]['wmf_donor.years_consecutive'], "Wrong years_consecutive for '$name'.");
+    }
+  }
+
+  /**
+   * donor_segment_overall calculates via ::get or ::update and resolves labels.
+   *
+   * The trigger path is covered by testWMFDonorSegmentAndConsecutiveYears; this
+   * covers the WMFDonor::get() and WMFDonor::update() paths plus :label/:description.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorSegmentOverall(): void {
+    $segments = [
+      // [this year's donation amount, expected segment, expected label, expected description fragment]
+      'major' => [12000, 100, 'Major Donor', '$10,000+'],
+      'mid_value' => [1500, 300, 'Mid Value Donor', '$1,000+'],
+    ];
+    foreach ($segments as $name => [$amount]) {
+      $this->createIndividual([], $name);
+      $this->createTestEntity('Contribution', [
+        'contact_id' => $this->ids['Contact'][$name],
+        'receive_date' => $this->currentDate,
+        'total_amount' => $amount,
+        'financial_type_id:name' => 'Donation',
+      ], $name);
+    }
+
+    $rows = (array) WMFDonor::get(FALSE)
+      ->addSelect('donor_segment_overall', 'donor_segment_overall:label', 'donor_segment_overall:description')
+      ->addWhere('id', 'IN', array_values($this->ids['Contact']))
+      ->execute()->indexBy('id');
+    foreach ($segments as $name => [, $expected, $expectedLabel, $expectedDescription]) {
+      $contactID = $this->ids['Contact'][$name];
+      $this->assertEquals($expected, $rows[$contactID]['donor_segment_overall'], "Wrong donor_segment_overall for '$name'.");
+      $this->assertEquals($expectedLabel, $rows[$contactID]['donor_segment_overall:label'], "Wrong label for '$name'.");
+      $this->assertStringContainsString($expectedDescription, $rows[$contactID]['donor_segment_overall:description'], "Wrong description for '$name'.");
+    }
+
+    $this->clearWMFDonorData();
+    WMFDonor::update(FALSE)
+      ->addWhere('id', 'IN', array_values($this->ids['Contact']))
+      ->setValues(['donor_segment_overall' => TRUE])
+      ->execute();
+    $stored = Contact::get(FALSE)
+      ->addWhere('id', 'IN', array_values($this->ids['Contact']))
+      ->addSelect('id', 'wmf_donor.donor_segment_overall')
+      ->execute()->indexBy('id');
+    foreach ($segments as $name => [, $expected]) {
+      $this->assertEquals($expected, $stored[$this->ids['Contact'][$name]]['wmf_donor.donor_segment_overall'], "Wrong stored donor_segment_overall for '$name'.");
+    }
+  }
+
+  /**
+   * Every branch of the overall donor status calculation.
+   *
+   * Each scenario gives in the listed financial years (offset in years from the
+   * frozen current date) and expects a status value and :name.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorStatusOverallBranches(): void {
+    // [expected status, expected status name, [years given]
+    $scenarios = [
+      'consecutive' => [10, 'consecutive', [0, 1]],
+      'reactivated' => [20, 'reactivated', [0, 2]],
+      'new' => [30, 'new', [0]],
+      'consecutive_last_year' => [40, 'lybunt', [1, 2]],
+      'reactivated_last_year' => [50, 'reactivated_last_year', [1, 3]],
+      'new_last_year' => [60, 'new_last_year', [1]],
+      'lapsed' => [70, 'lapsed', [2]],
+      'deep_lapsed' => [80, 'deep_lapsed', [4]],
+      'ultra_lapsed' => [90, 'ultra_lapsed', [7]],
+    ];
+    foreach ($scenarios as $name => [, , $years]) {
+      $this->createIndividual([], $name);
+      foreach ($years as $offset) {
+        $this->createTestEntity('Contribution', [
+          'contact_id' => $this->ids['Contact'][$name],
+          'receive_date' => $this->financialYearDate($offset),
+          'total_amount' => 10,
+          'financial_type_id:name' => 'Donation',
+        ], $name . '_' . $offset);
+      }
+    }
+
+    $rows = WMFDonor::get(FALSE)
+      ->addSelect('donor_status_overall', 'donor_status_overall:name')
+      ->addWhere('id', 'IN', array_values($this->ids['Contact']))
+      ->execute()->indexBy('id');
+
+    foreach ($scenarios as $name => [$expected, $expectedName]) {
+      $contactID = $this->ids['Contact'][$name];
+      $this->assertEquals($expected, $rows[$contactID]['donor_status_overall'], "Wrong donor_status_overall for '$name'.");
+      $this->assertEquals($expectedName, $rows[$contactID]['donor_status_overall:name'], "Wrong donor_status_overall:name for '$name'.");
+    }
+  }
+
+  /**
+   * donor_status_otg only counts one-time gifts, donor_status_overall counts all.
+   *
+   * Both donors give a mix of recurring and one-time gifts across the same three
+   * financial years, so each is a consecutive overall donor. Their one-time-gift
+   * status differs by which of those gifts were recurring: when the recent gifts
+   * are recurring the donor is otg lapsed, when the recent gifts are one-time the
+   * donor is otg consecutive.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorStatusOTG(): void {
+    // [expected overall, expected otg, [[year offset, is recurring], ...]]
+    $scenarios = [
+      'recurring_recent' => [10, 70, [[0, TRUE], [1, TRUE], [2, FALSE]]],
+      'onetime_recent' => [10, 10, [[0, FALSE], [1, FALSE], [2, TRUE]]],
+    ];
+    foreach ($scenarios as $name => [, , $gifts]) {
+      $this->createIndividual([], $name);
+      $this->createTestEntity('ContributionRecur', [
+        'contact_id' => $this->ids['Contact'][$name],
+        'frequency_unit' => 'month',
+        'frequency_interval' => 1,
+        'amount' => 10,
+        'start_date' => $this->financialYearDate(2),
+      ], $name);
+      foreach ($gifts as $index => [$offset, $isRecurring]) {
+        $this->createTestEntity('Contribution', [
+          'contact_id' => $this->ids['Contact'][$name],
+          'contribution_recur_id' => $isRecurring ? $this->ids['ContributionRecur'][$name] : NULL,
+          'receive_date' => $this->financialYearDate($offset),
+          'total_amount' => 10,
+          'financial_type_id:name' => 'Donation',
+        ], $name . '_' . $index);
+      }
+    }
+
+    $rows = WMFDonor::get(FALSE)
+      ->addSelect('donor_status_overall', 'donor_status_otg')
+      ->addWhere('id', 'IN', array_values($this->ids['Contact']))
+      ->execute()->indexBy('id');
+    foreach ($scenarios as $name => [$overall, $otg]) {
+      $contactID = $this->ids['Contact'][$name];
+      $this->assertEquals($overall, $rows[$contactID]['donor_status_overall'], "Wrong donor_status_overall for '$name'.");
+      $this->assertEquals($otg, $rows[$contactID]['donor_status_otg'], "Wrong donor_status_otg for '$name'.");
+    }
+
+    // Trigger-written values match the ::get calculation.
+    $stored = Contact::get(FALSE)
+      ->addWhere('id', 'IN', array_values($this->ids['Contact']))
+      ->addSelect('id', 'wmf_donor.donor_status_overall', 'wmf_donor.donor_status_otg')
+      ->execute()->indexBy('id');
+    foreach ($scenarios as $name => [$overall, $otg]) {
+      $contactID = $this->ids['Contact'][$name];
+      $this->assertEquals($overall, $stored[$contactID]['wmf_donor.donor_status_overall'], "Wrong stored donor_status_overall for '$name'.");
+      $this->assertEquals($otg, $stored[$contactID]['wmf_donor.donor_status_otg'], "Wrong stored donor_status_otg for '$name'.");
+    }
+
+    // Backfill path writes the same values to wmf_donor.
+    $this->clearWMFDonorData();
+    WMFDonor::update(FALSE)
+      ->addWhere('id', 'IN', array_values($this->ids['Contact']))
+      ->setValues(['donor_status_overall' => TRUE, 'donor_status_otg' => TRUE])
+      ->execute();
+    $updated = Contact::get(FALSE)
+      ->addWhere('id', 'IN', array_values($this->ids['Contact']))
+      ->addSelect('id', 'wmf_donor.donor_status_overall', 'wmf_donor.donor_status_otg')
+      ->execute()->indexBy('id');
+    foreach ($scenarios as $name => [$overall, $otg]) {
+      $contactID = $this->ids['Contact'][$name];
+      $this->assertEquals($overall, $updated[$contactID]['wmf_donor.donor_status_overall'], "Wrong backfilled donor_status_overall for '$name'.");
+      $this->assertEquals($otg, $updated[$contactID]['wmf_donor.donor_status_otg'], "Wrong backfilled donor_status_otg for '$name'.");
+    }
+  }
+
+  /**
+   * first_donation_was_recur reflects the earliest donation.
+   *
+   * Covers the three options: contribution directly linked by
+   * contribution_recur_id, post payment monthly convert (sharing
+   * an invoice_id with a recur), or not recurring at all, plus a
+   * donor with no donations, which stays NULL.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorFirstDonationWasRecur(): void {
+    $early = '2020-06-01';
+    $late = '2021-06-01';
+
+    $this->createIndividual([], 'first_recur');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['first_recur'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'start_date' => $early,
+    ], 'first_recur');
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['first_recur'],
+      'contribution_recur_id' => $this->ids['ContributionRecur']['first_recur'],
+      'receive_date' => $early,
+      'total_amount' => 10,
+      'financial_type_id:name' => 'Donation',
+    ], 'first_recur');
+
+    $this->createIndividual([], 'ppmc');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['ppmc'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'start_date' => $early,
+      'invoice_id' => 'shared-invoice-1',
+    ], 'ppmc');
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['ppmc'],
+      'invoice_id' => 'shared-invoice-1',
+      'receive_date' => $early,
+      'total_amount' => 10,
+      'financial_type_id:name' => 'Donation',
+    ], 'ppmc');
+
+    $this->createIndividual([], 'first_onetime');
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['first_onetime'],
+      'receive_date' => $early,
+      'total_amount' => 10,
+      'financial_type_id:name' => 'Donation',
+    ], 'first_onetime_early');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['first_onetime'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'start_date' => $late,
+    ], 'first_onetime');
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['first_onetime'],
+      'contribution_recur_id' => $this->ids['ContributionRecur']['first_onetime'],
+      'receive_date' => $late,
+      'total_amount' => 10,
+      'financial_type_id:name' => 'Donation',
+    ], 'first_onetime_late');
+
+    $this->createIndividual([], 'no_donations');
+
+    $rows = Contact::get(FALSE)
+      ->addWhere('id', 'IN', array_values($this->ids['Contact']))
+      ->addSelect('id', 'wmf_donor.first_donation_was_recur')
+      ->execute()->indexBy('id');
+
+    $this->assertTrue($rows[$this->ids['Contact']['first_recur']]['wmf_donor.first_donation_was_recur'], 'Recur-linked first donation should be recurring.');
+    $this->assertTrue($rows[$this->ids['Contact']['ppmc']]['wmf_donor.first_donation_was_recur'], 'PPMC first donation should be recurring.');
+    $this->assertFalse($rows[$this->ids['Contact']['first_onetime']]['wmf_donor.first_donation_was_recur'], 'A one-time first donation should not be recurring.');
+    $this->assertNull($rows[$this->ids['Contact']['no_donations']]['wmf_donor.first_donation_was_recur'], 'A donor with no donations should be NULL.');
+  }
+
+  /**
    * @dataProvider segmentDataProvider
    *
    * @param $status
@@ -353,6 +649,17 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
    */
   public function getDate() {
     return date('Y-m-d', strtotime('- 2 years', strtotime($this->currentDate)));
+  }
+
+  /**
+   * Get a date the given number of years before the frozen current date.
+   *
+   * @param int $yearsAgo
+   *
+   * @return string
+   */
+  protected function financialYearDate(int $yearsAgo = 0): string {
+    return date('Y-m-d', strtotime("-$yearsAgo years", strtotime($this->currentDate)));
   }
 
   /**
