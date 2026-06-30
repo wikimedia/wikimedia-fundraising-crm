@@ -38,7 +38,7 @@ class BaseAuditTestCase extends TestCase {
     // outside of git, and somewhat durable.
     $this->setSetting('wmf_audit_directory_working_log', \CRM_Core_Config::singleton()->uploadDir);
     $this->setSetting('wmf_audit_directory_payments_log', __DIR__ . '/data/logs/');
-    $this->auditFileBaseDirectory = __DIR__ . '/data/' . ucfirst($this->gateway);
+    $this->setAuditBaseDirectory();
     parent::setUp();
   }
 
@@ -60,7 +60,8 @@ class BaseAuditTestCase extends TestCase {
   public function getRows(string $directory, string $fileName): array {
     $this->setAuditDirectory($directory);
     // First let's have a process to create some TransactionLog entries.
-    $file = $this->auditFileBaseDirectory . DIRECTORY_SEPARATOR . $directory . DIRECTORY_SEPARATOR . $this->gateway . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR . $fileName;
+    $incomingDirectory = $this->getIncomingPath($directory);
+    $file = $incomingDirectory . $fileName;
     try {
       $csv = Reader::from($file, 'r');
       $csv->setHeaderOffset(0);
@@ -83,6 +84,41 @@ class BaseAuditTestCase extends TestCase {
     $this->processRefundQueue();
     $this->processSettleQueue();
     $this->processContributionTrackingQueue();
+  }
+
+  /**
+   * @param string $directory
+   *
+   * @return string
+   */
+  public function getIncomingPath(string $directory): string {
+    $nestedPath = $this->useIncomingDirectory ? $directory . DIRECTORY_SEPARATOR . $this->gateway . DIRECTORY_SEPARATOR . 'incoming' . DIRECTORY_SEPARATOR : '';
+    return $this->auditFileBaseDirectory . DIRECTORY_SEPARATOR . $nestedPath;
+  }
+
+  /**
+   * Specify that our test audit files are in directories but without the gateway/incoming/ layer.
+   *
+   * @param string $directory
+   *
+   * @return void
+   */
+  public function specifyFlatDirectoryStructure(string $directory): void {
+    $this->useIncomingDirectory = FALSE;
+    if (str_starts_with($directory, DIRECTORY_SEPARATOR)) {
+      $this->auditFileBaseDirectory = $directory;
+    }
+    else {
+      $this->setAuditBaseDirectory();
+      $this->auditFileBaseDirectory .= DIRECTORY_SEPARATOR . $directory;
+    }
+  }
+
+  /**
+   * @return void
+   */
+  public function setAuditBaseDirectory(): void {
+    $this->auditFileBaseDirectory = __DIR__ . '/data/' . ucfirst($this->gateway);
   }
 
   /**

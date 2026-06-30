@@ -395,7 +395,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
       $this->$fixture();
     }
     $this->setSetting('wmf_audit_directory_audit', $case['path']);
-
+    $this->specifyFlatDirectoryStructure($case['path']);
     $this->runAuditor();
 
     $this->assertMessages($case['expected']);
@@ -422,7 +422,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
       'contribution_extra.backend_processor' => 'adyen',
       'contribution_extra.backend_processor_txn_id' => 'FGH',
     ])['id'];
-    $this->setSetting('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/donation_gravy/');
+    $this->specifyFlatDirectoryStructure('donation_gravy');
     $this->runAuditor();
     $this->processRefundQueue();
     $this->processSettleQueue();
@@ -446,10 +446,10 @@ class AdyenAuditTest extends BaseAuditTestCase {
    */
   public function testSubsequentRecur(): void {
     $this->createRecurContributionTrackingFixture();
-    $this->setAuditDirectory('donation_recur');
+    $this->specifyFlatDirectoryStructure('donation_recur');
     $this->runAuditor();
     $this->processDonationsQueue();
-    $this->setAuditDirectory('donation_recur_subsequent');
+    $this->specifyFlatDirectoryStructure('donation_recur_subsequent');
     $this->runAuditor();
     $this->processDonationsQueue();
     $contribution = Contribution::get(FALSE)
@@ -472,7 +472,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
         'id' => 12345,
       ])
       ->execute()->first()['id'];
-    $this->setSetting('wmf_audit_directory_audit', __DIR__ . '/data/Adyen/donation_gravy/');
+    $this->specifyFlatDirectoryStructure('donation_gravy');
     $this->createTestEntity('TransactionLog', [
       'date' => '2025-09-01 23:04:00',
       'gateway' => 'gravy',
@@ -597,6 +597,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
       'contribution_extra.gateway_txn_id' => 'MNOP',
       'contribution_extra.backend_processor' => 'adyen',
     ])['id'];
+    $this->specifyFlatDirectoryStructure('donation_gravy');
     $this->runAuditBatch('donation_gravy', 'settlement_detail_report_batch_4.csv');
     $contribution = Contribution::get(FALSE)
       ->addWhere('id', '=', $contributionID)
