@@ -1849,7 +1849,29 @@ abstract class BaseAuditProcessor {
 
     $time = $this->stopTiming("Parsing $fileName");
     $this->echo(count($records) . " results found in $time seconds\n");
-    $this->statistics[$fileName] = ['main' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'cancel' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'chargeback_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'refund' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'fee' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'reversal' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'reversal_reversed' => ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []], 'missing_negative' => 0, 'missing_main' => 0, 'total_missing' => 0, 'total_queued_from_transaction_log' => 0];
+
+    $this->statistics[$fileName] = [
+      'missing_negative' => 0,
+      'missing_main' => 0,
+      'total_missing' => 0,
+      'total_queued_from_transaction_log' => 0,
+      'total_records' => count($records),
+    ];
+    $types = [
+      'main',
+      'cancel',
+      'chargeback',
+      'chargeback_reversed',
+      'refund_reversed',
+      'refund',
+      'fee',
+      'reversal',
+      'reversal_reversed',
+    ];
+
+    foreach ($types as $type) {
+      $this->statistics[$fileName][$type] = ['found' => 0, 'missing' => 0, 'total' => 0, 'by_payment' => []];
+    }
     $this->statistics[$fileName]['total_records'] = count($records);
     $this->statistics['total_records'] += $this->statistics[$fileName]['total_records'];
     return [$records, $fileName];
