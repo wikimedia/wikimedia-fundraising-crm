@@ -68,6 +68,7 @@ class AuditMessage extends DonationMessage {
    *    street_address: string,
    *    supplemental_address_1: string,
    *    txn_type: string,
+   *    manual_review: string,
    *    subscr_id: string,
    *    }
    */
@@ -909,7 +910,7 @@ class AuditMessage extends DonationMessage {
   /**
    * @return string[]
    */
-  private function getContributionSelectFields(): array {
+  protected function getContributionSelectFields(): array {
     return [
       'id',
       'contribution_status_id:name',

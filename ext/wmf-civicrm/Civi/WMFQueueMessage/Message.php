@@ -523,7 +523,7 @@ class Message {
         'label' => 'Gift Source',
         'api_entity' => 'Contribution',
         'api_field' => 'Gift_Data.Campaign',
-        'description' => 'is this actually incoming anywhere or do we just use the default (Online Gift)',
+        'description' => 'Comes in from chariot, not sure where else',
       ],
       'contact_id' => [
         'name' => 'contact_id',
@@ -633,6 +633,25 @@ class Message {
         'data_type' => 'String',
         'description' => E::ts('Full name to be parsed'),
       ],
+      'partner_full_name' => [
+        'name' => 'partner_full_name',
+        'data_type' => 'String',
+        'description' => E::ts('Full name to be parsed'),
+        'api_field' => 'Partner.Partner',
+        'api_entity' => 'Contact',
+      ],
+      'prefix' => [
+        'name' => 'prefix',
+        'data_type' => 'String',
+        'api_field' => 'prefix_id:name',
+        'api_entity' => 'Contact',
+      ],
+      'suffix' => [
+        'name' => 'suffix',
+        'data_type' => 'String',
+        'api_field' => 'suffix_id:name',
+        'api_entity' => 'Contact',
+      ],
       'organization_name' => [
         'name' => 'organization_name',
         'data_type' => 'String',
@@ -663,6 +682,21 @@ class Message {
         'name' => 'payment_instrument',
         'data_type' => 'String',
         'description' => 'Human-readable payment instrument name',
+      ],
+      'check_number' => [
+        'name' => 'check_number',
+        'data_type' => 'String',
+        'description' => 'Check number (checks only...)',
+        'api_entity' => 'Contribution',
+        'api_field' => 'check_number',
+        'used_for' => 'offline gifts',
+        'getter' => 'getCheckNumber',
+      ],
+      'manual_review' => [
+        'name' => 'manual_review',
+        'data_type' => 'String',
+        'description' => 'Has the gift been tagged for manual review? If so we aim to email the offline gifts peeps',
+        'used_for' => 'offline gifts',
       ],
       'source_enqueued_time' => [
         'name' => 'source_enqueued_time',
@@ -755,6 +789,61 @@ class Message {
         'label' => E::ts('Grant provider'),
         'description' => E::ts('The name provided for PayPal grants donations telling us who sent the organisation. This is then linked with a payment hand-entered from the PayPal grants console.'),
         'used_for' => 'audit message',
+      ],
+      'banking_institution' => [
+        'name' => 'banking_institution',
+        'data_type' => 'String',
+        'label' => E::ts('Banking Institution'),
+        'description' => E::ts('Offline gift provider. This is the provider the donor interacts with and we relate using soft credit'),
+        'comment' => 'From the donor POV they likely have a relationship with this institution (e.g Fidelity) and select which charity/charities they want their gift to go to',
+        'used_for' => 'audit message, offline gifts',
+      ],
+      'donor_advised_fund_name' => [
+        'name' => 'donor_advised_fund_name',
+        'data_type' => 'String',
+        'label' => E::ts('Donor Advised Fund Name (DAF)'),
+        'description' => E::ts('The name of the fund the donor has set up to give under'),
+        'comment' => 'DAFs are US tax-friendly giving constructs managed by (e.g) Fidelity',
+        'used_for' => 'audit message, offline gifts',
+      ],
+      'matching_gift_organization' => [
+        'name' => 'matching_gift_organization',
+        'data_type' => 'String',
+        'label' => E::ts('Matching gift organization'),
+        'description' => E::ts('The name of an organization matching the donation'),
+        'used_for' => 'audit message, offline gifts',
+      ],
+      'is_daf' => [
+        'name' => 'is_daf',
+        'data_type' => 'Boolean',
+        'label' => E::ts('Is gift a daf'),
+        'description' => E::ts('Should we handle this through our DAF flow?'),
+        'used_for' => 'audit message, offline gifts',
+      ],
+      'is_matching_gift' => [
+        'name' => 'is_matching_gift',
+        'data_type' => 'Boolean',
+        'label' => E::ts('Is gift a matching gift'),
+        'description' => E::ts('Should we handle this through our Matching Gift flow?'),
+        'used_for' => 'audit message, offline gifts',
+      ],
+      'note' => [
+        'name' => 'note',
+        'data_type' => 'String',
+        'label' => E::ts('Offline gift note'),
+        'used_for' => 'audit message, offline gifts',
+      ],
+      'original_matching_gift_amount' => [
+        'name' => 'original_matching_gift_amount',
+        'data_type' => 'Float',
+        'label' => E::ts('Amount given by matching gift entity (e.g. employer) in the original currency'),
+        'used_for' => 'audit message, offline gifts',
+      ],
+      'original_individual_gift_amount' => [
+        'name' => 'original_individual_gift_amount',
+        'data_type' => 'Float',
+        'label' => E::ts('Amount given by the individual expecting to be matched in the original currency'),
+        'used_for' => 'audit message, offline gifts',
       ],
     ];
     $contactFields = Contact::getFields(FALSE)
@@ -1607,6 +1696,13 @@ class Message {
    */
   public function getMessageLoggingDescription(): string {
     return 'message';
+  }
+
+  public function getCheckNumber(): ?string {
+    if (empty($this->message['check_number'])) {
+      return NULL;
+    }
+    return ltrim((string) $this->message['check_number'], '0');
   }
 
 }

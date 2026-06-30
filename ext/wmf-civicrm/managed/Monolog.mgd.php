@@ -136,4 +136,31 @@ return [
       ],
     ],
   ],
+  [
+    'name' => 'offline_duplicates',
+    'entity' => 'Monolog',
+    'cleanup' => 'never',
+    'update' => 'always',
+    'params' => [
+      'debug' => TRUE,
+      'version' => 4,
+      'checkPermissions' => FALSE,
+      'values' => [
+        'name' => 'offline_duplicates',
+        'type' => 'mail',
+        'channel' => 'offline_gifts',
+        'is_default' => FALSE,
+        'is_active' => TRUE,
+        'is_final' => FALSE,
+        'weight' => 1,
+        'minimum_severity' => 'info',
+        'description' => ('Send Mail regarding unresolved duplicates'),
+        'configuration_options' => [
+          'to' => 'emcnaughton@wikimedia.org',
+          'from' => \Civi::settings()->get('wmf_failmail_from'),
+          'subject' => 'Offline duplicates to resolve %context.subject%',
+        ],
+      ],
+    ],
+  ],
 ];

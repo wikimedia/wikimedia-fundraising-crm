@@ -620,7 +620,11 @@ abstract class BaseAuditProcessor {
     }
 
     $recon_file_stats = [];
-    foreach ($this->getReconciliationFiles() as $file) {
+    $files = $this->getReconciliationFiles();
+    if (empty($files)) {
+      return;
+    }
+    foreach ($files as $file) {
       //parse the recon files into something relatively reasonable.
       [$parsed, $file] = $this->parseReconciliationFile($file);
       if (empty($parsed)) {
@@ -829,14 +833,14 @@ abstract class BaseAuditProcessor {
         if (substr($file, 0, 1) == '.') {
           continue;
         }
-        if (preg_match($this->regexForFilesToProcess(), $file)) {
+        if ($this->regexForFilesToIgnore() && preg_match($this->regexForFilesToIgnore(), $file)) {
+          $this->moveFile($file, $this->getIgnoredFilesDirectory(), TRUE);
+        }
+        elseif (preg_match($this->regexForFilesToProcess(), $file)) {
           // sort the files depending on how each processor handles the file names
           // the last three files in $files_by_sort_key will be the ones looked at
           $sort_key = $this->get_recon_file_sort_key($file);
           $files_by_sort_key[$sort_key][] = $files_directory . '/' . $file;
-        }
-        elseif ($this->regexForFilesToIgnore() && preg_match($this->regexForFilesToIgnore(), $file)) {
-          $this->moveFile($file, $this->getIgnoredFilesDirectory(), TRUE);
         }
       }
       closedir($handle);

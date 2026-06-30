@@ -124,10 +124,13 @@ class DonationMessage extends Message {
   /**
    * @param array $message
    *
-   * @return \Civi\WMFQueueMessage\DonationMessage|\Civi\WMFQueueMessage\RecurDonationMessage
+   * @return \Civi\WMFQueueMessage\OfflineAuditMessage|\Civi\WMFQueueMessage\DonationMessage|\Civi\WMFQueueMessage\RecurDonationMessage
    */
-  public static function getWMFMessage($message) {
-    if (!empty($message['recurring']) || !empty($message['contribution_recur_id'])) {
+  public static function getWMFMessage(array $message): OfflineAuditMessage|DonationMessage|RecurDonationMessage {
+    if (!empty($message['is_daf']) || !empty($message['is_matching_gift']) || $message['gateway'] === 'chariot') {
+      $messageObject = new OfflineAuditMessage($message);
+    }
+    elseif (!empty($message['recurring']) || !empty($message['contribution_recur_id'])) {
       $messageObject = new RecurDonationMessage($message);
     }
     else {
