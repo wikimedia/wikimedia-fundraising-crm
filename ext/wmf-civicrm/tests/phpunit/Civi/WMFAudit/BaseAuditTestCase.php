@@ -58,7 +58,9 @@ class BaseAuditTestCase extends TestCase {
    * @return Reader
    */
   public function getRows(string $directory, string $fileName): array {
-    $this->setAuditDirectory($directory);
+    if ($this->useIncomingDirectory) {
+      $this->setAuditDirectory($directory);
+    }
     // First let's have a process to create some TransactionLog entries.
     $incomingDirectory = $this->getIncomingPath($directory);
     $file = $incomingDirectory . $fileName;
@@ -112,6 +114,7 @@ class BaseAuditTestCase extends TestCase {
       $this->setAuditBaseDirectory();
       $this->auditFileBaseDirectory .= DIRECTORY_SEPARATOR . $directory;
     }
+    $this->setSetting('wmf_audit_directory_audit', $this->auditFileBaseDirectory);
   }
 
   /**

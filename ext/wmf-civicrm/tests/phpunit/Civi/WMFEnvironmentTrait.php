@@ -147,7 +147,9 @@ trait WMFEnvironmentTrait {
    * @param mixed $value
    */
   protected function setSetting(string $name, mixed $value): void {
-    $this->originalSettings[$name] = \Civi::settings()->get($name);
+    if (!isset($this->originalSettings[$name])) {
+      $this->originalSettings[$name] = \Civi::settings()->get($name);
+    }
     \Civi::settings()->set($name, $value);
   }
 
