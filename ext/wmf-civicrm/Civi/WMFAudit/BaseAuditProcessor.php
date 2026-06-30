@@ -1459,7 +1459,7 @@ abstract class BaseAuditProcessor {
       $isHitRowLimit = ($rowLimit && $count === $rowLimit);
       if ($auditRecord['is_missing']) {
 
-        if (!$isHitRowLimit && $messageType === 'fee') {
+        if (!$isHitRowLimit && ($messageType === 'fee' || $messageType === 'adjustment')) {
           // I went back and forth on pushing this into the queue consumer.
           // These are super low volume and it felt like a contortion to get the DonationQueueConsumer
           // to handle them.
@@ -1480,11 +1480,13 @@ abstract class BaseAuditProcessor {
               'contribution_settlement.settlement_batch_reference' => $auditRecord['message']['settlement_batch_reference'],
               'contribution_settlement.settlement_date' => '@' . $auditRecord['message']['settled_date'],
               'contribution_settlement.settlement_currency' => $auditRecord['message']['settled_currency'],
-              'financial_type_id:name' => 'Cash',
+              'financial_type_id:name' => ($messageType === 'adjustment') ? 'Adjustment': 'Cash',
+              'contribution_status_id:name' => ($messageType === 'adjustment') ? 'adjustment': 'Completed',
               'payment_instrument_id:name' => 'Cash',
             ])->setMatch(['trxn_id'])->execute();
           continue;
         }
+
         if (!$isHitRowLimit && $messageType === 'aggregate') {
           // These are totals - we track them in recordStatistic but then discard.
           continue;
@@ -1867,6 +1869,7 @@ abstract class BaseAuditProcessor {
       'fee',
       'reversal',
       'reversal_reversed',
+      'adjustment',
     ];
 
     foreach ($types as $type) {

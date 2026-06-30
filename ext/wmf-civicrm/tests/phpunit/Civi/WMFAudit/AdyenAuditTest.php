@@ -121,6 +121,9 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ->addWhere('trxn_id', 'LIKE', 'ADYEN%Transaction%Fees%')
       ->execute();
     Contribution::delete(FALSE)
+      ->addWhere('trxn_id', 'LIKE', 'ADYEN%Adjustment%')
+      ->execute();
+    Contribution::delete(FALSE)
       ->addWhere('trxn_id', 'LIKE', '%Discounts%and%additional%')
       ->execute();
     Contribution::delete(FALSE)
@@ -785,6 +788,22 @@ class AdyenAuditTest extends BaseAuditTestCase {
       ->addSelect('contribution_extra.gateway_txn_id')
       ->execute()->single();
     $this->assertEquals('5364893193133131', $contribution['contribution_extra.gateway_txn_id']);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function testDepositCorrection(): void {
+    $fileName = 'settlement_detail_report_batch_2.csv';
+    $directory = 'deposit_correction';
+    $this->specifyFlatDirectoryStructure($directory);
+    $this->runAuditBatch($directory, $fileName, 'adyen_2');
+    $contributions = Contribution::get(FALSE)
+      ->addWhere('finance_batch', '=', 'adyen_2_USD')
+      ->addSelect('contribution_extra.gateway_txn_id', '*', 'financial_type_id:name')
+      ->execute()->indexBy('contribution_extra.gateway_txn_id');
+    $this->assertCount(3, $contributions);
+    $this->assertEquals('Adjustment', $contributions['adjustment-2-DepositCorrection--9']['financial_type_id:name']);
   }
 
   /**
