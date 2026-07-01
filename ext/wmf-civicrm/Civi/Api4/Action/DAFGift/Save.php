@@ -4,6 +4,7 @@ namespace Civi\Api4\Action\DAFGift;
 use Civi\Api4\ContributionSoft;
 use Civi\Api4\Generic\Result;
 use Civi\WMFException\DuplicateContactException;
+use Civi\WMFHelper\Contact;
 
 /**
  *
@@ -30,7 +31,7 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
       ], $dafOrganizationID ?? $individualID, 1);
       $result[] = $contribution;
 
-      if ($isRecordDaf) {
+      if ($isRecordDaf && $individualID !== Contact::getAnonymousContactID()) {
         ContributionSoft::create($this->checkPermissions)
           ->setValues([
             'contribution_id' => $contribution['id'],
