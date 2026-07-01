@@ -157,10 +157,12 @@ class ChariotAuditTest extends BaseAuditTestCase {
 
     $contributionSoft = ContributionSoft::get(FALSE)
       ->addWhere('contribution_id', 'IN', \CRM_Utils_Array::collect('id', $contributions))
-      ->addSelect('*', 'soft_credit_type_id:name')
-      ->execute();
-    $this->assertCount(3, $contributionSoft);
-    $this->assertEquals('workplace', $contributionSoft[0]['soft_credit_type_id:name']);
+      ->addSelect('*', 'soft_credit_type_id:name', 'contact_id.display_name')
+      ->execute()->indexBy('contact_id.display_name');
+    $this->assertCount(5, $contributionSoft);
+    $this->assertEquals('workplace', $contributionSoft['ABC']['soft_credit_type_id:name']);
+    $this->assertEquals('matched_gift', $contributionSoft['Sara Mouse']['soft_credit_type_id:name']);
+
     // Check it runs again without error.
     $this->runAuditBatch('', $this->getBatchFile('benevity'));
   }
