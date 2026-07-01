@@ -36,12 +36,19 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   /**
    * Current date.
    *
+   * We force this to get consistent test results.
+   *
    * @var string
    */
   protected string $currentDate;
 
   public function setUp(): void {
-    $this->currentDate = date('Y-m-d');
+    if (date('m') > 6) {
+      $this->currentDate = date('Y') . '-08-01';
+    }
+    else {
+      $this->currentDate = (date('Y') - 1) . '-08-01';
+    }
 
     // This setTime works for the tests that check the php level calculation but not the triggers.
     \CRM_Utils_Time::setTime($this->currentDate);
@@ -316,7 +323,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       'consecutive_major_donor' => [
         'status' => 'consecutive',
         'segment' => 'major_donor',
-        'contributions' => [['receive_date' => 'yesterday', 'total_amount' => 10], ['receive_date' => '1 year ago', 'total_amount' => 12000]],
+        'contributions' => [['receive_date' => 'yesterday', 'total_amount' => 10], ['receive_date' => '8 months ago', 'total_amount' => 12000]],
       ],
       'ultra_lapsed' => [
         'status' => 'ultra_lapsed',
