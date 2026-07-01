@@ -55,14 +55,22 @@ class ChariotAuditTest extends BaseAuditTestCase {
   public function testGroundswellMatchingGiftFile(): void {
     $this->runAuditBatch('', '20260502081216-Groundswell-1000.00-deposit_01kqkvxnj5mc751be13egn6j6p.csv');
     $contributions = Contribution::get(FALSE)
-      ->setSelect(['*', 'payment_instrument_id:name', 'contribution_extra.*', 'Gift_Data.Channel:label'])
+      ->setSelect(['*', 'payment_instrument_id:name', 'contribution_extra.*', 'Gift_Data.Channel:label', 'Gift_Data.*'])
       ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'chariot_01kqkvxnj5mc751be13egn6j6p_USD')
       ->addOrderBy('id', 'ASC')
-      ->execute();
+      ->execute()->indexBy('trxn_id');
     $this->assertCount(2, $contributions);
-    $firstContribution = $contributions->first();
-    $this->assertEquals('EFT', $firstContribution['payment_instrument_id:name']);
-    $this->assertEquals('Workplace Giving', $firstContribution['Gift_Data.Channel:label']);
+    $organizationGift = $contributions['CHARIOT donation_01kqjzr900nz46ss2441smgmc9_MATCHED'];
+    $this->assertEquals('EFT', $organizationGift['payment_instrument_id:name']);
+    $this->assertEquals('Workplace Giving', $organizationGift['Gift_Data.Channel:label']);
+    $this->assertEquals('USD 5.00', $organizationGift['source']);
+    $this->assertEquals('Matching Gift', $organizationGift['Gift_Data.Campaign']);
+
+    $individualGift = $contributions['CHARIOT donation_01kqjzr900k1xtvvfx6j3cw2ry'];
+    $this->assertEquals('EFT', $individualGift['payment_instrument_id:name']);
+    $this->assertEquals('Workplace Giving', $individualGift['Gift_Data.Channel:label']);
+    $this->assertEquals('USD 5.00', $individualGift['source']);
+    $this->assertEquals('Workplace Giving', $individualGift['Gift_Data.Campaign']);
   }
 
   public function testFidelityFullNameHandling(): void {
@@ -139,10 +147,13 @@ class ChariotAuditTest extends BaseAuditTestCase {
       ->setSelect(['*', 'contribution_extra.*', 'payment_instrument_id:name', 'financial_type_id:name', 'Gift_Data.*'])
       ->addWhere('contribution_settlement.settlement_batch_reference', '=', $this->getBatchName('benevity'))
       ->addOrderBy('id')
-      ->execute();
+      ->execute()->indexBy('trxn_id');
     // 3 individual gifts, 2 matching gifts, 1 fee row.
     $this->assertCount(6, $contributions);
-    $this->assertEquals('Employee Giving', $contributions[0]['Gift_Data.Campaign']);
+    $this->assertEquals('Employee Giving', $contributions['CHARIOT donation_01krmexm00xcfaqg']['Gift_Data.Campaign']);
+    $this->assertEquals('Workplace Giving', $contributions['CHARIOT donation_01krmexm00xcfaqg']['Gift_Data.Channel']);
+    $this->assertEquals('Workplace Giving', $contributions['CHARIOT donation_01krmexm00xcfaqg_MATCHED']['Gift_Data.Channel']);
+    $this->assertEquals('Matching Gift', $contributions['CHARIOT donation_01krmexm00xcfaqg_MATCHED']['Gift_Data.Campaign']);
 
     $contributionSoft = ContributionSoft::get(FALSE)
       ->addWhere('contribution_id', 'IN', \CRM_Utils_Array::collect('id', $contributions))

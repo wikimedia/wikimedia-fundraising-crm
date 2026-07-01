@@ -78,6 +78,8 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
     if ($record['payment_method'] === 'Check' ){
       $gatewayAccount = 'Chariot Digital Mailbox';
     }
+    $channel = $record['gift_source'] === 'Employee Giving' ? 'Workplace Giving' : 'Other Offline';
+
     return Contribution::create($this->checkPermissions)
       ->setValues($extraValues + [
         'contact_id' => $contactId,
@@ -88,7 +90,7 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
         'financial_type_id:name' => 'Cash',
         'check_number' => $record['check_number'] ?? NULL,
         'trxn_id' => WMFTransaction::from_message($record)->get_unique_id(),
-        'contribution_extra.original_amount' => $record['original_individual_gift_amount'],
+        'contribution_extra.original_amount' => CurrencyRoundingHelper::round($record['original_total_amount'] * $giftRatio, $record['original_currency']),
         'contribution_extra.original_currency' => $record['original_currency'],
         'contribution_extra.gateway' => $record['gateway'],
         'contribution_extra.gateway_account' => $gatewayAccount,
@@ -100,7 +102,7 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
         'contribution_settlement.settled_donation_amount' => CurrencyRoundingHelper::round($record['settled_total_amount'] * $giftRatio, 'USD'),
         'contribution_settlement.settled_fee_amount' => CurrencyRoundingHelper::round($record['settled_fee_amount'], 'USD'),
         'contribution_settlement.settlement_batch_reference' => $record['settlement_batch_reference'],
-        'Gift_Data.Channel' => 'Other Offline',
+        'Gift_Data.Channel' => $channel,
         'Gift_Data.Appeal' => 'White Mail',
         'Gift_Data.Fund' => 'Major Gifts - CC104',
         'Gift_Data.is_major_gift' => TRUE,
