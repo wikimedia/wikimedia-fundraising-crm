@@ -83,6 +83,8 @@ class CRM_Omnimail_Omniactivity extends CRM_Omnimail_Omnimail {
             // Skip Legacy Giving Signup
             || (($recipient->getRecipientActionName() === 'Form' || $recipient->getRecipientAction() === 'form')
               && str_starts_with($recipient->getRecipientActionUrlName(), 'Legacy Giving Signup'))
+            // Skip Lead Gen - Email
+            || ($recipient->getRecipientActionName() === 'Lead Gen - Email')
           ) {
             $this->skippedRows++;
             continue;
