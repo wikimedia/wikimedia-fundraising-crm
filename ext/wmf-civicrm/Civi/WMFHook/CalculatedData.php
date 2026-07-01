@@ -133,7 +133,7 @@ class CalculatedData extends TriggerHook {
         'getSelectSQL' => 'getContributionSelectSQL',
       ],
       'civicrm_contribution_recur' => [
-        'significantFields' => ['contribution_status_id', 'contact_id', 'frequency_unit', 'start_date', 'next_sched_contribution_date'],
+        'significantFields' => ['contribution_status_id', 'contact_id', 'frequency_unit', 'start_date', 'next_sched_contribution_date', 'amount'],
         'getSelectSQL' => 'getRecurringSelectSQL',
       ],
     ];
@@ -372,7 +372,6 @@ class CalculatedData extends TriggerHook {
       return [];
     }
     $info = [];
-    $sql = $this->getUpdateWMFDonorSql();
     $tableName = $this->getTableName();
     $updateConditions = [];
     foreach (self::getTriggerTables()[$tableName]['significantFields'] as $significantField) {
@@ -403,8 +402,9 @@ class CalculatedData extends TriggerHook {
       $updateClauses[] = "(NEW.contribution_status_id <> $processingID)";
     }
 
+    $sql = $this->getUpdateWMFDonorSql();
     $insertSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' THEN' . $sql . "\nEND IF;\n";
-    $updateSQL = ' IF ' . implode(' AND ', $updateClauses) . ' AND (' . implode(' OR ', $updateConditions) . ' ) THEN' . $sql . "\nEND IF;\n";
+    $updateSQL = ' IF ' . implode(' AND ', $updateClauses) . ' AND (' . implode(' OR ', $updateConditions) . ' ) THEN' . $this->getUpdateWMFDonorSql(TRUE) . "\nEND IF;\n";
     $requiredClausesForOldClause = str_replace('NEW.', 'OLD.', implode(' AND ', $requiredClauses));
     $oldSql = str_replace('NEW.', 'OLD.', $sql);
     $updateOldSQL = ' IF ' . $requiredClausesForOldClause
@@ -1014,7 +1014,80 @@ class CalculatedData extends TriggerHook {
       'civicrm_contribution_recur' => $contributionRecurFields,
     ];
 
-    return array_merge(...array_values($this->calculatedFields));
+    // Update-only fields compare NEW & OLD values, so they aren't in $this->calculatedFields
+    // as they aren't used for Get/Update, but they should be in the field list.
+    $allFields = $this->calculatedFields;
+    foreach ($this->getUpdateOnlyFieldsByTable() as $table => $fields) {
+      $allFields[$table] = array_merge($allFields[$table] ?? [], $fields);
+    }
+
+    return array_merge(...array_values($allFields));
+  }
+
+  /**
+   * Get the update-only fields, keyed by source table.
+   *
+   * These fields are only used by the UPDATE trigger, see getUpdateWMFDonorSql().
+   * These fields aren't updated by WMFDonor::update, past changes require manual backfill.
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  protected function getUpdateOnlyFieldsByTable(): array {
+    return [
+      'civicrm_contribution_recur' => [
+        'last_recurring_amount_change' => [
+          'name' => 'last_recurring_amount_change',
+          'column_name' => 'last_recurring_amount_change',
+          'label' => ts('Last Recurring Amount Change (Native Currency)'),
+          'data_type' => 'Money',
+          'html_type' => 'Text',
+          'is_active' => 1,
+          'is_view' => 1,
+          'is_searchable' => 1,
+          'update_select_clause' => 'IF(NEW.amount <> OLD.amount, NEW.amount - OLD.amount, NULL)',
+        ],
+        'last_recurring_amount_change_date' => [
+          'name' => 'last_recurring_amount_change_date',
+          'column_name' => 'last_recurring_amount_change_date',
+          'label' => ts('Last Recurring Amount Change Date'),
+          'data_type' => 'Date',
+          'html_type' => 'Select Date',
+          'is_active' => 1,
+          'is_view' => 1,
+          'is_searchable' => 1,
+          'update_select_clause' => 'IF(NEW.amount <> OLD.amount, CURDATE(), NULL)',
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Get the update-only fields for the current source table.
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  protected function getUpdateOnlyFields(): array {
+    return $this->getUpdateOnlyFieldsByTable()[$this->getTableName()] ?? [];
+  }
+
+  /**
+   * Get the outer select columns, optionally including update-only fields.
+   *
+   * @param bool $includeUpdateOnly
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  protected function getOuterSelects(bool $includeUpdateOnly): array {
+    $selects = $this->getSelectsAggregate();
+    if ($includeUpdateOnly) {
+      foreach ($this->getUpdateOnlyFields() as $field) {
+        $selects[$field['name']] = $field['update_select_clause'] . ' as ' . $field['name'];
+      }
+    }
+    return $selects;
   }
 
   /**
@@ -1027,31 +1100,47 @@ class CalculatedData extends TriggerHook {
    * ON DUPLICATE KEY UPDATE
    * last_donation_currency = VALUES(last_donation_currency), ...
    *
+   * Update-only fields are folded into the same statement on UPDATE.
+   * Their clause yields NULL when nothing relevant changed;
+   * COALESCE then preserves the stored value rather than overwriting.
+   *
+   * @param bool $includeUpdateOnly
+   *
    * @return string
    */
-  protected function getUpdateWMFDonorSql(): string {
+  protected function getUpdateWMFDonorSql(bool $includeUpdateOnly = FALSE): string {
+    $columns = array_keys($this->getCalculatedFields());
+    $updateClauses = $this->getUpdateClauses();
+    if ($includeUpdateOnly) {
+      foreach (array_keys($this->getUpdateOnlyFields()) as $column) {
+        $columns[] = $column;
+        $updateClauses[$column] = "$column = COALESCE(VALUES($column), $column)";
+      }
+    }
     return "
       INSERT INTO wmf_donor (
-        entity_id,\n        " . implode(",\n        ", array_keys($this->getCalculatedFields())) . "
+        entity_id,\n        " . implode(",\n        ", $columns) . "
       )
-      " . $this->getSelectSQL() . "
+      " . $this->getSelectSQL($includeUpdateOnly) . "
      ON DUPLICATE KEY UPDATE
-     " . implode(",\n     ", $this->getUpdateClauses()) . ";";
+     " . implode(",\n     ", $updateClauses) . ";";
 
   }
 
   /**
    * Get the string to select the wmf donor data.
    *
+   * @param bool $includeUpdateOnly
+   *
    * @return string
    */
-  public function getSelectSQL(): string {
+  public function getSelectSQL(bool $includeUpdateOnly = FALSE): string {
     // After filterDonorFields() this is only the requested fields for this table, so empty means no SQL needed.
     if (empty($this->getCalculatedFields())) {
       return '';
     }
     $method = self::getTriggerTables()[$this->getTableName()]['getSelectSQL'];
-    return $this->$method();
+    return $this->$method($includeUpdateOnly);
   }
 
   /**
@@ -1059,7 +1148,7 @@ class CalculatedData extends TriggerHook {
    *
    * @return string
    */
-  protected function getRecurringSelectSQL(): string {
+  protected function getRecurringSelectSQL(bool $includeUpdateOnly = FALSE): string {
     $innerColumns = $this->getTotalsFieldSelects();
     if ($this->isTriggerContext()) {
       $from = "FROM civicrm_contribution_recur c
@@ -1075,7 +1164,7 @@ class CalculatedData extends TriggerHook {
       $entityID = 'totals.contact_id';
     }
     return "SELECT $entityID as entity_id,
-      " . implode(",\n      ", $this->getSelectsAggregate()) . "
+      " . implode(",\n      ", $this->getOuterSelects($includeUpdateOnly)) . "
       FROM (
         SELECT " . implode(",\n        ", $innerColumns) . "
         $from
@@ -1088,7 +1177,7 @@ class CalculatedData extends TriggerHook {
    *
    * @return string
    */
-  protected function getContributionSelectSQL(): string {
+  protected function getContributionSelectSQL(bool $includeUpdateOnly = FALSE): string {
     $innerColumns = $this->getTotalsFieldSelects();
     if ($this->isTriggerContext()) {
       $where = 'c.contact_id = NEW.contact_id';
@@ -1103,7 +1192,7 @@ class CalculatedData extends TriggerHook {
       $entityID = 'totals.contact_id';
     }
     return "SELECT $entityID as entity_id,
-      " . implode(",\n      ", $this->getSelectsAggregate()) . "
+      " . implode(",\n      ", $this->getOuterSelects($includeUpdateOnly)) . "
       FROM (
         SELECT " . implode(",\n        ", $innerColumns) . "
   FROM civicrm_contribution c

@@ -168,11 +168,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     $this->assertStringContainsString('has an annual recurring plan that is active or was active in the last 13 months', $row['donor_segment_id:description']);
 
     // End recurring donation today, segment is still annual recurring, status is now delinquent
-    ContributionRecur::update(FALSE)
-      ->addValue('contribution_status_id:name', 'Cancelled')
-      ->addValue('end_date', $todayDate)
-      ->addWhere('id', '=', $this->ids['ContributionRecur']['annual'])
-      ->execute();
+    $this->updateRecur(['contribution_status_id:name' => 'Cancelled', 'end_date' => $todayDate], 'annual');
 
     $result = WMFDonor::get(FALSE)
       ->setDebug(TRUE)
@@ -184,11 +180,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     $this->assertEquals(14, $row['donor_status_id']);
 
     // Cancel recurring donation 8 months ago, segment is still annual recurring, status is now lapsed
-    ContributionRecur::update(FALSE)
-      ->addValue('cancel_date', $annualDonationDate)
-      ->addValue('end_date', NULL)
-      ->addWhere('id', '=', $this->ids['ContributionRecur']['annual'])
-      ->execute();
+    $this->updateRecur(['cancel_date' => $annualDonationDate, 'end_date' => NULL], 'annual');
 
     $result = WMFDonor::get(FALSE)
       ->setDebug(TRUE)
@@ -217,10 +209,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     $this->assertEquals(25, $row['donor_status_id']);
 
     // Cancel recurring donation 36 months ago, segment now falls out of annual recurring to grassroots plus, status is now deep lapsed
-    ContributionRecur::update(FALSE)
-      ->addValue('cancel_date', $thirtySixMonthsAgoDate)
-      ->addWhere('id', '=', $this->ids['ContributionRecur']['annual'])
-      ->execute();
+    $this->updateRecur(['cancel_date' => $thirtySixMonthsAgoDate], 'annual');
 
     // Update all the donor's contributions so they aren't a major donor, three years ago makes sure they fall in fiscal years for deep lapsed
     Contribution::update(FALSE)
@@ -398,10 +387,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     $this->assertEquals(10, $donor['wmf_donor.donor_status_recur_month']);
     $this->assertEquals(100, $donor['wmf_donor.donor_status_recur_year']);
 
-    ContributionRecur::update(FALSE)
-      ->addValue('frequency_unit', 'year')
-      ->addWhere('id', '=', $this->ids['ContributionRecur']['recur'])
-      ->execute();
+    $this->updateRecur(['frequency_unit' => 'year'], 'recur');
 
     $donor = Contact::get(FALSE)
       ->addWhere('id', '=', $this->ids['Contact']['donor'])
@@ -409,6 +395,82 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ->execute()->first();
     $this->assertEquals(100, $donor['wmf_donor.donor_status_recur_month']);
     $this->assertEquals(10, $donor['wmf_donor.donor_status_recur_year']);
+  }
+
+  /**
+   * last_recurring_amount_change records the size and date of a recur amount change.
+   *
+   * Both are update-only fields: nothing is recorded on insert, delete or contact change,
+   * an increase or decrease records the amount and its date, and an update that leaves the
+   * amount unchanged preserves the previously recorded values.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorLastRecurringChange(): void {
+    $this->createIndividual([], 'donor');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['donor'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id' => 5,
+      'start_date' => date('Y-m-d', strtotime('-2 years', strtotime($this->currentDate))),
+    ], 'recur');
+
+    // Nothing is recorded on insert.
+    $this->assertNull($this->getStoredDonorField('last_recurring_amount_change'));
+    $this->assertNull($this->getStoredDonorField('last_recurring_amount_change_date'));
+
+    $this->updateRecur(['amount' => 20.01], 'recur');
+    $this->assertEquals(10.01, $this->getStoredDonorField('last_recurring_amount_change'));
+    $this->assertEquals($this->currentDate, $this->getStoredDonorField('last_recurring_amount_change_date'));
+
+    $this->updateRecur(['amount' => 5], 'recur');
+    $this->assertEquals(-15.01, $this->getStoredDonorField('last_recurring_amount_change'));
+    $this->assertEquals($this->currentDate, $this->getStoredDonorField('last_recurring_amount_change_date'));
+
+    // Set a fixed date to make sure it is preserved
+    Contact::update(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['donor'])
+      ->addValue('wmf_donor.last_recurring_amount_change_date', '2020-01-01')
+      ->execute();
+
+    // A change that leaves the amount untouched preserves both values.
+    $this->updateRecur(['contribution_status_id' => 1], 'recur');
+    $this->assertEquals(-15.01, $this->getStoredDonorField('last_recurring_amount_change'));
+    $this->assertEquals('2020-01-01', $this->getStoredDonorField('last_recurring_amount_change_date'));
+  }
+
+  /**
+   * Update one of the test recurs.
+   *
+   * @param array $values
+   * @param string $key
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function updateRecur(array $values, string $key): void {
+    $update = ContributionRecur::update(FALSE)
+      ->addWhere('id', '=', $this->ids['ContributionRecur'][$key]);
+    foreach ($values as $field => $value) {
+      $update->addValue($field, $value);
+    }
+    $update->execute();
+  }
+
+  /**
+   * Get a stored wmf_donor field for the test donor.
+   *
+   * @param string $fieldName
+   *
+   * @return mixed
+   * @throws \CRM_Core_Exception
+   */
+  private function getStoredDonorField(string $fieldName) {
+    return Contact::get(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['donor'])
+      ->addSelect("wmf_donor.$fieldName")
+      ->execute()->first()["wmf_donor.$fieldName"];
   }
 
   /**
@@ -986,11 +1048,10 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     }
 
     foreach ($annualContributionRecurs as $name => $recur) {
-      ContributionRecur::update(FALSE)
-        ->addValue('contribution_status_id', $recur['status'])
-        ->addValue('cancel_date', $recur['cancel_date'] ? date('Y-m-d', strtotime($recur['cancel_date'], strtotime($this->currentDate))) : NULL)
-        ->addWhere('id', '=', $this->ids['ContributionRecur'][$name])
-        ->execute();
+      $this->updateRecur([
+        'contribution_status_id' => $recur['status'],
+        'cancel_date' => $recur['cancel_date'] ? date('Y-m-d', strtotime($recur['cancel_date'], strtotime($this->currentDate))) : NULL,
+      ], $name);
     }
 
     WMFDonor::updateAnnualDonors(FALSE)->execute();
