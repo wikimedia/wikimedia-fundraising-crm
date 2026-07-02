@@ -30,12 +30,16 @@
         for (let p=0; p < placeholderCount; ++p) {
           this.placeholders.push({});
         }
+        const isSubsearch = $element.closest('.crm-search-col-type-subsearch').length > 0;
 
         // Add keys used by crmSearchDisplayTable.toggleColumns
         const setColumnDefaults = (col) => {
           col.enabled = true;
           col.fetched = true;
         };
+
+        // Useful for custom include columns; used by afAdmin/afListPlacementColumn.html
+        $scope.crmUrl = CRM.url;
 
         // This will ony be true if running the search outside of an Afform.
         // Within an Afform, default columns will be set by AfformSearchMetadataInjector.
@@ -77,7 +81,7 @@
         if (contactTab && !$element.is($('#' + contactTab + ' [search][display]').first())) {
           contactTab = null;
         }
-        let hasCounter = contactTab || ctrl.hasOwnProperty('totalCount');
+        let hasCounter = !isSubsearch && (contactTab || ctrl.hasOwnProperty('totalCount'));
         if (hasCounter) {
           $scope.$watch('$ctrl.rowCount', function(rowCount) {
             // Update totalCount only if no user filters are set
@@ -97,10 +101,12 @@
         }
 
         // Popup forms in this display or surrounding Afform trigger a refresh
-        $element.closest('form').on('crmPopupFormSuccess crmFormSuccess', function() {
-          ctrl.rowCount = null;
-          ctrl.getResultsPronto();
-        });
+        if (!isSubsearch) {
+          $element.closest('form').on('crmPopupFormSuccess crmFormSuccess', () => {
+            ctrl.rowCount = null;
+            ctrl.getResultsPronto();
+          });
+        }
 
         // When filters are changed, trigger callbacks and refresh search (if there's no search button)
         function onChangeFilters() {
@@ -155,7 +161,7 @@
         // Because `angular.$watch` runs immediately as well as on subsequent changes,
         // this also kicks off the first run of the search (if there's no search button).
         function setUpWatches() {
-          if (ctrl.afFieldset) {
+          if (ctrl.afFieldset && !isSubsearch) {
             $scope.$watch(ctrl.afFieldset.getFilterValues, onChangeFilters, true);
           }
           if (ctrl.settings.pager && ctrl.settings.pager.expose_limit) {

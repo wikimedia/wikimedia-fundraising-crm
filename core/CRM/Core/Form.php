@@ -1389,7 +1389,7 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
    *
    * @return HTML_QuickForm_group
    */
-  public function &addRadio($name, $title, $values, $attributes = [], $separator = NULL, $required = FALSE, $optionAttributes = [], $setRadioTextEscaped = FALSE) {
+  public function &addRadio($name, $title, $values, $attributes = [], $separator = '', $required = FALSE, $optionAttributes = [], $setRadioTextEscaped = FALSE) {
     $options = [];
     $attributes = $attributes ?: [];
     $allowClear = !empty($attributes['allowClear']);
@@ -2182,6 +2182,10 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
   }
 
   /**
+   * Add an Api4-based autocomplete field.
+   *
+   * Note: filters should be defined by implementing `autocompleteFilters()`.
+   *
    * @param string $name
    * @param string $label
    * @param array $props
@@ -2212,6 +2216,17 @@ class CRM_Core_Form extends HTML_QuickForm_Page {
 
     CRM_Utils_Array::remove($props, 'select', 'api', 'entity');
     return $this->add('text', $name, $label, $props, $required);
+  }
+
+  /**
+   * Form classes should override this to provide filters for autocompletes.
+   *
+   * @param $mainEntityId
+   *   Whatever the _contactId or _entityId is set to (typically the main entity being edited by the form).
+   * @return array
+   */
+  public static function autocompleteFilters($mainEntityId = NULL): array {
+    return [];
   }
 
   /**

@@ -550,9 +550,9 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
   private function formatFieldLinks($column, $data, $value): array {
     $links = [];
     foreach ((array) $value as $index => $val) {
-      // If contents of field are multi-valued, pass $index to formatLink(), otherwise NULL
+      // If contents of field are multi-valued (array_is_list), pass $index to formatLink(), otherwise NULL
       // This tells it whether to select a single value or all values in a multivalued token
-      $link = $this->formatLink($column['link'], $data, FALSE, $val, is_array($value) ? $index : NULL);
+      $link = $this->formatLink($column['link'], $data, FALSE, $val, is_array($value) && array_is_list($value) ? $index : NULL);
       if ($link) {
         // Style rules get appled to each link
         if (!empty($column['cssRules'])) {
@@ -669,6 +669,9 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       return NULL;
     }
     $link['text'] = $text ?? $this->replaceTokens($link['text'], $data, 'view');
+    if (!empty($link['title'])) {
+      $link['title'] = $this->replaceTokens($link['title'], $data, 'view');
+    }
     if (!empty($link['task'])) {
       $keys = ['task', 'text', 'title', 'icon', 'style'];
     }
@@ -1348,9 +1351,14 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
         break;
 
       case 'Money':
-        $currencyField = $this->getCurrencyField($key) ?? '';
-        $currency = is_string($data[$currencyField] ?? NULL) ? $data[$currencyField] : NULL;
-        $formatted = \Civi::format()->money($rawValue, $currency);
+        if ($format === 'number') {
+          $formatted = \CRM_Utils_Number::formatLocaleNumeric((string) $rawValue);
+        }
+        else {
+          $currencyField = $this->getCurrencyField($key) ?? '';
+          $currency = is_string($data[$currencyField] ?? NULL) ? $data[$currencyField] : NULL;
+          $formatted = \Civi::format()->money($rawValue, $currency);
+        }
         break;
 
       case 'Float':
@@ -2060,6 +2068,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
   protected function filterPrintableColumns(array &$settings): void {
     // Respect if user has disabled any columns, otherwise show all
     $this->toggleColumns = $this->toggleColumns ?: array_keys($settings['columns']);
+    $supportsLinks = isset($this->format) && !in_array($this->format, ['csv', 'array'], TRUE);
 
     // Checking permissions for menu, link or button columns is costly, so remove them early
     foreach ($settings['columns'] as $index => $col) {
@@ -2069,7 +2078,12 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       }
       // Avoid wasting time processing links, editable and other non-printable items from spreadsheet
       else {
-        \CRM_Utils_Array::remove($settings['columns'][$index], 'link', 'editable', 'icons', 'cssClass');
+        if ($supportsLinks) {
+          \CRM_Utils_Array::remove($settings['columns'][$index], 'editable', 'icons', 'cssClass');
+        }
+        else {
+          \CRM_Utils_Array::remove($settings['columns'][$index], 'link', 'editable', 'icons', 'cssClass');
+        }
       }
     }
 

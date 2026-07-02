@@ -74,7 +74,7 @@ class Admin {
       'joins' => self::getJoins($schema),
       'pseudoFields' => AbstractRunAction::getPseudoFields(),
       'operators' => \CRM_Utils_Array::makeNonAssociative(self::getOperators()),
-      'permissions' => [],
+      'permissions' => \CRM_Core_Permission::getPermissionList(['civicrm', 'cms', 'userRole']),
       'functions' => self::getSqlFunctions(),
       'displayTypes' => Display::getDisplayTypes(['id', 'name', 'label', 'description', 'icon', 'grouping']),
       'styles' => \CRM_Utils_Array::makeNonAssociative(self::getStyles()),
@@ -91,18 +91,6 @@ class Admin {
         \NumberFormatter::MIN_FRACTION_DIGITS => E::ts('Min Decimal Places'),
       ],
     ];
-    $perms = \Civi\Api4\Permission::get()
-      ->addWhere('group', 'IN', ['civicrm', 'cms'])
-      ->addWhere('is_active', '=', 1)
-      ->setOrderBy(['title' => 'ASC'])
-      ->execute();
-    foreach ($perms as $perm) {
-      $data['permissions'][] = [
-        'id' => $perm['name'],
-        'text' => $perm['title'],
-        'description' => $perm['description'] ?? NULL,
-      ];
-    }
     return $data;
   }
 
@@ -309,6 +297,19 @@ class Admin {
             }
           }
         }
+        // Contact ID of primary membership.
+        if ($entity['name'] === 'Membership') {
+          $ownerMembershipField = \CRM_Utils_Array::findAll($schema['Membership']['fields'], ['name' => 'owner_membership_id'])[0];
+          $newField = \CRM_Utils_Array::findAll($schema['Membership']['fields'], ['name' => 'contact_id'])[0];
+          $newField['name'] = 'owner_membership_id.contact_id';
+          $newField['label'] = ($ownerMembershipField['input_attrs']['label'] ?? $ownerMembershipField['label']) . ' ' . $newField['label'];
+          array_splice(
+            $entity['fields'],
+            array_search('owner_membership_id', array_column($entity['fields'], 'name')) + 1,
+            0,
+            [$newField]
+          );
+        }
       }
     }
     return array_values($schema);
@@ -457,7 +458,7 @@ class Admin {
         // FIXME: See comment above: this loop should be able to handle every entity.
         // Above block could be removed and the first part of this conditional
         // `($field['type'] === 'Custom' || $isVirtualEntity)` can be removed.
-        if (($field['type'] === 'Custom' || $isVirtualEntity) && $field['fk_entity'] && $field['input_type'] === 'EntityRef') {
+        if (($field['type'] === 'Custom' || $isVirtualEntity) && $field['fk_entity'] && in_array($field['input_type'], ['EntityRef', 'File'], TRUE)) {
           $entityRefJoins = self::getEntityRefJoins($entity, $field);
           foreach ($entityRefJoins as $joinEntity => $joinInfo) {
             $joins[$joinEntity][] = $joinInfo;

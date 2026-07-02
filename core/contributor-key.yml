@@ -399,6 +399,8 @@
 
 - name        : Andy Clarke
 
+- github      : davemoreton
+
 - github      : dbwells
   name        : Dan Wells
   organization: Calvin Theological Seminary
@@ -1679,6 +1681,8 @@
   name        : Sunil Pawar
   organization: Skvare
 
+- github      : sushant-cividesk
+
 - github      : swastikpareek
   name        : Swastik Pareek
   organization: QED42
@@ -1913,7 +1917,7 @@
 
 - github      : wintermoor
   name        : Torben Bertram
-  organization: Civiservice.de GmbH
+  organization: civiservice.de GmbH
 
 - github      : wmortada
   name        : William Mortada
