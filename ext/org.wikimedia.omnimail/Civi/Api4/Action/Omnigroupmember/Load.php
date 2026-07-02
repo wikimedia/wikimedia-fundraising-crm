@@ -316,7 +316,7 @@ class Load extends Omniaction {
       $job->saveJobSetting(array_merge($jobSettings, ['offset' => $offset + $count]));
 
       $rowsLeftBeforeThrottle--;
-      if ($throttleStagePoint && (strtotime('now') > $throttleStagePoint)) {
+      if ($throttleStagePoint && (strtotime('now') >= $throttleStagePoint)) {
         $throttleStagePoint = strtotime('+ ' . (int) $throttleSeconds . 'seconds');
         $rowsLeftBeforeThrottle = $throttleCount;
       }

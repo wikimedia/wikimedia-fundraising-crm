@@ -37,24 +37,44 @@ class CalculatedData extends TriggerHook {
    *
    * @var string
    */
-  private $segmentSelectSQL;
+  private $oldSegmentSelectSQL;
 
   /**
    * SQL for the status selects.
    *
    * @var string
    */
+  private $oldStatusSelectSQL;
+
+  /**
+   * SQL for the 2026 segment selects.
+   *
+   * @var string
+   */
+  private $segmentSelectSQL;
+
+  /**
+   * SQL for the status selects.
+   *
+   * Array of strings by type (overall, OTG, monthly, yearly)
+   *
+   * @var array
+   */
   private $statusSelectSQL;
 
   /**
-   * @param bool $triggerContext
+   * Cached field option_values, keyed by field name.
    *
-   * @return \Civi\WMFHook\CalculatedData
+   * @var array
    */
-  public function setTriggerContext(bool $triggerContext): self {
-    $this->triggerContext = $triggerContext;
-    return $this;
-  }
+  private $fieldOptions = [];
+
+  /**
+   * Cached donor status options, keyed by field.
+   *
+   * @var array
+   */
+  private $donorStatusOptions = [];
 
   /**
    * Where clause to restrict contacts/ contributions to include.
@@ -69,6 +89,8 @@ class CalculatedData extends TriggerHook {
   /**
    * Fields that are based on year-based totals.
    *
+   * Array of arrays by table name
+   *
    * @var array
    */
   protected $calculatedFields;
@@ -76,12 +98,16 @@ class CalculatedData extends TriggerHook {
   /**
    * Get the select clauses for year field for use when GROUP BY is not in use.
    *
+   *  Array of arrays by table name
+   *
    * @var array
    */
   protected $yearFieldSelects;
 
   /**
    * Get the select clauses for year field for use when GROUP BY is in use.
+   *
+   * Array of arrays by table name
    *
    * @var array
    */
@@ -94,12 +120,62 @@ class CalculatedData extends TriggerHook {
    */
   protected $updateClauses;
 
-  public function getCalculatedFields(): array {
+  /**
+   * Get the tables we add donor-recalculation triggers to, keyed by table
+   * name, with the fields whose change should fire a recalculation.
+   *
+   * @return array
+   */
+  public static function getTriggerTables(): array {
+    return [
+      'civicrm_contribution' => [
+        'significantFields' => ['contribution_status_id', 'total_amount', 'contact_id', 'receive_date', 'currency', 'financial_type_id'],
+        'getSelectSQL' => 'getContributionSelectSQL',
+      ],
+    ];
+  }
+
+  /**
+   * Get a CalculatedData processor for each source table.
+   *
+   * wmf_donor is populated from more than one source table, each handled by its
+   * own per-table instance.
+   *
+   * @param string|null $tableName
+   *
+   * @return self[]
+   */
+  public static function createForSourceTables(?string $tableName = NULL): array {
+    $processors = [];
+    foreach (array_keys(self::getTriggerTables()) as $table) {
+      if (!$tableName || $tableName === $table) {
+        $processor = new self();
+        $processor->setTableName($table);
+        $processors[$table] = $processor;
+      }
+    }
+    return $processors;
+  }
+
+  /**
+   * @param bool $triggerContext
+   *
+   * @return \Civi\WMFHook\CalculatedData
+   */
+  public function setTriggerContext(bool $triggerContext): self {
+    $this->triggerContext = $triggerContext;
+    return $this;
+  }
+
+  protected function getCalculatedFields(): array {
     if ($this->calculatedFields === NULL) {
-      $this->calculatedFields = [];
       $this->getWMFDonorFields();
     }
-    return $this->calculatedFields;
+    // If no table is set, for compatibility with existing code return a flattened array of all fields
+    if ($this->getTableName() === NULL) {
+      return array_merge(...array_values($this->calculatedFields));
+    }
+    return $this->calculatedFields[$this->getTableName()];
   }
 
   /**
@@ -110,8 +186,11 @@ class CalculatedData extends TriggerHook {
    * @return array []
    * @throws \CRM_Core_Exception
    */
-  public function getFieldOptions(string $fieldName): array {
-    return $this->getWMFDonorFields()[$fieldName]['option_values'] ?? [];
+  protected function getFieldOptions(string $fieldName): array {
+    if (!isset($this->fieldOptions[$fieldName])) {
+      $this->fieldOptions[$fieldName] = $this->getWMFDonorFields()[$fieldName]['option_values'] ?? [];
+    }
+    return $this->fieldOptions[$fieldName];
   }
 
   /**
@@ -158,16 +237,17 @@ class CalculatedData extends TriggerHook {
    *
    * @return array
    */
-  public function getTotalsFieldSelects(): array {
-    if ($this->yearFieldSelects === NULL) {
-      $this->yearFieldSelects = [];
+  protected function getTotalsFieldSelects(): array {
+    $tableName = $this->getTableName();
+    if (!isset($this->yearFieldSelects[$tableName])) {
+      $this->yearFieldSelects[$tableName] = [];
       foreach ($this->getCalculatedFields() as $yearField) {
         if (($yearField['table_alias'] ?? 'totals') === 'totals') {
-          $this->yearFieldSelects[$yearField['name']] = $yearField['select_clause'];
+          $this->yearFieldSelects[$tableName][$yearField['name']] = $yearField['select_clause'];
         }
       }
     }
-    return $this->yearFieldSelects;
+    return $this->yearFieldSelects[$tableName];
   }
 
   /**
@@ -175,7 +255,7 @@ class CalculatedData extends TriggerHook {
    *
    * @return array
    */
-  public function getUpdateClauses(): array {
+  protected function getUpdateClauses(): array {
     if ($this->updateClauses === NULL) {
       $this->updateClauses = [];
       foreach ($this->getCalculatedFields() as $yearField) {
@@ -195,23 +275,24 @@ class CalculatedData extends TriggerHook {
    *
    * @return array
    */
-  public function getSelectsAggregate(): array {
-    if ($this->selectsAggregate === NULL) {
-      $this->selectsAggregate = [];
+  protected function getSelectsAggregate(): array {
+    $tableName = $this->getTableName();
+    if (!isset($this->selectsAggregate[$tableName])) {
+      $this->selectsAggregate[$tableName] = [];
       foreach ($this->getCalculatedFields() as $calculatedField) {
         if (!empty($calculatedField['aggregate_select_clause'])) {
-          $this->selectsAggregate[$calculatedField['name']] = $calculatedField['aggregate_select_clause'];
+          $this->selectsAggregate[$tableName][$calculatedField['name']] = $calculatedField['aggregate_select_clause'];
         }
         else {
           // When full group by is applied (which it is not currently on our prod but at some point...)
           // it is necessary to aggregate all fields in some way - MAX is a stand in for when there is
           // only one value of interest.
           $operator = $calculatedField['group_by_operator'] ?? 'MAX';
-          $this->selectsAggregate[$calculatedField['name']] = $operator . '(' . $calculatedField['name'] . ") as " . $calculatedField['name'];
+          $this->selectsAggregate[$tableName][$calculatedField['name']] = $operator . '(' . $calculatedField['name'] . ") as " . $calculatedField['name'];
         }
       }
     }
-    return $this->selectsAggregate;
+    return $this->selectsAggregate[$tableName];
   }
 
   public static function getCalculatedCustomFieldGroupID(): int {
@@ -239,7 +320,7 @@ class CalculatedData extends TriggerHook {
   /**
    * @return mixed
    */
-  public function getWhereClause() {
+  protected function getWhereClause() {
     return $this->whereClause;
   }
 
@@ -256,16 +337,16 @@ class CalculatedData extends TriggerHook {
   /**
    * @return string
    */
-  public function isTriggerContext(): string {
+  protected function isTriggerContext(): string {
     return $this->triggerContext;
   }
 
   /**
    * Add triggers for our calculated custom fields.
    *
-   * Whenever a contribution is updated the fields are re-calculated provided
-   * the change is an update, a delete or an update which alters a relevant field
-   * (contribution_status_id, receive_date, total_amount, contact_id, currency).
+   * Whenever a contribution or recurring contribution is updated the fields are
+   * re-calculated provided the change is an update, a delete or an update which
+   * alters a relevant field per getTriggerTables().)
    *
    * All fields in the dataset are recalculated (the performance gain on a
    * 'normal' contact of being more selective was too little to show in testing.
@@ -287,70 +368,77 @@ class CalculatedData extends TriggerHook {
       return [];
     }
     $info = [];
+    $sql = $this->getUpdateWMFDonorSql();
     $tableName = $this->getTableName();
-    if (!$tableName || $tableName === 'civicrm_contribution') {
-      $sql = $this->getUpdateWMFDonorSql();
-
-      $significantFields = ['contribution_status_id', 'total_amount', 'contact_id', 'receive_date', 'currency', 'financial_type_id'];
-      $updateConditions = [];
-      foreach ($significantFields as $significantField) {
-        $updateConditions[] = "(NEW.{$significantField} != OLD.{$significantField})";
-      }
-
-      $requiredClauses = [1];
-
-      $matchingGiftDonors = civicrm_api3('Contact', 'get', ['nick_name' => ['IN' => ['Microsoft', 'Google', 'Apple', 'Citi']]])['values'];
-      $excludedContacts = array_keys($matchingGiftDonors);
-      $anonymousContact = civicrm_api3('Contact', 'get', [
-        'first_name' => 'Anonymous',
-        'last_name' => 'Anonymous',
-        'options' => ['limit' => 1, 'sort' => 'id ASC'],
-      ]);
-      if ($anonymousContact['count']) {
-        $excludedContacts[] = $anonymousContact['id'];
-      }
-      if (!empty($excludedContacts)) {
-        // On live there will always be an anonymous contact. Check is just for dev instances.
-        $requiredClauses[] = '(NEW.contact_id NOT IN (' . implode(',', $excludedContacts) . '))';
-      }
-
-      $insertSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' THEN' . $sql . ' END IF; ';
-      $updateSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' AND (' . implode(' OR ', $updateConditions) . ' ) THEN' . $sql . ' END IF; ';
-      $requiredClausesForOldClause = str_replace('NEW.', 'OLD.', implode(' AND ', $requiredClauses));
-      $oldSql = str_replace('NEW.', 'OLD.', $sql);
-      $updateOldSQL = ' IF ' . $requiredClausesForOldClause
-        . ' AND (NEW.contact_id <> OLD.contact_id) THEN'
-        . $oldSql . " END IF;\n";
-
-      $deleteSql = ' IF ' . $requiredClausesForOldClause . ' THEN' . $oldSql . ' END IF; ';
-
-      // We want to fire this trigger on insert, update and delete.
-      $info[] = [
-        'table' => 'civicrm_contribution',
-        'when' => 'AFTER',
-        'event' => 'INSERT',
-        'sql' => $insertSQL,
-      ];
-      $info[] = [
-        'table' => 'civicrm_contribution',
-        'when' => 'AFTER',
-        'event' => 'UPDATE',
-        'sql' => $updateSQL,
-      ];
-      $info[] = [
-        'table' => 'civicrm_contribution',
-        'when' => 'AFTER',
-        'event' => 'UPDATE',
-        'sql' => $updateOldSQL,
-      ];
-      // For delete, we reference OLD.field instead of NEW.field
-      $info[] = [
-        'table' => 'civicrm_contribution',
-        'when' => 'AFTER',
-        'event' => 'DELETE',
-        'sql' => $deleteSql,
-      ];
+    $updateConditions = [];
+    foreach (self::getTriggerTables()[$tableName]['significantFields'] as $significantField) {
+      $updateConditions[] = "(NEW.{$significantField} != OLD.{$significantField})";
     }
+
+    $requiredClauses = [1];
+
+    $matchingGiftDonors = civicrm_api3('Contact', 'get', ['nick_name' => ['IN' => ['Microsoft', 'Google', 'Apple', 'Citi']]])['values'];
+    $excludedContacts = array_keys($matchingGiftDonors);
+    $anonymousContact = civicrm_api3('Contact', 'get', [
+      'first_name' => 'Anonymous',
+      'last_name' => 'Anonymous',
+      'options' => ['limit' => 1, 'sort' => 'id ASC'],
+    ]);
+    if ($anonymousContact['count']) {
+      $excludedContacts[] = $anonymousContact['id'];
+    }
+    if (!empty($excludedContacts)) {
+      // On live there will always be an anonymous contact. Check is just for dev instances.
+      $requiredClauses[] = '(NEW.contact_id NOT IN (' . implode(',', $excludedContacts) . '))';
+    }
+
+    $updateClauses = $requiredClauses;
+    if ($tableName === 'civicrm_contribution_recur') {
+      $processingID = \Civi\Api4\OptionValue::get(FALSE)
+        ->addSelect('value')
+        ->addWhere('option_group_id:name', '=', 'contribution_recur_status')
+        ->addWhere('name', '=', 'Processing')
+        ->execute()->first()['value'] ?? NULL;
+      // For updates, don't recalculate while processing each recurring, only after processing finishes.
+      $updateClauses[] = "(NEW.contribution_status_id <> $processingID)";
+    }
+
+    $insertSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' THEN' . $sql . "\nEND IF;\n";
+    $updateSQL = ' IF ' . implode(' AND ', $updateClauses) . ' AND (' . implode(' OR ', $updateConditions) . ' ) THEN' . $sql . "\nEND IF;\n";
+    $requiredClausesForOldClause = str_replace('NEW.', 'OLD.', implode(' AND ', $requiredClauses));
+    $oldSql = str_replace('NEW.', 'OLD.', $sql);
+    $updateOldSQL = ' IF ' . $requiredClausesForOldClause
+      . ' AND (NEW.contact_id <> OLD.contact_id) THEN'
+      . $oldSql . "\nEND IF;\n";
+
+    $deleteSql = ' IF ' . $requiredClausesForOldClause . ' THEN' . $oldSql . "\nEND IF;\n";
+
+    // We want to fire this trigger on insert, update and delete.
+    $info[] = [
+      'table' => $tableName,
+      'when' => 'AFTER',
+      'event' => 'INSERT',
+      'sql' => $insertSQL,
+    ];
+    $info[] = [
+      'table' => $tableName,
+      'when' => 'AFTER',
+      'event' => 'UPDATE',
+      'sql' => $updateSQL,
+    ];
+    $info[] = [
+      'table' => $tableName,
+      'when' => 'AFTER',
+      'event' => 'UPDATE',
+      'sql' => $updateOldSQL,
+    ];
+    // For delete, we reference OLD.field instead of NEW.field
+    $info[] = [
+      'table' => $tableName,
+      'when' => 'AFTER',
+      'event' => 'DELETE',
+      'sql' => $deleteSql,
+    ];
     return $info;
   }
 
@@ -381,19 +469,22 @@ class CalculatedData extends TriggerHook {
    * @param array $fieldsToShow
    */
   public function filterDonorFields(array $fieldsToShow): void {
+    $tableName = $this->getTableName();
     $allFields = $this->getCalculatedFields();
-    // Reduce calculated fields to the intersection.
-    $this->calculatedFields = array_intersect_key($allFields, array_fill_keys($fieldsToShow, 1));
+    // Reduce this table's calculated fields to the intersection.
+    $this->calculatedFields[$tableName] = array_intersect_key($allFields, array_fill_keys($fieldsToShow, 1));
 
     // Put back join fields if needed for other fields, or to ensure there is at least one field present.
-    if (empty($this->calculatedFields) || $this->isIncludeTable('latest')) {
-      $this->calculatedFields['all_funds_last_donation_date'] = $allFields['all_funds_last_donation_date'];
-    }
-    if ($this->isIncludeTable('earliest')) {
-      $this->calculatedFields['first_donation_date'] = $allFields['first_donation_date'];
-    }
-    if ($this->isIncludeTable('largest')) {
-      $this->calculatedFields['largest_donation'] = $allFields['largest_donation'];
+    if ($tableName === 'civicrm_contribution') {
+      if (empty($this->calculatedFields[$tableName]) || $this->isIncludeTable('latest')) {
+        $this->calculatedFields[$tableName]['all_funds_last_donation_date'] = $allFields['all_funds_last_donation_date'];
+      }
+      if ($this->isIncludeTable('earliest')) {
+        $this->calculatedFields[$tableName]['all_funds_first_donation_date'] = $allFields['all_funds_first_donation_date'];
+      }
+      if ($this->isIncludeTable('largest')) {
+        $this->calculatedFields[$tableName]['largest_donation'] = $allFields['largest_donation'];
+      }
     }
   }
 
@@ -402,9 +493,9 @@ class CalculatedData extends TriggerHook {
    *
    * @return array
    */
-  public function getRequiredTables(): array {
+  protected function getRequiredTables(): array {
     $tables = [];
-    foreach ($this->calculatedFields as $field) {
+    foreach ($this->getCalculatedFields() as $field) {
       $table = $field['table_alias'] ?? 'wmf_donor';
       $tables[$table] = $table;
     }
@@ -418,7 +509,7 @@ class CalculatedData extends TriggerHook {
    *
    * @return bool
    */
-  public function isIncludeTable($tableAlias): bool {
+  protected function isIncludeTable($tableAlias): bool {
     return isset($this->getRequiredTables()[$tableAlias]);
   }
 
@@ -432,10 +523,10 @@ class CalculatedData extends TriggerHook {
    */
   public function getWMFDonorFields(): array {
     $endowmentFinancialType = $this->getEndowmentFinancialType();
-    $this->calculatedFields = [
-      'donor_segment_id' => [
-        'name' => 'donor_segment_id',
-        'column_name' => 'donor_segment_id',
+    $contributionFields = [
+      'donor_segment_overall' => [
+        'name' => 'donor_segment_overall',
+        'column_name' => 'donor_segment_overall',
         'label' => ts('Donor Segment'),
         'data_type' => 'Int',
         'default_value' => 1000,
@@ -443,20 +534,73 @@ class CalculatedData extends TriggerHook {
         'is_active' => 1,
         'is_searchable' => 1,
         'is_view' => 1,
-        'select_clause' => $this->getSegmentSelect(),
+        'table_alias' => 'consecutive_years',
+        'aggregate_select_clause' => $this->getSegmentSelect(),
         'option_values' => $this->getDonorSegmentOptions(),
+      ],
+      'years_consecutive' => [
+        'name' => 'years_consecutive',
+        'column_name' => 'years_consecutive',
+        'label' => ts('Consecutive Giving Years'),
+        'data_type' => 'Int',
+        'default_value' => 0,
+        'html_type' => 'Text',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+        'table_alias' => 'consecutive_years',
+        'aggregate_select_clause' => 'COALESCE(MAX(consecutive_years.years_consecutive), 0) as years_consecutive',
+      ],
+      'donor_status_overall' => [
+        'name' => 'donor_status_overall',
+        'column_name' => 'donor_status_overall',
+        'label' => ts('Donor Status: Overall'),
+        'data_type' => 'Int',
+        'default_value' => 100,
+        'html_type' => 'Select',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+        'select_clause' => $this->getOverallOTGDonorStatusSelect('donor_status_overall'),
+        'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_overall'),
+      ],
+      'donor_status_otg' => [
+        'name' => 'donor_status_otg',
+        'column_name' => 'donor_status_otg',
+        'label' => ts('Donor Status: OTG'),
+        'data_type' => 'Int',
+        'default_value' => 100,
+        'html_type' => 'Select',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+        'select_clause' => $this->getOverallOTGDonorStatusSelect('donor_status_otg'),
+        'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_otg'),
+      ],
+      'donor_segment_id' => [
+        'name' => 'donor_segment_id',
+        'column_name' => 'donor_segment_id',
+        'label' => ts('Old Donor Segment'),
+        'data_type' => 'Int',
+        'default_value' => 1000,
+        'html_type' => 'Select',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+        'select_clause' => $this->getOldSegmentSelect(),
+        'option_values' => $this->getOldDonorSegmentOptions(),
       ],
       'donor_status_id' => [
         'name' => 'donor_status_id',
         'column_name' => 'donor_status_id',
-        'label' => ts('Donor Status'),
+        'label' => ts('Old Donor Status'),
         'data_type' => 'Int',
         'html_type' => 'Select',
         'is_active' => 1,
         'is_searchable' => 1,
         'is_view' => 1,
-        'select_clause' => $this->getSegmentStatusSelect(),
-        'option_values' => $this->getDonorStatusOptions(),
+        'select_clause' => $this->getOldSegmentStatusSelect(),
+        'option_values' => $this->getOldDonorStatusOptions(),
       ],
       'last_donation_currency' => [
         'name' => 'last_donation_currency',
@@ -485,9 +629,7 @@ class CalculatedData extends TriggerHook {
         'is_view' => 1,
         'table_alias' => 'latest',
         'select_clause' => 'COALESCE(x.original_amount, latest.total_amount, 0) as last_donation_amount',
-        'aggregate_select_clause' => 'MAX(COALESCE(x.original_amount,
- latest.total_amount,
- 0)) as last_donation_amount',
+        'aggregate_select_clause' => 'MAX(COALESCE(x.original_amount, latest.total_amount, 0)) as last_donation_amount',
       ],
       'last_donation_usd' => [
         'name' => 'last_donation_usd',
@@ -502,8 +644,7 @@ class CalculatedData extends TriggerHook {
         'is_view' => 1,
         'table_alias' => 'latest',
         'select_clause' => 'COALESCE(latest.total_amount, 0) as last_donation_usd',
-        'aggregate_select_clause' => 'MAX(COALESCE(latest.total_amount,
- 0)) as last_donation_usd',
+        'aggregate_select_clause' => 'MAX(COALESCE(latest.total_amount, 0)) as last_donation_usd',
       ],
       'first_donation_usd' => [
         'name' => 'first_donation_usd',
@@ -518,8 +659,19 @@ class CalculatedData extends TriggerHook {
         'is_view' => 1,
         'table_alias' => 'earliest',
         'select_clause' => 'COALESCE(earliest.total_amount, 0) as first_donation_usd,',
-        'aggregate_select_clause' => 'MAX(COALESCE(earliest.total_amount,
- 0)) as first_donation_usd',
+        'aggregate_select_clause' => 'MAX(COALESCE(earliest.total_amount, 0)) as first_donation_usd',
+      ],
+      'first_donation_was_recur' => [
+        'name' => 'first_donation_was_recur',
+        'column_name' => 'first_donation_was_recur',
+        'label' => ts('First donation was recurring?'),
+        'data_type' => 'Boolean',
+        'html_type' => 'Radio',
+        'is_active' => 1,
+        'is_searchable' => 0,
+        'is_view' => 1,
+        'table_alias' => 'earliest',
+        'aggregate_select_clause' => 'MAX(IF(earliest.id IS NULL, NULL, earliest.contribution_recur_id IS NOT NULL OR ppmc_recur.id IS NOT NULL)) as first_donation_was_recur',
       ],
       'date_of_largest_donation' => [
         'name' => 'date_of_largest_donation',
@@ -694,7 +846,7 @@ class CalculatedData extends TriggerHook {
       // This weight setting seems to be ignored - but perhaps doesn't matter.
       $weight = $year - 2000;
       // Add financial year fields (5 years worth).
-      $this->calculatedFields["total_{$year}_{$nextYear}"] = [
+      $contributionFields["total_{$year}_{$nextYear}"] = [
         'name' => "total_{$year}_{$nextYear}",
         'column_name' => "total_{$year}_{$nextYear}",
         'label' => ts("FY {$year}-{$nextYear} total"),
@@ -711,7 +863,7 @@ class CalculatedData extends TriggerHook {
       ];
       // Add calendar year fields.
       if ($year >= self::WMF_MIN_CALENDER_YEAR) {
-        $this->calculatedFields["total_{$year}"] = [
+        $contributionFields["total_{$year}"] = [
           'name' => "total_{$year}",
           'column_name' => "total_{$year}",
           'label' => ts("CY {$year} total"),
@@ -728,8 +880,8 @@ class CalculatedData extends TriggerHook {
         ];
       }
       // Financial year totals for endowment (5 years)
-      $this->calculatedFields["endowment_total_{$year}_{$nextYear}"] = array_merge(
-        $this->calculatedFields["total_{$year}_{$nextYear}"], [
+      $contributionFields["endowment_total_{$year}_{$nextYear}"] = array_merge(
+        $contributionFields["total_{$year}_{$nextYear}"], [
           'name' => "endowment_total_{$year}_{$nextYear}",
           'column_name' => "endowment_total_{$year}_{$nextYear}",
           'label' => 'Endowment ' . ts("FY {$year}-{$nextYear} total"),
@@ -738,8 +890,8 @@ class CalculatedData extends TriggerHook {
       );
       // Endowment field total
       if ($year >= self::WMF_MIN_CALENDER_YEAR) {
-        $this->calculatedFields["endowment_total_{$year}"] = array_merge(
-          $this->calculatedFields["total_{$year}"], [
+        $contributionFields["endowment_total_{$year}"] = array_merge(
+          $contributionFields["total_{$year}"], [
             'name' => "endowment_total_{$year}",
             'column_name' => "endowment_total_{$year}",
             'label' => 'Endowment ' . ts("CY {$year} total"),
@@ -748,8 +900,8 @@ class CalculatedData extends TriggerHook {
         );
       }
       // Financial year totals for all funds (5 years)
-      $this->calculatedFields["all_funds_total_{$year}_{$nextYear}"] = array_merge(
-        $this->calculatedFields["total_{$year}_{$nextYear}"], [
+      $contributionFields["all_funds_total_{$year}_{$nextYear}"] = array_merge(
+        $contributionFields["total_{$year}_{$nextYear}"], [
           'name' => "all_funds_total_{$year}_{$nextYear}",
           'column_name' => "all_funds_total_{$year}_{$nextYear}",
           'label' => 'All Funds ' . ts("FY {$year}-{$nextYear} total"),
@@ -758,7 +910,7 @@ class CalculatedData extends TriggerHook {
       );
       if ($nextYear >= self::WMF_MIN_CALENDER_YEAR) {
         // Change fields, year ending in this year onwards, co-incident with our calendar years.
-        $this->calculatedFields["all_funds_change_{$year}_{$nextYear}"] = [
+        $contributionFields["all_funds_change_{$year}_{$nextYear}"] = [
           'name' => "all_funds_change_{$year}_{$nextYear}",
           'column_name' => "all_funds_change_{$year}_{$nextYear}",
           'label' => ts("All Funds Change {$year}-{$nextYear} total"),
@@ -776,7 +928,7 @@ class CalculatedData extends TriggerHook {
              as all_funds_change_{$year}_{$nextYear}",
         ];
 
-        $this->calculatedFields["endowment_change_{$year}_{$nextYear}"] = [
+        $contributionFields["endowment_change_{$year}_{$nextYear}"] = [
           'name' => "endowment_change_{$year}_{$nextYear}",
           'column_name' => "endowment_change_{$year}_{$nextYear}",
           'label' => ts("Endowment Change {$year}-{$nextYear} total"),
@@ -794,7 +946,7 @@ class CalculatedData extends TriggerHook {
             - SUM(COALESCE(IF(c.financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_{$year}_{$nextYear}",
         ];
-        $this->calculatedFields["change_{$year}_{$nextYear}"] = [
+        $contributionFields["change_{$year}_{$nextYear}"] = [
           'name' => "change_{$year}_{$nextYear}",
           'column_name' => "change_{$year}_{$nextYear}",
           'label' => ts("Change {$year}-{$nextYear} total"),
@@ -814,8 +966,11 @@ class CalculatedData extends TriggerHook {
         ];
       }
     }
+    $this->calculatedFields = [
+      'civicrm_contribution' => $contributionFields,
+    ];
 
-    return $this->calculatedFields;
+    return array_merge(...array_values($this->calculatedFields));
   }
 
   /**
@@ -831,13 +986,14 @@ class CalculatedData extends TriggerHook {
    * @return string
    */
   protected function getUpdateWMFDonorSql(): string {
-    return '
+    return "
       INSERT INTO wmf_donor (
-        entity_id, ' . implode(",\n", array_keys($this->getCalculatedFields())) . '
-      )'
-      . $this->getSelectSQL() . '
+        entity_id,\n        " . implode(",\n        ", array_keys($this->getCalculatedFields())) . "
+      )
+      " . $this->getSelectSQL() . "
      ON DUPLICATE KEY UPDATE
-    ' . implode(",\n", $this->getUpdateClauses()) . ";";
+     " . implode(",\n     ", $this->getUpdateClauses()) . ";";
+
   }
 
   /**
@@ -846,67 +1002,119 @@ class CalculatedData extends TriggerHook {
    * @return string
    */
   public function getSelectSQL(): string {
-    $endowmentFinancialType = $this->getEndowmentFinancialType();
-    return 'SELECT
-      ' . ($this->isTriggerContext() ? ' NEW.contact_id as entity_id , ' : ' totals.contact_id as entity_id , ')
-      . '# to honour FULL_GROUP_BY mysql mode we need an aggregate command for each
- # field - even though we know we just want `the value from the subquery`
- # MAX is a safe wrapper for that
- # https://www.percona.com/blog/2019/05/13/solve-query-failures-regarding-only_full_group_by-sql-mode/
- '
-      . implode(', ', $this->getSelectsAggregate()) . "
+    // After filterDonorFields() this is only the requested fields for this table, so empty means no SQL needed.
+    if (empty($this->getCalculatedFields())) {
+      return '';
+    }
+    $method = self::getTriggerTables()[$this->getTableName()]['getSelectSQL'];
+    return $this->$method();
+  }
 
-    FROM (
-      SELECT\n " . (!$this->isTriggerContext() ? ' c.contact_id,' : '')
-      . implode(",\n", $this->getTotalsFieldSelects()) . "
-      FROM civicrm_contribution c
-      USE INDEX(FK_civicrm_contribution_contact_id)
-        LEFT JOIN civicrm_contribution_recur annual_recur
-           ON annual_recur.id = c.contribution_recur_id
-           AND annual_recur.frequency_unit = 'year'
-           -- contribution_status_id != cancelled?
-      WHERE " . ($this->isTriggerContext() ? ' c.contact_id = NEW.contact_id' : $this->getWhereClause()) . "
-        AND c.contribution_status_id = 1
-        AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)"
-      . (!$this->isTriggerContext() ? ' GROUP BY contact_id ' : '') . "
-    ) as totals" .
-
+  /**
+   * Get the string to select the wmf donor data fpr the contribution table.
+   *
+   * @return string
+   */
+  protected function getContributionSelectSQL(): string {
+    $innerColumns = $this->getTotalsFieldSelects();
+    if ($this->isTriggerContext()) {
+      $where = 'c.contact_id = NEW.contact_id';
+      $groupBy = '';
+      $entityID = 'NEW.contact_id';
+    }
+    else {
+      // Add c.contact_id manually outside trigger context as we don't have NEW.contact_id to group by
+      array_unshift($innerColumns, 'c.contact_id');
+      $where = $this->getWhereClause();
+      $groupBy = 'GROUP BY c.contact_id';
+      $entityID = 'totals.contact_id';
+    }
+    return "SELECT $entityID as entity_id,
+      " . implode(",\n      ", $this->getSelectsAggregate()) . "
+      FROM (
+        SELECT " . implode(",\n        ", $innerColumns) . "
+  FROM civicrm_contribution c
+  USE INDEX(FK_civicrm_contribution_contact_id)
+  -- TODO: remove this join when removing donor_segment_id and donor_status_id
+  LEFT JOIN civicrm_contribution_recur annual_recur
+    ON annual_recur.id = c.contribution_recur_id
+    AND annual_recur.frequency_unit = 'year'
+  WHERE $where
+    AND c.contribution_status_id = 1
+    AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
+  $groupBy
+  ) as totals" .
       (!$this->isIncludeTable('latest') ? '' : "
-
   LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
-    ON latest.contact_id = " . ($this->isTriggerContext() ? ' NEW.contact_id' : ' totals.contact_id') . "
+    ON latest.contact_id = $entityID
     AND latest.receive_date = totals.all_funds_last_donation_date
     AND latest.contribution_status_id = 1
     AND latest.total_amount > 0
     AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)
-  LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id
-") .
-
+  LEFT JOIN wmf_contribution_extra x ON x.entity_id = latest.id") .
       (!$this->isIncludeTable('earliest') ? '' : "
   LEFT JOIN civicrm_contribution earliest
     USE INDEX(FK_civicrm_contribution_contact_id)
-    ON earliest.contact_id = " . ($this->isTriggerContext() ? ' NEW.contact_id' : ' totals.contact_id') . "
-    AND earliest.receive_date = totals.first_donation_date
+    ON earliest.contact_id = $entityID
+    AND earliest.receive_date = totals.all_funds_first_donation_date
     AND earliest.contribution_status_id = 1
     AND earliest.total_amount > 0
-    AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)")
-
-      . (!$this->isIncludeTable('largest') ? '' : "
-
+    AND (earliest.trxn_id NOT LIKE 'RFD %' OR earliest.trxn_id IS NULL)
+    LEFT JOIN civicrm_contribution_recur ppmc_recur
+      ON ppmc_recur.invoice_id = earliest.invoice_id
+      AND ppmc_recur.contact_id = $entityID") .
+      (!$this->isIncludeTable('largest') ? '' : "
   LEFT JOIN civicrm_contribution largest
     USE INDEX(FK_civicrm_contribution_contact_id)
-    ON largest.contact_id = " . ($this->isTriggerContext() ? ' NEW.contact_id ' : ' totals.contact_id ') . "
+    ON largest.contact_id = $entityID
     AND largest.total_amount = totals.largest_donation
     AND largest.contribution_status_id = 1
     AND largest.total_amount > 0
     AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)") .
-
-      " GROUP BY " . ($this->isTriggerContext() ? ' NEW.contact_id' : ' totals.contact_id');
+      (!$this->isIncludeTable('consecutive_years') ? '' : $this->getSegmentRollupJoin($where, $entityID)) . "
+  GROUP BY $entityID";
   }
 
   /**
-   * Run a back fill on WMF donor data.
+   * Get the join that calculates donor_segment_overall & years_consecutive
+   * by grouping contributions by fy and calculating from latest donation fy.
+   *
+   * @param string $where
+   * @param string $entityID
+   *
+   * @return string
+   */
+  protected function getSegmentRollupJoin(string $where, string $entityID): string {
+    return "
+  LEFT JOIN (
+    SELECT contact_id,
+      last_fy,
+      MAX(IF(fy >= last_fy - 2, fy_total, 0)) AS highest_3y_window_total,
+      SUM(streak_group = last_fy + 1) AS years_consecutive
+    FROM (
+      SELECT contact_id, fy, fy_total,
+        MAX(fy) OVER (PARTITION BY contact_id) AS last_fy,
+        fy + ROW_NUMBER() OVER (PARTITION BY contact_id ORDER BY fy DESC) AS streak_group
+      FROM (
+        SELECT c.contact_id,
+          YEAR(c.receive_date) - (MONTH(c.receive_date) < 7) AS fy,
+          SUM(c.total_amount) AS fy_total
+        FROM civicrm_contribution c
+        USE INDEX(FK_civicrm_contribution_contact_id)
+        WHERE $where
+          AND c.contribution_status_id = 1
+          AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
+          AND c.total_amount > 0
+        GROUP BY c.contact_id, fy
+      ) fy_totals
+    ) fy_islands
+    GROUP BY contact_id, last_fy
+  ) consecutive_years ON consecutive_years.contact_id = $entityID";
+  }
+
+  /**
+   * Run a back fill on WMF donor data for this source table.
    *
    * This will recalculate and update WMF donor data where the where clause is
    * met.
@@ -918,7 +1126,9 @@ class CalculatedData extends TriggerHook {
     if (!$this->getWhereClause()) {
       throw new \CRM_Core_Exception('This update requires a WHERE clause');
     }
-    \CRM_Core_DAO::executeQuery($this->getUpdateWMFDonorSql());
+    if (!empty($this->getCalculatedFields())) {
+      \CRM_Core_DAO::executeQuery($this->getUpdateWMFDonorSql());
+    }
   }
 
   /**
@@ -931,27 +1141,72 @@ class CalculatedData extends TriggerHook {
   }
 
   /**
-   * Get the select clause for the donor segment status.
+   * Get the select clause for the old donor segment status.
    *
    * Currently a placeholder.
    *
    * @return string
    * @throws \CRM_Core_Exception
    */
-  protected function getSegmentStatusSelect(): string {
-    if (!$this->statusSelectSQL) {
-      $options = $this->getDonorStatusOptions();
-      $this->statusSelectSQL = "\nCASE";
+  protected function getOldSegmentStatusSelect(): string {
+    if (!$this->oldStatusSelectSQL) {
+      $options = $this->getOldDonorStatusOptions();
+      $this->oldStatusSelectSQL = "\nCASE";
       foreach ($options as $option) {
         if (!empty($option['sql_select'])) {
-          $this->statusSelectSQL .= "\n" . $option['sql_select'] . ' THEN ' . $option['value'] . "\n";
+          $this->oldStatusSelectSQL .= "\n" . $option['sql_select'] . ' THEN ' . $option['value'] . "\n";
         }
       }
-      $this->statusSelectSQL .= '
+      $this->oldStatusSelectSQL .= '
        ELSE 1000
-       END  as donor_status_id';
+       END as donor_status_id';
     }
-    return $this->statusSelectSQL;
+    return $this->oldStatusSelectSQL;
+  }
+
+  /**
+   * Get the select clause for the old donor segment.
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  protected function getOldSegmentSelect(): string {
+    if (!$this->oldSegmentSelectSQL) {
+      $options = $this->getOldDonorSegmentOptions();
+      $this->oldSegmentSelectSQL = ' CASE ';
+      foreach ($options as $option) {
+        if (!empty($option['sql_select'])) {
+          $this->oldSegmentSelectSQL .= "\n" . $option['sql_select'] . ' THEN ' . $option['value'] . "\n";
+        }
+      }
+      $this->oldSegmentSelectSQL .= '
+       ELSE 1000
+       END as donor_segment_id';
+    }
+    return $this->oldSegmentSelectSQL;
+  }
+
+  /**
+   * Get the select clause for the Overall or OTG donor status.
+   *
+   * @param string $field
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  protected function getOverallOTGDonorStatusSelect(string $field): string {
+    if (!isset($this->statusSelectSQL[$field])) {
+      $this->statusSelectSQL[$field] = "\nCASE";
+      foreach ($this->getSpecifiedDonorStatusOptions($field) as $option) {
+        if (!empty($option['sql_select'])) {
+          $this->statusSelectSQL[$field] .= "\n" . $option['sql_select'] . ' THEN ' . $option['value'] . "\n";
+        }
+      }
+      $this->statusSelectSQL[$field] .= '
+       ELSE 100
+       END as ' . $field;
+    }
+    return $this->statusSelectSQL[$field];
   }
 
   /**
@@ -962,30 +1217,27 @@ class CalculatedData extends TriggerHook {
    */
   protected function getSegmentSelect(): string {
     if (!$this->segmentSelectSQL) {
-      $options = $this->getDonorSegmentOptions();
-      $this->segmentSelectSQL = "\nCASE";
-      foreach ($options as $option) {
-        if (!empty($option['sql_select'])) {
-          $this->segmentSelectSQL .= "\n" . $option['sql_select'] . ' THEN ' . $option['value'] . "\n";
+      $this->segmentSelectSQL = 'MAX(CASE';
+      foreach ($this->getDonorSegmentOptions() as $option) {
+        if (isset($option['threshold'])) {
+          $this->segmentSelectSQL .= "\n         WHEN consecutive_years.highest_3y_window_total >= {$option['threshold']} THEN {$option['value']}";
         }
       }
-      $this->segmentSelectSQL .= '
-       ELSE 1000
-       END  as donor_segment_id';
+      $this->segmentSelectSQL .= "\n         ELSE 1000\n       END) as donor_segment_overall";
     }
     return $this->segmentSelectSQL;
   }
 
   /**
-   * Get explanations of the segment options.
+   * Get explanations of the old segment options.
    *
    * This is primary for fr-tech brain injury prevention during QA.
    * It's not clear the longer term role of this function.
    *
    * @throws \CRM_Core_Exception
    */
-  public function getSegmentOptionDetails($value): string {
-    foreach ($this->getDonorSegmentOptions() as $segmentOption) {
+  public function getOldSegmentOptionDetails($value): string {
+    foreach ($this->getOldDonorSegmentOptions() as $segmentOption) {
       if ($segmentOption['value'] === $value) {
         return $segmentOption['static_description'] . ' ' . $segmentOption['description'];
       }
@@ -994,7 +1246,169 @@ class CalculatedData extends TriggerHook {
   }
 
   /**
-   * Get the options for the donor status field.
+   * Get the donor segment options by field type.
+   *
+   * @param string $field
+   * @return array[]
+   * @throws \CRM_Core_Exception
+   */
+  public function getSpecifiedDonorStatusOptions(string $field): array {
+    if (isset($this->donorStatusOptions[$field])) {
+      return $this->donorStatusOptions[$field];
+    }
+    switch ($field) {
+      case 'donor_status_overall':
+      case 'donor_status_otg':
+        return $this->donorStatusOptions[$field] = $this->getOverallOTGDonorStatusOptions($field);
+      default:
+        return $this->donorStatusOptions[$field] = [];
+    }
+  }
+
+
+  /**
+   * Get the options for the overall and OTG donor status fields.
+   *
+   * Ref
+   * https://docs.google.com/spreadsheets/d/17Pc1tIvqol6XJhuu97RlOfwy_Avbb9MEaRwhy2F529I/edit?usp=sharing
+   *
+   * @param string $field
+   * @return array[]
+   * @throws \CRM_Core_Exception
+   */
+  protected function getOverallOTGDonorStatusOptions(string $field): array {
+    $details = [
+      10 => [
+        'label' => 'Consecutive this year',
+        'static_description' => 'Gave this year and the year before',
+        'value' => 10,
+        'name' => 'consecutive',
+        'criteria' => [
+          // multiple ranges are AND rather than OR
+          'multiple_range' => [
+            ['from' => $this->getFinancialYearStartDateTime(), 'to' => $this->getFinancialYearEndDateTime()],
+            ['from' => $this->getFinancialYearStartDateTime(-1), 'to' => $this->getFinancialYearEndDateTime(-1)],
+          ],
+        ],
+      ],
+      20 => [
+        'label' => 'Reactivated this year',
+        'static_description' => 'Gave this year, after previously being a lapsed status',
+        'value' => 20,
+        'name' => 'reactivated',
+        'criteria' => [
+          'multiple_range' => [
+            ['from' => $this->getFinancialYearStartDateTime(), 'to' => $this->getFinancialYearEndDateTime()],
+            ['from' => $this->getFinancialYearStartDateTime(-25), 'to' => $this->getFinancialYearEndDateTime(-2)],
+          ],
+        ],
+      ],
+      30 => [
+        'label' => 'New this year',
+        'static_description' => 'First donation this year',
+        'value' => 30,
+        'name' => 'new',
+        'criteria' => [
+          // can't we just fall through here instead?
+          'first_donation' => [
+            ['from' => $this->getFinancialYearStartDateTime(), 'to' => $this->getFinancialYearEndDateTime()],
+          ],
+        ],
+      ],
+      40 => [
+        'label' => 'Consecutive last year',
+        'static_description' => "Previously consecutive but didn't give this year",
+        'value' => 40,
+        'name' => 'lybunt',
+        'criteria' => [
+          'multiple_range' => [
+            ['from' => $this->getFinancialYearStartDateTime(-1), 'to' => $this->getFinancialYearEndDateTime(-1)],
+            ['from' => $this->getFinancialYearStartDateTime(-2), 'to' => $this->getFinancialYearEndDateTime(-2)],
+          ],
+        ],
+      ],
+      50 => [
+        'label' => 'Reactivated last year',
+        'static_description' => 'Reactivated last year, has not given this year',
+        'value' => 50,
+        'name' => 'reactivated_last_year',
+        'criteria' => [
+          'multiple_range' => [
+            ['from' => $this->getFinancialYearStartDateTime(-1), 'to' => $this->getFinancialYearEndDateTime(-1)],
+            ['from' => $this->getFinancialYearStartDateTime(-25), 'to' => $this->getFinancialYearEndDateTime(-3)],
+          ],
+        ],
+      ],
+      60 => [
+        'label' => 'New last year',
+        'static_description' => 'New donor last year, has not given this year',
+        'value' => 60,
+        'name' => 'new_last_year',
+        'criteria' => [
+          'range' => [
+            ['from' => $this->getFinancialYearStartDateTime(-1), 'to' => $this->getFinancialYearEndDateTime(-1)],
+          ],
+        ],
+      ],
+      70 => [
+        'label' => 'Lapsed',
+        'static_description' => 'Last gave in the year before last',
+        'value' => 70,
+        'name' => 'lapsed',
+        'criteria' => [
+          'range' => [
+            ['from' => $this->getFinancialYearStartDateTime(-2), 'to' => $this->getFinancialYearEndDateTime(-2)],
+          ],
+        ],
+      ],
+      80 => [
+        'label' => 'Deep lapsed',
+        'static_description' => 'Last gave between 2 & 5 years ago',
+        'value' => 80,
+        'name' => 'deep_lapsed',
+        'criteria' => [
+          'range' => [
+            ['from' => $this->getFinancialYearStartDateTime(-5), 'to' => $this->getFinancialYearEndDateTime(-3)],
+          ],
+        ],
+      ],
+      90 => [
+        'label' => 'Ultra lapsed',
+        'static_description' => 'Last gave prior to 5 years ago',
+        'value' => 90,
+        'name' => 'ultra_lapsed',
+        'criteria' => [
+          'range' => [
+            ['from' => $this->getFinancialYearEndDateTime(-25), 'to' => $this->getFinancialYearEndDateTime(-6)],
+          ],
+        ],
+      ],
+      100 => [
+        'label' => 'Non donor',
+        'static_description' => 'Has never given',
+        'value' => 100,
+        'name' => 'non_donor',
+      ],
+    ];
+    foreach ($details as $index => $detail) {
+      if ($field === 'donor_status_otg' && !empty($detail['criteria'])) {
+        $criteriaKey = array_key_first($detail['criteria']);
+        foreach ($detail['criteria'][$criteriaKey] as $rangeKey => $range) {
+          $details[$index]['criteria'][$criteriaKey][$rangeKey]['additional_criteria'] = ['contribution_recur_id IS NULL'];
+        }
+      }
+      if (!empty($detail['criteria'])) {
+        $this->addCriteriaInterpretation($details[$index]);
+      }
+      else {
+        $details[$index]['description'] = $detail['static_description'];
+      }
+    }
+    return $details;
+  }
+
+  /**
+   * Get the options for the old donor status field.
    *
    * Ref
    * https://docs.google.com/spreadsheets/d/1qM36MeKWyOENl-iR5umuLph5HLHG6W_6c46xJUdE3QY/edit
@@ -1002,7 +1416,7 @@ class CalculatedData extends TriggerHook {
    * @return array[]
    * @throws \CRM_Core_Exception
    */
-  public function getDonorStatusOptions(): array {
+  public function getOldDonorStatusOptions(): array {
     $midTierAndMajorGiftsExclusionRange = [
       ['from' => $this->getFinancialYearStartDateTime(), 'to' => $this->getFinancialYearEndDateTime(), 'max_total' => 1000],
       ['from' => $this->getFinancialYearStartDateTime(-1), 'to' => $this->getFinancialYearEndDateTime(-1), 'max_total' => 1000],
@@ -1241,7 +1655,7 @@ class CalculatedData extends TriggerHook {
   }
 
   /**
-   * Get the options for the donor segment field.
+   * Get the options for the old donor segment field.
    *
    * Ref
    * https://docs.google.com/spreadsheets/d/1qM36MeKWyOENl-iR5umuLph5HLHG6W_6c46xJUdE3QY/edit
@@ -1249,7 +1663,7 @@ class CalculatedData extends TriggerHook {
    * @return array[]
    * @throws \CRM_Core_Exception
    */
-  public function getDonorSegmentOptions(): array {
+  public function getOldDonorSegmentOptions(): array {
     $financialYears = [
       'this' => ['start' => $this->getFinancialYearStartDateTime(), 'end' => $this->getFinancialYearEndDateTime()],
       -1 => ['start' => $this->getFinancialYearStartDateTime(-1), 'end' => $this->getFinancialYearEndDateTime(-1)],
@@ -1389,6 +1803,68 @@ class CalculatedData extends TriggerHook {
   }
 
   /**
+   * Get the options for the donor segment field.
+   *
+   * Ref
+   * https://docs.google.com/spreadsheets/d/17Pc1tIvqol6XJhuu97RlOfwy_Avbb9MEaRwhy2F529I/edit?usp=sharing
+   *
+   * @return array[]
+   * @throws \CRM_Core_Exception
+   */
+  public function getDonorSegmentOptions(): array {
+    return [
+      100 => [
+        'label' => 'Major Donor',
+        'value' => 100,
+        'name' => 'major_donor',
+        'threshold' => 10000,
+        'description' => 'Has given $10,000+ in the last fiscal year in which they gave or the 2 years before that',
+      ],
+      200 => [
+        'label' => 'Mid Value Plus Donor',
+        'value' => 200,
+        'name' => 'mid_value_plus',
+        'threshold' => 5000,
+        'description' => 'Has given $5,000+ in the last fiscal year in which they gave or the 2 years before that',
+      ],
+      300 => [
+        'label' => 'Mid Value Donor',
+        'value' => 300,
+        'name' => 'mid_value',
+        'threshold' => 1000,
+        'description' => 'Has given $1,000+ in the last fiscal year in which they gave or the 2 years before that',
+      ],
+      400 => [
+        'label' => 'Mid Value Prospect',
+        'value' => 400,
+        'name' => 'mid_value_prospect',
+        'threshold' => 250,
+        'description' => 'Has given $250+ in the last fiscal year in which they gave or the 2 years before that',
+      ],
+      500 => [
+        'label' => 'Grassroots Plus Donor',
+        'value' => 500,
+        'name' => 'grass_roots_plus',
+        'threshold' => 50,
+        'description' => 'Has given $50+ in the last fiscal year in which they gave or the 2 years before that',
+      ],
+      600 => [
+        'label' => 'Grassroots Donor',
+        'value' => 600,
+        'name' => 'grass_roots',
+        'threshold' => 0.01,
+        'description' => 'Has given',
+      ],
+      1000 => [
+        'label' => 'Non Donor',
+        'value' => 1000,
+        'name' => 'non_donor',
+        'description' => 'Has never donated',
+      ],
+    ];
+  }
+
+  /**
    * Converts a string date description to sql.
    *
    * E.g '12 months ago' becomes 'NOW() - INTERVAL 12 MONTH'
@@ -1401,7 +1877,7 @@ class CalculatedData extends TriggerHook {
    *
    * @return string
    */
-  public function convertDateOffSetToSQL(string $textDateOffset): string {
+  protected function convertDateOffSetToSQL(string $textDateOffset): string {
     if ($textDateOffset === $this->getFinancialYearEndDateTime()) {
       return "'" . $this->getFinancialYearEndDateTime() . "'";
     }
@@ -1433,9 +1909,8 @@ class CalculatedData extends TriggerHook {
    */
   protected function getRangeClause(array $range): string {
     $additionalCriteria = empty($range['additional_criteria']) ? '' : (implode(' AND ', $range['additional_criteria'])) . ' AND ';
-    return "COALESCE(IF($additionalCriteria receive_date
-      BETWEEN (" . $this->convertDateOffsetToSQL($range['from']) . ") AND (" . $this->convertDateOffsetToSQL($range['to']) . ')
-      , total_amount, 0), 0)';
+    return "COALESCE( IF($additionalCriteria receive_date " .
+      "BETWEEN (" . $this->convertDateOffsetToSQL($range['from']) . ") AND (" . $this->convertDateOffsetToSQL($range['to']) . '), total_amount, 0), 0)';
   }
 
   /**
@@ -1445,15 +1920,15 @@ class CalculatedData extends TriggerHook {
    * @throws \CRM_Core_Exception
    */
   protected function getTextClause($range): string {
-    $comparison = isset($range['total']) ? 'at least ' : ' less than ';
-    $amount = $range['total'] ?? $range['max_total'];
+    $comparison = isset($range['max_total']) ? ' less than ' : 'at least ';
+    $amount = $range['total'] ?? $range['max_total'] ?? '0.01';
     $textClause = $comparison . \Civi::format()->money($amount, 'USD', 'en-US') .
       ' between ' . date('Y-m-d H:i:s', strtotime($range['from'])) . ' and ' .
       date('Y-m-d H:i:s', strtotime($range['to']));
     if (!empty($range['additional_criteria'])) {
-      // Currently this is the only additional criteria defined so
-      // let's cut a corner.
-      $textClause .= ' AND donation is recurring';
+      // Once we get rid of the old segments, we can just set this to always be 'not recurring'
+      // if there is an additional criteria.
+      $textClause .= ($range['additional_criteria'] === ['contribution_recur_id IS NULL']) ? ' and the donation is not recurring' : ' and donation is recurring';
     }
     return $textClause;
   }
@@ -1476,7 +1951,7 @@ class CalculatedData extends TriggerHook {
         $rangeClauses[] = 'SUM(' . $this->getRangeClause($range) . ')' . $this->getValueComparisonClause($range);
         $textClauses[] = $this->getTextClause($range);
       }
-      $clauses = implode(' OR ', $rangeClauses);
+      $clauses = implode("\n         OR ", $rangeClauses);
       $dynamicDescription = implode(" OR \n", $textClauses);
     }
     if (!empty($detail['criteria']['multiple_range'])) {
@@ -1486,7 +1961,7 @@ class CalculatedData extends TriggerHook {
         $rangeClauses[] = 'SUM(' . $this->getRangeClause($range) . ')' . $this->getValueComparisonClause($range);
         $textClauses[] = $this->getTextClause($range);
       }
-      $clauses = implode(' AND ', $rangeClauses);
+      $clauses = implode("\n         AND ", $rangeClauses);
       $dynamicDescription = implode(" AND \n", $textClauses);
     }
     if (!empty($detail['criteria']['first_donation'])) {
@@ -1496,7 +1971,7 @@ class CalculatedData extends TriggerHook {
         $rangeClauses[] = 'MIN(' . $this->getRangeClause($range) . ')' . $this->getValueComparisonClause($range);
         $textClauses[] = $this->getTextClause($range);
       }
-      $clauses = implode(' OR ', $rangeClauses);
+      $clauses = implode("\n         OR ", $rangeClauses);
       $dynamicDescription = implode(" OR \n", $textClauses);
     }
     if (!empty($detail['criteria']['recurring'])) {
@@ -1508,9 +1983,8 @@ class CalculatedData extends TriggerHook {
     }
     $sqlSelect = "
          WHEN (
-         --  {$detail['label']}  {$detail['static_description']}
+         --  {$detail['label']}: {$detail['static_description']}
          $clauses
-
         )";
     $detail['sql_select'] = $sqlSelect;
   }
@@ -1563,6 +2037,8 @@ class CalculatedData extends TriggerHook {
   /**
    * Get Value comparison clause.
    *
+   * If no total or max_total supplied, return one cent or more.
+   *
    * @param array $criteria Holds one of
    *   - total
    *   - max_total
@@ -1575,11 +2051,12 @@ class CalculatedData extends TriggerHook {
     if (isset($criteria['total'])) {
       return ($criteria['total'] === 0 ? ' > ' : ' >= ') . $criteria['total'];
     }
-    if (isset($criteria['max_total'])) {
+    elseif (isset($criteria['max_total'])) {
       return ' < ' . $criteria['max_total'];
     }
-    // This would only be hit during development so is just for clarity.
-    throw new \CRM_Core_Exception('No total specified');
+    else {
+      return ' >= 0.01';
+    }
   }
 
 }

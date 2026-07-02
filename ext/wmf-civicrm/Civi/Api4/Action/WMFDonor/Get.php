@@ -85,35 +85,54 @@ class Get extends DAOGetAction {
    * @throws \Civi\Core\Exception\DBQueryException|\CRM_Core_Exception
    */
   protected function getObjects(Result $result): void {
-    $sqlQuery = \CRM_Core_DAO::executeQuery($this->getSQL());
+    $labelData = new CalculatedData();
     $rows = [];
-    $calculatedData = new CalculatedData();
-    while ($sqlQuery->fetch()) {
-      /** @noinspection PhpPossiblePolymorphicInvocationInspection */
-      $row = ['id' => $sqlQuery->entity_id];
-      foreach ($this->select as $selectedField) {
-        $fieldSplit = explode(':', $selectedField);
-        $donorField = $fieldSplit[0];
-        if (isset($sqlQuery->$donorField)) {
-          $row[$donorField] = $sqlQuery->$donorField;
-          // Translating the :label & :description & :name honors the civicrm style
-          // but it's kinda just hacked in. Given it is just a couple of fields for
-          // a narrow use case that feels OK.
-          if (($fieldSplit[1] ?? NULL) === 'label') {
-            $row[$selectedField] = $calculatedData->getFieldLabel($donorField, $row[$donorField]);
-          }
-          if (($fieldSplit[1] ?? NULL) === 'description') {
-            $row[$selectedField] = $calculatedData->getFieldDescription($donorField, $row[$donorField]);
-          }
-          if (($fieldSplit[1] ?? NULL) === 'name') {
-            $row[$selectedField] = $calculatedData->getFieldName($donorField, $row[$donorField]);
+    foreach (CalculatedData::createForSourceTables() as $processor) {
+      $sql = $this->getSQL($processor);
+      if ($sql === '') {
+        continue;
+      }
+      $sqlQuery = \CRM_Core_DAO::executeQuery($sql);
+      while ($sqlQuery->fetch()) {
+        /** @noinspection PhpPossiblePolymorphicInvocationInspection */
+        $entityID = $sqlQuery->entity_id;
+        $rows[$entityID]['id'] = $entityID;
+        foreach ($this->select as $selectedField) {
+          $fieldSplit = explode(':', $selectedField);
+          $donorField = $fieldSplit[0];
+          if (isset($sqlQuery->$donorField)) {
+            $value = $sqlQuery->$donorField;
+            $rows[$entityID][$donorField] = $value;
+            // Translating the :label & :description & :name honors the civicrm style
+            // but it's kinda just hacked in. Given it is just a couple of fields for
+            // a narrow use case that feels OK.
+            if (($fieldSplit[1] ?? NULL) === 'label') {
+              $rows[$entityID][$selectedField] = $labelData->getFieldLabel($donorField, $value);
+            }
+            if (($fieldSplit[1] ?? NULL) === 'description') {
+              $rows[$entityID][$selectedField] = $labelData->getFieldDescription($donorField, $value);
+            }
+            if (($fieldSplit[1] ?? NULL) === 'name') {
+              $rows[$entityID][$selectedField] = $labelData->getFieldName($donorField, $value);
+            }
           }
         }
       }
-      $rows[] = $row;
     }
 
-    $result->exchangeArray($rows);
+    // Add defaults for any requested field whose source table had no row.
+    // Note we get nothing at all if the contact has nothing in either table.
+    $fields = $labelData->getWMFDonorFields();
+    foreach ($rows as $entityID => $row) {
+      foreach ($this->select as $selectedField) {
+        $donorField = explode(':', $selectedField)[0];
+        if (!array_key_exists($donorField, $row) && isset($fields[$donorField])) {
+          $rows[$entityID][$donorField] = $fields[$donorField]['default_value'] ?? NULL;
+        }
+      }
+    }
+
+    $result->exchangeArray(array_values($rows));
   }
 
   /**
@@ -126,12 +145,15 @@ class Get extends DAOGetAction {
    * if we want it to - but it is tested so we can tinker if we want to
    * iterate.   $b = 1;
    *
+   * @param \Civi\WMFHook\CalculatedData $calculatedData
+   *   The per-source-table processor to configure and get SQL from.
+   *
    * @return string
+   *   The select SQL, or '' if no requested fields belong to this table.
    *
    * @throws \CRM_Core_Exception
    */
-  protected function getSQL(): string {
-    $calculatedData = new CalculatedData();
+  protected function getSQL(CalculatedData $calculatedData): string {
     $calculatedData->setTriggerContext(FALSE)
       ->setWhereClause($this->getTemporaryTableSelectClause());
 
@@ -139,15 +161,17 @@ class Get extends DAOGetAction {
       $selectFields = [];
       foreach ($this->select as $selectField) {
         $fieldSplit = explode(':', $selectField);
-        // Handle donor_segment_id:label
+        // Handle donor_segment_id:label, etc
         $selectFields[$fieldSplit[0]] = TRUE;
       }
       // If we have specified the fields then filter to only select those fields.
       $calculatedData->filterDonorFields(array_keys($selectFields));
     }
     $sql = $calculatedData->getSelectSQL();
-    $this->_debugOutput['sql'] = $sql;
-    \Civi::log('wmf')->info($sql);
+    if ($sql !== '') {
+      $this->_debugOutput['sql'] = $sql;
+      \Civi::log('wmf')->info($sql);
+    }
     return $sql;
   }
 

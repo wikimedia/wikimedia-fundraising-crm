@@ -52,21 +52,23 @@ class Update extends DAOUpdateAction {
    * @throws \CRM_Core_Exception
    */
   protected function updateRecords(array $items): array {
-    $calculatedData = new CalculatedData();
     if (count($items) === 1) {
       $item = reset($items);
-      $calculatedData->setWhereClause('c.contact_id = ' . (int) $item['id']);
+      $whereClause = 'c.contact_id = ' . (int) $item['id'];
     }
     elseif (count($this->where) === 1 && $this->where[0][0] === 'id' && $this->where[0][1] === 'IN') {
-      $calculatedData->setWhereClause('c.contact_id IN (' . implode(", ", $this->where[0][2]) . ')');
+      $whereClause = 'c.contact_id IN (' . implode(", ", $this->where[0][2]) . ')';
     }
     else {
-      $calculatedData->setWhereClause($this->getTemporaryTableSelectClause());
+      $whereClause = $this->getTemporaryTableSelectClause();
     }
-    if (!array_key_exists('*', $this->values)) {
-      $calculatedData->filterDonorFields(array_keys($this->values));
+    foreach (CalculatedData::createForSourceTables() as $processor) {
+      $processor->setWhereClause($whereClause);
+      if (!array_key_exists('*', $this->values)) {
+        $processor->filterDonorFields(array_keys($this->values));
+      }
+      $processor->updateWMFDonorData();
     }
-    $calculatedData->updateWMFDonorData();
     return $items;
   }
 

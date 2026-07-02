@@ -778,11 +778,17 @@ END";
   }
 
   /**
-   * @param $MEMO
+   * Is it a fee transaction.
+   *
+   * We loosely include adjustments here too as they are rare and like
+   * fees affect our settlements but not our donations. The main difference being
+   * that they are usually reversed again later (or re-adjusted).
+   *
+   * @param array $row
    * @return bool
    */
   public function isFee($row): bool {
-    return str_contains($row['MEMO'], 'Fee');
+    return str_contains($row['MEMO'], 'Fee') || str_ends_with($row['MEMO'], 'Adjustment');
   }
 
   /**
@@ -914,7 +920,7 @@ END";
     $deptIDClause = $this->getDeptIDClause();
     $restrictionsClause = $this->getRestrictionsClause();
     $dateDescription = $this->getBatches()[$batchName]['date_description'];
-    $gatewayLevelTrxnExcludeClause = ' AND ' . $this->getGatewayLevelTransactionExcludeClause($batchName);
+    $gatewayLevelTrxnExcludeClause = ' AND ' . $this->getGatewayLevelTransactionExcludeClause($batchName) . ' AND ' . $this->getGatewayLevelTransactionExcludeAdjustmentClause($batchName);
     $gatewayLevelTrxnIncludeClause = ' AND ' . $this->getGatewayLevelTrxnIncludeClause($batchName);
     $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
 
@@ -1047,6 +1053,34 @@ WHERE (%1 = settlement_batch_reference)
   $gatewayLevelTrxnIncludeClause
   AND is_template = 0
 GROUP BY s.settlement_batch_reference
+UNION ALL
+-- Adjustments part.
+-- currently using fee gl code 60917 - expect further directions from finance on that.
+-- also dept_id based on fees until advised otherwise
+SELECT
+-- note GROUP BY here....
+    CONCAT('Contribution Revenue ', '{$dateDescription}' ) as DESCRIPTION,
+    60917 as ACCT_NO,
+-- @todo - not for endowment - need the number for that
+    '100-WMF' as LOCATION_ID,
+-- cost centre - CC-1014 for all fees
+    'CC-1014' as DEPT_ID,
+    -- @todo - not always donations at the end of memo
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Adjustment') as MEMO,
+    IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, SUM(COALESCE(-settled_fee_amount, 0)),0) as DEBIT,
+    IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0)))  as CREDIT,
+    s.settlement_currency as CURRENCY,
+    '' as GLENTRY_PROJECTID,
+    0 as is_endowment,
+    'Unrestricted' as GLDIMFUNDING
+FROM civicrm_value_contribution_settlement s
+  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
+  LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
+WHERE (%1 = settlement_batch_reference)
+  AND ( settled_fee_amount <> 0)
+  AND trxn_id LIKE 'adyen adjustment%'
+  AND is_template = 0
+GROUP BY s.settlement_batch_reference
 ";
   }
 
@@ -1065,6 +1099,13 @@ GROUP BY s.settlement_batch_reference
       AND trxn_id NOT LIKE '{$gateway} invoice%'
       AND trxn_id NOT LIKE '{$gateway} rounding%'
       AND trxn_id NOT LIKE '{$gateway} fee%'
+    )";
+  }
+
+  private function getGatewayLevelTransactionExcludeAdjustmentClause($batchName): string {
+    $gateway = $this->getGateway($batchName);
+    return "(
+      trxn_id NOT LIKE '{$gateway} adjustment%'
     )";
   }
 
@@ -1180,8 +1221,8 @@ GROUP BY s.settlement_batch_reference
       if (!$isFee) {
         $count += $rowCount;
       }
-      if (str_ends_with($row['MEMO'], 'Fees')
-        && !str_ends_with($row['MEMO'], 'Donation Fees')
+      if (str_ends_with($row['MEMO'], 'Adjustment') || (str_ends_with($row['MEMO'], 'Fees')
+        && !str_ends_with($row['MEMO'], 'Donation Fees'))
       ) {
         // These are the fee-only rows. Include them in the count
         // as they are in the batch count...

@@ -363,9 +363,9 @@ function wmf_civicrm_civicrm_alterLogTables(array &$logTableSpec) {
  * @throws \CRM_Core_Exception
  */
 function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
-  $processor = new CalculatedData();
-  $wmfTriggerInfo = $processor->setTableName($tableName)->triggerInfo();
-  $info = array_merge($info, $wmfTriggerInfo);
+  foreach (CalculatedData::createForSourceTables($tableName) as $processor) {
+    $info = array_merge($info, $processor->triggerInfo());
+  }
   $recurProcessor = new ContactModifiedTrigger();
   $recurTriggerInfo = $recurProcessor->setTableName($tableName)->triggerInfo();
   $info = array_merge($info, $recurTriggerInfo);

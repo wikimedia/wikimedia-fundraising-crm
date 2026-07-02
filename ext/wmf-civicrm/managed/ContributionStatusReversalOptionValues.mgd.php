@@ -82,4 +82,24 @@ return [
       ],
     ],
   ],
+  [
+    'name' => 'OptionValue_adjustment',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'contribution_status',
+        'label' => E::ts('Adjustment'),
+        'description' => E::ts('Adjustment in gateway settlement, accounting rather than income related'),
+        'name' => 'adjustment',
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+        'value',
+      ],
+    ],
+  ],
 ];
