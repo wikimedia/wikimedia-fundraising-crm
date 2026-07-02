@@ -70,7 +70,7 @@ class ChariotAuditTest extends BaseAuditTestCase {
     $this->assertEquals('EFT', $individualGift['payment_instrument_id:name']);
     $this->assertEquals('Workplace Giving', $individualGift['Gift_Data.Channel:label']);
     $this->assertEquals('USD 5.00', $individualGift['source']);
-    $this->assertEquals('Workplace Giving', $individualGift['Gift_Data.Campaign']);
+    $this->assertEquals('Employee Giving', $individualGift['Gift_Data.Campaign']);
   }
 
   public function testFidelityFullNameHandling(): void {
