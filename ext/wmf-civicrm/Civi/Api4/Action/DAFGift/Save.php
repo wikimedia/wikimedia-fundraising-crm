@@ -27,7 +27,9 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
       }
       $individualID = $this->getOrCreateIndividual($record, $dafOrganizationID, $record['donor_advised_fund_name'] ?? '');
       $contribution = $this->saveContribution($record, [
-        'Gift_Data.Campaign' => 'Donor Advised Fund',
+        // gift_source is something Melanie can manipulate by setting rules within Intacct.
+        // She is able to set the Gift Type property based on rules around the text of the donation.
+        'Gift_Data.Campaign' => $record['gift_source'] === 'Employee Giving' ? 'Workplace Giving' : 'Donor Advised Fund',
       ], $dafOrganizationID ?? $individualID, 1);
       $result[] = $contribution;
 
