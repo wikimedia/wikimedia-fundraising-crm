@@ -78,13 +78,13 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
     if ($record['payment_method'] === 'Check' ){
       $gatewayAccount = 'Chariot Digital Mailbox';
     }
-    $channel = $record['gift_source'] === 'Employee Giving' ? 'Workplace Giving' : 'Other Offline';
+    $channel = ($record['gift_source'] ?? '') === 'Employee Giving' ? 'Workplace Giving' : 'Other Offline';
 
     return Contribution::create($this->checkPermissions)
       ->setValues($extraValues + [
         'contact_id' => $contactId,
         'receive_date' => gmdate('Y-m-d', $record['date']),
-        'total_amount' => CurrencyRoundingHelper::round($record['settled_total_amount'] * $giftRatio, 'USD'),
+        'total_amount' => $this->getProportionalGiftAmountInReportingCurrency($record['settled_total_amount'], $giftRatio),
         'fee_amount' => CurrencyRoundingHelper::round($record['settled_fee_amount'], 'USD'),
         'payment_instrument_id:name' => $record['payment_method'],
         'financial_type_id:name' => 'Cash',
@@ -354,6 +354,25 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
         ->execute()->first()['id'] ?? NULL;
     }
     return $ruleGroupID;
+  }
+
+
+  /**
+   * Get the proportion of the settled amount that relates to the portion of the gift.
+   *
+   * The settled_amount is the whole amount in the settled currency (always USD).
+   *
+   * This amount may be made up of a combination of individual & organization gift
+   * so this splits it out.
+   *
+   * @param string $settled_total_amount
+   * @param float|int $matchingGiftRatio
+   * @param string $currency
+   *
+   * @return string
+   */
+  protected function getProportionalGiftAmountInReportingCurrency(string $settled_total_amount, float|int $matchingGiftRatio, $currency = 'USD'): string {
+    return CurrencyRoundingHelper::round($settled_total_amount * $matchingGiftRatio, $currency);
   }
 
 }

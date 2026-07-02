@@ -58,7 +58,7 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
               'contribution_id' => $contribution['id'],
               'soft_credit_type_id:name' => 'workplace',
               'contact_id' => $matchingGiftOrganizationID,
-              'amount' => $record['original_individual_gift_amount'],
+              'amount' => $this->getProportionalGiftAmountInReportingCurrency($record['settled_total_amount'], $individualGiftRatio),
             ])
             ->execute();
         }
@@ -78,6 +78,17 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
           'Gift_Data.Channel' => 'Workplace Giving',
           'Gift_Data.Campaign' => 'Matching Gift',
         ], $matchingGiftOrganizationID, $matchingGiftRatio);
+
+        if ($individualID) {
+          ContributionSoft::create($this->checkPermissions)
+            ->setValues([
+              'contribution_id' => $contribution['id'],
+              'soft_credit_type_id:name' => 'matched_gift',
+              'contact_id' => $individualID,
+              'amount' => $this->getProportionalGiftAmountInReportingCurrency($record['settled_total_amount'], $matchingGiftRatio),
+            ])
+            ->execute();
+        }
         $result[] = $contribution;
       }
       $this->createBankingInstitutionSoftCredit($record, $contribution['id']);
