@@ -39,7 +39,7 @@ class Message {
   protected array $supportedFields = [];
   protected array $requiredFields = [];
   protected bool $isRestrictToSupportedFields = FALSE;
-  protected bool $isLogUnsupportedFields = FALSE;
+  protected bool $isLogUnsupportedFields = TRUE;
   protected bool $isLogUnavailableFields = FALSE;
 
   protected array $availableFields;
