@@ -11,6 +11,7 @@ use Civi\WMFHook\Activity;
 use Civi\WMFHook\CalculatedData;
 use Civi\WMFHook\Contribution;
 use Civi\WMFHook\ContactModifiedTrigger;
+use Civi\WMFHook\DonorHistoryTrigger;
 use Civi\WMFHook\ContributionSoft;
 use Civi\WMFHook\Import;
 use Civi\WMFHook\ProfileDynamic;
@@ -348,6 +349,7 @@ function wmf_civicrm_civicrm_alterLogTables(array &$logTableSpec) {
     'civicrm_contribution_tracking',
     // wmf_donor contains calculated data only.
     'wmf_donor',
+    'wmf_donor_history',
     'civicrm_payment_attempts',
   ];
   foreach ($tablesNotToLog as $noLoggingTable) {
@@ -369,6 +371,10 @@ function wmf_civicrm_civicrm_triggerInfo(&$info, $tableName) {
   $recurProcessor = new ContactModifiedTrigger();
   $recurTriggerInfo = $recurProcessor->setTableName($tableName)->triggerInfo();
   $info = array_merge($info, $recurTriggerInfo);
+
+  $donorHistoryProcessor = new DonorHistoryTrigger();
+  $info = array_merge($info, $donorHistoryProcessor->setTableName($tableName)->triggerInfo());
+
   $info = Activity::alterTriggerSql($info);
 
   // Remove any disabled custom fields from our SQL. This allows us to stage the deletion process

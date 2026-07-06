@@ -7,6 +7,8 @@ use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\WMFDonor;
+use Civi\Api4\WMFDonorHistory;
+use Civi\WMFHook\CalculatedData;
 use Civi\Test;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
@@ -471,6 +473,72 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ->addWhere('id', '=', $this->ids['Contact']['donor'])
       ->addSelect("wmf_donor.$fieldName")
       ->execute()->first()["wmf_donor.$fieldName"];
+  }
+
+  /**
+   * The first write to wmf_donor logs a history row flagging every tracked field.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorHistoryLogsInsert(): void {
+    $this->createDonor();
+    $loggedFields = (new CalculatedData())->getLoggedFields();
+
+    $insertRow = WMFDonorHistory::get(FALSE)
+      ->addWhere('entity_id', '=', $this->ids['Contact']['donor'])
+      ->addOrderBy('log_id', 'ASC')
+      ->execute()->first();
+
+    // The insert of the wmf_donor row populates every tracked field, so all are logged.
+    $this->assertEquals(array_values(array_column($loggedFields, 'log_changes')), $insertRow['changed_fields']);
+  }
+
+  /**
+   * Adding a recurring donation logs only the recur field that its status changes.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorHistoryLogsRecurringDonation(): void {
+    $this->createDonor();
+    $loggedFields = (new CalculatedData())->getLoggedFields();
+
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['donor'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id' => 5,
+      'start_date' => date('Y-m-d', strtotime('-2 years', strtotime($this->currentDate))),
+    ], 'recur');
+
+    $latest = WMFDonorHistory::get(FALSE)
+      ->addWhere('entity_id', '=', $this->ids['Contact']['donor'])
+      ->addOrderBy('log_id', 'DESC')
+      ->execute()->first();
+
+    // Only the monthly recur status changes because no contribution was added
+    $this->assertEquals([$loggedFields['donor_status_recur_month']['log_changes']], $latest['changed_fields']);
+    $this->assertEquals(10, $latest['donor_status_recur_month']);
+    $this->assertEquals(100, $latest['donor_status_recur_year']);
+  }
+
+  /**
+   * A write that leaves every tracked field unchanged logs no history row.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorHistorySkipsUnchangedUpdate(): void {
+    $this->createDonor();
+    $countBefore = count(WMFDonorHistory::get(FALSE)
+      ->addWhere('entity_id', '=', $this->ids['Contact']['donor'])
+      ->execute());
+
+    $this->updateWMFDonorData();
+
+    $countAfter = count(WMFDonorHistory::get(FALSE)
+      ->addWhere('entity_id', '=', $this->ids['Contact']['donor'])
+      ->execute());
+    $this->assertEquals($countBefore, $countAfter);
   }
 
   /**

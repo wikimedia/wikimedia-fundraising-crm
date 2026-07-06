@@ -534,6 +534,7 @@ class CalculatedData extends TriggerHook {
         'is_active' => 1,
         'is_searchable' => 1,
         'is_view' => 1,
+        'log_changes' => 1,
         'table_alias' => 'consecutive_years',
         'aggregate_select_clause' => $this->getSegmentSelect(),
         'option_values' => $this->getDonorSegmentOptions(),
@@ -561,6 +562,7 @@ class CalculatedData extends TriggerHook {
         'is_active' => 1,
         'is_searchable' => 1,
         'is_view' => 1,
+        'log_changes' => 2,
         'select_clause' => $this->getOverallOTGDonorStatusSelect('donor_status_overall'),
         'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_overall'),
       ],
@@ -574,6 +576,7 @@ class CalculatedData extends TriggerHook {
         'is_active' => 1,
         'is_searchable' => 1,
         'is_view' => 1,
+        'log_changes' => 3,
         'select_clause' => $this->getOverallOTGDonorStatusSelect('donor_status_otg'),
         'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_otg'),
       ],
@@ -991,6 +994,7 @@ class CalculatedData extends TriggerHook {
         'is_active' => 1,
         'is_searchable' => 1,
         'is_view' => 1,
+        'log_changes' => 4,
         'select_clause' => $this->getRecurringDonorStatusSelect('month'),
         'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_recur_month'),
       ],
@@ -1004,6 +1008,7 @@ class CalculatedData extends TriggerHook {
         'is_active' => 1,
         'is_searchable' => 1,
         'is_view' => 1,
+        'log_changes' => 5,
         'select_clause' => $this->getRecurringDonorStatusSelect('year'),
         'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_recur_year'),
       ],
@@ -1088,6 +1093,47 @@ class CalculatedData extends TriggerHook {
       }
     }
     return $selects;
+  }
+
+  /**
+   * Get the wmf_donor fields flagged for tracking in wmf_donor_history.
+   *
+   * Note that the log_changes int value is set for each field, but is intended
+   * to reflect the column order in the table itself for Analytics' convenience.
+   *
+   * @return array
+   *   Field specs keyed by name, filtered to those marked 'log_changes'.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function getLoggedFields(): array {
+    // Only int fields with a select (option list) are supported in the history table.
+    return array_filter(
+      $this->getWMFDonorFields(),
+      fn($field) => !empty($field['log_changes']) && $field['data_type'] === 'Int' && $field['html_type'] === 'Select'
+    );
+  }
+
+  /**
+   * Pseudoconstant callback for wmf_donor_history fields.
+   *
+   * Returns the same in-code option values as the matching wmf_donor field, avoiding a
+   * duplicate option group or doing a DB lookup here.
+   *
+   * @param string $fieldName
+   *
+   * @return array
+   *   Options keyed by value.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public static function getHistoryFieldOptions(string $fieldName): array {
+    $options = [];
+    $field = (new self())->getWMFDonorFields()[$fieldName] ?? [];
+    foreach ($field['option_values'] ?? [] as $option) {
+      $options[$option['value']] = $option['label'];
+    }
+    return $options;
   }
 
   /**

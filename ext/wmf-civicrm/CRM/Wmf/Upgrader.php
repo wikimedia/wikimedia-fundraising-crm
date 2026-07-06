@@ -4971,6 +4971,14 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Create the wmf_donor_history table.
+   */
+  public function upgrade_5040(): bool {
+    E::schema()->createEntityTable('schema/WMFDonorHistory.entityType.php');
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
