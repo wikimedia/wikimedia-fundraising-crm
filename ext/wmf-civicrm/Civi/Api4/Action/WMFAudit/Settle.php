@@ -89,7 +89,7 @@ class Settle extends AbstractAction {
         // (float) .46 does not always equal (float) .46 ....
         // I'm actually interested in passing money objects up
         // from the settlement report & around our subsystem but let's come back to that.
-        $newValue = Money::of((string) $value, $settlementCurrency, NULL, RoundingMode::HALF_UP);
+        $newValue = Money::of((string) $value, $settlementCurrency, NULL, RoundingMode::HalfUp);
         if ($newValue->compareTo((string) $contribution[$name]) === 0) {
           unset($values[$name]);
         }
