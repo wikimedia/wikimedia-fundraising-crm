@@ -395,7 +395,7 @@ class PaypalAuditTest extends BaseAuditTestCase {
     $trackingID = explode('.', $orderID)[0];
     $isGravy = !is_numeric($trackingID);
     if ($isGravy) {
-      $trackingID = 1 + ((int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution_tracking'));
+      $trackingID = $this->getNextContributionTrackingID();
     }
     $utmSource = "B2526_082914_esLA_m_p1_lg_twn_twin1_optIn0.no-LP.apple_amex";
     $this->ids['ContributionTracking'][] = ContributionTracking::save(FALSE)

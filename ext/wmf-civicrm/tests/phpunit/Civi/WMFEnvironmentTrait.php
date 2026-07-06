@@ -208,6 +208,14 @@ trait WMFEnvironmentTrait {
     $generator->initializeSequence($highestContributionTrackingID);
   }
 
+  /**
+   * @return int
+   * @throws \CRM_Core_Exception
+   */
+  public function getNextContributionTrackingID(): int {
+    return 1 + ((int) \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contribution_tracking'));
+  }
+
   protected function cleanupContact(array $contact): void {
     try {
       $where = $contributionTrackingWhere = $contactWhere = [];
