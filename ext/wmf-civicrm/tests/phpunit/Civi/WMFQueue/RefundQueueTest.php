@@ -572,6 +572,7 @@ class RefundQueueTest extends BaseQueueTestCase {
   public function testMakeWrongCurrencyRefund(): void {
     $this->setupOriginalContribution();
     $this->expectException(WMFException::class);
+    $this->expectExceptionMessage('INVALID_MESSAGE Contribution ' . $this->ids['Contribution']['original'] . ' was refund in a different currency GBP. Freaking out.');
     $wrong_currency = 'GBP';
     $this->processMessageWithoutQueuing([
       'gateway_parent_id' => 'E-I-E-I-O',
