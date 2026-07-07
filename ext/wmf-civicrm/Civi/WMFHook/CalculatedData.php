@@ -132,6 +132,10 @@ class CalculatedData extends TriggerHook {
         'significantFields' => ['contribution_status_id', 'total_amount', 'contact_id', 'receive_date', 'currency', 'financial_type_id'],
         'getSelectSQL' => 'getContributionSelectSQL',
       ],
+      'civicrm_contribution_recur' => [
+        'significantFields' => ['contribution_status_id', 'contact_id', 'frequency_unit', 'start_date', 'next_sched_contribution_date', 'amount'],
+        'getSelectSQL' => 'getRecurringSelectSQL',
+      ],
     ];
   }
 
@@ -368,7 +372,6 @@ class CalculatedData extends TriggerHook {
       return [];
     }
     $info = [];
-    $sql = $this->getUpdateWMFDonorSql();
     $tableName = $this->getTableName();
     $updateConditions = [];
     foreach (self::getTriggerTables()[$tableName]['significantFields'] as $significantField) {
@@ -394,17 +397,14 @@ class CalculatedData extends TriggerHook {
 
     $updateClauses = $requiredClauses;
     if ($tableName === 'civicrm_contribution_recur') {
-      $processingID = \Civi\Api4\OptionValue::get(FALSE)
-        ->addSelect('value')
-        ->addWhere('option_group_id:name', '=', 'contribution_recur_status')
-        ->addWhere('name', '=', 'Processing')
-        ->execute()->first()['value'] ?? NULL;
+      $processingID = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Processing');
       // For updates, don't recalculate while processing each recurring, only after processing finishes.
       $updateClauses[] = "(NEW.contribution_status_id <> $processingID)";
     }
 
+    $sql = $this->getUpdateWMFDonorSql();
     $insertSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' THEN' . $sql . "\nEND IF;\n";
-    $updateSQL = ' IF ' . implode(' AND ', $updateClauses) . ' AND (' . implode(' OR ', $updateConditions) . ' ) THEN' . $sql . "\nEND IF;\n";
+    $updateSQL = ' IF ' . implode(' AND ', $updateClauses) . ' AND (' . implode(' OR ', $updateConditions) . ' ) THEN' . $this->getUpdateWMFDonorSql(TRUE) . "\nEND IF;\n";
     $requiredClausesForOldClause = str_replace('NEW.', 'OLD.', implode(' AND ', $requiredClauses));
     $oldSql = str_replace('NEW.', 'OLD.', $sql);
     $updateOldSQL = ' IF ' . $requiredClausesForOldClause
@@ -755,6 +755,20 @@ class CalculatedData extends TriggerHook {
         'time_format' => 2,
         'select_clause' => "MAX(IF(total_amount > 0, receive_date, NULL)) AS all_funds_last_donation_date",
       ],
+      'last_otg_donation_date' => [
+        'name' => 'last_otg_donation_date',
+        'column_name' => 'last_otg_donation_date',
+        'label' => ts('Last OTG Donation Date'),
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_search_range' => 1,
+        'is_view' => 1,
+        'date_format' => 'M d, yy',
+        'time_format' => 2,
+        'select_clause' => "MAX(IF(total_amount > 0 AND contribution_recur_id IS NULL, receive_date, NULL)) AS last_otg_donation_date",
+      ],
       'first_donation_date' => [
         'name' => 'first_donation_date',
         'column_name' => 'first_donation_date',
@@ -966,11 +980,114 @@ class CalculatedData extends TriggerHook {
         ];
       }
     }
-    $this->calculatedFields = [
-      'civicrm_contribution' => $contributionFields,
+    $contributionRecurFields = [
+      'donor_status_recur_month' => [
+        'name' => 'donor_status_recur_month',
+        'column_name' => 'donor_status_recur_month',
+        'label' => ts('Donor Status: Monthly Recurring'),
+        'data_type' => 'Int',
+        'default_value' => 100,
+        'html_type' => 'Select',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+        'select_clause' => $this->getRecurringDonorStatusSelect('month'),
+        'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_recur_month'),
+      ],
+      'donor_status_recur_year' => [
+        'name' => 'donor_status_recur_year',
+        'column_name' => 'donor_status_recur_year',
+        'label' => ts('Donor Status: Annual Recurring'),
+        'data_type' => 'Int',
+        'default_value' => 100,
+        'html_type' => 'Select',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+        'select_clause' => $this->getRecurringDonorStatusSelect('year'),
+        'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_recur_year'),
+      ],
     ];
 
-    return array_merge(...array_values($this->calculatedFields));
+    $this->calculatedFields = [
+      'civicrm_contribution' => $contributionFields,
+      'civicrm_contribution_recur' => $contributionRecurFields,
+    ];
+
+    // Update-only fields compare NEW & OLD values, so they aren't in $this->calculatedFields
+    // as they aren't used for Get/Update, but they should be in the field list.
+    $allFields = $this->calculatedFields;
+    foreach ($this->getUpdateOnlyFieldsByTable() as $table => $fields) {
+      $allFields[$table] = array_merge($allFields[$table] ?? [], $fields);
+    }
+
+    return array_merge(...array_values($allFields));
+  }
+
+  /**
+   * Get the update-only fields, keyed by source table.
+   *
+   * These fields are only used by the UPDATE trigger, see getUpdateWMFDonorSql().
+   * These fields aren't updated by WMFDonor::update, past changes require manual backfill.
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  protected function getUpdateOnlyFieldsByTable(): array {
+    return [
+      'civicrm_contribution_recur' => [
+        'last_recurring_amount_change' => [
+          'name' => 'last_recurring_amount_change',
+          'column_name' => 'last_recurring_amount_change',
+          'label' => ts('Last Recurring Amount Change (Native Currency)'),
+          'data_type' => 'Money',
+          'html_type' => 'Text',
+          'is_active' => 1,
+          'is_view' => 1,
+          'is_searchable' => 1,
+          'update_select_clause' => 'IF(NEW.amount <> OLD.amount, NEW.amount - OLD.amount, NULL)',
+        ],
+        'last_recurring_amount_change_date' => [
+          'name' => 'last_recurring_amount_change_date',
+          'column_name' => 'last_recurring_amount_change_date',
+          'label' => ts('Last Recurring Amount Change Date'),
+          'data_type' => 'Date',
+          'html_type' => 'Select Date',
+          'is_active' => 1,
+          'is_view' => 1,
+          'is_searchable' => 1,
+          'update_select_clause' => 'IF(NEW.amount <> OLD.amount, CURDATE(), NULL)',
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Get the update-only fields for the current source table.
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  protected function getUpdateOnlyFields(): array {
+    return $this->getUpdateOnlyFieldsByTable()[$this->getTableName()] ?? [];
+  }
+
+  /**
+   * Get the outer select columns, optionally including update-only fields.
+   *
+   * @param bool $includeUpdateOnly
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  protected function getOuterSelects(bool $includeUpdateOnly): array {
+    $selects = $this->getSelectsAggregate();
+    if ($includeUpdateOnly) {
+      foreach ($this->getUpdateOnlyFields() as $field) {
+        $selects[$field['name']] = $field['update_select_clause'] . ' as ' . $field['name'];
+      }
+    }
+    return $selects;
   }
 
   /**
@@ -983,31 +1100,76 @@ class CalculatedData extends TriggerHook {
    * ON DUPLICATE KEY UPDATE
    * last_donation_currency = VALUES(last_donation_currency), ...
    *
+   * Update-only fields are folded into the same statement on UPDATE.
+   * Their clause yields NULL when nothing relevant changed;
+   * COALESCE then preserves the stored value rather than overwriting.
+   *
+   * @param bool $includeUpdateOnly
+   *
    * @return string
    */
-  protected function getUpdateWMFDonorSql(): string {
+  protected function getUpdateWMFDonorSql(bool $includeUpdateOnly = FALSE): string {
+    $columns = array_keys($this->getCalculatedFields());
+    $updateClauses = $this->getUpdateClauses();
+    if ($includeUpdateOnly) {
+      foreach (array_keys($this->getUpdateOnlyFields()) as $column) {
+        $columns[] = $column;
+        $updateClauses[$column] = "$column = COALESCE(VALUES($column), $column)";
+      }
+    }
     return "
       INSERT INTO wmf_donor (
-        entity_id,\n        " . implode(",\n        ", array_keys($this->getCalculatedFields())) . "
+        entity_id,\n        " . implode(",\n        ", $columns) . "
       )
-      " . $this->getSelectSQL() . "
+      " . $this->getSelectSQL($includeUpdateOnly) . "
      ON DUPLICATE KEY UPDATE
-     " . implode(",\n     ", $this->getUpdateClauses()) . ";";
+     " . implode(",\n     ", $updateClauses) . ";";
 
   }
 
   /**
    * Get the string to select the wmf donor data.
    *
+   * @param bool $includeUpdateOnly
+   *
    * @return string
    */
-  public function getSelectSQL(): string {
+  public function getSelectSQL(bool $includeUpdateOnly = FALSE): string {
     // After filterDonorFields() this is only the requested fields for this table, so empty means no SQL needed.
     if (empty($this->getCalculatedFields())) {
       return '';
     }
     $method = self::getTriggerTables()[$this->getTableName()]['getSelectSQL'];
-    return $this->$method();
+    return $this->$method($includeUpdateOnly);
+  }
+
+  /**
+   * Get the string to select the wmf donor data for the recurring contribution table.
+   *
+   * @return string
+   */
+  protected function getRecurringSelectSQL(bool $includeUpdateOnly = FALSE): string {
+    $innerColumns = $this->getTotalsFieldSelects();
+    if ($this->isTriggerContext()) {
+      $from = "FROM civicrm_contribution_recur c
+        WHERE c.contact_id = NEW.contact_id";
+      $entityID = 'NEW.contact_id';
+    }
+    else {
+      // Add c.contact_id manually outside trigger context as we don't have NEW.contact_id to group by
+      array_unshift($innerColumns, 'c.contact_id');
+      $from = "FROM civicrm_contribution_recur c
+        WHERE " . $this->getWhereClause() . "
+        GROUP BY c.contact_id";
+      $entityID = 'totals.contact_id';
+    }
+    return "SELECT $entityID as entity_id,
+      " . implode(",\n      ", $this->getOuterSelects($includeUpdateOnly)) . "
+      FROM (
+        SELECT " . implode(",\n        ", $innerColumns) . "
+        $from
+      ) as totals
+      GROUP BY $entityID";
   }
 
   /**
@@ -1015,7 +1177,7 @@ class CalculatedData extends TriggerHook {
    *
    * @return string
    */
-  protected function getContributionSelectSQL(): string {
+  protected function getContributionSelectSQL(bool $includeUpdateOnly = FALSE): string {
     $innerColumns = $this->getTotalsFieldSelects();
     if ($this->isTriggerContext()) {
       $where = 'c.contact_id = NEW.contact_id';
@@ -1030,7 +1192,7 @@ class CalculatedData extends TriggerHook {
       $entityID = 'totals.contact_id';
     }
     return "SELECT $entityID as entity_id,
-      " . implode(",\n      ", $this->getSelectsAggregate()) . "
+      " . implode(",\n      ", $this->getOuterSelects($includeUpdateOnly)) . "
       FROM (
         SELECT " . implode(",\n        ", $innerColumns) . "
   FROM civicrm_contribution c
@@ -1260,6 +1422,10 @@ class CalculatedData extends TriggerHook {
       case 'donor_status_overall':
       case 'donor_status_otg':
         return $this->donorStatusOptions[$field] = $this->getOverallOTGDonorStatusOptions($field);
+      case 'donor_status_recur_month':
+        return $this->donorStatusOptions[$field] = $this->getRecurringDonorStatusOptions('month');
+      case 'donor_status_recur_year':
+        return $this->donorStatusOptions[$field] = $this->getRecurringDonorStatusOptions('year');
       default:
         return $this->donorStatusOptions[$field] = [];
     }
@@ -1405,6 +1571,93 @@ class CalculatedData extends TriggerHook {
       }
     }
     return $details;
+  }
+
+  /**
+   * Get the options for the annual and monthly recurring donor status fields.
+   *
+   * Ref
+   * https://docs.google.com/spreadsheets/d/17Pc1tIvqol6XJhuu97RlOfwy_Avbb9MEaRwhy2F529I/edit?usp=sharing
+   *
+   * @param string $field
+   * @return array[]
+   * @throws \CRM_Core_Exception
+   */
+  protected function getRecurringDonorStatusOptions(string $frequencyUnit): array {
+    $frequency = $frequencyUnit === 'year' ? 'annual' : 'monthly';
+    return [
+      10 => [
+        'label' => 'Active',
+        'description' => "Has an active {$frequency} recurring donation",
+        'value' => 10,
+        'name' => 'active',
+      ],
+      20 => [
+        'label' => 'New',
+        'description' => "First year as {$frequency} recurring donor",
+        'value' => 20,
+        'name' => 'new',
+      ],
+      30 => [
+        'label' => 'Paused',
+        'description' => "All non-cancelled {$frequency} recurring donations paused",
+        'value' => 30,
+        'name' => 'paused',
+      ],
+      40 => [
+        'label' => 'Failing',
+        'description' => "Has {$frequency} recurring donations in failing flow",
+        'value' => 40,
+        'name' => 'failing',
+      ],
+      50 => [
+        'label' => 'Failed',
+        'description' => "Has {$frequency} recurring donation that has failed because we couldn't process the payment",
+        'value' => 50,
+        'name' => 'failed',
+      ],
+      60 => [
+        'label' => 'Cancelled',
+        'description' => "Has {$frequency} recurring donation that was cancelled per donor request",
+        'value' => 60,
+        'name' => 'cancelled',
+      ],
+      100 => [
+        'label' => 'Never',
+        'description' => "Has never made a {$frequency} recurring donation",
+        'value' => 100,
+        'name' => 'never',
+      ],
+    ];
+  }
+
+  /**
+   * Get the select clause for the recurring donor statuses.
+   *
+   * @param string $frequencyUnit
+   * @return string
+   */
+  protected function getRecurringDonorStatusSelect(string $frequencyUnit): string {
+    $s = array_flip(\CRM_Core_PseudoConstant::get(
+      'CRM_Contribute_BAO_ContributionRecur',
+      'contribution_status_id',
+      ['labelColumn' => 'name']
+    ));
+    return "CASE
+      -- Paused status (30), no scheduled payments in the next $frequencyUnit
+      WHEN MIN(CASE WHEN c.contribution_status_id IN ({$s['Pending']},{$s['In Progress']},{$s['Processing']}) AND c.frequency_unit = '$frequencyUnit'
+              THEN c.next_sched_contribution_date > DATE_ADD(NOW(), INTERVAL 1 $frequencyUnit)
+         END) = 1 THEN 30
+      -- Active Status (10) Has an active recurring and was already a recurring donor prior to this financial year
+      WHEN MAX(c.contribution_status_id IN ({$s['Pending']},{$s['In Progress']},{$s['Processing']}) AND c.frequency_unit = '$frequencyUnit') = 1
+       AND MAX(c.start_date < '{$this->getFinancialYearStartDateTime()}' AND c.frequency_unit = '$frequencyUnit') = 1 THEN 10
+       -- New(20) has an active recurring and no recurrings of this frequency started before this year (or they would have been snagged in 10 above)
+      WHEN MAX(c.contribution_status_id IN ({$s['Pending']},{$s['In Progress']},{$s['Processing']}) AND c.frequency_unit = '$frequencyUnit') = 1 THEN 20
+      WHEN MAX(c.contribution_status_id = {$s['Failing']} AND c.frequency_unit = '$frequencyUnit') = 1 THEN 40
+      WHEN MAX(c.contribution_status_id = {$s['Failed']} AND c.frequency_unit = '$frequencyUnit') = 1 THEN 50
+      WHEN MAX(c.contribution_status_id IN ({$s['Cancelled']},{$s['Completed']}) AND c.frequency_unit = '$frequencyUnit') = 1 THEN 60
+      ELSE 100
+      END AS donor_status_recur_$frequencyUnit";
   }
 
   /**

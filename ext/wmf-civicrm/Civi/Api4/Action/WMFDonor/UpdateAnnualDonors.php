@@ -9,6 +9,9 @@ use Civi\Api4\Generic\Result;
 
 /**
  * Update Annual Recurring donor segments and statuses.
+ *
+ * This class will no longer be needed once we retire the pre-2026 segment and statuses.
+ * And we can remove segmentation aging in process-control completely.
  */
 class UpdateAnnualDonors extends AbstractAction {
 

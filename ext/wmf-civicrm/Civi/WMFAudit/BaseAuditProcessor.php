@@ -1527,7 +1527,7 @@ abstract class BaseAuditProcessor {
     $type = $auditRecord['audit_message_type'];
     if ($type === 'aggregate') {
       $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] ??= Money::zero($transaction['settled_currency']);
-      $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] = $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']]->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
+      $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']] = $this->totals[$file][$transaction['settlement_batch_reference']][$transaction['settled_currency']]->plus($transaction['settled_total_amount'], RoundingMode::HalfUp);
       $this->setBatchValue($file, $transaction['settlement_batch_reference'], $transaction, ['settlement_date' => date('Ymd', $transaction['settled_date'])]);
       return;
     }
@@ -1720,18 +1720,18 @@ abstract class BaseAuditProcessor {
       \Civi::log('wmf')->warning('missing total_amount for {transaction}', ['transaction' => $transaction]);
     }
     else {
-      $this->batches[$file][$batchName]['settled_total_amount'] = $this->batches[$file][$batchName]['settled_total_amount']->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
+      $this->batches[$file][$batchName]['settled_total_amount'] = $this->batches[$file][$batchName]['settled_total_amount']->plus($transaction['settled_total_amount'], RoundingMode::HalfUp);
       if ($transaction['settled_total_amount'] < 0) {
-        $this->batches[$file][$batchName]['settled_reversal_amount'] = $this->batches[$file][$batchName]['settled_reversal_amount']->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
+        $this->batches[$file][$batchName]['settled_reversal_amount'] = $this->batches[$file][$batchName]['settled_reversal_amount']->plus($transaction['settled_total_amount'], RoundingMode::HalfUp);
       }
       else {
-        $this->batches[$file][$batchName]['settled_donation_amount'] = $this->batches[$file][$batchName]['settled_donation_amount']->plus($transaction['settled_total_amount'], RoundingMode::HALF_UP);
+        $this->batches[$file][$batchName]['settled_donation_amount'] = $this->batches[$file][$batchName]['settled_donation_amount']->plus($transaction['settled_total_amount'], RoundingMode::HalfUp);
       }
     }
     // These will be wrong if they are not set right - but that is OK for now as it will highlight
     // where the gaps are and it is informational.
-    $this->batches[$file][$batchName]['settled_fee_amount'] = $this->batches[$file][$batchName]['settled_fee_amount']->plus($transaction['settled_fee_amount'] ?? 0, RoundingMode::HALF_UP);
-    $this->batches[$file][$batchName]['settled_net_amount'] = $this->batches[$file][$batchName]['settled_net_amount']->plus($transaction['settled_net_amount'] ?? 0, RoundingMode::HALF_UP);
+    $this->batches[$file][$batchName]['settled_fee_amount'] = $this->batches[$file][$batchName]['settled_fee_amount']->plus($transaction['settled_fee_amount'] ?? 0, RoundingMode::HalfUp);
+    $this->batches[$file][$batchName]['settled_net_amount'] = $this->batches[$file][$batchName]['settled_net_amount']->plus($transaction['settled_net_amount'] ?? 0, RoundingMode::HalfUp);
   }
 
   /**
@@ -2029,7 +2029,7 @@ abstract class BaseAuditProcessor {
         }
         else {
           \Civi::log('wmf')->alert('Batch total mismatch. {currency} is out by {difference}. Expected {expected} vs Actual {actual}', [
-            'difference' => $expectedAmount->minus($settledNetAmount, RoundingMode::HALF_UP)->getAmount(),
+            'difference' => $expectedAmount->minus($settledNetAmount, RoundingMode::HalfUp)->getAmount(),
             'expected' => $expectedAmount->getAmount(),
             'actual' => $settledNetAmount->getAmount(),
             'currency' => $currency,

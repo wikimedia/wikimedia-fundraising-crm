@@ -218,7 +218,7 @@ class Audit extends AbstractAction {
         // from the settlement report & around our subsystem but let's come back to that.
         // Use USD as it just checks to 2 decimal places - seems enough for this
         // rather than figuring out which field.
-        $newValue = Money::of($value, 'USD', NULL, RoundingMode::HALF_UP);
+        $newValue = Money::of($value, 'USD', NULL, RoundingMode::HalfUp);
         if ($newValue->compareTo($record[$key] ?: 0) === 0) {
           unset($settlementRecord[$key]);
         }

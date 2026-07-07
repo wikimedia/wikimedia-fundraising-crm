@@ -205,8 +205,8 @@ class PushJournal extends AbstractAction {
         $debitAmount  = (string) ($row['DEBIT'] ?? '0');
         $creditAmount = (string) ($row['CREDIT'] ?? '0');
 
-        $debitMoney  = Money::of($debitAmount, $currency, null, RoundingMode::HALF_UP);
-        $creditMoney = Money::of($creditAmount, $currency, null, RoundingMode::HALF_UP);
+        $debitMoney  = Money::of($debitAmount, $currency, null, RoundingMode::HalfUp);
+        $creditMoney = Money::of($creditAmount, $currency, null, RoundingMode::HalfUp);
 
         $transactionType = !$debitMoney->isZero() ? 'debit' : 'credit';
         $transactionMoney = !$debitMoney->isZero() ? $debitMoney : $creditMoney;
@@ -271,8 +271,8 @@ class PushJournal extends AbstractAction {
       $debitAmount  = (string) ($row['DEBIT'] ?? '0');
       $creditAmount = (string) ($row['CREDIT'] ?? '0');
 
-      $debitMoney  = Money::of($debitAmount, $currency, null, RoundingMode::HALF_UP);
-      $creditMoney = Money::of($creditAmount, $currency, null, RoundingMode::HALF_UP);
+      $debitMoney  = Money::of($debitAmount, $currency, null, RoundingMode::HalfUp);
+      $creditMoney = Money::of($creditAmount, $currency, null, RoundingMode::HalfUp);
 
       $hasDebit  = !$debitMoney->isZero();
       $hasCredit = !$creditMoney->isZero();
@@ -411,7 +411,7 @@ class PushJournal extends AbstractAction {
         continue;
       }
 
-      $money = Money::of($amount, $currency, null, RoundingMode::HALF_UP);
+      $money = Money::of($amount, $currency, null, RoundingMode::HalfUp);
 
       if ($transactionType === 'debit') {
         $debit = $debit->plus($money);
