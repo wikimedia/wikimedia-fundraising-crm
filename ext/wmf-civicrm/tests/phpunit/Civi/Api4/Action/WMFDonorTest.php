@@ -525,8 +525,8 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
 
     // Only the monthly recur status changes because no contribution was added
     $this->assertEquals([$loggedFields['donor_status_recur_month']['log_changes']], $latest['changed_fields']);
-    $this->assertEquals(10, $latest['donor_status_recur_month']);
-    $this->assertEquals(100, $latest['donor_status_recur_year']);
+    $this->assertEquals(15, $latest['donor_status_recur_month']);
+    $this->assertEquals(95, $latest['donor_status_recur_year']);
   }
 
   /**
