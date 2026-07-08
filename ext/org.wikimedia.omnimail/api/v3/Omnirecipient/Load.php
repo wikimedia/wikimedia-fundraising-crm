@@ -36,14 +36,14 @@ function civicrm_api3_omnirecipient_load($params) {
   try {
     $omnimail = new CRM_Omnimail_Omnirecipients($params);
     $recipients = $omnimail->getResult($params);
-    $map = _civicrm_api3_omnirecipient_load_batch_get_merged_contact_map($recipients);
+    $limit = $params['options']['limit'] ?? NULL;
+    $map = _civicrm_api3_omnirecipient_load_batch_get_merged_contact_map($recipients, $limit);
     $jobSettings = $omnimail->getJobSettings();
 
     $throttleSeconds = $params['throttle_seconds'] ?? NULL;
     $throttleStagePoint = strtotime('+ ' . (int) $throttleSeconds . ' seconds');
     $throttleCount = (int) ($params['throttle_number'] ?? 0);
     $rowsLeftBeforeThrottle = $throttleCount;
-    $limit = $params['options']['limit'] ?? NULL;
     $count = 0;
     $insertBatchSize = $params['insert_batch_size'] ?? 1;
     $valueStrings = [];
@@ -231,9 +231,14 @@ function _civicrm_api3_omnirecipient_load_spec(&$params) {
 
 }
 
-function _civicrm_api3_omnirecipient_load_batch_get_merged_contact_map($recipients): array {
+function _civicrm_api3_omnirecipient_load_batch_get_merged_contact_map($recipients, ?int $limit = NULL): array {
   $contactIds = [];
+  $count = 0;
   foreach ($recipients as $row) {
+    if ($limit && $count >= $limit) {
+      break;
+    }
+    $count++;
     $recipient = new \Omnimail\Silverpop\Responses\Recipient($row);
     $contactId = (int)$recipient->getContactReference();
     if ($contactId) {

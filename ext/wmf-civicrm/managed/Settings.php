@@ -23,6 +23,9 @@ $settings = [
   // Prevents acl cache clearing (as of recording already set on prod/staging)
   'acl_cache_refresh_mode' => 'deterministic',
 
+  // Turn off slow FTS search setting
+  'search_mysql_fts' => FALSE,
+
   // Enable message translation with locale parsing.
   'partial_locales' => 1,
 

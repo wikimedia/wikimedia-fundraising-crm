@@ -108,7 +108,8 @@ class UpdateCommunicationsPreferences extends AbstractAction {
       );
       $this->contactID = $mergedContactID;
     }
-    $message = "";
+    $detailsMessage = "";
+    $subjectParts = [];
     $outcome = [];
     $snoozeValues = [];
     $contactUpdateValues = [];
@@ -141,12 +142,13 @@ class UpdateCommunicationsPreferences extends AbstractAction {
         if ($oldSnoozeDateValue !== null &&
           strtotime($oldSnoozeDateValue) > strtotime('+1 day')) {
           $snoozeValues['email_settings.snooze_date'] = date("Y-m-d", strtotime("+1 day"));
-          $message .= ', since current snoozeValue was ' . $oldSnoozeDateValue . ', so set snoozeValue to ' . $snoozeValues['email_settings.snooze_date'];
+          $detailsMessage .= ', since current snoozeValue was ' . $oldSnoozeDateValue . ', so set snoozeValue to ' . $snoozeValues['email_settings.snooze_date'];
         }
-        $message .= ", opt_in from {$oldOptInValue} to {$newOptIn}";
-        $detail = "Email Preference Center update opt_in from {$oldOptInValue} to {$newOptIn}";
+        $detailsMessage .= ", opt_in from {$oldOptInValue} to {$newOptIn}";
+        $subjectParts[] = $newOptIn ? 'Opted in' : 'Opted out';
+        $optInDetail = "Email Preference Center update opt_in from {$oldOptInValue} to {$newOptIn}";
         if ($this->sendEmail === 'true') {
-          $this->logActivity("OptIn", $detail, $this->contactID);
+          $this->logActivity("OptIn", $optInDetail, $this->contactID);
           $countryID = $contact['address.country_id'];
           if ($this->country) {
             // If they are updating their country, use the new one
@@ -164,7 +166,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
             $this->sendDoubleOptInEmail($contact);
           }
         } else {
-          $this->logActivity("unsubscribe", $detail, $this->contactID);
+          $this->logActivity("unsubscribe", $optInDetail, $this->contactID);
         }
       }
     }
@@ -172,7 +174,8 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     // 2: language update
     if (!empty($this->language) && $oldLanguageValue !== $this->language) {
       $contactUpdateValues['preferred_language'] = $this->language;
-      $message .= ", preferred_language from {$oldLanguageValue} to $this->language";
+      $detailsMessage .= ", preferred_language from {$oldLanguageValue} to $this->language";
+      $subjectParts[] = "Lang: $this->language";
     }
 
     if ($contactUpdateValues !== []) {
@@ -210,7 +213,8 @@ class UpdateCommunicationsPreferences extends AbstractAction {
         ])->execute()->first();
       }
       $outcome = array_merge($outcome, $addressResult);
-      $message .= ", country from {$oldCountryValue} to $this->country";
+      $detailsMessage .= ", country from {$oldCountryValue} to $this->country";
+      $subjectParts[] = "Country: $this->country";
     }
 
     // We just need to set this value here. The omnimail_civicrm_custom hook will pick up
@@ -218,7 +222,8 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     // 4: update snoozed_date
     if (!empty($this->snoozeDate) && $this->snoozeDate !== $oldSnoozeDateValue) {
       $snoozeValues = ['email_settings.snooze_date' => $this->snoozeDate];
-      $message .= ", snooze date from {$oldSnoozeDateValue} to $this->snoozeDate";
+      $detailsMessage .= ", snooze date from {$oldSnoozeDateValue} to $this->snoozeDate";
+      $subjectParts[] = "Snoozed to $this->snoozeDate";
     }
 
     // 5: update email - trigger verification email if email changed
@@ -231,6 +236,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
       $this->logActivity("Send Verification Email",
         "Try to update EmailPreference email from $oldEmailValue to $this->email and send verification email.",
         $this->contactID);
+      $subjectParts[] = "Email: $this->email";
     }
 
     // 6: if snooze date updated, update/create email record
@@ -245,9 +251,10 @@ class UpdateCommunicationsPreferences extends AbstractAction {
 
     // only log when epc have the info update
     if ($outcome !== []) {
-      $message = "Email Preference Center update - civicrm_contact id: $this->contactID " . $message . '.';
-      \Civi::log('wmf')->info($message);
-      $this->logActivity('Email Preference Center', $message, $this->contactID);
+      $detailsMessage = "Email Preference Center update - civicrm_contact id: $this->contactID " . $detailsMessage . '.';
+      \Civi::log('wmf')->info($detailsMessage);
+      $subjectMessage = implode(', ', $subjectParts);
+      $this->logActivity('Email Preference Center', $detailsMessage, $this->contactID, $subjectMessage);
     }
 
     $result[] = $outcome;
@@ -362,8 +369,8 @@ class UpdateCommunicationsPreferences extends AbstractAction {
    * @throws \CRM_Core_Exception
    * @throws UnauthorizedException
    */
-  function logActivity($activityName, $detail, $contactId): void {
-    $subject = $activityName === 'Email Preference Center' ? 'Preferences Updated' : "$activityName - Email Preference Center";
+  function logActivity($activityName, $detail, $contactId, $subject = NULL): void {
+    $subject = $subject ?: ($activityName === 'Email Preference Center' ? 'Preferences Updated' : "$activityName - Email Preference Center");
     Activity::create(FALSE)
       ->addValue('activity_type_id:name', $activityName)
       ->addValue('status_id:name', 'Completed')
