@@ -237,7 +237,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
             ->first()['amount'], 2);
         }
         else {
-          throw new WMFException(WMFException::INVALID_MESSAGE, "Refund was in a different currency.  Freaking out.");
+          throw new WMFException(WMFException::INVALID_MESSAGE, "Contribution {$contribution['id']} was refund in a different currency $refund_currency. Freaking out.");
         }
       }
     }

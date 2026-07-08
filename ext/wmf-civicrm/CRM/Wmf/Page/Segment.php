@@ -22,6 +22,7 @@ class CRM_Wmf_Page_Segment extends CRM_Core_Page {
     $statusTables = [
       'Overall status' => 'donor_status_overall',
       'OTG status' => 'donor_status_otg',
+      'Overall recurring status' => 'donor_status_recur_overall',
       'Monthly recurring status' => 'donor_status_recur_month',
       'Annual recurring status' => 'donor_status_recur_year',
     ];

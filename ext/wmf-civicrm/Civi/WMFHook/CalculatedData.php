@@ -16,6 +16,8 @@ class CalculatedData extends TriggerHook {
 
   protected const WMF_MIN_CALENDER_YEAR = 2023;
 
+  protected const WMF_MIN_INDEXED_YEAR = 2021;
+
   protected const WMF_MIN_FINANCIAL_YEAR_START = 2017;
 
   /**
@@ -529,11 +531,12 @@ class CalculatedData extends TriggerHook {
         'column_name' => 'donor_segment_overall',
         'label' => ts('Donor Segment'),
         'data_type' => 'Int',
-        'default_value' => 1000,
+        'default_value' => 990,
         'html_type' => 'Select',
         'is_active' => 1,
         'is_searchable' => 1,
         'is_view' => 1,
+        'log_changes' => 1,
         'table_alias' => 'consecutive_years',
         'aggregate_select_clause' => $this->getSegmentSelect(),
         'option_values' => $this->getDonorSegmentOptions(),
@@ -556,11 +559,12 @@ class CalculatedData extends TriggerHook {
         'column_name' => 'donor_status_overall',
         'label' => ts('Donor Status: Overall'),
         'data_type' => 'Int',
-        'default_value' => 100,
+        'default_value' => 99,
         'html_type' => 'Select',
         'is_active' => 1,
         'is_searchable' => 1,
         'is_view' => 1,
+        'log_changes' => 2,
         'select_clause' => $this->getOverallOTGDonorStatusSelect('donor_status_overall'),
         'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_overall'),
       ],
@@ -569,11 +573,12 @@ class CalculatedData extends TriggerHook {
         'column_name' => 'donor_status_otg',
         'label' => ts('Donor Status: OTG'),
         'data_type' => 'Int',
-        'default_value' => 100,
+        'default_value' => 99,
         'html_type' => 'Select',
         'is_active' => 1,
         'is_searchable' => 1,
         'is_view' => 1,
+        'log_changes' => 3,
         'select_clause' => $this->getOverallOTGDonorStatusSelect('donor_status_otg'),
         'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_otg'),
       ],
@@ -869,7 +874,7 @@ class CalculatedData extends TriggerHook {
         'default_value' => 0,
         'is_active' => 1,
         'is_required' => 0,
-        'is_searchable' => ($year > 2019),
+        'is_searchable' => ($year >= self::WMF_MIN_INDEXED_YEAR),
         'is_view' => 1,
         'weight' => $weight,
         'is_search_range' => 1,
@@ -886,7 +891,7 @@ class CalculatedData extends TriggerHook {
           'default_value' => 0,
           'is_active' => 1,
           'is_required' => 0,
-          'is_searchable' => ($year > 2019),
+          'is_searchable' => ($year >= self::WMF_MIN_INDEXED_YEAR),
           'is_view' => 1,
           'weight' => $weight,
           'is_search_range' => 1,
@@ -933,7 +938,7 @@ class CalculatedData extends TriggerHook {
           'default_value' => 0,
           'is_active' => 1,
           'is_required' => 0,
-          'is_searchable' => ($year > 2019),
+          'is_searchable' => ($year >= self::WMF_MIN_INDEXED_YEAR),
           'is_view' => 1,
           'weight' => $weight,
           'is_search_range' => 1,
@@ -981,16 +986,30 @@ class CalculatedData extends TriggerHook {
       }
     }
     $contributionRecurFields = [
+      'donor_status_recur_overall' => [
+        'name' => 'donor_status_recur_overall',
+        'column_name' => 'donor_status_recur_overall',
+        'label' => ts('Donor Status: Overall Recurring'),
+        'data_type' => 'Int',
+        'default_value' => 95,
+        'html_type' => 'Select',
+        'is_active' => 1,
+        'is_searchable' => 1,
+        'is_view' => 1,
+        'select_clause' => $this->getRecurringDonorStatusSelect('overall'),
+        'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_recur_overall'),
+      ],
       'donor_status_recur_month' => [
         'name' => 'donor_status_recur_month',
         'column_name' => 'donor_status_recur_month',
         'label' => ts('Donor Status: Monthly Recurring'),
         'data_type' => 'Int',
-        'default_value' => 100,
+        'default_value' => 95,
         'html_type' => 'Select',
         'is_active' => 1,
         'is_searchable' => 1,
         'is_view' => 1,
+        'log_changes' => 4,
         'select_clause' => $this->getRecurringDonorStatusSelect('month'),
         'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_recur_month'),
       ],
@@ -999,11 +1018,12 @@ class CalculatedData extends TriggerHook {
         'column_name' => 'donor_status_recur_year',
         'label' => ts('Donor Status: Annual Recurring'),
         'data_type' => 'Int',
-        'default_value' => 100,
+        'default_value' => 95,
         'html_type' => 'Select',
         'is_active' => 1,
         'is_searchable' => 1,
         'is_view' => 1,
+        'log_changes' => 5,
         'select_clause' => $this->getRecurringDonorStatusSelect('year'),
         'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_recur_year'),
       ],
@@ -1088,6 +1108,47 @@ class CalculatedData extends TriggerHook {
       }
     }
     return $selects;
+  }
+
+  /**
+   * Get the wmf_donor fields flagged for tracking in wmf_donor_history.
+   *
+   * Note that the log_changes int value is set for each field, but is intended
+   * to reflect the column order in the table itself for Analytics' convenience.
+   *
+   * @return array
+   *   Field specs keyed by name, filtered to those marked 'log_changes'.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function getLoggedFields(): array {
+    // Only int fields with a select (option list) are supported in the history table.
+    return array_filter(
+      $this->getWMFDonorFields(),
+      fn($field) => !empty($field['log_changes']) && $field['data_type'] === 'Int' && $field['html_type'] === 'Select'
+    );
+  }
+
+  /**
+   * Pseudoconstant callback for wmf_donor_history fields.
+   *
+   * Returns the same in-code option values as the matching wmf_donor field, avoiding a
+   * duplicate option group or doing a DB lookup here.
+   *
+   * @param string $fieldName
+   *
+   * @return array
+   *   Options keyed by value.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public static function getHistoryFieldOptions(string $fieldName): array {
+    $options = [];
+    $field = (new self())->getWMFDonorFields()[$fieldName] ?? [];
+    foreach ($field['option_values'] ?? [] as $option) {
+      $options[$option['value']] = $option['label'];
+    }
+    return $options;
   }
 
   /**
@@ -1365,7 +1426,7 @@ class CalculatedData extends TriggerHook {
         }
       }
       $this->statusSelectSQL[$field] .= '
-       ELSE 100
+       ELSE 99
        END as ' . $field;
     }
     return $this->statusSelectSQL[$field];
@@ -1385,7 +1446,7 @@ class CalculatedData extends TriggerHook {
           $this->segmentSelectSQL .= "\n         WHEN consecutive_years.highest_3y_window_total >= {$option['threshold']} THEN {$option['value']}";
         }
       }
-      $this->segmentSelectSQL .= "\n         ELSE 1000\n       END) as donor_segment_overall";
+      $this->segmentSelectSQL .= "\n         ELSE 990\n       END) as donor_segment_overall";
     }
     return $this->segmentSelectSQL;
   }
@@ -1422,12 +1483,14 @@ class CalculatedData extends TriggerHook {
       case 'donor_status_overall':
       case 'donor_status_otg':
         return $this->donorStatusOptions[$field] = $this->getOverallOTGDonorStatusOptions($field);
+      case 'donor_status_recur_overall':
+        return $this->donorStatusOptions[$field] = $this->getRecurringDonorStatusOptions('overall');
       case 'donor_status_recur_month':
         return $this->donorStatusOptions[$field] = $this->getRecurringDonorStatusOptions('month');
       case 'donor_status_recur_year':
         return $this->donorStatusOptions[$field] = $this->getRecurringDonorStatusOptions('year');
       default:
-        return $this->donorStatusOptions[$field] = [];
+        throw new \CRM_Core_Exception("Unknown donor status field $field");
     }
   }
 
@@ -1549,10 +1612,10 @@ class CalculatedData extends TriggerHook {
           ],
         ],
       ],
-      100 => [
+      99 => [
         'label' => 'Non donor',
         'static_description' => 'Has never given',
-        'value' => 100,
+        'value' => 99,
         'name' => 'non_donor',
       ],
     ];
@@ -1574,58 +1637,58 @@ class CalculatedData extends TriggerHook {
   }
 
   /**
-   * Get the options for the annual and monthly recurring donor status fields.
+   * Get the options for the recurring donor status fields.
    *
    * Ref
    * https://docs.google.com/spreadsheets/d/17Pc1tIvqol6XJhuu97RlOfwy_Avbb9MEaRwhy2F529I/edit?usp=sharing
    *
-   * @param string $field
+   * @param string $frequencyUnit
    * @return array[]
    * @throws \CRM_Core_Exception
    */
   protected function getRecurringDonorStatusOptions(string $frequencyUnit): array {
-    $frequency = $frequencyUnit === 'year' ? 'annual' : 'monthly';
+    $frequency = ['year' => 'annual ', 'month' => 'monthly ', 'overall' => ''][$frequencyUnit];
     return [
-      10 => [
+      15 => [
         'label' => 'Active',
-        'description' => "Has an active {$frequency} recurring donation",
-        'value' => 10,
+        'description' => "Has an active {$frequency}recurring donation",
+        'value' => 15,
         'name' => 'active',
       ],
-      20 => [
+      25 => [
         'label' => 'New',
-        'description' => "First year as {$frequency} recurring donor",
-        'value' => 20,
+        'description' => "First year as a {$frequency}recurring donor",
+        'value' => 25,
         'name' => 'new',
       ],
-      30 => [
+      35 => [
         'label' => 'Paused',
-        'description' => "All non-cancelled {$frequency} recurring donations paused",
-        'value' => 30,
+        'description' => "All non-cancelled {$frequency}recurring donations paused",
+        'value' => 35,
         'name' => 'paused',
       ],
-      40 => [
+      45 => [
         'label' => 'Failing',
-        'description' => "Has {$frequency} recurring donations in failing flow",
-        'value' => 40,
+        'description' => "Has a {$frequency}recurring donations in failing flow",
+        'value' => 45,
         'name' => 'failing',
       ],
-      50 => [
+      55 => [
         'label' => 'Failed',
-        'description' => "Has {$frequency} recurring donation that has failed because we couldn't process the payment",
-        'value' => 50,
+        'description' => "Has a {$frequency}recurring donation that has failed because we couldn't process the payment",
+        'value' => 55,
         'name' => 'failed',
       ],
-      60 => [
+      65 => [
         'label' => 'Cancelled',
-        'description' => "Has {$frequency} recurring donation that was cancelled per donor request",
-        'value' => 60,
+        'description' => "Has {$frequency}recurring donation that was cancelled per donor request",
+        'value' => 65,
         'name' => 'cancelled',
       ],
-      100 => [
+      95 => [
         'label' => 'Never',
-        'description' => "Has never made a {$frequency} recurring donation",
-        'value' => 100,
+        'description' => "Has never made a {$frequency}recurring donation",
+        'value' => 95,
         'name' => 'never',
       ],
     ];
@@ -1643,20 +1706,31 @@ class CalculatedData extends TriggerHook {
       'contribution_status_id',
       ['labelColumn' => 'name']
     ));
+    $frequencyFilter = $frequencyUnit === 'overall' ? '' : " AND c.frequency_unit = '$frequencyUnit'";
+    if ($frequencyUnit === 'overall') {
+      $pausedUntil = 'CASE c.frequency_unit';
+      foreach (['month', 'year'] as $unit) {
+        $pausedUntil .= " WHEN '$unit' THEN DATE_ADD(NOW(), INTERVAL 1 $unit)";
+      }
+      $pausedUntil .= ' END';
+    }
+    else {
+      $pausedUntil = "DATE_ADD(NOW(), INTERVAL 1 $frequencyUnit)";
+    }
     return "CASE
-      -- Paused status (30), no scheduled payments in the next $frequencyUnit
-      WHEN MIN(CASE WHEN c.contribution_status_id IN ({$s['Pending']},{$s['In Progress']},{$s['Processing']}) AND c.frequency_unit = '$frequencyUnit'
-              THEN c.next_sched_contribution_date > DATE_ADD(NOW(), INTERVAL 1 $frequencyUnit)
-         END) = 1 THEN 30
-      -- Active Status (10) Has an active recurring and was already a recurring donor prior to this financial year
-      WHEN MAX(c.contribution_status_id IN ({$s['Pending']},{$s['In Progress']},{$s['Processing']}) AND c.frequency_unit = '$frequencyUnit') = 1
-       AND MAX(c.start_date < '{$this->getFinancialYearStartDateTime()}' AND c.frequency_unit = '$frequencyUnit') = 1 THEN 10
-       -- New(20) has an active recurring and no recurrings of this frequency started before this year (or they would have been snagged in 10 above)
-      WHEN MAX(c.contribution_status_id IN ({$s['Pending']},{$s['In Progress']},{$s['Processing']}) AND c.frequency_unit = '$frequencyUnit') = 1 THEN 20
-      WHEN MAX(c.contribution_status_id = {$s['Failing']} AND c.frequency_unit = '$frequencyUnit') = 1 THEN 40
-      WHEN MAX(c.contribution_status_id = {$s['Failed']} AND c.frequency_unit = '$frequencyUnit') = 1 THEN 50
-      WHEN MAX(c.contribution_status_id IN ({$s['Cancelled']},{$s['Completed']}) AND c.frequency_unit = '$frequencyUnit') = 1 THEN 60
-      ELSE 100
+      -- Paused status (35), no scheduled payments within the recurring's frequency unit
+      WHEN MIN(CASE WHEN c.contribution_status_id IN ({$s['Pending']},{$s['In Progress']},{$s['Processing']})$frequencyFilter
+              THEN c.next_sched_contribution_date > $pausedUntil
+         END) = 1 THEN 35
+      -- Active Status (15) Has an active recurring and was already a recurring donor prior to this financial year
+      WHEN MAX(c.contribution_status_id IN ({$s['Pending']},{$s['In Progress']},{$s['Processing']})$frequencyFilter) = 1
+       AND MAX(c.start_date < '{$this->getFinancialYearStartDateTime()}'$frequencyFilter) = 1 THEN 15
+       -- New(25) has an active recurring and no recurrings of this frequency started before this year (or they would have been snagged in 15 above)
+      WHEN MAX(c.contribution_status_id IN ({$s['Pending']},{$s['In Progress']},{$s['Processing']})$frequencyFilter) = 1 THEN 25
+      WHEN MAX(c.contribution_status_id = {$s['Failing']}$frequencyFilter) = 1 THEN 45
+      WHEN MAX(c.contribution_status_id = {$s['Failed']}$frequencyFilter) = 1 THEN 55
+      WHEN MAX(c.contribution_status_id IN ({$s['Cancelled']},{$s['Completed']})$frequencyFilter) = 1 THEN 65
+      ELSE 95
       END AS donor_status_recur_$frequencyUnit";
   }
 
@@ -2108,9 +2182,9 @@ class CalculatedData extends TriggerHook {
         'threshold' => 0.01,
         'description' => 'Has given',
       ],
-      1000 => [
+      990 => [
         'label' => 'Non Donor',
-        'value' => 1000,
+        'value' => 990,
         'name' => 'non_donor',
         'description' => 'Has never donated',
       ],

@@ -4,7 +4,7 @@
 For the older version, the phab was <a target="_blank" href="https://phabricator.wikimedia.org/T336305">donor segments</a>
 and the segments were initially described in this <a target="_blank" href="https://docs.google.com/spreadsheets/d/1qM36MeKWyOENl-iR5umuLph5HLHG6W_6c46xJUdE3QY/edit#gid=1786541006"> Google doc</a>.
 </p>
-<p>A contact will be assigned to the first segment / status that they match (from the top / lowest value), except om the old segments where if they are in the Major Donor or Mid Tier segments, in which case they will not be assigned to a recurring status even if they do have a recurring donation.</p>
+<p>A contact will be assigned to the first segment / status that they match (from the top / lowest value), except on the old segments where if they are in the Major Donor or Mid Tier segments, in which case they will not be assigned to a recurring status even if they do have a recurring donation.</p>
 </div>
 
 <h3 style="margin: 0px 0px 10px 0px;">Segments</h3>
