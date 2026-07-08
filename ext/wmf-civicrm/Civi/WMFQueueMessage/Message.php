@@ -833,14 +833,14 @@ class Message {
         'label' => E::ts('Offline gift note'),
         'used_for' => 'audit message, offline gifts',
       ],
-      'original_matching_gift_amount' => [
-        'name' => 'original_matching_gift_amount',
+      'original_matching_gift_total_amount' => [
+        'name' => 'original_matching_gift_total_amount',
         'data_type' => 'Float',
         'label' => E::ts('Amount given by matching gift entity (e.g. employer) in the original currency'),
         'used_for' => 'audit message, offline gifts',
       ],
-      'original_individual_gift_amount' => [
-        'name' => 'original_individual_gift_amount',
+      'original_individual_gift_total_amount' => [
+        'name' => 'original_individual_gift_total_amount',
         'data_type' => 'Float',
         'label' => E::ts('Amount given by the individual expecting to be matched in the original currency'),
         'used_for' => 'audit message, offline gifts',

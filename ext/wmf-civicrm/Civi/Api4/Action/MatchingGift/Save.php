@@ -28,8 +28,8 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
 
       $matchingGiftOrganizationID = $this->getOrCreateMatchingGiftOrganization($record);
       $individualID = $this->getOrCreateIndividual($record, $matchingGiftOrganizationID, $record['matching_gift_organization'] ?? NULL);
-      if (!empty($record['original_individual_gift_amount'])) {
-        $individualGiftRatio = $record['original_individual_gift_amount'] / $record['original_total_amount'];
+      if (!empty($record['original_individual_gift_total_amount'])) {
+        $individualGiftRatio = $record['original_individual_gift_total_amount'] / $record['original_total_amount'];
         $contributionValues = [
           'Gift_Data.Channel' => 'Workplace Giving',
           'Gift_Data.Campaign' => 'Employee Giving',
@@ -63,7 +63,7 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
             ->execute();
         }
       }
-      if (!empty($record['original_matching_gift_amount'])) {
+      if (!empty($record['original_matching_gift_total_amount'])) {
         if (!$matchingGiftOrganizationID) {
           $matchingGiftOrganizationID = \Civi\Api4\Contact::create(FALSE)
             ->setValues([
@@ -71,7 +71,7 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
               'organization_name' => $record['matching_gift_organization'],
             ])->execute()->single()['id'];
         }
-        $matchingGiftRatio = $record['original_matching_gift_amount'] / $record['original_total_amount'];
+        $matchingGiftRatio = $record['original_matching_gift_total_amount'] / $record['original_total_amount'];
         $record['gateway_txn_id'] .= '_MATCHED';
         $record['backend_processor_txn_id'] .= '_MATCHED';
         $contribution = $this->saveContribution($record, [

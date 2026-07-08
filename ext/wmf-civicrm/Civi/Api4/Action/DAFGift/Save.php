@@ -39,7 +39,7 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
             'contribution_id' => $contribution['id'],
             'soft_credit_type_id:name' => 'donor-advised_fund',
             'contact_id' => $individualID,
-            'amount' => $record['original_individual_gift_amount'],
+            'amount' => $record['original_individual_gift_total_amount'],
           ])
           ->execute();
       }

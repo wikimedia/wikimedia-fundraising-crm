@@ -39,8 +39,8 @@ class OfflineAuditMessage extends AuditMessage {
    *    original_net_amount: float,
    *    original_fee_amount: float,
    *    original_total_amount: float,
-   *    original_matching_gift_amount: float,
-   *    original_individual_gift_amount: float,
+   *    original_matching_gift_total_amount: float,
+   *    original_individual_gift_total_amount: float,
    *    exchange_rate: float,
    *    settled_date: string,
    *    external_identifier: string,
@@ -90,11 +90,11 @@ class OfflineAuditMessage extends AuditMessage {
   }
 
   public function hasMatchingOrganizationGift(): bool {
-    return !empty($this->message['original_matching_gift_amount']);
+    return !empty($this->message['original_matching_gift_total_amount']);
   }
 
   public function hasIndividualGift(): bool {
-    return !empty($this->message['original_individual_gift_amount']);
+    return !empty($this->message['original_individual_gift_total_amount']);
   }
 
   /**
