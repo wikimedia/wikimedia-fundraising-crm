@@ -2,6 +2,7 @@
 
 namespace Civi\WMFAudit;
 
+use Brick\Math\RoundingMode;
 use Civi\Api4\DAFGift;
 use Civi\Api4\MatchingGift;
 use SmashPig\CrmLink\Messages\SourceFields;
@@ -72,6 +73,22 @@ class ChariotAuditProcessor extends BaseAuditProcessor {
         ->setQueueMethod($this->queueMethod)
         ->setMessage($message)
         ->execute();
+    }
+  }
+
+  /**
+   * @param array $transaction
+   * @return void
+   */
+  protected function addToBatch(array $transaction, string $file): void {
+    parent::addToBatch($transaction, $file);
+    $batchName = $transaction['settlement_batch_reference'];
+
+    $matchingGift = $transaction['original_matching_gift_total_amount'] ?? '0.00';
+    $individualGift = $transaction['original_individual_gift_total_amount'] ?? '0.00';
+    if (!empty($individualGift) && $individualGift !== '0.00' && !empty($matchingGift) && $matchingGift !== '0.00') {
+      // We have 2 transactions on the row - count 2
+      $this->batches[$file][$batchName]['transaction_count']++;
     }
   }
 

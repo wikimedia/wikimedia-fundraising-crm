@@ -142,7 +142,7 @@ class ChariotAuditTest extends BaseAuditTestCase {
     $this->createTestEntity('Contact', ['organization_name' => 'Mouse'], 'mouse_1');
     $this->createTestEntity('Contact', ['organization_name' => 'Mouse'], 'mouse_2');
 
-    $this->runAuditBatch('', $this->getBatchFile('benevity'));
+    $this->runAuditBatch('', $this->getBatchFile('benevity'),  $this->getBatchPrefix('benevity'));
     $contributions = (array) Contribution::get(FALSE)
       ->setSelect(['*', 'contribution_extra.*', 'payment_instrument_id:name', 'financial_type_id:name', 'Gift_Data.*'])
       ->addWhere('contribution_settlement.settlement_batch_reference', '=', $this->getBatchName('benevity'))
@@ -190,6 +190,10 @@ class ChariotAuditTest extends BaseAuditTestCase {
 
   public function getBatchName($batch): string {
     return $this->batches[$batch]['name'];
+  }
+
+  public function getBatchPrefix($batch): string {
+    return substr($this->batches[$batch]['name'], 0, -4);
   }
 
   public function getBatchNames(): array {

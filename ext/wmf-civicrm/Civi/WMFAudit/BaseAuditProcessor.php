@@ -1711,7 +1711,7 @@ abstract class BaseAuditProcessor {
    * @param array $transaction
    * @return void
    */
-  private function addToBatch(array $transaction, string $file): void {
+  protected function addToBatch(array $transaction, string $file): void {
     $batchName = $transaction['settlement_batch_reference'];
     $this->ensureBatchExists($file, $batchName, $transaction);
 
