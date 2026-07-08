@@ -1120,12 +1120,6 @@ DROP TRIGGER IF EXISTS civicrm_value_relationship_metadata_before_delete //
 DROP TRIGGER IF EXISTS civicrm_value_relationship_metadata_after_insert //
 DROP TRIGGER IF EXISTS civicrm_value_relationship_metadata_after_update //
 DROP TRIGGER IF EXISTS civicrm_value_relationship_metadata_after_delete //
-DROP TRIGGER IF EXISTS civicrm_value_test_51_before_insert //
-DROP TRIGGER IF EXISTS civicrm_value_test_51_before_update //
-DROP TRIGGER IF EXISTS civicrm_value_test_51_before_delete //
-DROP TRIGGER IF EXISTS civicrm_value_test_51_after_insert //
-DROP TRIGGER IF EXISTS civicrm_value_test_51_after_update //
-DROP TRIGGER IF EXISTS civicrm_value_test_51_after_delete //
 DROP TRIGGER IF EXISTS civicrm_website_before_insert //
 DROP TRIGGER IF EXISTS civicrm_website_before_update //
 DROP TRIGGER IF EXISTS civicrm_website_before_delete //
@@ -1474,7 +1468,7 @@ CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contrib
       MAX(endowment_change_2026_2027) as endowment_change_2026_2027,
       MAX(change_2026_2027) as change_2026_2027
       FROM (
-        SELECT 
+        SELECT
 CASE
 
          WHEN (
@@ -1536,7 +1530,7 @@ CASE
 
        ELSE 99
        END as donor_status_overall,
-        
+
 CASE
 
          WHEN (
@@ -1598,7 +1592,7 @@ CASE
 
        ELSE 99
        END as donor_status_otg,
-         CASE 
+         CASE
 
          WHEN (
          --  Major Donor: has given 10,000+ in one of the past 5 financial years, or in the current financial year so far
@@ -1669,7 +1663,7 @@ CASE
 
        ELSE 1000
        END as donor_segment_id,
-        
+
 CASE
 
          WHEN (
@@ -1824,11 +1818,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2022-01-01' AND '2022-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2022_2023,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2022-01-01' AND '2022-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2022_2023,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2022-01-01' AND '2022-12-31 23:59:59', c.total_amount, 0),0))
           as change_2022_2023,
@@ -1840,11 +1834,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2023_2024,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2023_2024,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
           as change_2023_2024,
@@ -1856,11 +1850,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2024_2025,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2024_2025,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
           as change_2024_2025,
@@ -1872,11 +1866,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2025_2026,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2025_2026,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
           as change_2025_2026,
@@ -1888,11 +1882,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2027-01-01' AND '2027-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2026_2027,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2027-01-01' AND '2027-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2026_2027,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2027-01-01' AND '2027-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
           as change_2026_2027
@@ -1905,7 +1899,7 @@ CASE
   WHERE c.contact_id = NEW.contact_id
     AND c.contribution_status_id = 1
     AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
-  
+
   ) as totals
   LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
@@ -2190,7 +2184,7 @@ CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contrib
       MAX(endowment_change_2026_2027) as endowment_change_2026_2027,
       MAX(change_2026_2027) as change_2026_2027
       FROM (
-        SELECT 
+        SELECT
 CASE
 
          WHEN (
@@ -2252,7 +2246,7 @@ CASE
 
        ELSE 99
        END as donor_status_overall,
-        
+
 CASE
 
          WHEN (
@@ -2314,7 +2308,7 @@ CASE
 
        ELSE 99
        END as donor_status_otg,
-         CASE 
+         CASE
 
          WHEN (
          --  Major Donor: has given 10,000+ in one of the past 5 financial years, or in the current financial year so far
@@ -2385,7 +2379,7 @@ CASE
 
        ELSE 1000
        END as donor_segment_id,
-        
+
 CASE
 
          WHEN (
@@ -2540,11 +2534,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2022-01-01' AND '2022-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2022_2023,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2022-01-01' AND '2022-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2022_2023,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2022-01-01' AND '2022-12-31 23:59:59', c.total_amount, 0),0))
           as change_2022_2023,
@@ -2556,11 +2550,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2023_2024,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2023_2024,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
           as change_2023_2024,
@@ -2572,11 +2566,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2024_2025,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2024_2025,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
           as change_2024_2025,
@@ -2588,11 +2582,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2025_2026,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2025_2026,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
           as change_2025_2026,
@@ -2604,11 +2598,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2027-01-01' AND '2027-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2026_2027,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2027-01-01' AND '2027-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2026_2027,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2027-01-01' AND '2027-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
           as change_2026_2027
@@ -2621,7 +2615,7 @@ CASE
   WHERE c.contact_id = NEW.contact_id
     AND c.contribution_status_id = 1
     AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
-  
+
   ) as totals
   LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
@@ -2904,7 +2898,7 @@ END IF;
       MAX(endowment_change_2026_2027) as endowment_change_2026_2027,
       MAX(change_2026_2027) as change_2026_2027
       FROM (
-        SELECT 
+        SELECT
 CASE
 
          WHEN (
@@ -2966,7 +2960,7 @@ CASE
 
        ELSE 99
        END as donor_status_overall,
-        
+
 CASE
 
          WHEN (
@@ -3028,7 +3022,7 @@ CASE
 
        ELSE 99
        END as donor_status_otg,
-         CASE 
+         CASE
 
          WHEN (
          --  Major Donor: has given 10,000+ in one of the past 5 financial years, or in the current financial year so far
@@ -3099,7 +3093,7 @@ CASE
 
        ELSE 1000
        END as donor_segment_id,
-        
+
 CASE
 
          WHEN (
@@ -3254,11 +3248,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2022-01-01' AND '2022-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2022_2023,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2022-01-01' AND '2022-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2022_2023,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2022-01-01' AND '2022-12-31 23:59:59', c.total_amount, 0),0))
           as change_2022_2023,
@@ -3270,11 +3264,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2023_2024,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2023_2024,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
           as change_2023_2024,
@@ -3286,11 +3280,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2024_2025,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2024_2025,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
           as change_2024_2025,
@@ -3302,11 +3296,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2025_2026,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2025_2026,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
           as change_2025_2026,
@@ -3318,11 +3312,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2027-01-01' AND '2027-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2026_2027,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2027-01-01' AND '2027-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2026_2027,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2027-01-01' AND '2027-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
           as change_2026_2027
@@ -3335,7 +3329,7 @@ CASE
   WHERE c.contact_id = OLD.contact_id
     AND c.contribution_status_id = 1
     AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
-  
+
   ) as totals
   LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
@@ -3620,7 +3614,7 @@ CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contrib
       MAX(endowment_change_2026_2027) as endowment_change_2026_2027,
       MAX(change_2026_2027) as change_2026_2027
       FROM (
-        SELECT 
+        SELECT
 CASE
 
          WHEN (
@@ -3682,7 +3676,7 @@ CASE
 
        ELSE 99
        END as donor_status_overall,
-        
+
 CASE
 
          WHEN (
@@ -3744,7 +3738,7 @@ CASE
 
        ELSE 99
        END as donor_status_otg,
-         CASE 
+         CASE
 
          WHEN (
          --  Major Donor: has given 10,000+ in one of the past 5 financial years, or in the current financial year so far
@@ -3815,7 +3809,7 @@ CASE
 
        ELSE 1000
        END as donor_segment_id,
-        
+
 CASE
 
          WHEN (
@@ -3970,11 +3964,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2022-01-01' AND '2022-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2022_2023,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2022-01-01' AND '2022-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2022_2023,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2022-01-01' AND '2022-12-31 23:59:59', c.total_amount, 0),0))
           as change_2022_2023,
@@ -3986,11 +3980,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2023_2024,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2023_2024,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2023-01-01' AND '2023-12-31 23:59:59', c.total_amount, 0),0))
           as change_2023_2024,
@@ -4002,11 +3996,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2024_2025,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2024_2025,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2024-01-01' AND '2024-12-31 23:59:59', c.total_amount, 0),0))
           as change_2024_2025,
@@ -4018,11 +4012,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2025_2026,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2025_2026,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2025-01-01' AND '2025-12-31 23:59:59', c.total_amount, 0),0))
           as change_2025_2026,
@@ -4034,11 +4028,11 @@ CASE
         SUM(COALESCE(IF(receive_date BETWEEN '2027-01-01' AND '2027-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_2026_2027,
-        
+
              SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2027-01-01' AND '2027-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(c.financial_type_id = 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
              as endowment_change_2026_2027,
-        
+
             SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2027-01-01' AND '2027-12-31 23:59:59', c.total_amount, 0),0))
           - SUM(COALESCE(IF(c.financial_type_id <> 26 AND receive_date BETWEEN '2026-01-01' AND '2026-12-31 23:59:59', c.total_amount, 0),0))
           as change_2026_2027
@@ -4051,7 +4045,7 @@ CASE
   WHERE c.contact_id = OLD.contact_id
     AND c.contribution_status_id = 1
     AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
-  
+
   ) as totals
   LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
@@ -4955,14 +4949,14 @@ CREATE TRIGGER civicrm_pcp_block_after_delete after delete ON civicrm_pcp_block 
 CREATE TRIGGER civicrm_phone_after_insert after insert ON civicrm_phone FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_phone (`id`, `contact_id`, `location_type_id`, `is_primary`, `is_billing`, `mobile_provider_id`, `phone`, `phone_ext`, `phone_numeric`, `phone_type_id`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`contact_id`, NEW.`location_type_id`, NEW.`is_primary`, NEW.`is_billing`, NEW.`mobile_provider_id`, NEW.`phone`, NEW.`phone_ext`, NEW.`phone_numeric`, NEW.`phone_type_id`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.contact_id; END //
 
-CREATE TRIGGER civicrm_phone_before_insert before insert ON civicrm_phone FOR EACH ROW BEGIN  
+CREATE TRIGGER civicrm_phone_before_insert before insert ON civicrm_phone FOR EACH ROW BEGIN
 SET NEW.phone_numeric = civicrm_strip_non_numeric(NEW.phone);
  END //
 
 CREATE TRIGGER civicrm_phone_after_update after update ON civicrm_phone FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`contact_id`,'') <> IFNULL(NEW.`contact_id`,'') OR IFNULL(OLD.`location_type_id`,'') <> IFNULL(NEW.`location_type_id`,'') OR IFNULL(OLD.`is_primary`,'') <> IFNULL(NEW.`is_primary`,'') OR IFNULL(OLD.`is_billing`,'') <> IFNULL(NEW.`is_billing`,'') OR IFNULL(OLD.`mobile_provider_id`,'') <> IFNULL(NEW.`mobile_provider_id`,'') OR IFNULL(OLD.`phone`,'') <> IFNULL(NEW.`phone`,'') OR IFNULL(OLD.`phone_ext`,'') <> IFNULL(NEW.`phone_ext`,'') OR IFNULL(OLD.`phone_numeric`,'') <> IFNULL(NEW.`phone_numeric`,'') OR IFNULL(OLD.`phone_type_id`,'') <> IFNULL(NEW.`phone_type_id`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_phone (`id`, `contact_id`, `location_type_id`, `is_primary`, `is_billing`, `mobile_provider_id`, `phone`, `phone_ext`, `phone_numeric`, `phone_type_id`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`contact_id`, NEW.`location_type_id`, NEW.`is_primary`, NEW.`is_billing`, NEW.`mobile_provider_id`, NEW.`phone`, NEW.`phone_ext`, NEW.`phone_numeric`, NEW.`phone_type_id`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF;
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.contact_id; END //
 
-CREATE TRIGGER civicrm_phone_before_update before update ON civicrm_phone FOR EACH ROW BEGIN  
+CREATE TRIGGER civicrm_phone_before_update before update ON civicrm_phone FOR EACH ROW BEGIN
 SET NEW.phone_numeric = civicrm_strip_non_numeric(NEW.phone);
  END //
 
@@ -5598,15 +5592,6 @@ CREATE TRIGGER civicrm_value_relationship_metadata_after_insert after insert ON 
 CREATE TRIGGER civicrm_value_relationship_metadata_after_update after update ON civicrm_value_relationship_metadata FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`provided_by_donor`,'') <> IFNULL(NEW.`provided_by_donor`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_value_relationship_metadata (`id`, `entity_id`, `provided_by_donor`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`provided_by_donor`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF; END //
 
 CREATE TRIGGER civicrm_value_relationship_metadata_after_delete after delete ON civicrm_value_relationship_metadata FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_relationship_metadata (`id`, `entity_id`, `provided_by_donor`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`provided_by_donor`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF; END //
-
-CREATE TRIGGER civicrm_value_test_51_after_insert after insert ON civicrm_value_test_51 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_test_51 (`id`, `entity_id`, `test_field_462`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`test_field_462`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
-UPDATE civicrm_activity SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id; END //
-
-CREATE TRIGGER civicrm_value_test_51_after_update after update ON civicrm_value_test_51 FOR EACH ROW BEGIN  IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`test_field_462`,'') <> IFNULL(NEW.`test_field_462`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_value_test_51 (`id`, `entity_id`, `test_field_462`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`test_field_462`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF;
-UPDATE civicrm_activity SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id; END //
-
-CREATE TRIGGER civicrm_value_test_51_after_delete after delete ON civicrm_value_test_51 FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_value_test_51 (`id`, `entity_id`, `test_field_462`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`test_field_462`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
-UPDATE civicrm_activity SET modified_date = CURRENT_TIMESTAMP WHERE id = OLD.entity_id; END //
 
 CREATE TRIGGER civicrm_website_after_insert after insert ON civicrm_website FOR EACH ROW BEGIN  IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_website (`id`, `contact_id`, `url`, `website_type_id`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`contact_id`, NEW.`url`, NEW.`website_type_id`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.contact_id; END //
