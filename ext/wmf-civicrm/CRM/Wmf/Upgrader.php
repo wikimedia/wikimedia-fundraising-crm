@@ -4979,6 +4979,14 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Update wmf_donor data for all contacts.
+   */
+  public function upgrade_5045(): bool {
+    $this->doAnnualWMFDonorRollover();
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
@@ -5038,8 +5046,17 @@ v.channel IS NULL AND c.id = 131486342;",
     $maxContactID = CRM_Core_DAO::singleValueQuery('SELECT MAX(id) FROM civicrm_contact');
     $this->queueApi4('WMFDonor', 'update', [
       'values' => [
-        'donor_segment_id' => '',
-        'donor_status_id' => '',
+        'donor_segment_id' => TRUE,
+        'donor_status_id' => TRUE,
+        'donor_segment_overall' => TRUE,
+        'donor_status_overall' => TRUE,
+        'donor_status_otg' => TRUE,
+        'donor_status_recur_overall' => TRUE,
+        'donor_status_recur_month' => TRUE,
+        'donor_status_recur_year' => TRUE,
+        'years_consecutive' => TRUE,
+        'last_otg_donation_date' => TRUE,
+        'first_donation_was_recur' => TRUE,
       ],
       'where' => [
         ['id', 'BETWEEN', ['%1', '%2']],
