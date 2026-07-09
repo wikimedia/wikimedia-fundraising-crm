@@ -36,6 +36,7 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
           'fee_amount' => $record['original_individual_gift_fee_amount'],
           'contribution_settlement.settled_fee_amount' => $record['original_individual_gift_fee_amount'],
           'contribution_settlement.settled_net_amount' => $record['original_individual_gift_net_amount'],
+          'contribution_extra.no_thank_you' => 'Sent by portal (matching gift/ workplace giving)',
         ];
         if ($record['backend_processor'] === 'benevity') {
           $contributionValues['Gift_Data.Appeal'] = 'Benevity';
@@ -80,6 +81,7 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
         $contribution = $this->saveContribution($record, [
           'Gift_Data.Channel' => 'Workplace Giving',
           'Gift_Data.Campaign' => 'Matching Gift',
+          'contribution_extra.no_thank_you' => 'Sent by portal (matching gift/ workplace giving)',
           'fee_amount' => $record['settled_matching_gift_fee_amount'],
           'contribution_settlement.settled_fee_amount' => $record['settled_matching_gift_fee_amount'],
           'contribution_settlement.settled_net_amount' => $record['settled_matching_gift_net_amount'],
