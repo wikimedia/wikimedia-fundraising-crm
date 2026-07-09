@@ -100,11 +100,15 @@ class OfflineAuditMessage extends AuditMessage {
   }
 
   public function hasMatchingOrganizationGift(): bool {
-    return !empty($this->message['original_matching_gift_total_amount']);
+    return $this->hasAmount('original_matching_gift_total_amount');
   }
 
   public function hasIndividualGift(): bool {
-    return !empty($this->message['original_individual_gift_total_amount']);
+    return $this->hasAmount('original_individual_gift_total_amount');
+  }
+
+  private function hasAmount(string $name): bool {
+    return !empty($this->message[$name]) && $this->message[$name] !== '0.00';
   }
 
   /**

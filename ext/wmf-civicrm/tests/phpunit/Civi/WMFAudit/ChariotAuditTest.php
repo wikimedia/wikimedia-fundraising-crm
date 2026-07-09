@@ -19,6 +19,7 @@ class ChariotAuditTest extends BaseAuditTestCase {
   protected array $batches = [
     'groundswell' => [
       'name' => 'chariot_01kqkvxnj5mc751be13egn6j6p_USD',
+      'file' => '20260502081216-Groundswell-1000.00-deposit_01kqkvxnj5mc751be13egn6j6p.csv',
      ],
     'pinkaloo' => [
       'name' => 'chariot_01krysqhrtsdzva44bbaf37r4h_USD',
@@ -53,7 +54,7 @@ class ChariotAuditTest extends BaseAuditTestCase {
   }
 
   public function testGroundswellMatchingGiftFile(): void {
-    $this->runAuditBatch('', '20260502081216-Groundswell-1000.00-deposit_01kqkvxnj5mc751be13egn6j6p.csv');
+    $this->runAuditBatch('', $this->getBatchFile('groundswell'));
     $contributions = Contribution::get(FALSE)
       ->setSelect(['*', 'payment_instrument_id:name', 'contribution_extra.*', 'Gift_Data.Channel:label', 'Gift_Data.*'])
       ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'chariot_01kqkvxnj5mc751be13egn6j6p_USD')
@@ -71,6 +72,9 @@ class ChariotAuditTest extends BaseAuditTestCase {
     $this->assertEquals('Workplace Giving', $individualGift['Gift_Data.Channel:label']);
     $this->assertEquals('USD 5.00', $individualGift['source']);
     $this->assertEquals('Employee Giving', $individualGift['Gift_Data.Campaign']);
+
+    // It should run again without error.
+    $this->runAuditor($this->getBatchFile('groundswell'));
   }
 
   public function testFidelityFullNameHandling(): void {
