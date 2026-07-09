@@ -154,7 +154,7 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
    * @throws \CRM_Core_Exception
    */
   protected function getMatchingGiftOrganizationID(array $record): ?int {
-    if (!empty($record['original_matching_gift_amount']) && empty($record['matching_gift_organization'])) {
+    if (!empty($record['original_matching_gift_total_amount']) && empty($record['matching_gift_organization'])) {
       throw new \CRM_Core_Exception('missing matching gift organization name');
     }
     return empty($record['matching_gift_organization']) ? NULL : Contact::getOrganizationID($record['matching_gift_organization']);
@@ -167,7 +167,7 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
    * @throws \CRM_Core_Exception
    */
   protected function getDAFOrganizationID(array $record): ?int {
-    if (!empty($record['original_matching_gift_amount'])) {
+    if (!empty($record['original_matching_gift_total_amount']) && (float)$record['original_matching_gift_total_amount'] !== 0.0 ) {
       throw new \CRM_Core_Exception('unexpected DAF look up when matching_gift amount present');
     }
     $id = NULL;

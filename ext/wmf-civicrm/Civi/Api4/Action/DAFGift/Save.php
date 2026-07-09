@@ -29,7 +29,7 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
       $contribution = $this->saveContribution($record, [
         // gift_source is something Melanie can manipulate by setting rules within Intacct.
         // She is able to set the Gift Type property based on rules around the text of the donation.
-        'Gift_Data.Campaign' => $record['gift_source'] === 'Employee Giving' ? 'Employee Giving' : 'Donor Advised Fund',
+        'Gift_Data.Campaign' => ($record['gift_source'] ?? '') === 'Employee Giving' ? 'Employee Giving' : 'Donor Advised Fund',
       ], $dafOrganizationID ?? $individualID, 1);
       $result[] = $contribution;
 
@@ -39,7 +39,7 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
             'contribution_id' => $contribution['id'],
             'soft_credit_type_id:name' => 'donor-advised_fund',
             'contact_id' => $individualID,
-            'amount' => $record['original_individual_gift_amount'],
+            'amount' => $record['original_individual_gift_total_amount'],
           ])
           ->execute();
       }

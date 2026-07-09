@@ -28,11 +28,14 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
 
       $matchingGiftOrganizationID = $this->getOrCreateMatchingGiftOrganization($record);
       $individualID = $this->getOrCreateIndividual($record, $matchingGiftOrganizationID, $record['matching_gift_organization'] ?? NULL);
-      if (!empty($record['original_individual_gift_amount'])) {
-        $individualGiftRatio = $record['original_individual_gift_amount'] / $record['original_total_amount'];
+      if (!empty($record['original_individual_gift_total_amount'])) {
+        $individualGiftRatio = $record['original_individual_gift_total_amount'] / $record['original_total_amount'];
         $contributionValues = [
           'Gift_Data.Channel' => 'Workplace Giving',
           'Gift_Data.Campaign' => 'Employee Giving',
+          'fee_amount' => $record['original_individual_gift_fee_amount'],
+          'contribution_settlement.settled_fee_amount' => $record['original_individual_gift_fee_amount'],
+          'contribution_settlement.settled_net_amount' => $record['original_individual_gift_net_amount'],
         ];
         if ($record['backend_processor'] === 'benevity') {
           $contributionValues['Gift_Data.Appeal'] = 'Benevity';
@@ -63,7 +66,7 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
             ->execute();
         }
       }
-      if (!empty($record['original_matching_gift_amount'])) {
+      if (!empty($record['original_matching_gift_total_amount'])) {
         if (!$matchingGiftOrganizationID) {
           $matchingGiftOrganizationID = \Civi\Api4\Contact::create(FALSE)
             ->setValues([
@@ -71,12 +74,16 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
               'organization_name' => $record['matching_gift_organization'],
             ])->execute()->single()['id'];
         }
-        $matchingGiftRatio = $record['original_matching_gift_amount'] / $record['original_total_amount'];
+        $matchingGiftRatio = $record['original_matching_gift_total_amount'] / $record['original_total_amount'];
         $record['gateway_txn_id'] .= '_MATCHED';
         $record['backend_processor_txn_id'] .= '_MATCHED';
         $contribution = $this->saveContribution($record, [
           'Gift_Data.Channel' => 'Workplace Giving',
           'Gift_Data.Campaign' => 'Matching Gift',
+          'fee_amount' => $record['settled_matching_gift_fee_amount'],
+          'contribution_settlement.settled_fee_amount' => $record['settled_matching_gift_fee_amount'],
+          'contribution_settlement.settled_net_amount' => $record['settled_matching_gift_net_amount'],
+
         ], $matchingGiftOrganizationID, $matchingGiftRatio);
 
         if ($individualID) {
