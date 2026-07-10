@@ -1070,7 +1070,7 @@ class CalculatedData extends TriggerHook {
           'is_active' => 1,
           'is_view' => 1,
           'is_searchable' => 1,
-          'update_select_clause' => 'IF(NEW.amount <> OLD.amount, NEW.amount - OLD.amount, NULL)',
+          'update_select_clause' => 'IF(NEW.amount <> OLD.amount AND NEW.frequency_unit = OLD.frequency_unit, NEW.amount - OLD.amount, NULL)',
         ],
         'last_recurring_amount_change_date' => [
           'name' => 'last_recurring_amount_change_date',
@@ -1081,7 +1081,7 @@ class CalculatedData extends TriggerHook {
           'is_active' => 1,
           'is_view' => 1,
           'is_searchable' => 1,
-          'update_select_clause' => 'IF(NEW.amount <> OLD.amount, CURDATE(), NULL)',
+          'update_select_clause' => 'IF(NEW.amount <> OLD.amount AND NEW.frequency_unit = OLD.frequency_unit, CURDATE(), NULL)',
         ],
       ],
     ];
