@@ -425,12 +425,17 @@ END";
   }
 
   /**
+   * @param $batchName
    * @return string
+   * @throws \CRM_Core_Exception
    */
   public function getVendorCode($batchName): string {
     $gateway = $this->getGateway($batchName);
     $codes = $this->getVendorCodesForGateways();
-    return $codes[$gateway]['main'];
+    if (isset($codes[$gateway])) {
+      return $codes[$gateway]['main'];
+    }
+    throw new \CRM_Core_Exception('batch vendor ID missing for ' . $gateway);
   }
 
   /**
@@ -909,6 +914,7 @@ END";
       // V01729	& V05000Wikimedia CH
       // fundraise up - paypal V05040, V05001
       // overflow app V05045, V04996
+      // checkoutcom
     ];
   }
 

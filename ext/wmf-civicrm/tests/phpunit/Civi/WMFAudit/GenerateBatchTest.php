@@ -240,4 +240,27 @@ class GenerateBatchTest extends BaseAuditTestCase {
     }
   }
 
+  public function testGenerateBatchFailedRetrieveVendorID() {
+    // If the gateway (prefix) is not present in getVendorCodesForGateways(),
+    // GenerateBatch::getVendorCode() should throw a CRM_Core_Exception.
+    $prefix = 'wronggateway';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-01-30';
+
+    // Create a minimal batch that will be picked up by the action using the
+    // helper from this test case.
+    $this->createBatch($batchName, $currency, $settlementDate, 0.0, 0);
+
+    $this->expectException(\CRM_Core_Exception::class);
+    $this->expectExceptionMessage('batch vendor ID missing for ' . $prefix);
+
+    // Trigger the generation which should call getVendorCode() and raise.
+    WMFAudit::generateBatch(FALSE)
+      ->setBatchPrefix($prefix)
+      ->setIsDryRun(TRUE)
+      ->setIsOutputRows(TRUE)
+      ->execute();
+  }
+
 }
