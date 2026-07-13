@@ -4987,6 +4987,63 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Backfill wmf_donor.last_recurring_amount_change and _date.
+   *
+   * Within each contribution_recur, detect an amount change as a log row whose
+   * amount differs from the immediately preceding log row for that same recur.
+   * Per contact, keep the most recent such change and store its delta and date.
+   * Join to the current recur so we assign to the current owner of the recur
+   * in case of past merges.
+   * Only fill rows where the values are not already set.
+   * The earliest real changes are 2024-03, so not looking back further than 2023-09
+   * is enough to ensure we have a pre-change row to compare to as
+   * there were no annual donations at the time.
+   *
+   * Bug: T430877
+   */
+  public function upgrade_5050(): bool {
+    CRM_Core_DAO::executeQuery("
+      CREATE TEMPORARY TABLE tmp_recur_amount_change (PRIMARY KEY (contact_id)) AS
+      SELECT contact_id, change_amount, change_date
+      FROM (
+        SELECT
+          cr.contact_id,
+          history.amount - history.prev_amount AS change_amount,
+          history.log_date AS change_date,
+          ROW_NUMBER() OVER (PARTITION BY cr.contact_id ORDER BY history.log_date DESC) AS rn
+        FROM (
+          SELECT
+            id,
+            amount,
+            frequency_unit,
+            log_date,
+            LAG(amount) OVER w AS prev_amount,
+            LAG(frequency_unit) OVER w AS prev_frequency_unit
+          FROM log_civicrm_contribution_recur
+          WHERE log_date >= '2023-09-01'
+          WINDOW w AS (PARTITION BY id ORDER BY log_date)
+        ) history
+        INNER JOIN civicrm_contribution_recur cr ON cr.id = history.id
+        INNER JOIN civicrm_contact c ON c.id = cr.contact_id AND c.is_deleted = 0
+        WHERE history.prev_amount IS NOT NULL
+          AND history.amount <> history.prev_amount
+          AND history.frequency_unit = history.prev_frequency_unit
+      ) ranked
+      WHERE rn = 1
+    ");
+    CRM_Core_DAO::executeQuery('
+      UPDATE wmf_donor d
+      INNER JOIN tmp_recur_amount_change t ON t.contact_id = d.entity_id
+      SET d.last_recurring_amount_change = t.change_amount,
+          d.last_recurring_amount_change_date = DATE(t.change_date)
+      WHERE d.last_recurring_amount_change IS NULL
+        AND d.last_recurring_amount_change_date IS NULL
+    ');
+    CRM_Core_DAO::executeQuery('DROP TEMPORARY TABLE tmp_recur_amount_change');
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
