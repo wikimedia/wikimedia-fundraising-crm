@@ -249,7 +249,12 @@ class CalculatedData extends TriggerHook {
       $this->yearFieldSelects[$tableName] = [];
       foreach ($this->getCalculatedFields() as $yearField) {
         if (($yearField['table_alias'] ?? 'totals') === 'totals') {
-          $this->yearFieldSelects[$tableName][$yearField['name']] = $yearField['select_clause'];
+          $select = $yearField['select_clause'];
+          if (!str_starts_with($select, "\n")) {
+            // Fields starting with a newline supply their own blank line - don't indent it.
+            $select = '        ' . $select;
+          }
+          $this->yearFieldSelects[$tableName][$yearField['name']] = $select;
         }
       }
     }
@@ -1218,7 +1223,7 @@ class CalculatedData extends TriggerHook {
     }
     else {
       // Add c.contact_id manually outside trigger context as we don't have NEW.contact_id to group by
-      array_unshift($innerColumns, 'c.contact_id');
+      array_unshift($innerColumns, '        c.contact_id');
       $from = "FROM civicrm_contribution_recur c
         WHERE " . $this->getWhereClause() . "
         GROUP BY c.contact_id";
@@ -1227,7 +1232,7 @@ class CalculatedData extends TriggerHook {
     return "SELECT $entityID as entity_id,
       " . implode(",\n      ", $this->getOuterSelects($includeUpdateOnly)) . "
       FROM (
-        SELECT " . implode(",\n        ", $innerColumns) . "
+        SELECT\n" . implode(",\n", $innerColumns) . "
         $from
       ) as totals
       GROUP BY $entityID";
@@ -1247,15 +1252,15 @@ class CalculatedData extends TriggerHook {
     }
     else {
       // Add c.contact_id manually outside trigger context as we don't have NEW.contact_id to group by
-      array_unshift($innerColumns, 'c.contact_id');
+      array_unshift($innerColumns, '        c.contact_id');
       $where = $this->getWhereClause();
-      $groupBy = 'GROUP BY c.contact_id';
+      $groupBy = '  GROUP BY c.contact_id';
       $entityID = 'totals.contact_id';
     }
     return "SELECT $entityID as entity_id,
       " . implode(",\n      ", $this->getOuterSelects($includeUpdateOnly)) . "
       FROM (
-        SELECT " . implode(",\n        ", $innerColumns) . "
+        SELECT\n" . implode(",\n", $innerColumns) . "
   FROM civicrm_contribution c
   USE INDEX(FK_civicrm_contribution_contact_id)
   -- TODO: remove this join when removing donor_segment_id and donor_status_id
@@ -1265,7 +1270,7 @@ class CalculatedData extends TriggerHook {
   WHERE $where
     AND c.contribution_status_id = 1
     AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
-  $groupBy
+$groupBy
   ) as totals" .
       (!$this->isIncludeTable('latest') ? '' : "
   LEFT JOIN civicrm_contribution latest
@@ -1374,15 +1379,15 @@ class CalculatedData extends TriggerHook {
   protected function getOldSegmentStatusSelect(): string {
     if (!$this->oldStatusSelectSQL) {
       $options = $this->getOldDonorStatusOptions();
-      $this->oldStatusSelectSQL = "\nCASE";
+      $this->oldStatusSelectSQL = "\n        CASE";
       foreach ($options as $option) {
         if (!empty($option['sql_select'])) {
           $this->oldStatusSelectSQL .= "\n" . $option['sql_select'] . ' THEN ' . $option['value'] . "\n";
         }
       }
       $this->oldStatusSelectSQL .= '
-       ELSE 1000
-       END as donor_status_id';
+        ELSE 1000
+        END as donor_status_id';
     }
     return $this->oldStatusSelectSQL;
   }
@@ -1396,15 +1401,15 @@ class CalculatedData extends TriggerHook {
   protected function getOldSegmentSelect(): string {
     if (!$this->oldSegmentSelectSQL) {
       $options = $this->getOldDonorSegmentOptions();
-      $this->oldSegmentSelectSQL = ' CASE ';
+      $this->oldSegmentSelectSQL = "\n        CASE";
       foreach ($options as $option) {
         if (!empty($option['sql_select'])) {
           $this->oldSegmentSelectSQL .= "\n" . $option['sql_select'] . ' THEN ' . $option['value'] . "\n";
         }
       }
       $this->oldSegmentSelectSQL .= '
-       ELSE 1000
-       END as donor_segment_id';
+        ELSE 1000
+        END as donor_segment_id';
     }
     return $this->oldSegmentSelectSQL;
   }
@@ -1419,15 +1424,15 @@ class CalculatedData extends TriggerHook {
    */
   protected function getOverallOTGDonorStatusSelect(string $field): string {
     if (!isset($this->statusSelectSQL[$field])) {
-      $this->statusSelectSQL[$field] = "\nCASE";
+      $this->statusSelectSQL[$field] = "\n        CASE";
       foreach ($this->getSpecifiedDonorStatusOptions($field) as $option) {
         if (!empty($option['sql_select'])) {
           $this->statusSelectSQL[$field] .= "\n" . $option['sql_select'] . ' THEN ' . $option['value'] . "\n";
         }
       }
       $this->statusSelectSQL[$field] .= '
-       ELSE 99
-       END as ' . $field;
+        ELSE 99
+        END as ' . $field;
     }
     return $this->statusSelectSQL[$field];
   }
