@@ -490,7 +490,7 @@ class CalculatedData extends TriggerHook {
         $this->calculatedFields[$tableName]['all_funds_first_donation_date'] = $allFields['all_funds_first_donation_date'];
       }
       if ($this->isIncludeTable('largest')) {
-        $this->calculatedFields[$tableName]['largest_donation'] = $allFields['largest_donation'];
+        $this->calculatedFields[$tableName]['all_funds_largest_donation'] = $allFields['all_funds_largest_donation'];
       }
     }
   }
@@ -699,32 +699,6 @@ class CalculatedData extends TriggerHook {
         'select_clause' => 'MAX(largest.receive_date) as date_of_largest_donation',
         'aggregate_select_clause' => 'MAX(largest.receive_date) as date_of_largest_donation',
       ],
-      'largest_donation' => [
-        'name' => 'largest_donation',
-        'column_name' => 'largest_donation',
-        'label' => ts('Largest Donation'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'default_value' => 0,
-        'select_clause' => "MAX(IF(c.financial_type_id <> $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS largest_donation",
-      ],
-      'endowment_largest_donation' => [
-        'name' => 'endowment_largest_donation',
-        'column_name' => 'endowment_largest_donation',
-        'label' => ts('Endowment Largest Donation'),
-        'data_type' => 'Money',
-        'html_type' => 'Text',
-        'is_active' => 1,
-        'is_searchable' => 1,
-        'is_search_range' => 1,
-        'is_view' => 1,
-        'default_value' => 0,
-        'select_clause' => "MAX(IF(c.financial_type_id = $endowmentFinancialType, COALESCE(total_amount, 0), 0)) AS endowment_largest_donation",
-      ],
       'all_funds_largest_donation' => [
         'name' => 'all_funds_largest_donation',
         'column_name' => 'all_funds_largest_donation',
@@ -870,10 +844,10 @@ class CalculatedData extends TriggerHook {
       // This weight setting seems to be ignored - but perhaps doesn't matter.
       $weight = $year - 2000;
       // Add financial year fields (5 years worth).
-      $contributionFields["total_{$year}_{$nextYear}"] = [
-        'name' => "total_{$year}_{$nextYear}",
-        'column_name' => "total_{$year}_{$nextYear}",
-        'label' => ts("FY {$year}-{$nextYear} total"),
+      $contributionFields["all_funds_total_{$year}_{$nextYear}"] = [
+        'name' => "all_funds_total_{$year}_{$nextYear}",
+        'column_name' => "all_funds_total_{$year}_{$nextYear}",
+        'label' => ts("All Funds FY {$year}-{$nextYear} total"),
         'data_type' => 'Money',
         'html_type' => 'Text',
         'default_value' => 0,
@@ -883,14 +857,14 @@ class CalculatedData extends TriggerHook {
         'is_view' => 1,
         'weight' => $weight,
         'is_search_range' => 1,
-        'select_clause' => "SUM(COALESCE(IF(c.financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as total_{$year}_{$nextYear}",
+        'select_clause' => "SUM(COALESCE(IF(receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as all_funds_total_{$year}_{$nextYear}",
       ];
       // Add calendar year fields.
       if ($year >= self::WMF_MIN_CALENDER_YEAR) {
-        $contributionFields["total_{$year}"] = [
-          'name' => "total_{$year}",
-          'column_name' => "total_{$year}",
-          'label' => ts("CY {$year} total"),
+        $contributionFields["all_funds_total_{$year}"] = [
+          'name' => "all_funds_total_{$year}",
+          'column_name' => "all_funds_total_{$year}",
+          'label' => ts("All Funds CY {$year} total"),
           'data_type' => 'Money',
           'html_type' => 'Text',
           'default_value' => 0,
@@ -900,38 +874,9 @@ class CalculatedData extends TriggerHook {
           'is_view' => 1,
           'weight' => $weight,
           'is_search_range' => 1,
-          'select_clause' => "SUM(COALESCE(IF(c.financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as total_{$year}",
+          'select_clause' => "SUM(COALESCE(IF(receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as all_funds_total_{$year}",
         ];
       }
-      // Financial year totals for endowment (5 years)
-      $contributionFields["endowment_total_{$year}_{$nextYear}"] = array_merge(
-        $contributionFields["total_{$year}_{$nextYear}"], [
-          'name' => "endowment_total_{$year}_{$nextYear}",
-          'column_name' => "endowment_total_{$year}_{$nextYear}",
-          'label' => 'Endowment ' . ts("FY {$year}-{$nextYear} total"),
-          'select_clause' => "SUM(COALESCE(IF(c.financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}_{$nextYear}",
-        ]
-      );
-      // Endowment field total
-      if ($year >= self::WMF_MIN_CALENDER_YEAR) {
-        $contributionFields["endowment_total_{$year}"] = array_merge(
-          $contributionFields["total_{$year}"], [
-            'name' => "endowment_total_{$year}",
-            'column_name' => "endowment_total_{$year}",
-            'label' => 'Endowment ' . ts("CY {$year} total"),
-            'select_clause' => "SUM(COALESCE(IF(c.financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0)) as endowment_total_{$year}",
-          ]
-        );
-      }
-      // Financial year totals for all funds (5 years)
-      $contributionFields["all_funds_total_{$year}_{$nextYear}"] = array_merge(
-        $contributionFields["total_{$year}_{$nextYear}"], [
-          'name' => "all_funds_total_{$year}_{$nextYear}",
-          'column_name' => "all_funds_total_{$year}_{$nextYear}",
-          'label' => 'All Funds ' . ts("FY {$year}-{$nextYear} total"),
-          'select_clause' => "SUM(COALESCE(IF(receive_date BETWEEN '{$year}-07-01' AND '{$nextYear}-06-30 23:59:59', c.total_amount, 0),0)) as all_funds_total_{$year}_{$nextYear}",
-        ]
-      );
       if ($nextYear >= self::WMF_MIN_CALENDER_YEAR) {
         // Change fields, year ending in this year onwards, co-incident with our calendar years.
         $contributionFields["all_funds_change_{$year}_{$nextYear}"] = [
@@ -950,43 +895,6 @@ class CalculatedData extends TriggerHook {
           'select_clause' => "SUM(COALESCE(IF(receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
             - SUM(COALESCE(IF(receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
              as all_funds_change_{$year}_{$nextYear}",
-        ];
-
-        $contributionFields["endowment_change_{$year}_{$nextYear}"] = [
-          'name' => "endowment_change_{$year}_{$nextYear}",
-          'column_name' => "endowment_change_{$year}_{$nextYear}",
-          'label' => ts("Endowment Change {$year}-{$nextYear} total"),
-          'data_type' => 'Money',
-          'html_type' => 'Text',
-          'default_value' => 0,
-          'is_active' => 1,
-          'is_required' => 0,
-          'is_searchable' => 0,
-          'is_view' => 1,
-          'weight' => $weight,
-          'is_search_range' => 1,
-          'select_clause' => "
-             SUM(COALESCE(IF(c.financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
-            - SUM(COALESCE(IF(c.financial_type_id = $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
-             as endowment_change_{$year}_{$nextYear}",
-        ];
-        $contributionFields["change_{$year}_{$nextYear}"] = [
-          'name' => "change_{$year}_{$nextYear}",
-          'column_name' => "change_{$year}_{$nextYear}",
-          'label' => ts("Change {$year}-{$nextYear} total"),
-          'data_type' => 'Money',
-          'html_type' => 'Text',
-          'default_value' => 0,
-          'is_active' => 1,
-          'is_required' => 0,
-          'is_searchable' => 0,
-          'is_view' => 1,
-          'weight' => $weight,
-          'is_search_range' => 1,
-          'select_clause' => "
-            SUM(COALESCE(IF(c.financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$nextYear}-01-01' AND '{$nextYear}-12-31 23:59:59', c.total_amount, 0),0))
-          - SUM(COALESCE(IF(c.financial_type_id <> $endowmentFinancialType AND receive_date BETWEEN '{$year}-01-01' AND '{$year}-12-31 23:59:59', c.total_amount, 0),0))
-          as change_{$year}_{$nextYear}",
         ];
       }
     }
@@ -1298,7 +1206,7 @@ $groupBy
   LEFT JOIN civicrm_contribution largest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON largest.contact_id = $entityID
-    AND largest.total_amount = totals.largest_donation
+    AND largest.total_amount = totals.all_funds_largest_donation
     AND largest.contribution_status_id = 1
     AND largest.total_amount > 0
     AND (largest.trxn_id NOT LIKE 'RFD %' OR largest.trxn_id IS NULL)") .

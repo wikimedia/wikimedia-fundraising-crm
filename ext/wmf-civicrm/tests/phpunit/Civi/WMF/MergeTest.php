@@ -167,8 +167,8 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
       'wmf_donor.first_donation_date' => '2013-01-04 00:00:00',
       'wmf_donor.date_of_largest_donation' => '2023-08-04 00:00:00',
       'wmf_donor.number_donations' => 3,
-      'wmf_donor.total_2022_2023' => 0,
-      'wmf_donor.total_2023_2024' => 10,
+      'wmf_donor.all_funds_total_2022_2023' => 0,
+      'wmf_donor.all_funds_total_2023_2024' => 10,
     ]);
 
     // Now lets check the one to be deleted has a do_not_solicit = 0.
@@ -263,13 +263,14 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
-   * Test wmf_donor lifetime calculations.
+   * Test wmf_donor lifetime calculations and endowment only fields.
    *
    * We set up 2 contacts
    *  - one with an Endowment gift
    *  - one with a cash donation & an endowment gift
    *
    * We check that all are included in the lifetime calculation and last_ fields.
+   * Also, the only two endowment only fields have correct calculated values.
    *
    * After merging we check the same again.
    *
@@ -278,7 +279,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   public function testMergeCalculation(): void {
-    $this->callAPISuccess('Contribution', 'create', [
+    $endowmentGift = $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $this->contactID,
       'financial_type_id:name' => 'Endowment Gift',
       'total_amount' => 10,
@@ -288,7 +289,7 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
       'contribution_extra.original_currency' => 'NZD',
       'contribution_extra.original_amount' => 8,
     ]);
-    $cashJob = $this->callAPISuccess('Contribution', 'create', [
+    $this->callAPISuccess('Contribution', 'create', [
       'contact_id' => $this->contactID2,
       'financial_type_id:name' => 'Cash',
       'total_amount' => 5,
@@ -308,10 +309,14 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
 
     $this->assertContactValues($this->contactID, [
       'wmf_donor.lifetime_including_endowment' => 10,
+      'wmf_donor.endowment_first_donation_date' => '2024-08-04 00:00:00',
+      'wmf_donor.endowment_number_donations' => 1,
     ]);
 
     $this->assertContactValues($this->contactID2, [
       'wmf_donor.lifetime_including_endowment' => 12,
+      'wmf_donor.endowment_first_donation_date' => '2025-01-04 00:00:00',
+      'wmf_donor.endowment_number_donations' => 1,
     ]);
 
     $result = $this->callAPISuccess('Job', 'process_batch_merge', [
@@ -324,17 +329,21 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
       'wmf_donor.last_donation_currency' => 'USD',
       'wmf_donor.last_donation_usd' => 7,
       'wmf_donor.all_funds_last_donation_date' => '2025-01-04 00:00:00',
-      'wmf_donor.total_2024_2025' => 0, //total doesn't include endowment
+      'wmf_donor.all_funds_total_2024_2025' => 17,
+      'wmf_donor.endowment_first_donation_date' => '2024-08-04 00:00:00',
+      'wmf_donor.endowment_number_donations' => 2,
     ]);
 
-    $this->callAPISuccess('Contribution', 'delete', ['id' => $cashJob['id']]);
+    $this->callAPISuccess('Contribution', 'delete', ['id' => $endowmentGift['id']]);
     $this->assertContactValues($this->contactID, [
-      'wmf_donor.lifetime_including_endowment' => 17,
+      'wmf_donor.lifetime_including_endowment' => 12,
       'wmf_donor.last_donation_amount' => 7,
       'wmf_donor.last_donation_currency' => 'USD',
       'wmf_donor.last_donation_usd' => 7,
       'wmf_donor.all_funds_last_donation_date' => '2025-01-04 00:00:00',
-      'wmf_donor.total_2024_2025' => 0,
+      'wmf_donor.all_funds_total_2024_2025' => 7,
+      'wmf_donor.endowment_first_donation_date' => '2025-01-04 00:00:00',
+      'wmf_donor.endowment_number_donations' => 1,
     ]);
   }
 

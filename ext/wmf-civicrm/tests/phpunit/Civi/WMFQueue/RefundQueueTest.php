@@ -453,9 +453,9 @@ class RefundQueueTest extends BaseQueueTestCase {
       'wmf_donor.last_donation_amount' => 50,
       'wmf_donor.last_donation_usd' => 50,
       'wmf_donor.last_donation_currency' => 'USD',
-      "wmf_donor.total_$lastYear" => 40,
+      "wmf_donor.all_funds_total_$lastYear" => 40,
       'wmf_donor.number_donations'  => 1,
-      "wmf_donor.total_{$lastYear}_{$thisYear}" => 40,
+      "wmf_donor.all_funds_total_{$lastYear}_{$thisYear}" => 40,
     ]);
   }
 
@@ -874,7 +874,7 @@ class RefundQueueTest extends BaseQueueTestCase {
    */
   public function getCurrentFinancialYearTotalFieldName(): string {
     $financialYearEnd = (date('m') > 6) ? date('Y') + 1 : date('Y');
-    return 'total_' . ($financialYearEnd - 1) . '_' . $financialYearEnd;
+    return 'all_funds_total_' . ($financialYearEnd - 1) . '_' . $financialYearEnd;
   }
 
 }
