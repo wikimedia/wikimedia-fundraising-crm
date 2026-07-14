@@ -139,6 +139,8 @@ class ChariotAuditTest extends BaseAuditTestCase {
     $this->assertCount(2, $softCredit);
     $this->assertEquals('donor-advised_fund', $softCredit['Homer Simpson']['soft_credit_type_id:name']);
     $this->assertEquals('Banking Institution', $softCredit['Morgan Stanley GIFT']['soft_credit_type_id:name']);
+
+    $this->assertLoggedInfoThatContains('endowment');
   }
 
   public function testBenevityFile(): void {

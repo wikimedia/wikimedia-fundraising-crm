@@ -30,6 +30,7 @@ class OfflineAuditMessage extends AuditMessage {
    *    payment_method: string,
    *    check_number: string,
    *    type: string,
+   *    manual_review: string,
    *    original_currency: string,
    *    settled_currency: string,
    *    settlement_batch_reference: string,
