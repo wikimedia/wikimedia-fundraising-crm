@@ -34,6 +34,36 @@ class ContactModifiedTrigger extends TriggerHook {
         'sql' => 'UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id ' .
           "AND NEW.entity_table='civicrm_contact';",
       ];
+      $info[] = [
+        'table' => 'civicrm_entity_tag',
+        'when' => 'AFTER',
+        'event' => 'DELETE',
+        'sql' => 'UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = OLD.entity_id ' .
+          "AND OLD.entity_table='civicrm_contact';",
+      ];
+    }
+    if (
+      $this->getTableName() === NULL ||
+      $this->getTableName() === 'civicrm_relationship'
+    ) {
+      $info[] = [
+        'table' => 'civicrm_relationship',
+        'when' => 'AFTER',
+        'event' => 'INSERT',
+        'sql' => 'UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id IN (NEW.contact_id_a, NEW.contact_id_b);',
+      ];
+      $info[] = [
+        'table' => 'civicrm_relationship',
+        'when' => 'AFTER',
+        'event' => 'UPDATE',
+        'sql' => 'UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id IN (OLD.contact_id_a, OLD.contact_id_b, NEW.contact_id_a, NEW.contact_id_b);',
+      ];
+      $info[] = [
+        'table' => 'civicrm_relationship',
+        'when' => 'AFTER',
+        'event' => 'DELETE',
+        'sql' => 'UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id IN (OLD.contact_id_a, OLD.contact_id_b);',
+      ];
     }
     return $info;
   }
