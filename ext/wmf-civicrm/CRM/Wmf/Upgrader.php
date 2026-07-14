@@ -5002,44 +5002,51 @@ v.channel IS NULL AND c.id = 131486342;",
    * Bug: T430877
    */
   public function upgrade_5050(): bool {
-    CRM_Core_DAO::executeQuery("
-      CREATE TEMPORARY TABLE tmp_recur_amount_change (PRIMARY KEY (contact_id)) AS
-      SELECT contact_id, change_amount, change_date
-      FROM (
-        SELECT
-          cr.contact_id,
-          history.amount - history.prev_amount AS change_amount,
-          history.log_date AS change_date,
-          ROW_NUMBER() OVER (PARTITION BY cr.contact_id ORDER BY history.log_date DESC) AS rn
+    // Don't lock the recur or log recur table on read
+    CRM_Core_DAO::executeQuery("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED");
+    try {
+      CRM_Core_DAO::executeQuery("
+        CREATE TEMPORARY TABLE tmp_recur_amount_change (PRIMARY KEY (contact_id)) AS
+        SELECT contact_id, change_amount, change_date
         FROM (
           SELECT
-            id,
-            amount,
-            frequency_unit,
-            log_date,
-            LAG(amount) OVER w AS prev_amount,
-            LAG(frequency_unit) OVER w AS prev_frequency_unit
-          FROM log_civicrm_contribution_recur
-          WHERE log_date >= '2023-09-01'
-          WINDOW w AS (PARTITION BY id ORDER BY log_date)
-        ) history
-        INNER JOIN civicrm_contribution_recur cr ON cr.id = history.id
-        INNER JOIN civicrm_contact c ON c.id = cr.contact_id AND c.is_deleted = 0
-        WHERE history.prev_amount IS NOT NULL
-          AND history.amount <> history.prev_amount
-          AND history.frequency_unit = history.prev_frequency_unit
-      ) ranked
-      WHERE rn = 1
-    ");
-    CRM_Core_DAO::executeQuery('
-      UPDATE wmf_donor d
-      INNER JOIN tmp_recur_amount_change t ON t.contact_id = d.entity_id
-      SET d.last_recurring_amount_change = t.change_amount,
-          d.last_recurring_amount_change_date = DATE(t.change_date)
-      WHERE d.last_recurring_amount_change IS NULL
-        AND d.last_recurring_amount_change_date IS NULL
-    ');
-    CRM_Core_DAO::executeQuery('DROP TEMPORARY TABLE tmp_recur_amount_change');
+            cr.contact_id,
+            history.amount - history.prev_amount AS change_amount,
+            history.log_date AS change_date,
+            ROW_NUMBER() OVER (PARTITION BY cr.contact_id ORDER BY history.log_date DESC) AS rn
+          FROM (
+            SELECT
+              id,
+              amount,
+              frequency_unit,
+              log_date,
+              LAG(amount) OVER w AS prev_amount,
+              LAG(frequency_unit) OVER w AS prev_frequency_unit
+            FROM log_civicrm_contribution_recur
+            WHERE log_date >= '2023-09-01'
+            WINDOW w AS (PARTITION BY id ORDER BY log_date)
+          ) history
+          INNER JOIN civicrm_contribution_recur cr ON cr.id = history.id
+          INNER JOIN civicrm_contact c ON c.id = cr.contact_id AND c.is_deleted = 0
+          WHERE history.prev_amount IS NOT NULL
+            AND history.amount <> history.prev_amount
+            AND history.frequency_unit = history.prev_frequency_unit
+        ) ranked
+        WHERE rn = 1
+      ");
+      CRM_Core_DAO::executeQuery('
+        UPDATE wmf_donor d
+        INNER JOIN tmp_recur_amount_change t ON t.contact_id = d.entity_id
+        SET d.last_recurring_amount_change = t.change_amount,
+            d.last_recurring_amount_change_date = DATE(t.change_date)
+        WHERE d.last_recurring_amount_change IS NULL
+          AND d.last_recurring_amount_change_date IS NULL
+      ');
+      CRM_Core_DAO::executeQuery('DROP TEMPORARY TABLE tmp_recur_amount_change');
+    }
+    finally {
+      CRM_Core_DAO::executeQuery('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+    }
     return TRUE;
   }
 
