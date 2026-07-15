@@ -249,10 +249,11 @@ class Audit extends AbstractAction {
       \Civi::log('wmf')->info('Updating backend processor for {auth_id}', [
         'auth_id' => $message->getAuthID(),
         'capture_id' => $message->getCaptureID(),
+        'backend_processor_txn_id' => $message->getBackendProcessorTxnID(),
         'backend_processor' => $message->getBackendProcessor(),
       ]);
       if ($message->getPaymentOrchestratorReconciliationReference() &&
-        ($message->getAuthID() === $message->getCaptureID() || $message->getBackendProcessor() === 'paypal')) {
+        ($message->getAuthID() === $message->getCaptureID() || in_array($message->getBackendProcessor(), ['paypal', 'braintree'], TRUE))) {
         \CRM_Core_DAO::executeQuery(
           'UPDATE wmf_contribution_extra
         SET backend_processor_txn_id = %1,
@@ -260,8 +261,8 @@ class Audit extends AbstractAction {
             capture_id = %2
         WHERE payment_orchestrator_reconciliation_id = %3 AND backend_processor = %4
       ', [
-          1 => [$message->getAuthID(), 'String'],
-          2 => [$message->getCaptureID() ?: $message->getAuthID(), 'String'],
+          1 => [$message->getAuthID() ?: $message->getBackendProcessorTxnID(), 'String'],
+          2 => [$message->getCaptureID() ?: $message->getAuthID() ?: '', 'String'],
           3 => [$message->getPaymentOrchestratorReconciliationReference(), 'String'],
           4 => [$message->getBackendProcessor(), 'String'],
         ]);

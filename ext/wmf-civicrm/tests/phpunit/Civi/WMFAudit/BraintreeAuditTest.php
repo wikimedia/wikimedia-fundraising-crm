@@ -308,6 +308,34 @@ class BraintreeAuditTest extends BaseAuditTestCase {
   }
 
   /**
+   * Test that our repair routine fixes incorrect capture id in auth field.
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function testRepairBackendGatewayTxnSetToReconciliationID(): void {
+    $this->setSetting('wmf_audit_directory_audit', __DIR__ . '/data/Braintree/gravy_donation/');
+    $this->createTestEntity('Contribution', [
+      'contribution_extra.backend_processor_txn_id' => '4dKvU4tsIv5DZRxK4jYbib',
+      'contact_id' => $this->createIndividual(['email_primary.email' => 'mouse@wikimedia.org']),
+      'total_amount' => 56.70,
+      'contribution_extra.payment_orchestrator_reconciliation_id' => '4dKvU4tsIv5DZRxK4jYbib',
+      'receive_date' => '2025-07-24 05:55:55',
+      'financial_type_id:name' => 'Recurring Gift - Cash',
+      'payment_instrument_id:name' => 'Credit Card: Visa',
+      'contribution_extra.gateway' => 'gravy',
+      'contribution_extra.gateway_txn_id' => 'MNOP',
+      'contribution_extra.backend_processor' => 'braintree',
+    ])['id'];
+    $this->runAuditor();
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('contribution_extra.backend_processor_txn_id')
+      ->addWhere('contribution_extra.payment_orchestrator_reconciliation_id', '=', '4dKvU4tsIv5DZRxK4jYbib')
+      ->execute()->single();
+    $this->assertEquals('dHJhbnNhY3Rpb25fa2szNmZ4Y3A', $contribution['contribution_extra.backend_processor_txn_id']);
+  }
+
+  /**
    * @throws \CRM_Core_Exception
    */
   public function testAlreadyRefundedTransactionIsSkipped(): void {
