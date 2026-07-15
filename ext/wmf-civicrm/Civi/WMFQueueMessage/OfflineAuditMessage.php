@@ -76,6 +76,17 @@ class OfflineAuditMessage extends AuditMessage {
 
   public function normalize(): array {
     $message = parent::normalize();
+    if ($message['backend_processor'] === 'Digital Mailbox' && empty($message['partner_full_name']) && !empty($message['full_name'])) {
+      // Digital mailbox have been putting the names in the wrong places. Let's handle for now
+      // and push Chariot to resolve upstream... this might get some wrong but less tha not doing it.
+      $fullNameParts = explode(' ', $message['full_name']);
+      if (count($fullNameParts) >= 4 && str_contains($message['first_name'], ' ') && str_contains($message['last_name'], ' ')) {
+        // At this point we assume that one person is in the first name & one in the second
+        $message['full_name'] = $message['first_name'];
+        $message['partner_full_name'] = $message['last_name'];
+        unset($message['first_name'], $message['last_name']);
+      }
+    }
     $message['check_number'] = $this->getCheckNumber();
     return $message;
   }

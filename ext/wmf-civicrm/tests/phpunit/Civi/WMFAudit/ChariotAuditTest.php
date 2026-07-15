@@ -33,6 +33,10 @@ class ChariotAuditTest extends BaseAuditTestCase {
       'name' => 'chariot_01kt1vy6h4tez9jh2z51hvvpb0_USD',
       'file' => '20260602123036-Benevity-30497.00-deposit_01kt1vy6h4tez9jh2z51hvvpb0.csv',
     ],
+    'digital_mailbox' => [
+      'name' => 'chariot_01kwwd1w25edwcw8014yzm07em_USD',
+      'file' => '20260709050004-Digital_Mailbox-10000-deposit_01kwwd1w25edwcw8014yzm07em.csv',
+    ],
   ];
 
   /**
@@ -50,6 +54,7 @@ class ChariotAuditTest extends BaseAuditTestCase {
       ->addWhere('name', 'IN', $this->getBatchNames())
       ->execute();
     $this->cleanupContact(['organization_name' => 'Existing Duplicate Org']);
+    $this->cleanupContact(['organization_name' => 'Mickey Mouse & Donald McTest CHARITABLE FUND']);
     parent::tearDown();
   }
 
@@ -75,6 +80,34 @@ class ChariotAuditTest extends BaseAuditTestCase {
 
     // It should run again without error.
     $this->runAuditor($this->getBatchFile('groundswell'));
+  }
+
+  /**
+   * Tests a hopefully temporary situation where Digital Mailbox puts partner_name into full name.
+   *
+   * This has been raised with Chariot & when fixed the test can be removed along with the handling.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testDigitalMailboxPartnerNameHandling(): void {
+    $this->runAuditBatch('', $this->getBatchFile('digital_mailbox'));
+    $contribution = Contribution::get(FALSE)
+      ->setSelect(['*', 'contact_id.display_name', 'payment_instrument_id:name'])
+      ->addWhere('contribution_settlement.settlement_batch_reference', '=', $this->getBatchName('digital_mailbox'))
+      ->addOrderBy('id', 'ASC')
+      ->execute()->single();
+
+    $this->assertEquals('Mickey Mouse & Donald McTest CHARITABLE FUND', $contribution['contact_id.display_name']);
+
+    $contributionSoft = ContributionSoft::get(FALSE)
+      ->addWhere('contribution_id', '=', $contribution['id'])
+      ->addWhere('soft_credit_type_id:name', '=', 'donor-advised_fund')
+      ->setSelect(['*', 'contact_id.Partner.Partner', 'contact_id.display_name', 'contact_id.first_name', 'contact_id.last_name'])
+      ->execute()->single();
+    $this->assertEquals('Donald', $contributionSoft['contact_id.first_name']);
+    $this->assertEquals('McTest', $contributionSoft['contact_id.last_name']);
+    $this->assertEquals('Donald McTest', $contributionSoft['contact_id.display_name']);
+    $this->assertEquals('Mickey Mouse', $contributionSoft['contact_id.Partner.Partner']);
   }
 
   public function testFidelityFullNameHandling(): void {
