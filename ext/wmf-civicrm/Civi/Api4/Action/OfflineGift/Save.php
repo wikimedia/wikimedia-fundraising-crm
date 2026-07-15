@@ -25,9 +25,16 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
    *
    * @return bool
    */
-  public function isAnonymous(array $record): bool {
-    if (!empty($record['first_name']) || !empty($record['last_name']) || !empty($record['full_name'])) {
-      return FALSE;
+  public function isAnonymous(array $record, $contactType = 'Individual'): bool {
+    if ($contactType === 'Individual') {
+      if (!empty($record['first_name']) || !empty($record['last_name']) || !empty($record['full_name'])) {
+        return FALSE;
+      }
+    }
+    elseif ($contactType === 'DAF') {
+      if (!empty($record['donor_advised_fund_name']) && $record['donor_advised_fund_name'] !== 'Anonymous') {
+        return FALSE;
+      }
     }
     $significantValues = ['street_address', 'postal_code', 'email', 'phone'];
     foreach ($significantValues as $value) {

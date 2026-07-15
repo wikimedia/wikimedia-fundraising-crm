@@ -7,6 +7,7 @@ use Civi\Api4\Contribution;
 use Civi\Api4\ContributionSoft;
 use Civi\Api4\MatchingGift;
 use Civi\WMFAudit\BaseAuditTestCase;
+use Civi\WMFHelper\Contact;
 
 /**
  * @group Trustly
@@ -114,10 +115,10 @@ class ChariotAuditTest extends BaseAuditTestCase {
     $this->runAuditBatch('', $this->getBatchFile('fidelity'));
     $contributions = Contribution::get(FALSE)
       ->setSelect(['*', 'contact_id.display_name', 'payment_instrument_id:name'])
-      ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'chariot_01ks0ckx633sqdjrmwews9cs49_USD')
+      ->addWhere('contribution_settlement.settlement_batch_reference', '=', $this->getBatchName('fidelity'))
       ->addOrderBy('id', 'ASC')
       ->execute();
-    $this->assertCount(2, $contributions);
+    $this->assertCount(3, $contributions);
     $contribution = $contributions->first();
     $this->assertEquals('The Firm', $contribution['contact_id.display_name']);
     $this->assertEquals('ACH', $contribution['payment_instrument_id:name']);
@@ -144,7 +145,7 @@ class ChariotAuditTest extends BaseAuditTestCase {
     $this->runAuditBatch('', $this->getBatchFile('fidelity'));
     $contribution = Contribution::get(FALSE)
       ->setSelect(['*', 'contact_id.display_name', 'payment_instrument_id:name'])
-      ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'chariot_01ks0ckx633sqdjrmwews9cs49_USD')
+      ->addWhere('contribution_settlement.settlement_batch_reference', '=', $this->getBatchName('fidelity'))
       ->addWhere('contact_id.display_name', '=', 'Existing Duplicate Org')
       ->execute()->single();
 
@@ -157,6 +158,23 @@ class ChariotAuditTest extends BaseAuditTestCase {
     $this->assertEquals('Mouse', $contributionSoft['contact_id.last_name']);
     $this->assertEquals('Lisa Mouse', $contributionSoft['contact_id.display_name']);
   }
+
+  /**
+   * Test an anonymous DAF goes against the anonymous individual not an org.
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  public function testFidelityOrganizationAnonymous(): void {
+    $this->runAuditBatch('', $this->getBatchFile('fidelity'));
+    $contribution = Contribution::get(FALSE)
+      ->setSelect(['*', 'contact_id.display_name', 'payment_instrument_id:name'])
+      ->addWhere('contribution_settlement.settlement_batch_reference', '=', $this->getBatchName('fidelity'))
+      ->addWhere('contact_id.contact_type', '=', 'Individual')
+      ->execute()->single();
+    $this->assertEquals(Contact::getAnonymousContactID(), $contribution['contact_id']);
+  }
+
   public function testPinkalooDAFFile(): void {
     $this->runAuditBatch('', $this->getBatchFile('pinkaloo'));
     $contribution = Contribution::get(FALSE)
