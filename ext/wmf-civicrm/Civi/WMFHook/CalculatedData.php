@@ -1715,12 +1715,12 @@ $groupBy
     if ($frequencyUnit === 'overall') {
       $pausedUntil = 'CASE c.frequency_unit';
       foreach (['month', 'year'] as $unit) {
-        $pausedUntil .= " WHEN '$unit' THEN DATE_ADD(NOW(), INTERVAL 1 $unit)";
+        $pausedUntil .= " WHEN '$unit' THEN NOW() + INTERVAL 1 $unit + INTERVAL 1 DAY";
       }
       $pausedUntil .= ' END';
     }
     else {
-      $pausedUntil = "DATE_ADD(NOW(), INTERVAL 1 $frequencyUnit)";
+      $pausedUntil = "NOW() + INTERVAL 1 $frequencyUnit + INTERVAL 1 DAY";
     }
     return "CASE
       -- Paused status (35), no scheduled payments within the recurring's frequency unit

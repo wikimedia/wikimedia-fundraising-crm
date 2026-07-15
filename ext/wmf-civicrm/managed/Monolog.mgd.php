@@ -156,9 +156,9 @@ return [
         'minimum_severity' => 'info',
         'description' => ('Send Mail regarding unresolved duplicates'),
         'configuration_options' => [
-          'to' => 'emcnaughton@wikimedia.org',
+          'to' => 'fraccounts@wikimedia.org',
           'from' => \Civi::settings()->get('wmf_failmail_from'),
-          'subject' => 'Offline duplicates to resolve %context.subject%',
+          'subject' => 'Offline duplicates or manual review : %context.subject%',
         ],
       ],
     ],

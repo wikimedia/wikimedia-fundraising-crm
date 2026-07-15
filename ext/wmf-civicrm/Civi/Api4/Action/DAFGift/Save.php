@@ -20,7 +20,7 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
       $this->formatWriteValues($record);
       // In some cases our DAF-donors do not disclose the fund_name to us.
       // In this scenario we have to record the gift against the individual.
-      $isRecordDaf = !$this->isAnonymous($record, 'DAF');
+      $isRecordDaf = !empty($record['donor_advised_fund_name']) && !$this->isAnonymous($record, 'DAF');
       $dafOrganizationID = NULL;
       if ($isRecordDaf) {
         $dafOrganizationID = $this->getOrCreateDAFOrganization($record);
