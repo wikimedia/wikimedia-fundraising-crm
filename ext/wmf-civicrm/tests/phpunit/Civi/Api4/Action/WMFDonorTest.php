@@ -1007,6 +1007,128 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
+   * unPauseRecurring recalculates recur statuses for donors who shouldn't be paused any more.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorUnPauseRecurring(): void {
+    $beforeFinancialYear = date('Y-m-d', strtotime('-2 years', strtotime($this->currentDate)));
+    $withinWindow = date('Y-m-d', strtotime('+1 week', strtotime($this->currentDate)));
+    $yearOut = date('Y-m-d', strtotime('+18 months', strtotime($this->currentDate)));
+
+    // An active monthly recurring due within the window, so no longer
+    // paused, but carrying a stored paused status left over from before.
+    $this->createIndividual([], 'active');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['active'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'In Progress',
+      'start_date' => $beforeFinancialYear,
+      'next_sched_contribution_date' => $withinWindow,
+    ], 'active');
+    Contact::update(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['active'])
+      ->addValue('wmf_donor.donor_status_recur_month', 35)
+      ->addValue('wmf_donor.donor_status_recur_year', 95)
+      ->addValue('wmf_donor.donor_status_recur_overall', 35)
+      ->execute();
+
+    // Genuinely paused: both active recurrings are scheduled beyond their own
+    // window, so the donor should be excluded and left as-is.
+    $this->createIndividual([], 'paused');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['paused'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'In Progress',
+      'start_date' => $beforeFinancialYear,
+      'next_sched_contribution_date' => $yearOut,
+    ], 'paused_month');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['paused'],
+      'frequency_unit' => 'year',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'In Progress',
+      'start_date' => $beforeFinancialYear,
+      'next_sched_contribution_date' => $yearOut,
+    ], 'paused_year');
+    // A wrong sentinel a recompute would overwrite if the donor were touched.
+    Contact::update(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['paused'])
+      ->addValue('wmf_donor.donor_status_recur_month', 65)
+      ->addValue('wmf_donor.donor_status_recur_year', 35)
+      ->addValue('wmf_donor.donor_status_recur_overall', 35)
+      ->execute();
+
+    // Month should be unpaused, year should stay paused.
+    $this->createIndividual([], 'mixed');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['mixed'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'In Progress',
+      'start_date' => $beforeFinancialYear,
+      'next_sched_contribution_date' => $withinWindow,
+    ], 'mixed_month');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['mixed'],
+      'frequency_unit' => 'year',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'In Progress',
+      'start_date' => $beforeFinancialYear,
+      'next_sched_contribution_date' => $yearOut,
+    ], 'mixed_year');
+    Contact::update(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['mixed'])
+      ->addValue('wmf_donor.donor_status_recur_month', 35)
+      ->addValue('wmf_donor.donor_status_recur_overall', 35)
+      ->execute();
+
+    WMFDonor::unPauseRecurring(FALSE)->execute();
+
+    // The active donor is recomputed back to active.
+    $active = $this->getStoredRecurStatus('active');
+    $this->assertEquals(15, $active['donor_status_recur_month']);
+    $this->assertEquals(95, $active['donor_status_recur_year']);
+    $this->assertEquals(15, $active['donor_status_recur_overall']);
+
+    // The genuinely paused donor is excluded, so its sentinel is left untouched.
+    $this->assertEquals(65, $this->getStoredRecurStatus('paused')['donor_status_recur_month']);
+
+    // Month recalculated, year unchanged.
+    $mixed = $this->getStoredRecurStatus('mixed');
+    $this->assertEquals(15, $mixed['donor_status_recur_month']);
+    $this->assertEquals(35, $mixed['donor_status_recur_year']);
+    $this->assertEquals(15, $mixed['donor_status_recur_overall']);
+  }
+
+  /**
+   * Get the stored wmf_donor recur statuses for a test contact.
+   *
+   * @param string $identifier
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  private function getStoredRecurStatus(string $identifier): array {
+    $row = Contact::get(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact'][$identifier])
+      ->addSelect('wmf_donor.donor_status_recur_month', 'wmf_donor.donor_status_recur_year', 'wmf_donor.donor_status_recur_overall')
+      ->execute()->first();
+    return [
+      'donor_status_recur_month' => $row['wmf_donor.donor_status_recur_month'],
+      'donor_status_recur_year' => $row['wmf_donor.donor_status_recur_year'],
+      'donor_status_recur_overall' => $row['wmf_donor.donor_status_recur_overall'],
+    ];
+  }
+
+  /**
    * @dataProvider segmentDataProvider
    *
    * @param $status
