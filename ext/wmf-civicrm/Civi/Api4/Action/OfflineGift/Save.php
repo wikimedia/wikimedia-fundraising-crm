@@ -25,9 +25,16 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
    *
    * @return bool
    */
-  public function isAnonymous(array $record): bool {
-    if (!empty($record['first_name']) || !empty($record['last_name']) || !empty($record['full_name'])) {
-      return FALSE;
+  public function isAnonymous(array $record, $contactType = 'Individual'): bool {
+    if ($contactType === 'Individual') {
+      if (!empty($record['first_name']) || !empty($record['last_name']) || !empty($record['full_name'])) {
+        return FALSE;
+      }
+    }
+    elseif ($contactType === 'DAF') {
+      if (!empty($record['donor_advised_fund_name']) && $record['donor_advised_fund_name'] !== 'Anonymous') {
+        return FALSE;
+      }
     }
     $significantValues = ['street_address', 'postal_code', 'email', 'phone'];
     foreach ($significantValues as $value) {
@@ -80,7 +87,7 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
     }
     $channel = ($record['gift_source'] ?? '') === 'Employee Giving' ? 'Workplace Giving' : 'Other Offline';
 
-    return Contribution::create($this->checkPermissions)
+    $contribution = Contribution::create($this->checkPermissions)
       ->setValues($extraValues + [
         'contact_id' => $contactId,
         'receive_date' => gmdate('Y-m-d', $record['date']),
@@ -116,6 +123,18 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
         'Gift_Data.Campaign' => $this->getGiftType($record['gift_source'] ?? ''),
       ])
       ->execute()->single();
+    if (!empty($record['manual_review'])) {
+      \Civi::log('offline_gifts')->info('A contribution has been created that needs manual_review with message {manual_review}', [
+        'manual_review' => $record['manual_review'],
+        'id' => $contribution['id'],
+        'url' => \CRM_Utils_System::url('civicrm/contact/view/contribution', [
+          'id' => $contribution['id'],
+          'action' =>' view',
+          'reset' => 1,
+        ])
+      ]);
+    }
+    return $contribution;
   }
 
   private function getGiftType(string $giftSource): string {
