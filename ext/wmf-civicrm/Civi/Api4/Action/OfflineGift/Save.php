@@ -32,7 +32,7 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
       }
     }
     elseif ($contactType === 'DAF') {
-      if (!empty($record['donor_advised_fund_name']) && $record['donor_advised_fund_name'] !== 'Anonymous') {
+      if ($record['donor_advised_fund_name'] !== 'Anonymous') {
         return FALSE;
       }
     }
