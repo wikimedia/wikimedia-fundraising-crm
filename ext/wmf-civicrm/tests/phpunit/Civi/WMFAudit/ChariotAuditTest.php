@@ -111,7 +111,7 @@ class ChariotAuditTest extends BaseAuditTestCase {
   }
 
   public function testFidelityFullNameHandling(): void {
-    $this->runAuditBatch('', '20260520123012-Fidelity_Charitable-1696000.00-deposit_01ks0ckx633sqdjrmwews9cs49.csv');
+    $this->runAuditBatch('', $this->getBatchFile('fidelity'));
     $contributions = Contribution::get(FALSE)
       ->setSelect(['*', 'contact_id.display_name', 'payment_instrument_id:name'])
       ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'chariot_01ks0ckx633sqdjrmwews9cs49_USD')
@@ -141,7 +141,7 @@ class ChariotAuditTest extends BaseAuditTestCase {
   public function testFidelityOrganizationExistingMatch(): void {
     $this->createOrganization(['organization_name' => 'Existing Duplicate Org']);
     $this->createOrganization(['organization_name' => 'Existing Duplicate Org', 'address_primary.street_address' => '10 Downing St']);
-    $this->runAuditBatch('', '20260520123012-Fidelity_Charitable-1696000.00-deposit_01ks0ckx633sqdjrmwews9cs49.csv');
+    $this->runAuditBatch('', $this->getBatchFile('fidelity'));
     $contribution = Contribution::get(FALSE)
       ->setSelect(['*', 'contact_id.display_name', 'payment_instrument_id:name'])
       ->addWhere('contribution_settlement.settlement_batch_reference', '=', 'chariot_01ks0ckx633sqdjrmwews9cs49_USD')
