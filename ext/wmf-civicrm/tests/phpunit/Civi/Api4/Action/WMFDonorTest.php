@@ -1074,7 +1074,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       'frequency_unit' => 'month',
       'frequency_interval' => 1,
       'amount' => 10,
-      'contribution_status_id:name' => 'In Progress',
+      'contribution_status_id:name' => 'Pending',
       'start_date' => $beforeFinancialYear,
       'next_sched_contribution_date' => $withinWindow,
     ], 'mixed_month');
