@@ -960,7 +960,7 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'note_rows' => 4,
       'option_values' => [
         'a' => 'Below $30,000',
-        'b ' => '$30,000 - $39,999',
+        'b' => '$30,000 - $39,999',
         'c' => '$40,000 - $49,999',
         'd' => '$50,000 - $59,999',
         'e' => '$60,000 - $74,999',

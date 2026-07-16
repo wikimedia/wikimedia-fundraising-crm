@@ -3,6 +3,7 @@
 namespace Civi\Api4;
 
 use Civi\Api4\Action\WMFDonor\Get;
+use Civi\Api4\Action\WMFDonor\UnPauseRecurring;
 use Civi\Api4\Action\WMFDonor\Update;
 use Civi\Api4\Action\WMFDonor\UpdateAnnualDonors;
 use Civi\Api4\Generic\BasicGetFieldsAction;
@@ -50,6 +51,18 @@ class WMFDonor extends Generic\AbstractEntity {
    */
   public static function updateAnnualDonors(bool $checkPermissions = TRUE): UpdateAnnualDonors {
     return (new UpdateAnnualDonors(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Un-pause recurring donor status for donors whose pause has ended.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\WMFDonor\UnPauseRecurring
+   */
+  public static function unPauseRecurring(bool $checkPermissions = TRUE): UnPauseRecurring {
+    return (new UnPauseRecurring(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 

@@ -92,6 +92,10 @@ class SendSecondRecurringFailureEmail extends AbstractAction {
       unset ($sendResult['text']);// keep the output reasonable
       $sendResult['contactID'] = $recurringContribution['contact_id'];
       $result['notifications'][$recurringContribution['id']] = $sendResult;
+      // Limit to the batch
+      if ($this->batch > 0 && ($result['send_success_count'] + $result['send_failure_count']) >= $this->batch) {
+        break;
+      }
     }
   }
 

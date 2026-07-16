@@ -54,17 +54,24 @@ class SyncCustomFields extends AbstractAction {
               // we don't really aspire to be - or not enough to let this code run on prod.
               $existingOptions = OptionValue::get(FALSE)
                 ->addWhere('option_group_id', '=', $existingField['option_group_id'])
-                ->execute()->indexBy('name');
+                ->execute();
+              $existingOptionNames = $existingOptionValues = [];
+              foreach ($existingOptions as $existingOption) {
+                $existingOptionNames[$existingOption['name']] = TRUE;
+                $existingOptionValues[$existingOption['value']] = TRUE;
+              }
               foreach ($field['option_values'] as $index => $optionValue) {
                 if (isset($optionValue['name'])) {
-                  if (!isset($existingOptions[$optionValue['name']])) {
+                  if (!isset($existingOptionNames[$optionValue['name']])) {
                     OptionValue::create(FALSE)
                       ->setValues($optionValue + ['option_group_id' => $existingField['option_group_id']])->execute();
                   }
                 }
-                elseif (!isset($existingOptions[$index])) {
+                // Short-form options are stored with the array key as the value,
+                // mirroring how new fields are created via formatOptionValues().
+                elseif (!isset($existingOptionValues[$index])) {
                   OptionValue::create(FALSE)
-                    ->setValues(['name' => $index, 'value' => $optionValue, 'label' => $index, 'option_group_id' => $existingField['option_group_id']])->execute();
+                    ->setValues(['value' => $index, 'label' => $optionValue, 'option_group_id' => $existingField['option_group_id']])->execute();
                 }
               }
             }

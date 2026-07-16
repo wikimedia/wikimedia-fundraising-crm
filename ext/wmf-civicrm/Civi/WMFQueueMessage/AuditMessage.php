@@ -844,6 +844,17 @@ class AuditMessage extends DonationMessage {
    * @return bool
    */
   public function isRequiresBackendProcessorTxnIdRepair(): bool {
+    if ($this->getBackendProcessor() === 'braintree'
+      && $this->getPaymentOrchestratorReconciliationReference()
+      && $this->getSettlementTimeStamp() < strtotime('2026-07-18')
+      ) {
+        return (bool) \CRM_Core_DAO::singleValueQuery('SELECT id
+        FROM wmf_contribution_extra WHERE backend_processor_txn_id = %1
+            AND backend_processor = %2', [
+          1 => [$this->getPaymentOrchestratorReconciliationReference(), 'String'],
+          2 => [$this->getBackendProcessor(), 'String'],
+        ]);
+    }
     if (!in_array($this->getBackendProcessor(), ['adyen', 'paypal'], TRUE)
       || !$this->getCaptureID() || !$this->getAuthID()
       || $this->message['type'] !== 'donation'
