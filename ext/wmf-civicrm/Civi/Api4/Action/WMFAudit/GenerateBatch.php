@@ -910,6 +910,7 @@ END";
       'stripe' => ['main' => 'V04137', 'endowment' => 'V04994'],
       'trustly' => ['main' => 'V05354', 'endowment' => 'V04995'],
       'chariot' => ['main' => 'V05811', 'endowment' => 'V05002'],
+      'checkoutcom' => ['main' => 'V06128'],
       // V00343	& V04999 Wikimedia Deutschland
       // V01729	& V05000Wikimedia CH
       // fundraise up - paypal V05040, V05001
