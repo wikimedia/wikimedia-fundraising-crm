@@ -523,8 +523,11 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ->addOrderBy('log_id', 'DESC')
       ->execute()->first();
 
-    // Only the monthly recur status changes because no contribution was added
-    $this->assertEquals([$loggedFields['donor_status_recur_month']['log_changes']], $latest['changed_fields']);
+    $this->assertEqualsCanonicalizing(
+      [$loggedFields['donor_status_recur_overall']['log_changes'], $loggedFields['donor_status_recur_month']['log_changes']],
+      $latest['changed_fields']
+    );
+    $this->assertEquals(15, $latest['donor_status_recur_overall']);
     $this->assertEquals(15, $latest['donor_status_recur_month']);
     $this->assertEquals(95, $latest['donor_status_recur_year']);
   }
