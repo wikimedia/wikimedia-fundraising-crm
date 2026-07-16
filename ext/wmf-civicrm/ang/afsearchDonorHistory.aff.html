@@ -3,5 +3,5 @@
     <af-field name="changed_fields" defn="{input_attrs: {multiple: true}, label: 'Show only rows with changes to:', required: false, options: [{id: '1', label: 'Segment', name: 'donor_segment_overall', description: ''}, {id: '2', label: 'Status: Overall', name: 'donor_status_overall', description: ''}, {id: '3', label: 'Status: OTG', name: 'donor_status_otg', description: ''}, {id: '4', label: 'Status: Overall Recurring', name: 'donor_status_recur_overall', description: ''}, {id: '5', label: 'Status: Monthly Recurring', name: 'donor_status_recur_month', description: ''}, {id: '6', label: 'Status: Annual Recurring', name: 'donor_status_recur_year', description: ''}]}" />
     <af-field name="log_date" defn="{input_type: 'Select', search_range: true, input_attrs: {}}" />
   </div>
-  <crm-search-display-table search-name="Donor_history" display-name="" filters="{entity_id: options.contact_id}"></crm-search-display-table>
+  <crm-search-display-table search-name="Donor_history" display-name="WMF_Donor_History" filters="{entity_id: options.contact_id}"></crm-search-display-table>
 </div>
