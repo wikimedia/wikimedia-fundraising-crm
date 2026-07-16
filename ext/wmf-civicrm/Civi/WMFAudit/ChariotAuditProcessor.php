@@ -19,9 +19,13 @@ class ChariotAuditProcessor extends BaseAuditProcessor {
   }
 
   /**
+   * Move all json files that do not start with pending to ignored.
+   *
+   * This includes the 'unknowns' files & the raw json - which are both
+   * primarily for forensics/debug.
    */
   protected function regexForFilesToIgnore(): string {
-    return '/.json/';
+    return '/^(?!pending-).*\.json$/';
   }
 
   /**
