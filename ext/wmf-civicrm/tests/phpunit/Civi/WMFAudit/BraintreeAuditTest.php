@@ -75,6 +75,27 @@ class BraintreeAuditTest extends BaseAuditTestCase {
     $this->processDonationMessage($msg, FALSE);
     $contribution = $this->getContributionForMessage($msg);
     $this->ids['Contribution']['refund_test'] = $contribution['id'];
+
+    $msg = [
+      'gateway' => 'gravy',
+      'backend_processor' => 'braintree',
+      'date' => 1656390820,
+      'gross' => '1.00',
+      'contribution_tracking_id' => '1009.0',
+      'invoice_id' => '1009.0',
+      'currency' => 'USD',
+      'email' => 'fr-tech+donor@wikimedia.org',
+      'gateway_txn_id' => '9854ccb6-3195-4ed2-ac38-3aa18d105772',
+      'backend_processor_txn_id' => '4dRaPOkRQlbkC6fzVouOJu',
+      'payment_orchestrator_reconciliation_id' => 'dHJhbnNhY3Rpb25fY3pmaDlidHI',
+      'phone' => NULL,
+      'first_name' => 'f',
+      'last_name' => 'Mouse',
+      'payment_method' => 'cc',
+    ];
+    $this->processDonationMessage($msg, FALSE);
+    $contribution = $this->getContributionForMessage($msg);
+    $this->ids['Contribution']['gravy_chargeback'] = $contribution['id'];
   }
 
   public function auditTestProvider(): array {
@@ -164,6 +185,34 @@ class BraintreeAuditTest extends BaseAuditTestCase {
               'original_fee_amount' => NULL,
               'original_total_amount' => NULL,
               'backend_processor_reversal_id' => NULL,
+              'payment_orchestrator_reversal_id' => NULL,
+            ],
+          ],
+        ],
+      ],
+      'chargeback_gravy' => [
+        __DIR__ . '/data/Braintree/chargeback_gravy/',
+        [
+          "refund" => [
+            [
+              'gateway' => 'gravy',
+              'date' => 1783987200,
+              'gross' => '100.00',
+              'gateway_parent_id' => '9854ccb6-3195-4ed2-ac38-3aa18d105772',
+              'gateway_refund_id' => '9854ccb6-3195-4ed2-ac38-3aa18d105772',
+              'gross_currency' => 'USD',
+              'type' => 'chargeback',
+              'settlement_batch_reference' => NULL,
+              'settled_total_amount' => '-100.00',
+              'settled_fee_amount' => 0,
+              'settled_net_amount' => '-100.00',
+              'settled_currency' => 'USD',
+              'original_currency' => 'USD',
+              'settled_date' => NULL,
+              'original_net_amount' => NULL,
+              'original_fee_amount' => NULL,
+              'original_total_amount' => '-100.00',
+              'backend_processor_reversal_id' => 'ZGlzcHV0ZV82NzdqM3hwc2pjNWN3bWhy',
               'payment_orchestrator_reversal_id' => NULL,
             ],
           ],
