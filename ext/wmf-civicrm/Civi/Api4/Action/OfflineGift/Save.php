@@ -109,7 +109,7 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
         'contribution_settlement.settlement_currency' => 'USD',
         'contribution_settlement.settlement_batch_reference' => $record['settlement_batch_reference'],
         'Gift_Data.Channel' => $channel,
-        'Gift_Data.Appeal' => 'White Mail',
+        'Gift_Data.Appeal' => $record['direct_mail_appeal'],
         'Gift_Data.Fund' => 'Major Gifts - CC104',
         'Gift_Data.is_major_gift' => TRUE,
         'Gift_Information.import_batch_number' => 'deposit_' . substr($record['settlement_batch_reference'], 8, -4),

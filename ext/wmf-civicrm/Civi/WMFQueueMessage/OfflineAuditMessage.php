@@ -28,6 +28,7 @@ class OfflineAuditMessage extends AuditMessage {
    *    backend_processor_reversal_id: string,
    *    gateway_txn_id: string,
    *    payment_method: string,
+   *    direct_mail_appeal: string,
    *    check_number: string,
    *    type: string,
    *    manual_review: string,
@@ -88,7 +89,18 @@ class OfflineAuditMessage extends AuditMessage {
       }
     }
     $message['check_number'] = $this->getCheckNumber();
+    // Calling getAppeal here will ensure it exists... The incoming value is
+    // direct_mail_appeal.
+    $message['direct_mail_appeal'] = $this->getAppeal();
     return $message;
+  }
+
+  /**
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  public function getAppeal(): string {
+    return parent::getAppeal() ?: 'White Mail';
   }
 
   /**

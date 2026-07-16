@@ -72,12 +72,14 @@ class ChariotAuditTest extends BaseAuditTestCase {
     $this->assertEquals('Workplace Giving', $organizationGift['Gift_Data.Channel:label']);
     $this->assertEquals('USD 5.00', $organizationGift['source']);
     $this->assertEquals('Matching Gift', $organizationGift['Gift_Data.Campaign']);
+    $this->assertEquals('ABCD', $organizationGift['Gift_Data.Appeal']);
 
     $individualGift = $contributions['CHARIOT donation_01kqjzr900k1xtvvfx6j3cw2ry'];
     $this->assertEquals('EFT', $individualGift['payment_instrument_id:name']);
     $this->assertEquals('Workplace Giving', $individualGift['Gift_Data.Channel:label']);
     $this->assertEquals('USD 5.00', $individualGift['source']);
     $this->assertEquals('Employee Giving', $individualGift['Gift_Data.Campaign']);
+    $this->assertEquals('White Mail', $individualGift['Gift_Data.Appeal']);
 
     // It should run again without error.
     $this->runAuditor($this->getBatchFile('groundswell'));

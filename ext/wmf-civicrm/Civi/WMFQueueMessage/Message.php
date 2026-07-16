@@ -518,6 +518,15 @@ class Message {
         'api_entity' => 'Contribution',
         'getter' => 'getAppeal',
       ],
+      'direct_mail_appeal' => [
+        'name' => 'direct_mail_appeal',
+        'data_type' => 'String',
+        'description' => 'Direct mail appeal',
+        'used_for' => 'Offline gifts',
+        'api_field' => 'Gift_Data.Appeal',
+        'api_entity' => 'Contribution',
+        'getter' => 'getAppeal',
+      ],
       'gift_source' => [
         'name' => 'gift_source',
         'label' => 'Gift Source',
