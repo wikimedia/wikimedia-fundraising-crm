@@ -34,8 +34,10 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
           'Gift_Data.Channel' => 'Workplace Giving',
           'Gift_Data.Campaign' => 'Employee Giving',
           'fee_amount' => $record['original_individual_gift_fee_amount'],
-          'contribution_settlement.settled_fee_amount' => $record['original_individual_gift_fee_amount'],
-          'contribution_settlement.settled_net_amount' => $record['original_individual_gift_net_amount'],
+          'total_amount' => $record['settled_individual_gift_total_amount'],
+          'contribution_extra.original_amount' => $record['original_individual_gift_total_amount'],
+          'contribution_settlement.settled_fee_amount' => $record['settled_individual_gift_fee_amount'],
+          'contribution_settlement.settled_donation_amount' => $record['settled_individual_gift_total_amount'],
           'contribution_extra.no_thank_you' => 'Sent by portal (matching gift/ workplace giving)',
         ];
         if ($record['backend_processor'] === 'benevity') {
@@ -84,7 +86,7 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
           'contribution_extra.no_thank_you' => 'Sent by portal (matching gift/ workplace giving)',
           'fee_amount' => $record['settled_matching_gift_fee_amount'],
           'contribution_settlement.settled_fee_amount' => $record['settled_matching_gift_fee_amount'],
-          'contribution_settlement.settled_net_amount' => $record['settled_matching_gift_net_amount'],
+          'contribution_settlement.settled_donation_amount' => $record['settled_matching_gift_total_amount'],
 
         ], $matchingGiftOrganizationID, $matchingGiftRatio);
 

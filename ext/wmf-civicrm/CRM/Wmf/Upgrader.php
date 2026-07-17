@@ -5051,6 +5051,15 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Add donor_status_recur_overall to the wmf_donor_history table.
+   */
+  public function upgrade_5055(): bool {
+    $fields = (require E::path('schema/WMFDonorHistory.entityType.php'))['getFields']();
+    E::schema()->alterSchemaField('WMFDonorHistory', 'donor_status_recur_overall', $fields['donor_status_recur_overall'], "AFTER `donor_status_recur_year`");
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

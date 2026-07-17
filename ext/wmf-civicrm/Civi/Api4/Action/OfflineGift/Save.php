@@ -72,6 +72,7 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
    * @param array $extraValues
    * @param int $contactId
    * @param float|int $giftRatio
+   *   We are moving away from this in favour of getting it right at the csv layer and passing in relevant values.
    *
    * @return array
    * @throws \CRM_Core_Exception
@@ -106,8 +107,6 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
         'contribution_extra.backend_processor_txn_id' => $record['backend_processor_txn_id'],
         'contribution_settlement.settlement_date' => gmdate('Y-m-d', $record['settled_date']),
         'contribution_settlement.settlement_currency' => 'USD',
-        'contribution_settlement.settled_donation_amount' => CurrencyRoundingHelper::round($record['settled_total_amount'] * $giftRatio, 'USD'),
-        'contribution_settlement.settled_fee_amount' => CurrencyRoundingHelper::round($record['settled_fee_amount'], 'USD'),
         'contribution_settlement.settlement_batch_reference' => $record['settlement_batch_reference'],
         'Gift_Data.Channel' => $channel,
         'Gift_Data.Appeal' => 'White Mail',

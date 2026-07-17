@@ -40,7 +40,7 @@ class UnPauseRecurring extends AbstractAction {
         ->addSelect('id')
         ->addJoin('ContributionRecur AS recur', 'EXCLUDE',
           ['id', '=', 'recur.contact_id'],
-          ['recur.contribution_status_id:name', '=', '"In Progress"'],
+          ['recur.contribution_status_id:name', 'IN', ['In Progress', 'Pending', 'Processing']],
           ['recur.next_sched_contribution_date', '>', '"' . $pausedUntil . '"'],
           ['recur.frequency_unit', '=', '"' . $unit . '"'],
         )

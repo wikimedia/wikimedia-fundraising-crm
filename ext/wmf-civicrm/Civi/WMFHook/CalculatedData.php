@@ -1001,6 +1001,7 @@ class CalculatedData extends TriggerHook {
         'is_active' => 1,
         'is_searchable' => 1,
         'is_view' => 1,
+        'log_changes' => 6,
         'select_clause' => $this->getRecurringDonorStatusSelect('overall'),
         'option_values' => $this->getSpecifiedDonorStatusOptions('donor_status_recur_overall'),
       ],
