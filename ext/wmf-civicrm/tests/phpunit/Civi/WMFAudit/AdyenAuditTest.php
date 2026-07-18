@@ -171,7 +171,6 @@ class AdyenAuditTest extends BaseAuditTestCase {
                 'opt_in' => '1',
                 'order_id' => '82431234.1',
                 'contribution_tracking_id' => '82431234',
-                'processor_contact_id' => '82431234.1',
                 'audit_file_gateway' => 'adyen',
                 'backend_processor' => 'adyen',
                 'settlement_batch_reference' => 'adyen_2_USD',
