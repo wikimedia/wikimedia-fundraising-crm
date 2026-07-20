@@ -724,6 +724,17 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'note_rows' => 4,
       //"option_group_id":"45",
     ],
+    'Relationship_Manager' => [
+      'name' => 'Relationship_Manager',
+      'label' => 'Relationship Manager',
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'is_searchable' => 1,
+      'text_length' => 255,
+      'column_name' => 'relationship_manager_284',
+      'help_post' => 'The Solicitor the WMF staff member, C-team member, or Board member responsible for making the ask.',
+      'option_values' => _wmf_civicrm_get_solicitor_values(),
+    ],
     'Biography' => [
       'name' => 'Biography',
       'label' => 'Biography',
@@ -1078,6 +1089,7 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'note_columns' => 60,
       'note_rows' => 4,
       'is_searchable' => 1,
+      'column_name' => 'pg_stage_177',
       'option_values' => [
         '1' => 'Cultivation',
         '2' => "Cont'd Cultivation",
@@ -1219,6 +1231,16 @@ function _wmf_civicrm_get_prospect_fields(): array {
         ['name' => 'Not_a_Planned_Giver', 'label' => 'Not a Planned Giver', 'value' => 'Not a Planned Giver'],
         ['name' => 'Strong_Planned_Giving_Prospect', 'label' => 'Strong Planned Giving Prospect', 'value' => 'Strong Planned Giving Prospect'],
       ],
+    ],
+    'Exceptional_Upgrade_Prospect' => [
+      'name' => 'Exceptional_Upgrade_Prospect',
+      'label' => 'Exceptional Upgrade Prospect',
+      'data_type' => 'Boolean',
+      'html_type' => 'Toggle',
+      'default_value' => 0,
+      'is_searchable' => 1,
+      'column_name' => 'exceptional_upgrade_prospect',
+      'weight' => 314,
     ],
   ];
 }
@@ -2063,7 +2085,7 @@ function _wmf_civicrm_get_mg_year_end_appeal_fields(): array {
     ],
     'Solicitor' => [
       'name' => 'Solicitor',
-      'label' => 'Relationship Manager',
+      'label' => 'Solicitor',
       'data_type' => 'String',
       'html_type' => 'Select',
       'is_searchable' => TRUE,
