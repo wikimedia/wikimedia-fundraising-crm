@@ -91,6 +91,9 @@ class SMTPMailer extends MailerBase implements IMailer {
     ];
     // Seconds - default is 300.
     $mailer->Timeout = 10;
+    // Timelimit governs the wait for each SMTP command reply (e.g. DATA END,
+    // which doubles it); default is 300, leaving Timeout's 10s moot on stalls.
+    $mailer->getSMTPInstance()->Timelimit = 15;
     // Jeff suggests we don't want to advertise every module we use
     $mailer->XMailer = ' ';
     // end WMF.
