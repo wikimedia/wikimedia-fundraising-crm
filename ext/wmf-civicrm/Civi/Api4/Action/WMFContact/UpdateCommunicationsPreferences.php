@@ -12,6 +12,7 @@ use Civi\Api4\Address;
 use Civi\Api4\Activity;
 use Civi\Api4\WorkflowMessage;
 use Civi\WMFHelper\Activity as ActivityHelper;
+use Civi\WMFThankYou\From;
 use Civi\WorkflowMessage\SetPrimaryEmailMessage;
 
 /**
@@ -440,7 +441,6 @@ class UpdateCommunicationsPreferences extends AbstractAction {
       '&contact_id='. $this->contactID . '&checksum=' . $unexpiredChecksum .
       '&email_checksum=' . $this->emailChecksum .
       '&email=' . urlencode($this->email);
-    [$domainEmailName, $domainEmailAddress] = \CRM_Core_BAO_Domain::getNameAndEmail();
 
     // Render email template
     $emailTemplate = WorkflowMessage::render(FALSE)
@@ -457,13 +457,15 @@ class UpdateCommunicationsPreferences extends AbstractAction {
       ])
       ->execute()->first();
 
+    $fromName = From::getFromName(SetPrimaryEmailMessage::WORKFLOW);
+    $fromAddress = From::getFromAddress(SetPrimaryEmailMessage::WORKFLOW);
     $emailParams = [
       'html' => $emailTemplate['html'],
       'text' => $emailTemplate['text'],
       'subject' => $emailTemplate['subject'],
       'toEmail' => $this->email,
       'toName' => $contact['first_name'],
-      'from' => "$domainEmailName <$domainEmailAddress>",
+      'from' => "$fromName <$fromAddress>",
     ];
     \CRM_Utils_Mail::send($emailParams);
     \Civi::log('wmf')->info("Attempt to update contact $this->contactID's email from {$contact['email.email']} to $this->email, confirmation email sent");

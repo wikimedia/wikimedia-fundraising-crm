@@ -113,7 +113,7 @@ trait GroupSubscriptionProcessor {
   }
 
   /**
-   * Function to trigger double optin process
+   * Function to trigger double opt-in process
    *
    * @param int $contactId
    * @param string $groupName

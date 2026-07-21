@@ -5,6 +5,7 @@ namespace Civi\WMFQueue;
 use Civi;
 use Civi\WMFException\WMFException;
 use Civi\WMFHook\PreferencesLink;
+use Civi\WMFThankYou\From;
 use Civi\WorkflowMessage\NewChecksumLinkMessage;
 
 class NewChecksumLinkQueueConsumer extends QueueConsumer {
@@ -86,14 +87,15 @@ class NewChecksumLinkQueueConsumer extends QueueConsumer {
       ])
       ->execute()->first();
 
-    [$domainEmailName, $domainEmailAddress] = \CRM_Core_BAO_Domain::getNameAndEmail();
+    $fromName = From::getFromName(NewChecksumLinkMessage::WORKFLOW);
+    $fromAddress = From::getFromAddress(NewChecksumLinkMessage::WORKFLOW);
     $params = [
       'html' => $email['html'] ?? NULL,
       'text' => $email['text'] ?? NULL,
       'subject' => $email['subject'],
       'toEmail' => $contact['email_primary.email'],
       'toName' => $contact['display_name'],
-      'from' => "$domainEmailName <$domainEmailAddress>",
+      'from' => "$fromName <$fromAddress>",
     ];
     \CRM_Utils_Mail::send($params);
   }

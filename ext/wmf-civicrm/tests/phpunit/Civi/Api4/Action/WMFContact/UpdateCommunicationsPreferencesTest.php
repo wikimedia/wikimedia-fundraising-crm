@@ -54,6 +54,8 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
 
     $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($this->contactID);
     $emailChecksum = hash('sha256', $this->contactID);
+    $this->setSetting('wmf_set_primary_email_from_name', 'Set Primary Email Sender');
+    $this->setSetting('wmf_set_primary_email_from_address', 'verify@example.org');
     WMFContact::updateCommunicationsPreferences()
       ->setEmail('test1@example.org')
       ->setContactID($this->contactID)
@@ -96,6 +98,9 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
       ->last()['details'];
     $this->assertEquals('bob.roberto@test.com', $email['email']);
     $this->assertStringContainsString("Try to update EmailPreference email from bob.roberto@test.com to test1@example.org and send verification email.", $activityDetail);
+
+    $sentEmail = $this->getMostRecentEmail();
+    $this->assertStringContainsString('From: Set Primary Email Sender <verify@example.org>', $sentEmail['headers']);
 
     WMFContact::updateCommunicationsPreferences()
       ->setEmail('test2@example.org')
