@@ -798,10 +798,19 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
 
     $donor = Contact::get(FALSE)
       ->addWhere('id', '=', $this->ids['Contact']['donor'])
-      ->addSelect('wmf_donor.last_otg_donation_date')
+      ->addSelect(
+        'wmf_donor.last_otg_donation_date',
+        'wmf_donor.last_donation_usd',
+        'wmf_donor.last_donation_amount',
+        'wmf_donor.last_donation_currency'
+      )
       ->execute()->first();
 
     $this->assertEquals('2023-03-01 00:00:00', $donor['wmf_donor.last_otg_donation_date']);
+    // The latest-donation join fields resolve to the otg contribution, not the recurring one.
+    $this->assertEquals(10, $donor['wmf_donor.last_donation_usd']);
+    $this->assertEquals(10, $donor['wmf_donor.last_donation_amount']);
+    $this->assertEquals('USD', $donor['wmf_donor.last_donation_currency']);
   }
 
   /**
