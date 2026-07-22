@@ -26,13 +26,14 @@ class CheckoutComAuditProcessor extends BaseAuditProcessor {
   /**
    * Match Checkout.com settlement breakdown report files.
    *
-   * Example:
+   * Examples:
    * settlement-breakdown_ent_mk6kxjvmys2llfqt2elyl3ogyq_20260702_00000003k599_1.csv
+   * settlement-breakdown_ent_mk6kxjvmys2llfqt2elyl3ogyq_20260702_00000003k599_1.csv.gz
    *
    * @return string
    */
   protected function regexForFilesToProcess(): string {
-    return '/^settlement-breakdown_.*\.csv$/i';
+    return '/^settlement-breakdown_.*\.csv(?:\.gz)?$/i';
   }
 
   /**
@@ -44,7 +45,7 @@ class CheckoutComAuditProcessor extends BaseAuditProcessor {
    * @return string
    */
   protected function regexForFilesToIgnore(): string {
-    return '/^payouts_.*\.csv$/i';
+    return '/^payouts_.*\.csv(?:\.gz)?$/i';
   }
 
 }
