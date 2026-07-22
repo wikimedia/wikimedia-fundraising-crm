@@ -5060,6 +5060,19 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Fix dlocal / gravy payments mistakenly coded as 'Cash'
+   */
+  public function upgrade_5060(): bool {
+    Contribution::update(FALSE)
+      ->addValue('payment_instrument_id:name', 'Bank Transfer: Pix')
+      ->addWhere('contribution_extra.backend_processor', '=', 'dlocal')
+      ->addWhere('payment_instrument_id:name', '=', 'Cash')
+      ->addWhere('receive_date', '>', '2025-01-01')
+      ->execute();
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
