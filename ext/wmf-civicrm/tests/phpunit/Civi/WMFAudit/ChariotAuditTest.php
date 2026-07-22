@@ -94,23 +94,43 @@ class ChariotAuditTest extends BaseAuditTestCase {
    */
   public function testDigitalMailboxPartnerNameHandling(): void {
     $this->runAuditBatch('', $this->getBatchFile('digital_mailbox'));
-    $contribution = Contribution::get(FALSE)
+    $contributions = Contribution::get(FALSE)
       ->setSelect(['*', 'contact_id.display_name', 'payment_instrument_id:name'])
       ->addWhere('contribution_settlement.settlement_batch_reference', '=', $this->getBatchName('digital_mailbox'))
       ->addOrderBy('id', 'ASC')
-      ->execute()->single();
+      ->execute();
+    $this->assertCount(4, $contributions);
 
-    $this->assertEquals('Mickey Mouse & Donald McTest CHARITABLE FUND', $contribution['contact_id.display_name']);
+    $this->assertEquals('Mickey Mouse & Donald McTest CHARITABLE FUND', $contributions->first()['contact_id.display_name']);
 
-    $contributionSoft = ContributionSoft::get(FALSE)
-      ->addWhere('contribution_id', '=', $contribution['id'])
+    $contributionSofts = ContributionSoft::get(FALSE)
+      ->addWhere('contribution_id', 'IN', $contributions->column('id'))
       ->addWhere('soft_credit_type_id:name', '=', 'donor-advised_fund')
-      ->setSelect(['*', 'contact_id.Partner.Partner', 'contact_id.display_name', 'contact_id.first_name', 'contact_id.last_name'])
-      ->execute()->single();
+      ->setSelect(['*', 'contact_id.Partner.Partner', 'contact_id.display_name', 'contact_id.first_name', 'contact_id.last_name', 'contribution_id.trxn_id'])
+      ->execute()->indexBy('contribution_id.trxn_id');
+    $contributionSoft = $contributionSofts['CHARIOT donation_123'];
     $this->assertEquals('Donald', $contributionSoft['contact_id.first_name']);
     $this->assertEquals('McTest', $contributionSoft['contact_id.last_name']);
     $this->assertEquals('Donald McTest', $contributionSoft['contact_id.display_name']);
     $this->assertEquals('Mickey Mouse', $contributionSoft['contact_id.Partner.Partner']);
+
+    $second = $contributionSofts['CHARIOT donation_234'];
+    $this->assertEquals('Mickey', $second['contact_id.first_name']);
+    $this->assertEquals('Mouse', $second['contact_id.last_name']);
+    $this->assertEquals('Mickey Mouse', $second['contact_id.display_name']);
+    $this->assertEquals('Minnie Mouse', $second['contact_id.Partner.Partner']);
+
+    $second = $contributionSofts['CHARIOT donation_345'];
+    $this->assertEquals('Donald', $second['contact_id.first_name']);
+    $this->assertEquals('Mouse', $second['contact_id.last_name']);
+    $this->assertEquals('Donald Mouse', $second['contact_id.display_name']);
+    $this->assertEquals('Daisy Mouse', $second['contact_id.Partner.Partner']);
+
+    $second = $contributionSofts['CHARIOT donation_456'];
+    $this->assertEquals('Ronald', $second['contact_id.first_name']);
+    $this->assertEquals('Mouse', $second['contact_id.last_name']);
+    $this->assertEquals('Ronald Mouse', $second['contact_id.display_name']);
+    $this->assertEquals('Hamburger Mouse', $second['contact_id.Partner.Partner']);
   }
 
   public function testFidelityFullNameHandling(): void {

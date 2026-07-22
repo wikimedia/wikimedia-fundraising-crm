@@ -221,14 +221,37 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
    * @throws \CRM_Core_Exception
    */
   protected function createIndividual(array $record, array $nameValues): int {
-    $values = array_filter([
+    $values = array_filter($nameValues + [
       'contact_type' => 'Individual',
       'Partner.Partner' => $record['partner_full_name'] ?? '',
-    ] + $this->getLocationValues($record)
-      + $nameValues);
+    ] + $this->getLocationValues($record));
     // We can look at using WMFContact.save, but it needs to add something other than complexity to be useful.
-    return \Civi\Api4\Contact::create(FALSE)
+    $contactID = \Civi\Api4\Contact::create(FALSE)
       ->setValues($values)->execute()->single()['id'];
+
+    // Log / notify any changes made before returning.
+    $mappings = [
+      'first_name' => ['from' => 'first_name', 'to' => 'first_name'],
+      'last_name' => ['from' => 'last_name', 'to' => 'last_name'],
+      'partner_name' => ['from' => 'partner_full_name', 'to' => 'Partner.Partner']
+    ];
+    foreach ($mappings as $name => $mapping) {
+      if (!empty($record[$mapping['from']]) && $record[$mapping['from']]
+        !== $values[$mapping['to']]
+      ) {
+        \Civi::log('offline_gifts')->info('{name} changed from {from} to {to}',
+          [ 'subject' => 'Offline line name change in ' . $name . ' :' . htmlentities($record[$mapping['from']]) . ' to ' . htmlentities($values[$mapping['to']]),
+            'name' => $name,
+            'from' => $record[$mapping['from']],
+            'to' => $values[$mapping['to']],
+            'contact_id' => $contactID,
+            'url' => \CRM_Utils_System::url('civicrm/contact/view', ['reset' => 1, 'cid' => $contactID], TRUE, FALSE, FALSE),
+          ]
+          + $values
+        );
+      }
+    }
+    return $contactID;
   }
 
   /**
@@ -261,7 +284,7 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
       'last_name' => $record['last_name'] ?? '',
       'prefix_id:label' => $record['prefix'] ?? '',
     ]);
-    if (empty($record['first_name']) && empty($record['last_name']) && !empty($record['full_name'])) {
+    if (!empty($record['full_name'])) {
       $parsedName = Name::parse(FALSE)
         ->setNames([$record['full_name']])
         ->execute()->first();
