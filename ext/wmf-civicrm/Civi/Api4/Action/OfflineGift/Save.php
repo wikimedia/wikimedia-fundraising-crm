@@ -125,12 +125,13 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
     if (!empty($record['manual_review'])) {
       \Civi::log('offline_gifts')->info('A contribution has been created that needs manual_review with message {manual_review}', [
         'manual_review' => $record['manual_review'],
+        'subject' => 'Manual Review ' . $record['manual_review'],
         'id' => $contribution['id'],
         'url' => \CRM_Utils_System::url('civicrm/contact/view/contribution', [
           'id' => $contribution['id'],
           'action' =>' view',
           'reset' => 1,
-        ])
+        ], TRUE, NULL, FALSE)
       ]);
     }
     return $contribution;
