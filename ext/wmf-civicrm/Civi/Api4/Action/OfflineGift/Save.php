@@ -311,14 +311,21 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
    * @throws \CRM_Core_Exception
    */
   protected function getBankingInstitution(array $record): ?int {
-    if (empty($record['banking_institution'])) {
+    $bankingInstitution = $record['banking_institution'] ?? NULL;
+    if (!$bankingInstitution && $record['backend_processor'] === 'Every.org') {
+      // Every.org is out on its own in how it behaves. The donation details
+      // do not come into Chariot automatically and Melanie uploads them - meaning
+      // the data that populates banking_institution is not present.
+      $bankingInstitution = 'Every.org';
+    }
+    if (!$bankingInstitution) {
       return NULL;
     }
-    $id = Contact::getOrganizationID($record['banking_institution']);
+    $id = Contact::getOrganizationID($bankingInstitution);
     if (!$id) {
       $id = \Civi\Api4\Contact::create(FALSE)
-        ->setValues(['contact_type' => 'Organization', 'organization_name' => $record['banking_institution']])->execute()->single()['id'];
-      \Civi::$statics['wmf_contact']['organization'][$record['banking_institution']]['id'] = $id;
+        ->setValues(['contact_type' => 'Organization', 'organization_name' => $bankingInstitution])->execute()->single()['id'];
+      \Civi::$statics['wmf_contact']['organization'][$bankingInstitution]['id'] = $id;
     }
     return $id;
   }
