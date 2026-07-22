@@ -1619,7 +1619,7 @@ $groupBy
         ],
       ],
       99 => [
-        'label' => 'Non donor',
+        'label' => 'Never',
         'static_description' => 'Has never given',
         'value' => 99,
         'name' => 'non_donor',
