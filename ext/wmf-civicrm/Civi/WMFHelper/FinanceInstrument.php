@@ -145,7 +145,9 @@ class FinanceInstrument {
     'cash_provencia_pagos' => 'Provencia Pagos',
     'cash_red_pagos' => 'Red Pagos',
     'cash_rapipago' => 'Rapi Pago',
-    'cash_santander' => 'Santander'
+    'cash_santander' => 'Santander',
+    // Some frontend links mistakenly send pix in as a 'cash' submethod, but it should be 'bt'
+    'pix' => 'Bank Transfer: Pix',
   ];
 
   /**
