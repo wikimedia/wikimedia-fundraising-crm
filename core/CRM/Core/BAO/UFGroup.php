@@ -3366,7 +3366,7 @@ SELECT  group_id
    * @return bool|object
    */
   public static function isProfileDoubleOptin() {
-    // check for double optin
+    // check for double opt-in
     if (CRM_Core_Component::isEnabled('CiviMail')) {
       return Civi::settings()->get('profile_double_optin');
     }
@@ -3377,7 +3377,7 @@ SELECT  group_id
    * @return bool|object
    */
   public static function isProfileAddToGroupDoubleOptin() {
-    // check for add to group double optin
+    // check for add to group double opt-in
     if (CRM_Core_Component::isEnabled('CiviMail')) {
       return Civi::settings()->get('profile_add_to_group_double_optin');
     }

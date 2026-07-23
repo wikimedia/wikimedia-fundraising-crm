@@ -5073,6 +5073,29 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Backfill source_record_id on 'Contact Merged' activities.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5065(): bool {
+    $mergeActivityTypeID = OptionValue::get(FALSE)
+      ->addSelect('value')
+      ->addWhere('option_group_id:name', '=', 'activity_type')
+      ->addWhere('name', '=', 'Contact Merged')
+      ->execute()->first()['value'];
+
+    $sql = "
+      UPDATE civicrm_activity a
+      SET a.source_record_id = CAST(REGEXP_SUBSTR(a.subject, '[0-9]+') AS UNSIGNED)
+      WHERE a.activity_type_id = {$mergeActivityTypeID}
+        AND a.source_record_id IS NULL
+      LIMIT 50000";
+    $this->queueSQL($sql);
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

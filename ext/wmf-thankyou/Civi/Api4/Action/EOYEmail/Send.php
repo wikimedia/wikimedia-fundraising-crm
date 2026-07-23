@@ -107,8 +107,8 @@ class Send extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   public function sendLetters(): array {
-    $fromAddress = From::getFromAddress('eoy');
-    $fromName = From::getFromName('eoy');
+    $fromAddress = From::getFromAddress('eoy_thank_you');
+    $fromName = From::getFromName('eoy_thank_you');
     if (!$fromAddress || !$fromName) {
       throw new \CRM_Core_Exception('Must configure a valid return address in the Thank-you module');
     }

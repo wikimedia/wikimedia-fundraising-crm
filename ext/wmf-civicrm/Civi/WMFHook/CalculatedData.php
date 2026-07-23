@@ -484,7 +484,7 @@ class CalculatedData extends TriggerHook {
     // Put back join fields if needed for other fields, or to ensure there is at least one field present.
     if ($tableName === 'civicrm_contribution') {
       if (empty($this->calculatedFields[$tableName]) || $this->isIncludeTable('latest')) {
-        $this->calculatedFields[$tableName]['all_funds_last_donation_date'] = $allFields['all_funds_last_donation_date'];
+        $this->calculatedFields[$tableName]['last_otg_donation_date'] = $allFields['last_otg_donation_date'];
       }
       if ($this->isIncludeTable('earliest')) {
         $this->calculatedFields[$tableName]['all_funds_first_donation_date'] = $allFields['all_funds_first_donation_date'];
@@ -615,7 +615,7 @@ class CalculatedData extends TriggerHook {
       'last_donation_currency' => [
         'name' => 'last_donation_currency',
         'column_name' => 'last_donation_currency',
-        'label' => ts('Last Donation Currency'),
+        'label' => ts('Last OTG Donation Currency'),
         'data_type' => 'String',
         'html_type' => 'Text',
         'is_active' => 1,
@@ -629,7 +629,7 @@ class CalculatedData extends TriggerHook {
       'last_donation_amount' => [
         'name' => 'last_donation_amount',
         'column_name' => 'last_donation_amount',
-        'label' => ts('Last Donation Amount (Original Currency)'),
+        'label' => ts('Last OTG Donation Amount (Original Currency)'),
         'data_type' => 'Money',
         'html_type' => 'Text',
         'is_active' => 1,
@@ -644,7 +644,7 @@ class CalculatedData extends TriggerHook {
       'last_donation_usd' => [
         'name' => 'last_donation_usd',
         'column_name' => 'last_donation_usd',
-        'label' => ts('Last Donation Amount (USD)'),
+        'label' => ts('Last OTG Donation Amount (USD)'),
         'data_type' => 'Money',
         'html_type' => 'Text',
         'is_active' => 1,
@@ -1277,7 +1277,8 @@ $groupBy
   LEFT JOIN civicrm_contribution latest
     USE INDEX(FK_civicrm_contribution_contact_id)
     ON latest.contact_id = $entityID
-    AND latest.receive_date = totals.all_funds_last_donation_date
+    AND latest.receive_date = totals.last_otg_donation_date
+    AND latest.contribution_recur_id IS NULL
     AND latest.contribution_status_id = 1
     AND latest.total_amount > 0
     AND (latest.trxn_id NOT LIKE 'RFD %' OR latest.trxn_id IS NULL)

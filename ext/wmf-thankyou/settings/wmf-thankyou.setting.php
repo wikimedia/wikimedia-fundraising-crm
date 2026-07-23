@@ -1,6 +1,10 @@
 <?php
 use CRM_WmfThankyou_ExtensionUtil as E;
 
+// These setting names must be in the format "wmf_{name}_from_name"
+// and "wmf_{name}_from_address", where {name} is either the workflow name
+// or the string passed in directly to From::getFromName and getFromAddress.
+// See Civi\WMFThankYou\From
 return [
   'wmf_thank_you_from_name' => [
     'group_name' => 'WMF Thank You Settings',
@@ -66,10 +70,10 @@ return [
     ],
     'settings_pages' => ['wmf-thankyou' => ['weight' => 12]],
   ],
-  'wmf_monthly_convert_thank_you_from_name' => [
+  'wmf_monthly_convert_from_name' => [
     'group_name' => 'WMF Thank You Settings',
     'group' => 'wmf-thankyou',
-    'name' => 'wmf_monthly_convert_thank_you_from_name',
+    'name' => 'wmf_monthly_convert_from_name',
     'default' => 'Wikimedia Foundation',
     'type' => 'String',
     'is_domain' => 1,
@@ -82,10 +86,10 @@ return [
     ],
     'settings_pages' => ['wmf-thankyou' => ['weight' => 21]],
   ],
-  'wmf_monthly_convert_thank_you_from_address' => [
+  'wmf_monthly_convert_from_address' => [
     'group_name' => 'WMF Thank You Settings',
     'group' => 'wmf-thankyou',
-    'name' => 'wmf_monthly_convert_thank_you_from_address',
+    'name' => 'wmf_monthly_convert_from_address',
     'default' => 'donate@wikimedia.org',
     'type' => 'String',
     'is_domain' => 1,
@@ -129,6 +133,102 @@ return [
       'size' => 80,
     ],
     'settings_pages' => ['wmf-thankyou' => ['weight' => 32]],
+  ],
+  'wmf_double_opt_in_from_name' => [
+    'group_name' => 'WMF Thank You Settings',
+    'group' => 'wmf-thankyou',
+    'name' => 'wmf_double_opt_in_from_name',
+    'default' => 'Wikimedia Foundation',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'title' => E::ts('Double opt-in from name'),
+    'help_text' => '',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 80,
+    ],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 33]],
+  ],
+  'wmf_double_opt_in_from_address' => [
+    'group_name' => 'WMF Thank You Settings',
+    'group' => 'wmf-thankyou',
+    'name' => 'wmf_double_opt_in_from_address',
+    'default' => 'hello@wikimedia.org',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'title' => E::ts('Double opt-in from address'),
+    'help_text' => '',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 80,
+    ],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 34]],
+  ],
+  'wmf_new_checksum_link_from_name' => [
+    'group_name' => 'WMF Thank You Settings',
+    'group' => 'wmf-thankyou',
+    'name' => 'wmf_new_checksum_link_from_name',
+    'default' => 'Wikimedia Foundation',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'title' => E::ts('New checksum link email from name'),
+    'help_text' => '',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 80,
+    ],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 35]],
+  ],
+  'wmf_new_checksum_link_from_address' => [
+    'group_name' => 'WMF Thank You Settings',
+    'group' => 'wmf-thankyou',
+    'name' => 'wmf_new_checksum_link_from_address',
+    'default' => 'hello@wikimedia.org',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'title' => E::ts('New checksum link email from address'),
+    'help_text' => '',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 80,
+    ],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 36]],
+  ],
+  'wmf_set_primary_email_from_name' => [
+    'group_name' => 'WMF Thank You Settings',
+    'group' => 'wmf-thankyou',
+    'name' => 'wmf_set_primary_email_from_name',
+    'default' => 'Wikimedia Foundation',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'title' => E::ts('Set primary email confirmation from name'),
+    'help_text' => '',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 80,
+    ],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 37]],
+  ],
+  'wmf_set_primary_email_from_address' => [
+    'group_name' => 'WMF Thank You Settings',
+    'group' => 'wmf-thankyou',
+    'name' => 'wmf_set_primary_email_from_address',
+    'default' => 'hello@wikimedia.org',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'title' => E::ts('Set primary email confirmation from address'),
+    'help_text' => '',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 80,
+    ],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 38]],
   ],
 
   'thank_you_days' => [

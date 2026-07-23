@@ -5,7 +5,7 @@ $subject = file_get_contents($directory . 'double_opt_in.en.html.subject.txt');
 
 
 /**
- * Add double opt in email template.
+ * Add double opt-in email template.
  */
 return [
   [

@@ -15,7 +15,7 @@ class DoubleOptInExample extends WorkflowMessageExample {
         'double_opt_in',
         $this->getExampleName(),
       ]),
-      'title' => ts('Double Opt In Message'),
+      'title' => ts('Double Opt-In Message'),
       'tags' => ['preview'],
       'workflow' => 'double_opt_in',
     ];

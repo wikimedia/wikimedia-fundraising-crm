@@ -9,7 +9,7 @@
     "placement_filters": [],
     "placement_weight": null,
     "tags": null,
-    "icon": "fa-list-alt",
+    "icon": "fa-horse",
     "server_route": "civicrm/chariot",
     "is_public": false,
     "permission": [

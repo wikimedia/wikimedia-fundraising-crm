@@ -9,6 +9,7 @@ use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\MessageTemplate;
 use Civi\Api4\WorkflowMessage;
+use Civi\WMFThankYou\From;
 
 /**
  * Class Send.
@@ -85,15 +86,15 @@ class Send extends AbstractAction {
     if (empty($rendered['html']) && empty($rendered['text'])) {
       return;
     }
-    // TODO make these parameters
-    list($domainEmailName, $domainEmailAddress) = \CRM_Core_BAO_Domain::getNameAndEmail();
+    $fromName = From::getFromName($this->workflow);
+    $fromAddress = From::getFromAddress($this->workflow);
     $params = [
       'html' => $rendered['html'] ?? NULL,
       'text' => $rendered['text'] ?? NULL,
       'subject' => $rendered['subject'],
       'toEmail' => $contact['email_primary.email'],
       'toName' => $contact['display_name'],
-      'from' => "$domainEmailName <$domainEmailAddress>",
+      'from' => "$fromName <$fromAddress>",
     ];
 
     $success = \CRM_Utils_Mail::send($params);

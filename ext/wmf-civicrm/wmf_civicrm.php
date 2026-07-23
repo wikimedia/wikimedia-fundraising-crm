@@ -481,7 +481,7 @@ function wmf_civicrm_civicrm_customPre(string $op, int $groupID, int $entityID, 
 /**
  * Implementation of hook_civicrm_post, used to update contribution_extra fields
  * and wmf_donor rollup fields as well as send large donation notifications
- * and to set modified date for contacts when they add a double opt in activity.
+ * and to set modified date for contacts when they add a double opt-in activity.
  *
  * @implements hook_civicrm_post
  *

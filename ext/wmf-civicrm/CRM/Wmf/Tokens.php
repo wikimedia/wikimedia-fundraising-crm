@@ -75,6 +75,12 @@ class CRM_Wmf_Tokens {
       case 'new_recur':
         return self::getNewRecurUrl($shortLang, $row, $contactID);
 
+      case 'new_recur_no_amount':
+        return self::getNewRecurUrl($shortLang, $row, $contactID, ['preSelect']);
+
+      case 'new_recur_otg':
+        return self::getNewRecurUrl($shortLang, $row, $contactID, ['preSelect', 'frequency']);
+
       case 'unsubscribe':
         return WMFLink::getUnsubscribeURL(FALSE)
           ->setEmail($email)
@@ -100,9 +106,11 @@ class CRM_Wmf_Tokens {
    * @param string $shortLang
    * @param \Civi\Token\TokenRow $row
    * @param int|null $contactID
+   * @param array $exclude
+   *   Param keys to omit from the generated url.
    * @return string
    */
-  protected static function getNewRecurUrl(string $shortLang, $row, ?int $contactID): string {
+  protected static function getNewRecurUrl(string $shortLang, $row, ?int $contactID, array $exclude = []): string {
     $recurID = $row->tokenProcessor->context['contribution_recurId'] ?? NULL;
     $recur = \Civi\Api4\ContributionRecur::get(FALSE)
       ->addSelect('amount', 'contribution_recur_smashpig.original_country:abbr', 'frequency_unit', 'contact_id')
@@ -114,17 +122,17 @@ class CRM_Wmf_Tokens {
       default => NULL,
     };
     $contactID = $contactID ?? $recur['contact_id'] ?? NULL;
-    $emailCount = match($row->tokenProcessor->context['workflow'] ?? NULL) {
-      'recurring_failed_message' => '1',
-      'recurring_second_failed_message' => '2',
+    $campaign = match($row->tokenProcessor->context['workflow'] ?? NULL) {
+      'recurring_failed_message' => 'RecurringFailureMessage',
+      'recurring_second_failed_message' => 'RecurringSecondFailureMessage',
       default => '',
     };
     $params = [
-      'wmf_campaign' => 'FailedRecur',
-      'wmf_medium' => 'civi-mail',
+      'wmf_campaign' => $campaign,
+      'wmf_medium' => 'civimail',
+      'wmf_source' => 'civicrm',
       'appeal' => 'SupportingWikipedia',
       'monthlypitch' => '1',
-      'wmf_source' => 'FailedRecur' . $emailCount,
       'uselang' => $shortLang,
       'contact_id' => $contactID,
       'frequency' => $frequency,
@@ -133,6 +141,9 @@ class CRM_Wmf_Tokens {
     ];
     if ($contactID) {
       $params['checksum'] = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
+    }
+    foreach ($exclude as $key) {
+      unset($params[$key]);
     }
     return 'https://donate.wikimedia.org/?' . http_build_query(array_filter($params));
   }
@@ -145,7 +156,9 @@ class CRM_Wmf_Tokens {
   public static function onListTokens(TokenRegisterEvent $e): void {
     $e->entity('wmf_url')
       ->register('unsubscribe', ts('Unsubscribe url'))
-      ->register('new_recur', ts('New recurring url'))
+      ->register('new_recur', ts('New recur url'))
+      ->register('new_recur_no_amount', ts('New recur url, no amount'))
+      ->register('new_recur_otg', ts('New recur url, OTG instead'))
       ->register('cancel', ts('Cancel recurring url'))
       ->register('donorPortalUrl', ts('Donor portal url, if eligible'));
     $e->entity('now')
