@@ -50,7 +50,7 @@ return [
         'settings' => [
           'description' => NULL,
           'sort' => [
-            ['log_date', 'DESC'],
+            ['log_id', 'DESC'],
           ],
           'limit' => 100,
           'pager' => [
