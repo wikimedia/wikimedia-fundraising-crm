@@ -157,6 +157,14 @@ class RefundMessage extends Message {
         ->addWhere('contribution_extra.gateway_txn_id', '=', $this->message['gateway_parent_id'])
         ->execute()->first();
     }
+    if (!$originalContribution) {
+      // In case the original contribution was via the orchestrator
+      $originalContribution = Contribution::get(FALSE)
+        ->setSelect($selectFields)
+        ->addWhere('contribution_extra.backend_processor', '=', $this->getGateway())
+        ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->message['gateway_parent_id'])
+        ->execute()->first();
+    }
     return (array) $originalContribution;
   }
 
