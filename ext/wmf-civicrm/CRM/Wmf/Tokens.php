@@ -131,7 +131,6 @@ class CRM_Wmf_Tokens {
       'wmf_campaign' => $campaign,
       'wmf_medium' => 'civimail',
       'wmf_source' => 'civicrm',
-      'appeal' => 'SupportingWikipedia',
       'monthlypitch' => '1',
       'uselang' => $shortLang,
       'contact_id' => $contactID,
