@@ -3,10 +3,9 @@
 
 namespace Civi\Api4\Action\Name;
 
-use Civi;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use TheIconic\NameParser\Parser;
+use Iliaal\NameParser\Parser;
 
 /**
  * Class Parse.
@@ -41,8 +40,8 @@ class Parse extends AbstractAction {
           $doubleSplitNames[] = trim($toUse);
         }
       }
-      $result[$name] = $this->parseName($doubleSplitNames[0]);
-      if (!empty($doubleSplitNames[1])) {
+      $result[$name] = $this->parseName($name);
+      if (empty($result[$name]['Partner.Partner']) && !empty($doubleSplitNames[1])) {
         $result[$name]['Partner.Partner'] = $doubleSplitNames[1];
         $sharedLastName = $this->parseName($doubleSplitNames[1])['last_name'];
         if ($sharedLastName) {
@@ -68,24 +67,13 @@ class Parse extends AbstractAction {
    * @return array
    */
   protected function parseName(string $name): array {
-    // Detect multibyte initials, which currently break TheIconic parser
-    // Delete this when fix is merged upstream: https://github.com/theiconic/name-parser/pull/39
-    if (mb_ereg_match('.*\b[^\x00-\x7F]\b',$name)) {
-      $parts = explode(' ', $name, 2);
-      return [
-        'prefix_id:label' => '',
-        'first_name' => $parts[0],
-        'last_name' => $parts[1] ?? '',
-        'middle_name' => '',
-        'nick_name' => '',
-        'suffix_id:label' => ''
-      ];
-    }
-
     $parser = new Parser();
     $nameParser = $parser->parse($name);
-    return [
-      'prefix_id:label' => $nameParser->getSalutation(),
+    $partner = $nameParser->getPartner();
+    $partnerField = $partner ? ['Partner.Partner' => (string) $partner] : [];
+
+    return $partnerField + [
+      'prefix_id:label' => $nameParser->getSalutations()[0] ?? '',
       'first_name' => $nameParser->getFirstname(),
       'last_name' => $nameParser->getLastname(),
       'middle_name' => strlen($nameParser->getMiddlename()) ? $nameParser->getMiddlename() : $nameParser->getInitials(),

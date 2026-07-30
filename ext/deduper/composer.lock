@@ -4,64 +4,93 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7d939c4630ca01f7d8dd4014651d3459",
+    "content-hash": "635db57966254b555c260e16425bb6f4",
     "packages": [
         {
-            "name": "theiconic/name-parser",
-            "version": "v1.2.11",
+            "name": "iliaal/nameparser",
+            "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/theiconic/name-parser.git",
-                "reference": "9a54a713bf5b2e7fd990828147d42de16bf8a253"
+                "url": "https://github.com/eileenmcnaughton/nameparser.git",
+                "reference": "3b076923d2f152f19df5d702ab24b3e9095aec55"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/theiconic/name-parser/zipball/9a54a713bf5b2e7fd990828147d42de16bf8a253",
-                "reference": "9a54a713bf5b2e7fd990828147d42de16bf8a253",
+                "url": "https://api.github.com/repos/eileenmcnaughton/nameparser/zipball/3b076923d2f152f19df5d702ab24b3e9095aec55",
+                "reference": "3b076923d2f152f19df5d702ab24b3e9095aec55",
                 "shasum": ""
             },
             "require": {
-                "php": ">=7.1"
+                "ext-mbstring": "*",
+                "php": "^8.2"
             },
             "require-dev": {
-                "php-coveralls/php-coveralls": "^2.1",
-                "php-mock/php-mock-phpunit": "^2.1",
-                "phpunit/phpunit": "^7.0"
+                "friendsofphp/php-cs-fixer": "^3.64",
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^12.0"
             },
+            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "TheIconic\\NameParser\\": [
-                        "src/",
-                        "tests/"
-                    ]
+                    "Iliaal\\NameParser\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "Tests\\Iliaal\\NameParser\\": "tests/"
+                }
+            },
+            "scripts": {
+                "analyse": [
+                    "phpstan analyse"
+                ],
+                "check:readme": [
+                    "php -r \"exit(substr_count(file_get_contents('README.md'), \\\"—\\\") === 0 ? 0 : 1);\""
+                ],
+                "lint": [
+                    "php-cs-fixer fix --dry-run --diff"
+                ],
+                "lint:fix": [
+                    "php-cs-fixer fix"
+                ],
+                "test": [
+                    "phpunit"
+                ]
+            },
             "license": [
                 "MIT"
             ],
             "authors": [
                 {
-                    "name": "The Iconic",
-                    "email": "engineering@theiconic.com.au"
+                    "name": "Ilia Alshanetsky",
+                    "email": "ilia@ilia.ws"
                 }
             ],
-            "description": "PHP library for parsing a string containing a full name into its parts",
+            "description": "Parse a full-name string into its parts. Casing- and credential-aware fork of theiconic/name-parser, tuned for professional/clinician names.",
+            "keywords": [
+                "credentials",
+                "fullname",
+                "humanname",
+                "name",
+                "name-parser",
+                "parser"
+            ],
             "support": {
-                "issues": "https://github.com/theiconic/name-parser/issues",
-                "source": "https://github.com/theiconic/name-parser/tree/v1.2.11"
+                "source": "https://github.com/eileenmcnaughton/nameparser/tree/master"
             },
-            "time": "2019-11-14T14:08:48+00:00"
+            "time": "2026-07-29T23:52:11+00:00"
         }
     ],
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "iliaal/nameparser": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": [],
-    "platform-dev": [],
-    "plugin-api-version": "2.0.0"
+    "platform": {},
+    "platform-dev": {},
+    "plugin-api-version": "2.9.0"
 }
