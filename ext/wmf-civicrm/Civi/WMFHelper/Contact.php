@@ -201,14 +201,14 @@ class Contact {
     $scores = [];
     foreach ($contacts as $contact) {
       $scores[$contact['id']] = 0;
-      if ($contact['email_primary.email']) {
+      if ($email && $contact['email_primary.email']) {
         $scores[$contact['id']] += 10;
       }
       if ($contact['address_primary.postal_code'] && $postalCode &&
         mb_substr($contact['address_primary.postal_code'], 0, 5) === mb_substr($postalCode, 0, 5)) {
         $scores[$contact['id']] += 10;
       }
-      if (($organizationID && $contact['employer_id'] === $organizationID) || $contact['DAF.id']) {
+      if (($organizationID && $contact['employer_id'] === $organizationID) || ($organizationID && $contact['DAF.id'] === $organizationID)) {
         $scores[$contact['id']] += 25;
         // We don't need to check soft credits if we have employer or DAF.
         continue;

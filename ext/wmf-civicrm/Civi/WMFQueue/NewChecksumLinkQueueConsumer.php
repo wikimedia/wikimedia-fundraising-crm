@@ -3,6 +3,7 @@
 namespace Civi\WMFQueue;
 
 use Civi;
+use Civi\Omnimail\MailFactory;
 use Civi\WMFException\WMFException;
 use Civi\WMFHook\PreferencesLink;
 use Civi\WMFThankYou\From;
@@ -91,13 +92,13 @@ class NewChecksumLinkQueueConsumer extends QueueConsumer {
     $fromAddress = From::getFromAddress(NewChecksumLinkMessage::WORKFLOW);
     $params = [
       'html' => $email['html'] ?? NULL,
-      'text' => $email['text'] ?? NULL,
       'subject' => $email['subject'],
-      'toEmail' => $contact['email_primary.email'],
-      'toName' => $contact['display_name'],
-      'from' => "$fromName <$fromAddress>",
+      'to_address' => $contact['email_primary.email'],
+      'to_name' => $contact['display_name'],
+      'from_address' => $fromAddress,
+      'from_name' => $fromName,
     ];
-    \CRM_Utils_Mail::send($params);
+    MailFactory::singleton()->getMailer()->send($params);
   }
 
 }
