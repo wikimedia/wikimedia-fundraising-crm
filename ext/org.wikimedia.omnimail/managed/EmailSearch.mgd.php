@@ -2,7 +2,7 @@
 
 use CRM_Omnimail_ExtensionUtil as E;
 
-return [
+$entities = [
   [
     'name' => 'SavedSearch_snooze',
     'entity' => 'SavedSearch',
@@ -59,23 +59,29 @@ return [
       ],
     ],
   ],
-  [
-    'name' => 'SavedSearch_snooze_SearchDisplay_snooze_table',
+];
+
+$snoozeTableDisplayVariants = [
+  'snooze_table' => 'Search',
+  'snooze_table_auto_search' => NULL,
+];
+foreach ($snoozeTableDisplayVariants as $displayName => $button) {
+  $entities[] = [
+    'name' => 'SavedSearch_snooze_SearchDisplay_' . $displayName,
     'entity' => 'SearchDisplay',
     'cleanup' => 'always',
     'update' => 'unmodified',
     'params' => [
       'version' => 4,
       'values' => [
-        'name' => 'snooze_table',
+        'name' => $displayName,
         'label' => E::ts('Emails with snooze data'),
         'saved_search_id.name' => 'snooze',
         'type' => 'table',
         'settings' => [
-          'description' => E::ts('Emails with editable snooze date'),
           'sort' => [],
           'limit' => 10,
-          'pager' => [],
+          'pager' => ['hide_single' => true],
           'placeholder' => 5,
           'columns' => [
             [
@@ -146,7 +152,7 @@ return [
             'table',
             'table-striped',
           ],
-          'button' => 'Search',
+          'button' => $button,
         ],
         'acl_bypass' => FALSE,
       ],
@@ -155,5 +161,6 @@ return [
         'saved_search_id',
       ],
     ],
-  ],
-];
+  ];
+}
+return $entities;
