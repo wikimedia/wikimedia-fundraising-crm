@@ -1,5 +1,11 @@
 {
     "require": {
-        "theiconic/name-parser": "^1.2"
+        "iliaal/nameparser": "dev-master"
+    },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/eileenmcnaughton/nameparser.git"
     }
+  ]
 }

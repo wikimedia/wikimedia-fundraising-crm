@@ -238,13 +238,14 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
     ];
     foreach ($mappings as $name => $mapping) {
       if (!empty($record[$mapping['from']]) && $record[$mapping['from']]
-        !== $values[$mapping['to']]
+        !== ($values[$mapping['to']] ?? '')
       ) {
-        \Civi::log('offline_gifts')->info('{name} changed from {from} to {to}',
-          [ 'subject' => 'Offline line name change in ' . $name . ' :' . htmlentities($record[$mapping['from']]) . ' to ' . htmlentities($values[$mapping['to']]),
+        \Civi::log('offline_gifts')->debug('{name} changed from {from} to {to}',
+          [ 'subject' => 'Offline line name change in ' . $name . ' :' . htmlentities($record[$mapping['from']] ?? '') . ' to ' . htmlentities($values[$mapping['to']] ?? ''),
+
             'name' => $name,
             'from' => $record[$mapping['from']],
-            'to' => $values[$mapping['to']],
+            'to' => $values[$mapping['to']] ?? '',
             'contact_id' => $contactID,
             'url' => \CRM_Utils_System::url('civicrm/contact/view', ['reset' => 1, 'cid' => $contactID], TRUE, FALSE, FALSE),
           ]
