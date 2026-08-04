@@ -10,6 +10,8 @@ use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\WMFHelper\ContributionRecur as ContributionRecurHelper;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
+use CRM_Core_DAO;
+use SmashPig\Core\UtcDate;
 
 class GetDonorSummary extends AbstractAction {
 
@@ -58,6 +60,20 @@ class GetDonorSummary extends AbstractAction {
       }
     }
     $email = $contact['email_primary.email'];
+
+    // Do not honor any checksums generated before the last primary email change
+    if ($this->checksumOlderThanLastEmailChange($email)) {
+      \Civi::log('wmf')->warning(
+        'Checksum older than last email change for contact ID {contact_id}, checksum {checksum}',
+        ['contact_id' => $this->contact_id, 'checksum' => $this->checksum]
+      );
+      $result[] = [
+        'error' => TRUE,
+        'error_code' => 'InvalidCredentials',
+        'message' => 'Invalid credentials'
+      ];
+      return;
+    }
 
     // Since our database has a lot of duplicate contact records, we show donations for
     // all contacts with the same primary email address.
@@ -220,5 +236,35 @@ class GetDonorSummary extends AbstractAction {
       )
       ->execute()
       ->first();
+  }
+
+  /**
+   * Determine whether the checksum was generated for a previous email address.
+   * We only want to allow donors to use a link that was sent to their current
+   * primary email address.
+   *
+   * @param string $email
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  protected function checksumOlderThanLastEmailChange(string $email): bool {
+    $lastEmailChangeDate = CRM_Core_DAO::singleValueQuery(
+      'SELECT MIN(log_date) FROM log_civicrm_email ' .
+      'WHERE contact_id = %1 ' .
+      'AND is_primary = 1 ' .
+      'AND log_date > (' .
+      '  SELECT MAX(log_date) from log_civicrm_email ' .
+      '  WHERE contact_id = %1 ' .
+      '  AND is_primary = 1 ' .
+      '  AND email <> %2 ' .
+      ')', [
+      1 => [$this->contact_id, 'Integer'],
+      2 => [$email, 'String']
+    ]);
+    $checksumParts = explode('_', $this->checksum);
+    return (
+      $lastEmailChangeDate &&
+      UtcDate::getUtcTimestamp($lastEmailChangeDate) > $checksumParts[1]
+    );
   }
 }

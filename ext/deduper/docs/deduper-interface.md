@@ -7,8 +7,11 @@ to dedupe them within the screen, or to re-direct to the legacy screen with thos
 
 Note that the `Safe Merge` button will apply the same resolvers as an automated script
 will, and not merge any records that are considered to be conflicted. After clicking
-Safe Merge it will either merge or display any conflicts. Note that
-if you choose to save a name pair at this point then automated dedupes
+Safe Merge it will either merge or display any conflicts.
+
+![Conflicts when merging](images/conflict_on_merge.png "Conflicts when merging")
+
+Note that if you choose to save a name pair at this point then automated dedupes
 will always resolve that name pair in future.
 
 ![Deduper Screen](images/lukeNamePair.gif?raw=true "Saving a name pair")
