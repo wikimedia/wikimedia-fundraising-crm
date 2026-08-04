@@ -240,7 +240,7 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
       if (!empty($record[$mapping['from']]) && $record[$mapping['from']]
         !== $values[$mapping['to']]
       ) {
-        \Civi::log('offline_gifts')->info('{name} changed from {from} to {to}',
+        \Civi::log('offline_gifts')->debug('{name} changed from {from} to {to}',
           [ 'subject' => 'Offline line name change in ' . $name . ' :' . htmlentities($record[$mapping['from']]) . ' to ' . htmlentities($values[$mapping['to']]),
             'name' => $name,
             'from' => $record[$mapping['from']],
