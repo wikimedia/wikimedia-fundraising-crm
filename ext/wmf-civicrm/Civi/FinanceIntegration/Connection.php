@@ -23,10 +23,21 @@ class Connection {
 
   private bool $isStaging;
 
+  private static ?Client $testClient = NULL;
+
   public function __construct($instance = 'wmf', $isStaging = TRUE) {
     $this->instance = $instance;
     $this->isStaging = $isStaging;
   }
+
+  public static function setTestClient(?Client $client): void {
+    self::$testClient = $client;
+  }
+
+  public static function resetTestClient(): void {
+    self::$testClient = NULL;
+  }
+
 
   /**
    * @return Client
@@ -34,6 +45,9 @@ class Connection {
    * @throws \CRM_Core_Exception
    */
   public function getApiClient(): Client {
+    if (self::$testClient) {
+      return self::$testClient;
+    }
     $accessToken = $this->getBearerToken();
 
     if (!isset($this->apiClient)) {

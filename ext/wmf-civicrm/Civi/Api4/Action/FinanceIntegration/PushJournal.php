@@ -23,14 +23,6 @@ use League\Csv\Reader;
  */
 class PushJournal extends AbstractAction {
 
-  /**
-   * @var null|Client
-   */
-  protected ?Client $tokenClient = NULL;
-
-  protected ?Client $apiClient = NULL;
-
-  protected $tokenURL = 'https://api.intacct.com/ia/api/v1/oauth2/token';
   private array $batches = [];
 
   private Connection $connection;
@@ -82,11 +74,6 @@ class PushJournal extends AbstractAction {
   }
 
   public function _run(Result $result) {
-    if (!$this->tokenClient) {
-      $this->tokenClient = new Client([
-        'base_uri' => $this->tokenURL,
-      ]);
-    }
 
     try {
       $this->buildJournalEntries();
