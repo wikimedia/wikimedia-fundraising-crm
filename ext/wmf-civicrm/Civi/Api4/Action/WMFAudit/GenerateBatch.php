@@ -1281,17 +1281,11 @@ GROUP BY s.settlement_batch_reference
         ->addValue('batch_data.last_discrepancy', 0)
         ->addValue('batch_data.last_successful_validation_date',  gmdate('Y-m-d H:i:s'))
         ->addWhere('id', '=', $batch['id']);
-      if (in_array($batch['status_id:name'], ['total_verified'], TRUE)) {
-        // Only update status if it was already verified
-        // @todo - consider adding a verified date, allowing status move from needs_attention
-        // to validated
+      if (in_array($batch['status_id:name'], ['total_verified', 'needs_attention'], TRUE)
+        && !empty($batch['batch_data.last_attempted_total_verification_date'])
+      ) {
         $update->addValue('status_id:name', 'validated');
         $this->batches[$batch['name']]['status_id:name'] = 'validated';
-      }
-      if (in_array($batch['status_id:name'], ['needs_attention'], TRUE)) {
-        // If valid can move back to open - perhaps it could go to validated.
-        $update->addValue('status_id:name', 'Open');
-        $this->batches[$batch['name']]['status_id:name'] = 'Open';
       }
       $update->execute();
       $this->log('The following batches have been validated ' . implode(',', array_keys($this->batchSummary)));
