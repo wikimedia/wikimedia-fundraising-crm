@@ -6,6 +6,7 @@ use Civi\Api4\CustomGroup;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\CustomField;
+use Civi\Api4\OptionGroup;
 use Civi\Api4\OptionValue;
 use Civi\Core\Exception\DBQueryException;
 
@@ -96,6 +97,21 @@ class SyncCustomFields extends AbstractAction {
           }
         }
         if ($customGroupSpec['fields']) {
+          // If a field references an option_group_id.name, it may not exist yet if we haven't reconciled
+          // Add it as a placeholder that will get filled in with options when we do reconcile.
+          foreach ($customGroupSpec['fields'] as $field) {
+            $optionGroupName = $field['option_group_id.name'] ?? NULL;
+            if ($optionGroupName) {
+              $optionGroup = OptionGroup::get(FALSE)
+                ->addWhere('name', '=', $optionGroupName)
+                ->execute()->first();
+              if (!$optionGroup) {
+                OptionGroup::create(FALSE)
+                  ->setValues(['name' => $optionGroupName])
+                  ->execute();
+              }
+            }
+          }
           CustomField::save(FALSE)
             ->setRecords($customGroupSpec['fields'])
             ->setDefaults(['custom_group_id' => $customGroup['id']])
