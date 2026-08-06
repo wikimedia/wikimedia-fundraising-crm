@@ -64,7 +64,7 @@ abstract class Api4Query {
     $this->api = $api;
   }
 
-  abstract public function getField(string $expr):? array;
+  abstract public function getField(string $expr, bool $strict = FALSE):? array;
 
   /**
    * Builds main final sql statement after initialization.
@@ -626,6 +626,37 @@ abstract class Api4Query {
    */
   public function getQuery() {
     return $this->query;
+  }
+
+  /**
+   * Appends an expression to the SELECT clause if all fields are valid.
+   *
+   * @param string $item
+   * @param bool $checkAlias
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  protected function addExprToSelectClause(string $item, bool $checkAlias = FALSE): bool {
+    $expr = SqlExpression::convert($item, TRUE);
+    foreach ($expr->getFields() as $fieldName) {
+      $field = $this->getField($fieldName);
+      // Remove expressions with unknown fields without raising an error
+      if (!$field || $field['type'] === 'Filter') {
+        return FALSE;
+      }
+    }
+    $alias = $expr->getAlias();
+    if ($checkAlias && $alias != $expr->getExpr() && isset($this->apiFieldSpec[$alias])) {
+      throw new \CRM_Core_Exception('Cannot use existing field name as alias');
+    }
+    // Two expressions sharing an alias cannot both be returned, and ORDER BY/HAVING
+    // would resolve the alias to only one of them.
+    if (isset($this->selectAliases[$alias]) && $this->selectAliases[$alias] !== $expr->getExpr()) {
+      throw new \CRM_Core_Exception("Duplicate alias '$alias' in SELECT clause");
+    }
+    $this->selectAliases[$alias] = $expr->getExpr();
+    $this->query->select($expr->render($this, TRUE));
+    return TRUE;
   }
 
   /**

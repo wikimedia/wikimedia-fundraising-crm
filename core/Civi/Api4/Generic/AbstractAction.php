@@ -328,6 +328,10 @@ abstract class AbstractAction implements \ArrayAccess {
     return $param ? $this->_paramInfo[$param] : $this->_paramInfo;
   }
 
+  public function getUiParams(): array {
+    return [];
+  }
+
   /**
    * @return string
    */
@@ -468,7 +472,18 @@ abstract class AbstractAction implements \ArrayAccess {
   public function entityFields(?string $entityName = NULL, ?string $actionName = NULL) {
     $entityName = $entityName ?? $this->getEntityName();
     $actionName = $actionName ?? $this->getActionName();
-    if (empty(\Civi::$statics['Api4EntityFields'][$entityName][$actionName])) {
+
+    $dynamicValues = [];
+    foreach ($this->getParamInfo() as $paramName => $info) {
+      if (!empty($info['dynamicFieldControl']) && isset($this->$paramName)) {
+        $dynamicValues[$paramName] = $this->$paramName;
+      }
+    }
+    ksort($dynamicValues);
+    $dynamicKey = empty($dynamicValues) ? '' : serialize($dynamicValues);
+    $cacheKey = "{$entityName}::{$actionName}::{$dynamicKey}";
+
+    if (empty(\Civi::$statics['Api4EntityFields'][$cacheKey])) {
       $allowedTypes = ['Field', 'Filter', 'Extra'];
       $getFields = \Civi\API\Request::create($entityName, 'getFields', [
         'version' => 4,
@@ -476,12 +491,17 @@ abstract class AbstractAction implements \ArrayAccess {
         'action' => $actionName,
         'where' => [['type', 'IN', $allowedTypes]],
       ]);
+      foreach ($dynamicValues as $paramName => $val) {
+        if ($getFields->paramExists($paramName)) {
+          $getFields->{"set" . ucfirst($paramName)}($val);
+        }
+      }
       $result = new Result();
       // Pass TRUE for the private $isInternal param
       $getFields->_run($result, TRUE);
-      \Civi::$statics['Api4EntityFields'][$entityName][$actionName] = (array) $result->indexBy('name');
+      \Civi::$statics['Api4EntityFields'][$cacheKey] = (array) $result->indexBy('name');
     }
-    return \Civi::$statics['Api4EntityFields'][$entityName][$actionName];
+    return \Civi::$statics['Api4EntityFields'][$cacheKey];
   }
 
   /**

@@ -275,7 +275,9 @@ abstract class EntityMetadataBase implements EntityMetadataInterface {
                   continue;
                 }
               }
-              $field['input_attrs']['filter'][$filterKey] = $filterValue;
+              // A comma-separated value means "match any of these" - pass as an array so the
+              // query builder can use IN/CONTAINS instead of a literal (and always-failing) match.
+              $field['input_attrs']['filter'][$filterKey] = str_contains($filterValue, ',') ? explode(',', $filterValue) : $filterValue;
             }
           }
         }
@@ -285,15 +287,28 @@ abstract class EntityMetadataBase implements EntityMetadataInterface {
           $addressField = \Civi::entity('Address')->getField($addressFieldName);
           $field['pseudoconstant'] = $addressField['pseudoconstant'];
         }
+        if ($customField['data_type'] === 'Currency') {
+          $field['pseudoconstant'] = [
+            'option_group_name' => 'currencies_enabled',
+          ];
+        }
         // Set FK for EntityRef, ContactRef & File fields
         $fkEntity = \CRM_Core_BAO_CustomField::getFkEntity($customField);
         if ($fkEntity) {
           $onDelete = empty($customField['fk_entity_on_delete']) ? 'SET NULL' : strtoupper(str_replace('_', ' ', $customField['fk_entity_on_delete']));
           $field['entity_reference'] = [
             'entity' => $fkEntity,
-            'key' => 'id',
+            'key' => $fkEntity === 'Currency' ? 'name' : 'id',
             'on_delete' => $onDelete,
           ];
+        }
+        // A custom placeholder (from `attributes`) reaches the legacy QuickForm widget for free
+        // (parsed generically at the top of addQuickFormElement()) - do the same here for APIv4/Afform.
+        if ($customField['data_type'] === 'EntityReference' && !empty($customField['attributes'])) {
+          $placeholder = \CRM_Core_BAO_CustomField::attributesFromString($customField['attributes'])['placeholder'] ?? NULL;
+          if ($placeholder) {
+            $field['input_attrs']['placeholder'] = $placeholder;
+          }
         }
         if ($customField['option_group_id']) {
           // Options for Select, Radio, Checkbox
@@ -310,6 +325,10 @@ abstract class EntityMetadataBase implements EntityMetadataInterface {
             // Retain option list but don't prefetch since the widget is autocomplete
             $field['pseudoconstant']['prefetch'] = 'disabled';
           }
+        }
+        // Control field
+        if (isset($customField['control_field'])) {
+          $field['input_attrs']['control_field'] = $customField['control_field'];
         }
         $customFields[$fieldName] = $field;
       }

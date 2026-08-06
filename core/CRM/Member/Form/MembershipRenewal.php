@@ -139,7 +139,7 @@ class CRM_Member_Form_MembershipRenewal extends CRM_Member_Form {
    */
   public function preProcess() {
 
-    // This string makes up part of the class names, differentiating them (not sure why) from the membership fields.
+    // This string makes up part of the css class names, differentiating them (not sure why) from the membership fields.
     $this->assign('formClass', 'membershiprenew');
     parent::preProcess();
 
@@ -466,7 +466,6 @@ class CRM_Member_Form_MembershipRenewal extends CRM_Member_Form {
   public function postProcess(): void {
     // get the submitted form values.
     $this->_params = $this->controller->exportValues($this->_name);
-    $this->assignBillingName();
 
     try {
       $this->submit();
@@ -501,16 +500,12 @@ class CRM_Member_Form_MembershipRenewal extends CRM_Member_Form {
       $this->_params['financial_type_id'] = CRM_Core_DAO::getFieldValue('CRM_Member_DAO_MembershipType', $this->_memType, 'financial_type_id');
     }
     $contributionRecurID = NULL;
-    $this->assign('membershipID', $this->_id);
-    $this->assign('contactID', $this->_contactID);
-    $this->assign('module', 'Membership');
     $this->assign('receiptType', 'membership renewal');
     $this->_params['currencyID'] = CRM_Core_Config::singleton()->defaultCurrency;
     $this->_params['invoice_id'] = $this->getInvoiceID();
 
     if ($this->getSubmittedValue('send_receipt')) {
       $this->_params['receipt_date'] = $now;
-      $this->assign('receipt_date', CRM_Utils_Date::mysqlToIso($this->_params['receipt_date']));
     }
     else {
       $this->_params['receipt_date'] = NULL;
@@ -676,7 +671,6 @@ class CRM_Member_Form_MembershipRenewal extends CRM_Member_Form {
     }
     CRM_Core_BAO_UFGroup::getValues($this->_contactID, $customFields, $customValues, FALSE, $members);
 
-    $this->assign('formValues', $this->_params);
     $this->assign('customValues', $customValues);
 
     if ($this->_mode) {

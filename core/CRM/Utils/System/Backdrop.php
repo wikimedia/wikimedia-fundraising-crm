@@ -696,6 +696,16 @@ AND    u.status = 1
   /**
    * @inheritDoc
    */
+  public function cmsSitePath() {
+    if (defined('BACKDROP_ROOT')) {
+      $cmsSitePath = realpath(BACKDROP_ROOT . '/' . conf_path());
+      return $cmsSitePath;
+    }
+  }
+
+  /**
+   * @inheritDoc
+   */
   public function isUserLoggedIn() {
     $isloggedIn = FALSE;
     if (function_exists('user_is_logged_in')) {
@@ -781,24 +791,6 @@ AND    u.status = 1
     }
 
     return $url;
-  }
-
-  /**
-   * Find any users/roles/security-principals with the given permission
-   * and replace it with one or more permissions.
-   *
-   * @param string $oldPerm
-   * @param array $newPerms
-   *   Array, strings.
-   */
-  public function replacePermission($oldPerm, $newPerms) {
-    $roles = user_roles(FALSE, $oldPerm);
-    if (!empty($roles)) {
-      foreach (array_keys($roles) as $rid) {
-        user_role_revoke_permissions($rid, [$oldPerm]);
-        user_role_grant_permissions($rid, $newPerms);
-      }
-    }
   }
 
   /**

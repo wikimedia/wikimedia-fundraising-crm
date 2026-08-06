@@ -104,7 +104,7 @@ class Api4SelectQuery extends Api4Query {
    */
   public function run(): array {
     $results = $this->getResults();
-    FormattingUtil::formatOutputValues($results, $this->apiFieldSpec, 'get', $this->selectAliases);
+    FormattingUtil::formatOutputValues($results, $this->apiFieldSpec, 'get', $this->selectAliases, $this);
     return $results;
   }
 
@@ -185,24 +185,7 @@ class Api4SelectQuery extends Api4Query {
       $select = array_unique($select);
     }
     foreach ($select as $item) {
-      $expr = SqlExpression::convert($item, TRUE);
-      $valid = TRUE;
-      foreach ($expr->getFields() as $fieldName) {
-        $field = $this->getField($fieldName);
-        // Remove expressions with unknown fields without raising an error
-        if (!$field || $field['type'] === 'Filter') {
-          $select = array_diff($select, [$item]);
-          $valid = FALSE;
-        }
-      }
-      if ($valid) {
-        $alias = $expr->getAlias();
-        if ($alias != $expr->getExpr() && isset($this->apiFieldSpec[$alias])) {
-          throw new \CRM_Core_Exception('Cannot use existing field name as alias');
-        }
-        $this->selectAliases[$alias] = $expr->getExpr();
-        $this->query->select($expr->render($this, TRUE));
-      }
+      $this->addExprToSelectClause($item, TRUE);
     }
   }
 
@@ -822,8 +805,19 @@ class Api4SelectQuery extends Api4Query {
     $joinTreeNode =& $this->joinTree[$baseTableAlias];
 
     $useBridgeTable = FALSE;
+    $baseTable = $explicitJoin['table'] ?? $this->getFrom();
+    // The base table may not resolve to a string - e.g. getFrom() returns
+    // NULL when the entity's table mapping is not available yet.
+    // Joiner::getPath() is typed `string $baseTable`, so passing NULL would
+    // throw an uncaught \TypeError rather than the \CRM_Core_Exception handled
+    // below. Since the select clause silently ignores unknown fields (see the
+    // fallback in the catch block), this function should not throw - bail out
+    // gracefully instead of fataling.
+    if (!is_string($baseTable)) {
+      return;
+    }
     try {
-      $joinPath = $joiner->getPath($explicitJoin['table'] ?? $this->getFrom(), $pathArray);
+      $joinPath = $joiner->getPath($baseTable, $pathArray);
     }
     catch (\CRM_Core_Exception $e) {
       if (!empty($explicitJoin['bridge'])) {

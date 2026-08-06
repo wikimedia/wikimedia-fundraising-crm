@@ -855,6 +855,10 @@
 - github      : jeromelebleu
   name        : Jérôme Lebleu
 
+- github      : jfilter
+  name        : Johannes Filter
+  organization: civico GmbH
+
 - github      : JGaunt
   name        : Jade Gaunt
   organization: GMCVO Databases
@@ -890,6 +894,9 @@
 - github      : johntwyman
   name        : John Twyman
   organization: Australian Greens
+
+- github      : jonathandhn
+  name        : Jonathan Dahan
 
 - github      : jorich-2000
   name        : Jonathan Richardson
@@ -1507,6 +1514,9 @@
 - github      : rgilman
   name        : Robert Gilman
   organization: Context Institute
+
+- github      : RisingOrange
+  name        : Jakub Fidler
 
 - github      : robbrandt
   name        : Rob Brandt
