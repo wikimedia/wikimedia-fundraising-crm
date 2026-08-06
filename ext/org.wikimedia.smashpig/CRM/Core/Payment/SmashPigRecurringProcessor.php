@@ -1,29 +1,19 @@
 <?php
 
-use Civi\Api4\Activity;
 use Civi\Api4\ContributionRecur;
 use Civi\Helper\SmashPigPaymentError;
+use Civi\SmashPig\RecurringFailureHandler;
 use SmashPig\Core\DataStores\QueueWrapper;
 use SmashPig\Core\SequenceGenerators;
 use SmashPig\Core\UtcDate;
 use SmashPig\PaymentData\ErrorCode;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
-use Civi\Helper\FailureEmail;
-use SmashPig\PaymentProviders\Responses\CreatePaymentWithProcessorRetryResponse;
 use SmashPig\PaymentProviders\Responses\PaymentProviderResponse;
 
 class CRM_Core_Payment_SmashPigRecurringProcessor {
 
   protected $useQueue;
-
-  protected $retryCadence;
-
-  /**
-   * Calculated from $retryCadence
-   * @var int|null
-   */
-  protected $maxFailures;
 
   protected $catchUpDays;
 
@@ -40,6 +30,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   protected int $minRecurID;
 
   protected int $maxRecurID;
+
+  protected RecurringFailureHandler $failureHandler;
 
   const MAX_MERCHANT_REFERENCE_RETRIES = 3;
 
@@ -70,8 +62,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
   ) {
     \CRM_SmashPig_ContextWrapper::createContext('recurring-processor');
     $this->useQueue = $useQueue;
-    $this->retryCadence = array_map('intval', $retryCadence);
-    $this->maxFailures = count($retryCadence) + 1;
     $this->catchUpDays = $catchUpDays;
     $this->batchSize = $batchSize;
     $this->descriptor = $descriptor;
@@ -81,6 +71,9 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     $this->minRecurID = $minRecurID;
     $this->maxRecurID = $maxRecurID;
     $this->minDaysBetweenCharges = $minDaysBetweenCharges;
+    $this->failureHandler = new RecurringFailureHandler(
+      $retryCadence
+    );
   }
 
   /**
@@ -170,7 +163,12 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         $result[$recurringPayment['id']]['invoice_id'] = $payment['invoice_id'];
         $result[$recurringPayment['id']]['processor_id'] = $payment['processor_id'];
       } catch (CRM_Core_Exception $e) {
-        $this->recordFailedPayment($recurringPayment, $e);
+        $errorData = $e->getErrorData();
+        $errorResponse = $errorData['smashpig_processor_response'] ?? NULL;
+        // Get the text of the error
+        $errorMessage = SmashPigPaymentError::getErrorText($errorResponse ?? $e->getMessage());
+        $canRetry = ($e->getErrorCode() !== ErrorCode::DECLINED_DO_NOT_RETRY);
+        $this->failureHandler->recordFailedPayment($recurringPayment, $errorMessage, $canRetry, $errorResponse);
         $this->addErrorStats($errorCount, $e->getCode());
         // display information in the result array
         $result[$recurringPayment['id']]['error'] = $e->getMessage();
@@ -440,138 +438,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
     }
   }
 
-  protected function createActivity($recurringPayment, $errorResponse, $errorMessage, $type) {
-    if ($type == 'failure') {
-      $name = 'Recurring Failure';
-      $subject = 'Payment of ' . $recurringPayment['amount']. ' ' . $recurringPayment['currency'] . ' failed with ' . $errorMessage;
-      $details = $subject;
-    } else if ($type == 'processorRetry') {
-      $name = 'Recurring Processor Retry - Start';
-      $subject = 'Processor retry started with rescue reference ' . $errorResponse->getProcessorRetryRescueReference();
-      $details = 'Payment of ' . $recurringPayment['amount'] . ' ' .  $recurringPayment['currency'] . ' failed with ' . $errorMessage;
-    } else {
-      throw new UnexpectedValueException('Bad activity type: ' . $type);
-    }
-
-    $createCall = Activity::create(FALSE)
-      ->addValue('activity_type_id:name', $name)
-      ->addValue('source_record_id', $recurringPayment['id'])
-      ->addValue('status_id:name', 'Completed')
-      ->addValue('subject', $subject)
-      ->addValue('details', $details)
-      ->addValue('source_contact_id', $recurringPayment['contact_id'])
-      ->addValue('target_contact_id', $recurringPayment['contact_id']);
-    $createCall->execute();
-  }
-
-  /**
-   * @param array $recurringPayment
-   * @param \CRM_Core_Exception $exception
-   *
-   * @throws \Exception
-   */
-  protected function recordFailedPayment($recurringPayment, CRM_Core_Exception $exception) {
-    $cancelRecurringDonation = FALSE;
-    $errorData = $exception->getErrorData();
-    $errorResponse = $errorData['smashpig_processor_response'] ?? $exception->getMessage();
-
-    // Get the text of the error
-    $errorMessage = SmashPigPaymentError::getErrorText($errorResponse);
-
-    $this->createActivity($recurringPayment, $errorResponse, $errorMessage, 'failure');
-
-    $params = [];
-    if (!empty($errorResponse) &&
-                $errorResponse instanceof CreatePaymentWithProcessorRetryResponse
-    ) {
-      // if failed, also update the rescue_reference
-      if (!empty($errorResponse->getProcessorRetryRescueReference())) {
-        $params['contribution_recur_smashpig.rescue_reference'] = $errorResponse->getProcessorRetryRescueReference();
-      }
-      if ($errorResponse->getIsProcessorRetryScheduled()) {
-        // Set status to Pending but advance the next charge date a month so we don't try to charge again
-        $params['contribution_status_id:name'] = 'Pending';
-        $params['next_sched_contribution_date'] = CRM_Core_Payment_Scheduler::getNextContributionDate($recurringPayment);
-        $this->createActivity($recurringPayment, $errorResponse, $errorMessage, 'processorRetry');
-      } else {
-        // This happens when a payment cannot be rescued.
-        // For example, because of account closure or fraud.
-        $cancelRecurringDonation = TRUE;
-        // retryWindowHasElapsed: The rescue window expired.
-        // maxRetryAttemptsReached: The maximum number of retry attempts was made.
-        // fraudDecline: The retry was rejected due to fraud.
-        // internalError: An internal error occurred while retrying the payment.
-        $params['cancel_reason'] = 'Payment cannot be rescued: ' . $errorResponse->getProcessorRetryRefusalReason();
-        Civi::log('wmf')->info($params['cancel_reason'] . ' with contribution_recur_id:' . $recurringPayment['id']. ', and order reference is ' .  $recurringPayment['invoice_id']);
-      }
-    }
-    else {
-      // only if not handle by auto rescue, compare failure with maxFailure or update next retry day
-      $previousFailureCount = $recurringPayment['failure_count'];
-      $newFailureCount = $previousFailureCount + 1;
-      $params['failure_count'] = $newFailureCount;
-      if ($exception->getErrorCode() === ErrorCode::DECLINED_DO_NOT_RETRY) {
-        $cancelRecurringDonation = TRUE;
-        $params['cancel_reason'] = '(auto) un-retryable card decline reason code';
-      }
-      elseif ($newFailureCount >= $this->maxFailures) {
-        $cancelRecurringDonation = TRUE;
-        $params['cancel_reason'] = '(auto) maximum failures reached';
-      }
-      else {
-        // Calculate the number of days between retry day N and N-1
-        if ($previousFailureCount === 0) {
-          $delayDays = $this->retryCadence[0];
-        } else {
-          $delayDays = $this->retryCadence[$previousFailureCount] - $this->retryCadence[$previousFailureCount - 1];
-        }
-
-        $delayInterval = new DateInterval('P' . $delayDays . 'D');
-
-        $params['contribution_status_id:name'] = 'Failing';
-        $params['next_sched_contribution_date'] = UtcDate::getUtcDatabaseString(
-          (new DateTimeImmutable())->add($delayInterval)->getTimestamp()
-        );
-      }
-    }
-    if ($cancelRecurringDonation) {
-      $params['contribution_status_id:name'] = 'Failed';
-      $params['cancel_date'] = UtcDate::getUtcDatabaseString();
-    }
-    ContributionRecur::update(FALSE)
-      ->addWhere('id', '=', $recurringPayment['id'])
-      ->setValues($params)
-      ->execute();
-
-    if ($cancelRecurringDonation) {
-      $hasOtherActiveRecurring = $this->hasOtherActiveRecurringContribution(
-        $recurringPayment['contact_id'],
-        $recurringPayment['id']
-      );
-
-      if (!$hasOtherActiveRecurring) {
-        // we only send a recurring failure email if the contact has no
-        // other active recurring donations. see T260910
-        $this->sendFailureEmail($recurringPayment['id'], $recurringPayment['contact_id']);
-      }
-    }
-  }
-
-  /**
-   * Send an email notifying donor of cancellation.
-   *
-   * @param int $contributionRecurID
-   * @param int $contactID
-   *
-   * @throws \CRM_Core_Exception
-   * @throws \Civi\API\Exception\UnauthorizedException
-   */
-  public function sendFailureEmail(int $contributionRecurID, int $contactID) {
-    if (Civi::settings()->get('smashpig_recurring_send_failure_email')) {
-      FailureEmail::sendViaQueue($contactID, $contributionRecurID);
-    }
-  }
-
   /**
    * Check if this recurring donation has been autorescued
    *
@@ -778,27 +644,6 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
         throw $exception;
       }
     }
-  }
-
-  /**
-   * Check if the donor has another active recurring contribution set up.
-   *
-   * @param int $contactID
-   * @param int $recurringID ID of recurring contribution record
-   *
-   * @return bool
-   * @throws \CRM_Core_Exception
-   */
-  protected function hasOtherActiveRecurringContribution(int $contactID, int $recurringID) : bool {
-    $result = civicrm_api3('ContributionRecur', 'get', [
-      'id' => ['!=' => $recurringID],
-      'contact_id' => $contactID,
-      'contribution_status_id' => ['IN' => ['Pending', 'Overdue', 'In Progress', 'Failing']],
-      'payment_token_id' => ['IS NOT NULL' => TRUE],
-    ]);
-
-    $hasActiveRecurring = !empty($result['count']);
-    return $hasActiveRecurring;
   }
 
   /**

@@ -5096,6 +5096,40 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Update date_of_largest_donation for donors whose largest is endowment.
+   *
+   * This needs to be done because this formerly depended on largest_donation,
+   * which was foundation only, but now will depend on all_funds_largest_donation.
+   *
+   * Bug: T418885
+   *
+   * @return bool
+   */
+  public function upgrade_5070(): bool {
+    $contactIds = Contact::get(FALSE)
+      ->addSelect('id')
+      ->addJoin('Contribution AS endowment', 'INNER',
+        ['id', '=', 'endowment.contact_id'],
+        ['endowment.financial_type_id:name', '=', '"Endowment Gift"']
+      )
+      ->addJoin('Contribution AS non_endowment', 'EXCLUDE',
+        ['id', '=', 'non_endowment.contact_id'],
+        ['non_endowment.financial_type_id:name', '!=', '"Endowment Gift"'],
+        ['non_endowment.total_amount', '>', 'endowment.total_amount']
+      )
+      ->addGroupBy('id')
+      ->execute()
+      ->column('id');
+    foreach (array_chunk($contactIds, 10000) as $chunk) {
+      WMFDonor::update(FALSE)
+        ->addValue('date_of_largest_donation', TRUE)
+        ->addWhere('id', 'IN', $chunk)
+        ->execute();
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
