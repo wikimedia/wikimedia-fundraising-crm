@@ -1,10 +1,10 @@
 <?php
 namespace Civi\Api4\Action\Omnicontact;
 
+use Civi\Api4\Action\HasClientTrait;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\OmnimailJobProgress;
-use GuzzleHttp\Client;
 use League\Csv\Reader;
 use Omnimail\Silverpop\Responses\DownloadResponse;
 
@@ -21,8 +21,6 @@ use Omnimail\Silverpop\Responses\DownloadResponse;
  * @method $this setDatabaseID(int $databaseID)
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
- * @method $this setClient(Client $client) Generally Silverpop....
- * @method null|Client getClient()
  * @method float getTimeout()
  * @method $this setTimeout(float $timeout)
  * @method $this setUploadAction(string $action)
@@ -31,15 +29,12 @@ use Omnimail\Silverpop\Responses\DownloadResponse;
  */
 class Upload extends AbstractAction {
 
+  use HasClientTrait;
+
   /**
    * @var string
    */
   protected $mailProvider = 'Silverpop';
-
-  /**
-   * @var object
-   */
-  protected $client;
 
   /**
    * Path to the csv file.

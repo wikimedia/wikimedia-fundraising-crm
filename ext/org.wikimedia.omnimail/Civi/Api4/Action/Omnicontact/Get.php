@@ -1,10 +1,10 @@
 <?php
 namespace Civi\Api4\Action\Omnicontact;
 
+use Civi\Api4\Action\HasClientTrait;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use \CRM_Omnimail_ExtensionUtil as E;
-use GuzzleHttp\Client;
 
 /**
  *  Class Check.
@@ -22,17 +22,12 @@ use GuzzleHttp\Client;
  * @method array getGroupIdentifier()
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
- * @method $this setClient(Client$client) Generally Silverpop....
- * @method null|Client getClient()
  *
  * @package Civi\Api4
  */
 class Get extends AbstractAction {
 
-  /**
-   * @var object
-   */
-  protected $client;
+  use HasClientTrait;
 
   /**
    * @var array

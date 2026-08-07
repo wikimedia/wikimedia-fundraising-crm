@@ -1,10 +1,10 @@
 <?php
 namespace Civi\Api4\Action\OmnimailJobProgress;
 
+use Civi\Api4\Action\HasClientTrait;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\OmnimailJobProgress;
-use GuzzleHttp\Client;
 
 /**
  * Class Check.
@@ -15,12 +15,12 @@ use GuzzleHttp\Client;
  * @method string getJobName()
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
- * @method $this setClient(Client $client) Generally Silverpop....
- * @method null|Client getClient()
  *
  * @package Civi\Api4
  */
 class CheckStatus extends AbstractAction {
+
+  use HasClientTrait;
 
   /**
    * @var string
@@ -28,11 +28,6 @@ class CheckStatus extends AbstractAction {
    * @required
    */
   protected string $jobName = '';
-
-  /**
-   * @var object
-   */
-  protected $client;
 
   /**
    * @var string

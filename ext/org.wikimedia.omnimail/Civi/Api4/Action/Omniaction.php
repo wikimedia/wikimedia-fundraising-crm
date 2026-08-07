@@ -2,7 +2,6 @@
 namespace Civi\Api4\Action;
 
 use Civi\Api4\Generic\AbstractAction;
-use GuzzleHttp\Client;
 
 /**
  *  Class Check.
@@ -26,17 +25,12 @@ use GuzzleHttp\Client;
  * @method int getRecipientID()
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
- * @method $this setClient(Client$client) Generally Silverpop....
- * @method null|Client getClient()
  *
  * @package Civi\Api4
  */
 abstract class Omniaction extends AbstractAction {
 
-  /**
-   * @var object
-   */
-  protected $client;
+  use HasClientTrait;
 
   /**
    * @var int

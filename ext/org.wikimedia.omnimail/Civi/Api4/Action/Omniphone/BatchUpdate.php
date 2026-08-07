@@ -1,6 +1,7 @@
 <?php
 namespace Civi\Api4\Action\Omniphone;
 
+use Civi\Api4\Action\HasClientTrait;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Omnicontact;
@@ -8,7 +9,6 @@ use Civi\Api4\Omniphone;
 use Civi\Api4\Phone;
 use Civi\Api4\PhoneConsent;
 use \CRM_Omnimail_ExtensionUtil as E;
-use GuzzleHttp\Client;
 
 /**
  * Find phone records where we need data from Acoustic and update the data.
@@ -26,17 +26,12 @@ use GuzzleHttp\Client;
  * @method int getLimit()
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
- * @method $this setClient(Client$client) Generally Silverpop....
- * @method null|Client getClient()
  *
  * @package Civi\Api4
  */
 class BatchUpdate extends AbstractAction {
 
-  /**
-   * @var object
-   */
-  protected $client;
+  use HasClientTrait;
 
   /**
    * @var int
