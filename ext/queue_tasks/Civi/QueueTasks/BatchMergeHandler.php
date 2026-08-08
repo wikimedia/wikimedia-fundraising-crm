@@ -51,7 +51,7 @@ class BatchMergeHandler extends AutoService implements EventSubscriberInterface 
       // We need to assume there are more based on just date range
       $criteria['where'][] = ['id', 'BETWEEN', [$minimumContactID, $result['max_contact_id']]];
     }
-    \Civi::log('batch_merge')->info('deduping {limit} contacts from date {start_date} to date {to date}', [
+    \Civi::log('batch_merge')->info('deduping {limit} contacts from date {start_date} to date {to_date}', [
       'limit' => $limit,
       'start_date' => $startDateTime,
       'to_date' => $endDateTime,
