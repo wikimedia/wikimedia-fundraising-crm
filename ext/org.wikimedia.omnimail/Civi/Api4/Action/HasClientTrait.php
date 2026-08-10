@@ -14,7 +14,7 @@ trait HasClientTrait {
 
   protected ?Client $_client = NULL;
 
-  public function setClient(Client $client): self {
+  public function setClient(?Client $client): self {
     $this->_client = $client;
     return $this;
   }
