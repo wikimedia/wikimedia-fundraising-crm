@@ -1,13 +1,13 @@
 <?php
 namespace Civi\Api4\Action\Omnigroup;
 
+use Civi\Api4\Action\HasClientTrait;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Contact;
 use Civi\Api4\Omnicontact;
 use Civi\Api4\Omnigroup;
 use Civi\Api4\Queue;
-use GuzzleHttp\Client;
 
 /**
  * Group push.
@@ -23,12 +23,12 @@ use GuzzleHttp\Client;
  * @method bool getIsPublic()
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
- * @method $this setClient(Client$client) Generally Silverpop....
- * @method null|Client getClient()
  *
  * @package Civi\Api4
  */
 class Push extends AbstractAction {
+
+  use HasClientTrait;
 
   /**
    * ID of the group to push up.
@@ -36,11 +36,6 @@ class Push extends AbstractAction {
    * @var int
    */
   protected $groupID;
-
-  /**
-   * @var object
-   */
-  protected $client;
 
   /**
    * @required

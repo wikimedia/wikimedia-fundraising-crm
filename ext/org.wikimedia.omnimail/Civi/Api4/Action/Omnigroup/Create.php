@@ -1,10 +1,10 @@
 <?php
 namespace Civi\Api4\Action\Omnigroup;
 
+use Civi\Api4\Action\HasClientTrait;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Group;
-use GuzzleHttp\Client;
 
 /**
  *  Class Check.
@@ -18,17 +18,12 @@ use GuzzleHttp\Client;
  * @method bool getIsPublic()
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
- * @method $this setClient(Client$client) Generally Silverpop....
- * @method null|Client getClient()
  *
  * @package Civi\Api4
  */
 class Create extends AbstractAction {
 
-  /**
-   * @var object
-   */
-  protected $client;
+  use HasClientTrait;
 
   /**
    * @required

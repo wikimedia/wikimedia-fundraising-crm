@@ -1,10 +1,10 @@
 <?php
 namespace Civi\Api4\Action\Omnicontact;
 
+use Civi\Api4\Action\HasClientTrait;
 use Civi\Api4\Contact;
 use Civi\Api4\Generic\AbstractCreateAction;
 use Civi\Api4\Generic\Result;
-use GuzzleHttp\Client;
 use CRM_Omnimail_ExtensionUtil as E;
 
 /**
@@ -23,17 +23,12 @@ use CRM_Omnimail_ExtensionUtil as E;
  * @method $this setContactID(?int $contactID)
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
- * @method $this setClient(Client$client) Generally Silverpop....
- * @method null|Client getClient()
  *
  * @package Civi\Api4
  */
 class Create extends AbstractCreateAction {
 
-  /**
-   * @var object
-   */
-  protected $client;
+  use HasClientTrait;
 
   /**
    * @var array

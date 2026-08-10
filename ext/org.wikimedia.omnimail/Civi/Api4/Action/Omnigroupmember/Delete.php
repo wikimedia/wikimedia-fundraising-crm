@@ -1,11 +1,11 @@
 <?php
 namespace Civi\Api4\Action\Omnigroupmember;
 
+use Civi\Api4\Action\HasClientTrait;
 use Civi\Api4\Email;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Group;
-use GuzzleHttp\Client;
 use League\Csv\Exception;
 use Omnimail\Omnimail;
 
@@ -21,12 +21,12 @@ use Omnimail\Omnimail;
  * @method $this setGroupIdentifier(int $number)
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
- * @method $this setClient(Client $client) Optional Guzzle client.
- * @method null|Client getClient()
  *
  * @package Civi\Api4
  */
 class Delete extends AbstractAction {
+
+  use HasClientTrait;
 
   /**
    * CiviCRM group ID to add the imported contact to.
@@ -39,11 +39,6 @@ class Delete extends AbstractAction {
    * @var string
    */
   protected $mailProvider = 'Silverpop';
-
-  /**
-   * @var object|null
-   */
-  protected $client = NULL;
 
   /**
    * Email address.

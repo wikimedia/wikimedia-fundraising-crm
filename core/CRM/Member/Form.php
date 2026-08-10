@@ -216,7 +216,7 @@ class CRM_Member_Form extends CRM_Contribute_Form_AbstractEditPayment {
     parent::preProcess();
     $params = [];
     $params['context'] = CRM_Utils_Request::retrieve('context', 'Alphanumeric', $this, FALSE, 'membership');
-    $params['id'] = CRM_Utils_Request::retrieve('id', 'Positive', $this);
+    $params['id'] = $this->getMembershipID();
     $params['mode'] = CRM_Utils_Request::retrieve('mode', 'Alphanumeric', $this);
 
     $this->setContextVariables($params);
@@ -244,8 +244,8 @@ class CRM_Member_Form extends CRM_Contribute_Form_AbstractEditPayment {
    */
   public function setDefaultValues() {
     $defaults = [];
-    if (isset($this->_id)) {
-      $params = ['id' => $this->_id];
+    if ($this->getMembershipID()) {
+      $params = ['id' => $this->getMembershipID()];
       CRM_Member_BAO_Membership::retrieve($params, $defaults);
       if (isset($defaults['minimum_fee'])) {
         $defaults['minimum_fee'] = CRM_Utils_Money::formatLocaleNumericRoundedForDefaultCurrency($defaults['minimum_fee']);
@@ -274,20 +274,18 @@ class CRM_Member_Form extends CRM_Contribute_Form_AbstractEditPayment {
         $defaults['member_of_contact_id'], 'display_name'
       );
     }
-    if (!empty($defaults['membership_type_id'])) {
-      $this->_memType = $defaults['membership_type_id'];
-    }
-    if (is_numeric($this->_memType)) {
+    $membershipTypeID = $this->getMembershipValue('membership_type_id');
+    if ($membershipTypeID) {
       $defaults['membership_type_id'] = [];
       $defaults['membership_type_id'][0] = CRM_Core_DAO::getFieldValue('CRM_Member_DAO_MembershipType',
-        $this->_memType,
+        $membershipTypeID,
         'member_of_contact_id',
         'id'
       );
-      $defaults['membership_type_id'][1] = $this->_memType;
+      $defaults['membership_type_id'][1] = $membershipTypeID;
     }
     else {
-      $defaults['membership_type_id'] = $this->_memType;
+      $defaults['membership_type_id'] = $membershipTypeID;
     }
     return $defaults;
   }
@@ -445,7 +443,10 @@ class CRM_Member_Form extends CRM_Contribute_Form_AbstractEditPayment {
    * is only given where there is specific test cover.
    */
   public function getMembershipID(): ?int {
-    return $this->_id;
+    if (!isset($this->_id)) {
+      $this->_id = CRM_Utils_Request::retrieve('id', 'Positive', $this);
+    }
+    return $this->_id ?: NULL;
   }
 
   /**

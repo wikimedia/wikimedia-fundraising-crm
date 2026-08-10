@@ -254,11 +254,24 @@ trait DAOActionTrait {
       }
       [$fieldName, $fkField] = explode('.', $key);
       $field = $this->entityFields()[$fieldName] ?? NULL;
-      if (!$field || $field['type'] !== 'Field' || empty($field['fk_entity'])) {
+      if (!$field || $field['type'] !== 'Field') {
         continue;
       }
-      $fkEntityName = $field['fk_entity'];
-      $fkColumnName = $field['fk_column'];
+      $fkEntityName = $field['fk_entity'] ?? NULL;
+      $fkColumnName = $field['fk_column'] ?? 'id';
+      // Dynamic FK (e.g. `entity_id` paired with `entity_table`): the target entity
+      // isn't fixed, so resolve it from the sibling discriminator column's value,
+      // which must already be present (as a plain value) in this same record.
+      if (!$fkEntityName && !empty($field['dfk_entities'])) {
+        $controlField = $field['input_attrs']['control_field'] ?? NULL;
+        if (empty($record[$controlField])) {
+          continue;
+        }
+        $fkEntityName = CoreUtil::getApiNameFromTableName($record[$controlField]);
+      }
+      if (!$fkEntityName) {
+        continue;
+      }
       $fkEntity = \Civi::entity($fkEntityName);
       // Constrain search to the domain of the current entity
       $domainConstraint = NULL;
@@ -270,12 +283,12 @@ trait DAOActionTrait {
           $domainConstraint = \CRM_Core_DAO::getFieldValue($this->getBaoName(), $record['id'], 'domain_id');
         }
       }
-      $conditions = [[$fkField, '=', $value]];
-      if ($domainConstraint) {
-        $conditions[] = ['domain_id', '=', $domainConstraint];
-      }
       $resolvedId = NULL;
       if (CoreUtil::entityExists($fkEntityName)) {
+        $conditions = [[$fkField, '=', $value]];
+        if ($domainConstraint) {
+          $conditions[] = ['domain_id', '=', $domainConstraint];
+        }
         $fkResult = civicrm_api4($fkEntityName, 'get', [
           'select' => [$fkColumnName],
           'where' => $conditions,

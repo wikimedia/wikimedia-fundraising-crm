@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e6b32b2ba4ceeb4682ce8dcda1650b31",
+    "content-hash": "d07c4d382daca7baff6dc7125fba3591",
     "packages": [
         {
             "name": "adrienrn/php-mimetyper",
@@ -6043,6 +6043,82 @@
             "time": "2021-01-17T23:16:05+00:00"
         },
         {
+            "name": "smarty/smarty",
+            "version": "v5.8.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/smarty-php/smarty.git",
+                "reference": "94a27cbbc7820198d7adc17a2be8d457fb267753"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/smarty-php/smarty/zipball/94a27cbbc7820198d7adc17a2be8d457fb267753",
+                "reference": "94a27cbbc7820198d7adc17a2be8d457fb267753",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.2 || ^8.0",
+                "symfony/polyfill-mbstring": "^1.27"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^8.5 || ^7.5",
+                "smarty/smarty-lexer": "^4.0.2"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "5.0.x-dev"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/functions.php"
+                ],
+                "psr-4": {
+                    "Smarty\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-3.0"
+            ],
+            "authors": [
+                {
+                    "name": "Monte Ohrt",
+                    "email": "monte@ohrt.com"
+                },
+                {
+                    "name": "Uwe Tews",
+                    "email": "uwe.tews@googlemail.com"
+                },
+                {
+                    "name": "Rodney Rehm",
+                    "email": "rodney.rehm@medialize.de"
+                },
+                {
+                    "name": "Simon Wisselink",
+                    "homepage": "https://www.iwink.nl/"
+                }
+            ],
+            "description": "Smarty - the compiling PHP template engine",
+            "homepage": "https://smarty-php.github.io/smarty/",
+            "keywords": [
+                "templating"
+            ],
+            "support": {
+                "forum": "https://github.com/smarty-php/smarty/discussions",
+                "issues": "https://github.com/smarty-php/smarty/issues",
+                "source": "https://github.com/smarty-php/smarty/tree/v5.8.4"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/wisskid",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-06-29T10:46:32+00:00"
+        },
+        {
             "name": "soundasleep/html2text",
             "version": "2.1.0",
             "source": {
@@ -8781,11 +8857,11 @@
         },
         {
             "name": "wikimedia/omnimail-silverpop",
-            "version": "1.31",
+            "version": "1.35",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "e928c3f9450ccb4d570a0a6b52c4bda0a7fe22e6"
+                "reference": "f85589fbe2733fe0acfe2eca3a137bfbcfd94f7e"
             },
             "require": {
                 "league/csv": "^9",
@@ -8825,20 +8901,20 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2026-01-29T20:37:03+00:00"
+            "time": "2026-08-07T04:43:56+00:00"
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v1.2.5.7",
+            "version": "v1.2.5.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "2b6d7d97a574ce3e1e83ce110f0fbbbedbdf6056"
+                "reference": "24d3f1e48bc06147f74883cc31c6805c2ccf70fd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/2b6d7d97a574ce3e1e83ce110f0fbbbedbdf6056",
-                "reference": "2b6d7d97a574ce3e1e83ce110f0fbbbedbdf6056",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/24d3f1e48bc06147f74883cc31c6805c2ccf70fd",
+                "reference": "24d3f1e48bc06147f74883cc31c6805c2ccf70fd",
                 "shasum": ""
             },
             "require": {
@@ -8927,9 +9003,9 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.2.5.7"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.2.5.9"
             },
-            "time": "2026-07-24T02:07:16+00:00"
+            "time": "2026-08-07T05:43:26+00:00"
         },
         {
             "name": "willdurand/geocoder",

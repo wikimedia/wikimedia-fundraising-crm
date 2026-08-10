@@ -46,8 +46,24 @@ class CRM_ACL_BAO_Cache extends CRM_ACL_DAO_ACLCache {
       return self::$_cache[$id];
     }
 
+    // Use a lock to prevent users from reading this data while the table is being filled
+    // See https://lab.civicrm.org/dev/core/-/work_items/2641
+    $lock = Civi::lockManager()->acquire("data.core.acl.$id");
+    if (!$lock->isAcquired()) {
+      \Civi::log()->debug("Failed to acquire lock data.core.acl.$id. Lock will be ignored. ACL may have inconsistencies.");
+      // If you're hitting this frequently, then the question is... Why? Maybe you just need to extend the
+      // timeout? Or maybe there's a structural reason?
+    }
+
+    self::$_cache[$id] = self::retrieve($id);
+    if (self::$_cache[$id]) {
+      $lock->release();
+      return self::$_cache[$id];
+    }
+
     self::$_cache[$id] = CRM_ACL_BAO_ACL::getAllByContact((int) $id);
     self::store($id, self::$_cache[$id]);
+    $lock->release();
     return self::$_cache[$id];
   }
 
@@ -175,15 +191,19 @@ WHERE  modified_date IS NULL
    */
   protected static function flushACLContactCache(): void {
     unset(Civi::$statics['CRM_ACL_API']);
-    // CRM_Core_DAO::singleValueQuery("TRUNCATE TABLE civicrm_acl_contact_cache"); // No, force-commits transaction
-    // CRM_Core_DAO::singleValueQuery("DELETE FROM civicrm_acl_contact_cache"); // Transaction-safe
+    // Use DELETE rather than TRUNCATE: TRUNCATE is DDL, so it force-commits the
+    // current transaction and bumps the table's metadata version. Concurrent
+    // connections with an open SELECT on civicrm_acl_contact_cache (e.g. a
+    // reminder cron or another web request) then hit MySQL error 1213
+    // ("Deadlock found... try restarting transaction") or "table definition
+    // has changed". DELETE is plain DML and transaction-safe.
     if (CRM_Core_Transaction::isActive()) {
       CRM_Core_Transaction::addCallback(CRM_Core_Transaction::PHASE_POST_COMMIT, function () {
-        CRM_Core_DAO::singleValueQuery('TRUNCATE TABLE civicrm_acl_contact_cache');
+        CRM_Core_DAO::singleValueQuery('DELETE FROM civicrm_acl_contact_cache');
       });
     }
     else {
-      CRM_Core_DAO::singleValueQuery("TRUNCATE TABLE civicrm_acl_contact_cache");
+      CRM_Core_DAO::singleValueQuery("DELETE FROM civicrm_acl_contact_cache");
     }
   }
 

@@ -2,12 +2,12 @@
 
 namespace Civi\Api4\Action\Omnicontact;
 
+use Civi\Api4\Action\HasClientTrait;
 use Civi\Api4\Email;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Omnicontact;
 use Civi\Api4\WMFContact;
-use GuzzleHttp\Client;
 
 /**
  * Audit whether snoozed contacts are correctly snoozed remotely.
@@ -17,15 +17,10 @@ use GuzzleHttp\Client;
  * @method $this setDatabaseID(int $databaseID)
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
- * @method $this setClient(Client $client) Generally Silverpop....
- * @method null|Client getClient()
  */
 class VerifySnooze extends AbstractAction {
 
-  /**
-   * @var object
-   */
-  protected $client;
+  use HasClientTrait;
 
   /**
    * @var int

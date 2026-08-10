@@ -1,6 +1,7 @@
 <?php
 namespace Civi\Api4\Action\Omniphone;
 
+use Civi\Api4\Action\HasClientTrait;
 use Civi\Api4\Activity;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
@@ -23,17 +24,12 @@ use Civi\Api4\PhoneConsent;
  * @method int getLimit()
  * @method $this setMailProvider(string $mailProvider) Generally Silverpop....
  * @method string getMailProvider()
- * @method $this setClient(\GuzzleHttp\Client$client) Generally Silverpop....
- * @method null|\GuzzleHttp\Client getClient()
  *
  * @package Civi\Api4
  */
 class Update extends AbstractAction {
 
-  /**
-   * @var object
-   */
-  protected $client;
+  use HasClientTrait;
 
   /**
    * @var int

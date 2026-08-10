@@ -1,6 +1,7 @@
 <?php
 namespace Civi\Api4\Action\PhoneConsent;
 
+use Civi\Api4\Action\HasClientTrait;
 use Civi\Api4\Action\OmnimailJobProgress\CheckStatus;
 use Civi\Api4\Generic\AbstractUpdateAction;
 use Civi\Api4\Omnicontact;
@@ -23,17 +24,12 @@ use League\Csv\Writer;
  * @method string getMailProvider()
  * @method $this setIsTest(bool $isTest);
  * @method bool getIsTest();
- * @method $this setClient(\GuzzleHttp\Client$client) Generally Silverpop....
- * @method null|\GuzzleHttp\Client getClient()
  *
  * @package Civi\Api4
  */
 class RemoteUpdate extends AbstractUpdateAction {
 
-  /**
-   * @var object
-   */
-  protected $client;
+  use HasClientTrait;
 
   /**
    * For staging use id from docs - buildkit should configure this.

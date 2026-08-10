@@ -510,6 +510,10 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
       $defaults['payment_instrument_id'] = $this->getDefaultPaymentInstrumentId();
     }
 
+    if (!$this->_id && empty($defaults['contribution_status_id'])) {
+      $defaults['contribution_status_id'] = CRM_Core_OptionGroup::getDefaultValue('contribution_status') ?? CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
+    }
+
     $this->assign('is_test', !empty($defaults['is_test']));
     $this->assign('email', $this->getContactValue('email_primary.email'));
     $this->assign('is_pay_later', !empty($defaults['is_pay_later']));
