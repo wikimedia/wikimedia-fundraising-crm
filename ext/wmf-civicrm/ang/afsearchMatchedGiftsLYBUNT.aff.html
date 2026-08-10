@@ -1,0 +1,14 @@
+<div af-fieldset="">
+  <p class="af-text">Note that this search can only filter on if a donor has a donation within a specified time period and has a matching donation within a specified time period; it can't filter on if specific gifts have been matched as we don't record that data. Generally, the <strong>No matched gift within</strong> and <strong>Show donations within</strong> filters should have the same value because you want to see donations within a period where the donor has no matching gifts.</p>
+  <div class="af-container af-layout-cols">
+    <af-field name="wmf_donor.donor_segment_overall" defn="{input_attrs: {multiple: true}, label: 'Donor Segment'}" />
+    <af-field name="employer_id" defn="{label: 'Employer', input_attrs: {}}" />
+    <af-field name="Contact_ContributionSoft_contact_id_01_ContributionSoft_Contribution_contribution_id_01.receive_date" defn="{input_type: 'Select', search_range: true, input_attrs: {}, label: 'Previously matched within', afform_default: 'previous.year'}" />
+  </div>
+  <div class="af-container af-layout-cols">
+    <af-field name="Contact_ContributionSoft_contact_id_02_ContributionSoft_Contribution_contribution_id_01.receive_date" defn="{input_type: 'Select', search_range: true, input_attrs: {}, label: 'No matched gift within', afform_default: 'this.year', join_clause: 'Contact_ContributionSoft_contact_id_02_ContributionSoft_Contribution_contribution_id_01'}" />
+    <af-field name="Contact_Contribution_contact_id_01.receive_date" defn="{input_type: 'Select', search_range: true, input_attrs: {}, label: 'Show donations within', afform_default: 'this.year', join_clause: 'Contact_Contribution_contact_id_01'}" />
+    <af-field name="has_contribution_this_year" defn="{input_type: 'Radio', data_type: 'Boolean', label: 'Has donation within selected timeframe'}" />
+  </div>
+  <crm-search-display-table search-name="Matched_Gift_LYBUNT" display-name="Matched_Gift_LYBUNT"></crm-search-display-table>
+</div>
