@@ -33,7 +33,7 @@ class CRM_WMFFraud_Upgrader extends CRM_Extension_Upgrader_Base {
    */
   protected function createFredgeTables(): void {
     CRM_Core_DAO::executeQuery(
-      "CREATE TABLE `fredge`.`payments_initial` (
+      "CREATE TABLE IF NOT EXISTS `fredge`.`payments_initial` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `contribution_tracking_id` int(11) DEFAULT NULL,
   `gateway` varchar(255) DEFAULT NULL,
