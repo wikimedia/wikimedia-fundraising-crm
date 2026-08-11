@@ -234,11 +234,13 @@ abstract class BaseAuditProcessor {
    * prod.
    * @param string $errorCode If this code is fatal (According to
    * wmf_audit_error_isfatal), this will result in the whole script dying.
+   * @param string $subject
    */
-  protected function logError($message, $errorCode) {
+  protected function logError($message, $errorCode, string $subject = ''): void {
+    $subject = implode(': ', array_filter([$this->name . '_audit', $subject]));
+    $errorValues = ['message' => $message, 'code' => $errorCode, 'subject' => $subject];
     \Civi::log('wmf')
-      ->error($this->name . '_audit: {message}',
-        ['message' => $message]);
+      ->error('{subject} {message}', $errorValues);
 
     //Maybe explode
     //All of these "nonfatal" things are meant to be nonfatal to the *job*, and
@@ -255,8 +257,8 @@ abstract class BaseAuditProcessor {
       'NORMALIZE_DATA',
     ];
     if (!in_array($errorCode, $nonfatal)) {
-      \Civi::log('wmf')->alert($this->name . '_audit: {message}',
-          ['message' => $message, 'subject' => $this->name . '_audit']);
+      \Civi::log('wmf')->alert('{subject} {message}',
+        $errorValues);
       die("\n*** Fatal Error $errorCode: $message");
     }
   }
@@ -1844,6 +1846,14 @@ abstract class BaseAuditProcessor {
 
     try {
       $records = $recon_parser->parseFile($filePath);
+    }
+    catch (\OutOfBoundsException $e) {
+      $this->logError(
+        "Data issue in audit file "
+        . "processing $originalFilePath: \"{$e->getMessage()}\"",
+        'RECON_PARSE_ERROR',
+        $e->getMessage()
+      );
     }
     catch (\Exception $e) {
       $this->logError(
