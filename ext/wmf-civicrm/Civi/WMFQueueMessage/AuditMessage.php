@@ -319,7 +319,7 @@ class AuditMessage extends DonationMessage {
     }
     if (!$existingContribution && $this->getGatewayAlternateParentTxnID()) {
       $existingContribution = Contribution::get(FALSE)
-        ->addSelect('contribution_status_id:name', 'fee_amount', 'contribution_extra.settlement_date')
+        ->setSelect($this->getContributionSelectFields())
         ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
         ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayAlternateParentTxnID())
         ->execute()->first() ?? [];
@@ -807,7 +807,7 @@ class AuditMessage extends DonationMessage {
         $this->firstRecurringContribution = Contribution::get(FALSE)
           ->addWhere('contribution_recur_id', '=', $this->getContributionRecurID())
           ->addOrderBy('id')
-          ->addSelect('contact_id', 'contribution_recur_id')
+          ->setSelect($this->getContributionSelectFields())
           ->setLimit(1)
           ->execute()->first() ?? [];
       }
@@ -816,7 +816,7 @@ class AuditMessage extends DonationMessage {
         $this->firstRecurringContribution = Contribution::get(FALSE)
           ->addWhere('invoice_id', 'LIKE', ($contributionTrackingID . '.%|recur%'))
           ->addOrderBy('id')
-          ->addSelect('contact_id', 'contribution_recur_id')
+          ->setSelect($this->getContributionSelectFields())
           ->setLimit(1)
           ->execute()->first() ?? [];
       }
