@@ -203,7 +203,7 @@ class Contribution {
     if ($latestContributionCurrency !== \CRM_Utils_Array::value('original_currency', $extra)) {
       $params['wmf_donor.last_donation_currency'] = $latestContributionCurrency;
     }
-    if (round($contactLastDonation['wmf_donor.last_donation_amount'], 2) !== round($latestContributionAmount, 2)) {
+    if (round($contactLastDonation['wmf_donor.last_donation_amount'] ?? 0, 2) !== round($latestContributionAmount ?? 0, 2)) {
       $params['wmf_donor.last_donation_amount'] = $latestContributionAmount;
     }
     if (round($contactLastDonation['wmf_donor.last_donation_usd'], 2) !== round($latestContribution['total_amount'], 2)) {
