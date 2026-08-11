@@ -969,7 +969,8 @@ class AuditMessage extends DonationMessage {
           'contribution_extra.gateway_txn_id',
           'contribution_extra.backend_processor_txn_id',
           'contribution_recur_id.*',
-        ] + $this->getContributionSelectFields())
+         ...$this->getContributionSelectFields()
+      ])
       ->addWhere('contribution_recur_id.trxn_id', '=', $this->message['gateway_txn_id'])
       ->addOrderBy('id')
       ->execute()->first();
