@@ -255,6 +255,8 @@ abstract class BaseAuditProcessor {
       'NORMALIZE_DATA',
     ];
     if (!in_array($errorCode, $nonfatal)) {
+      \Civi::log('wmf')->alert($this->name . '_audit: {message}',
+          ['message' => $message]);
       die("\n*** Fatal Error $errorCode: $message");
     }
   }
