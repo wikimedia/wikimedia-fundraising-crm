@@ -335,6 +335,9 @@ class AuditMessage extends DonationMessage {
     if (!$existingContribution) {
       return NULL;
     }
+    if (empty($existingContribution['contribution_status_id:name'])) {
+      \Civi::log('wmf')->info('no status .. why ' . json_encode($existingContribution));
+    }
     if (
       $this->isNegative() &&
       // If we have a status change (ie negative transaction) and the contribution has not yet been updated to
