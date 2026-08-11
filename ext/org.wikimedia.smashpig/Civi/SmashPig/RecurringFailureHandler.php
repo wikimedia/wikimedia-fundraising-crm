@@ -11,8 +11,8 @@ use CRM_Core_Payment_Scheduler;
 use DateInterval;
 use DateTimeImmutable;
 use SmashPig\Core\UtcDate;
-use SmashPig\PaymentProviders\Responses\CreatePaymentResponse;
 use SmashPig\PaymentProviders\Responses\CreatePaymentWithProcessorRetryResponse;
+use SmashPig\PaymentProviders\Responses\PaymentProviderExtendedResponse;
 use UnexpectedValueException;
 
 class RecurringFailureHandler {
@@ -38,12 +38,12 @@ class RecurringFailureHandler {
    * @param array $recurringPayment
    * @param string $errorMessage
    * @param bool $canRetry
-   * @param CreatePaymentResponse|null $errorResponse
+   * @param PaymentProviderExtendedResponse|null $errorResponse
    * @throws UnauthorizedException
    * @throws \CRM_Core_Exception
    */
   public function recordFailedPayment(
-    array $recurringPayment, string $errorMessage, bool $canRetry, ?CreatePaymentResponse $errorResponse = NULL
+    array $recurringPayment, string $errorMessage, bool $canRetry, ?PaymentProviderExtendedResponse $errorResponse = NULL
   ): void {
     $cancelRecurringDonation = FALSE;
 
