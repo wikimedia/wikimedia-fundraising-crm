@@ -69,7 +69,7 @@ class FinanceInstrument {
    * all prefixed with 'Credit Card: '
    */
   public const CARD_SUBMETHOD_LIST = [
-    'accel' => 'Accel',
+    'accel' => 'Accel', // US debit network
     'alia' => 'Alia', // Ecuador
     'amex' => 'American Express',
     'argen' => 'Argencard',
@@ -97,11 +97,14 @@ class FinanceInstrument {
     'mercadolivre' => 'MercadoLivre',
     'naranja' => 'Naranja',
     'nativa' => 'Nativa',
+    'nyce' => 'NYCE', // US debit network
     'oca' => 'OCA',
     'presto' => 'Presto',
+    'pulse' => 'Pulse', // US debit network
     'rupay' => 'RuPay', // India
     'shopping' => 'Tarjeta Shopping',
     'solo' => 'Solo',
+    'star' => 'Star', // US debit network
     'visa' => 'Visa',
     'visa-beneficial' => 'Visa Beneficial',
     'visa-debit' => 'Visa Debit',
