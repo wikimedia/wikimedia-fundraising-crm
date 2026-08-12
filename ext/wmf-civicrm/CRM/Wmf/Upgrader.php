@@ -5191,6 +5191,24 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Backfill batch_data.settlement_gateway_account_id from the existing
+   * batch_data.settlement_gateway name, for batches that predate the new
+   * field. Civi\WMFHook\Data::batchPre() keeps the two in sync going
+   * forward, but that only fires on save - this is a one-off catch-up for
+   * existing rows.
+   */
+  public function upgrade_5115(): bool {
+    CRM_Core_DAO::executeQuery('
+      UPDATE civicrm_batch_data bd
+      INNER JOIN civicrm_gateway_account ga ON ga.name = bd.settlement_gateway
+      SET bd.settlement_gateway_account_id = ga.id
+      WHERE bd.settlement_gateway IS NOT NULL
+      AND bd.settlement_gateway_account_id IS NULL
+    ');
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
