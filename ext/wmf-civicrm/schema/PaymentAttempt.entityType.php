@@ -517,19 +517,19 @@ return [
     'auth_decline' => [
       'name' => 'auth_decline',
       'sql_type' => 'boolean',
-      'input_type' => 'Boolean',
+      'input_type' => 'CheckBox',
       'title' => E::ts('Declined by processor'),
     ],
     'blocked_by_filter' => [
       'name' => 'blocked_by_filter',
       'sql_type' => 'boolean',
-      'input_type' => 'Boolean',
+      'input_type' => 'CheckBox',
       'title' => E::ts('Blocked by our filters'),
     ],
     'fraud_flagged_by_processor' => [
       'name' => 'fraud_flagged_by_processor',
       'sql_type' => 'boolean',
-      'input_type' => 'Boolean',
+      'input_type' => 'CheckBox',
       'title' => E::ts('Flagged as fraudulent by processor'),
     ],
   ],

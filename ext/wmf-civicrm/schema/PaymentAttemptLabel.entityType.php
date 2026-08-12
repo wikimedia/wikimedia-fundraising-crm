@@ -37,7 +37,7 @@ return [
     'is_fraud' => [
       'name' => 'is_fraud',
       'sql_type' => 'boolean',
-      'input_type' => 'Boolean',
+      'input_type' => 'CheckBox',
       'title' => E::ts('Is Fraud'),
     ],
   ],
