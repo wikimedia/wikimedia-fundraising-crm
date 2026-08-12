@@ -235,10 +235,11 @@ abstract class BaseAuditProcessor {
    * @param string $errorCode If this code is fatal (According to
    * wmf_audit_error_isfatal), this will result in the whole script dying.
    * @param string $subject
+   * @param array $errorValues
    */
-  protected function logError($message, $errorCode, string $subject = ''): void {
+  protected function logError($message, $errorCode, string $subject = '', array $errorValues = []): void {
     $subject = implode(': ', array_filter([$this->name . '_audit', $subject]));
-    $errorValues = ['message' => $message, 'code' => $errorCode, 'subject' => $subject];
+    $errorValues += ['message' => $message, 'code' => $errorCode, 'subject' => $subject];
     \Civi::log('wmf')
       ->error('{subject} {message}', $errorValues);
 
@@ -1852,14 +1853,17 @@ abstract class BaseAuditProcessor {
         "Data issue in audit file "
         . "processing $originalFilePath: \"{$e->getMessage()}\"",
         'RECON_PARSE_ERROR',
-        $e->getMessage()
+        $e->getMessage(),
+        ['file_path' => $originalFilePath, 'file_name' => $fileName],
       );
     }
     catch (\Exception $e) {
       $this->logError(
         "Something went amiss with the recon parser while "
         . "processing $originalFilePath: \"{$e->getMessage()}\"",
-        'RECON_PARSE_ERROR'
+        'RECON_PARSE_ERROR',
+        '',
+        ['file_path' => $originalFilePath, 'file_name' => $fileName],
       );
     }
 
