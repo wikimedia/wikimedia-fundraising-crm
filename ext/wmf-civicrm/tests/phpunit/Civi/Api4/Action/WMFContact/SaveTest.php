@@ -1124,6 +1124,14 @@ class SaveTest extends TestCase {
     $this->assertEquals('Home', $emails[0]['location_type_id:name']);
     $this->assertEquals('paypal', $emails[1]['location_type_id:name']);
     $this->assertEquals($emails[0]['contact_id'], $emails[1]['contact_id']);
+
+    // Existing name came from a trusted (Home) primary email, so it should not
+    // be overwritten by the low-confidence (paypal) incoming donation's name.
+    $contact = Contact::get(FALSE)
+      ->addWhere('id', '=', $emails[0]['contact_id'])
+      ->addSelect('first_name')
+      ->execute()->first();
+    $this->assertEquals('Confidence', $contact['first_name']);
   }
 
   // Priority #4 — Email + location type
@@ -1241,6 +1249,53 @@ class SaveTest extends TestCase {
     $this->assertEquals('ach-from-bank@mouse.com', $emailUpdates[1]['email']);
     $this->assertEquals('ach', $emailUpdates[1]['location_type_id:name']);
     $this->assertEquals('CC', $emailUpdates[0]['contact_id.first_name']);
+  }
+
+  /**
+   * A repeat ACH donation on the same primary email should leave the
+   * achForm location type alone - it should only reset to Home when a
+   * later trusted donation comes in via a different (non-ach) method.
+   *
+   * Regression test for an operator-precedence bug where
+   * `$payment_method ?? '' !== 'ach'` parsed as `$payment_method ?? ('' !== 'ach')`
+   * (i.e. `?? true`), so the reset fired even when payment_method was 'ach'.
+   */
+  public function testAchFormLocationKeptOnRepeatAchDonation(): void {
+    $achInitMessage = new RecurDonationMessage([
+      'first_name' => 'ACH',
+      'last_name' => 'Mouse',
+      'email' => 'repeat-ach@test.org',
+      'gateway' => 'gravy',
+      'payment_method' => 'ach',
+      'country' => 'US',
+    ]);
+    WMFContact::save(FALSE)->setMessage($achInitMessage->normalize())->execute();
+    $contact = Contact::get(FALSE)
+      ->addWhere('email_primary.email', '=', 'repeat-ach@test.org')
+      ->addSelect('id')
+      ->execute()->first();
+    $this->ids['Contact'][] = $contact['id'];
+    $emails = Email::get(FALSE)
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->addSelect('location_type_id:name')
+      ->execute();
+    $this->assertEquals('achForm', $emails[0]['location_type_id:name']);
+
+    // A second ach donation on the same email should not reset the location type.
+    $repeatAchMessage = new RecurDonationMessage([
+      'first_name' => 'ACH',
+      'last_name' => 'Mouse',
+      'email' => 'repeat-ach@test.org',
+      'gateway' => 'gravy',
+      'payment_method' => 'ach',
+      'country' => 'US',
+    ]);
+    WMFContact::save(FALSE)->setMessage($repeatAchMessage->normalize())->execute();
+    $emailsAfterRepeat = Email::get(FALSE)
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->addSelect('location_type_id:name')
+      ->execute();
+    $this->assertEquals('achForm', $emailsAfterRepeat[0]['location_type_id:name']);
   }
 
   public function testMatchByAddress(): void {

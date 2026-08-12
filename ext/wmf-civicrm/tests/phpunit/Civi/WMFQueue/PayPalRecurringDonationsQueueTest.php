@@ -166,6 +166,8 @@ class PayPalRecurringDonationsQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * This test uses gateway paypal_ec, testRecurringPaymentNormalizedMessages
+   * in RecurringQueueTest uses paypal, so we cover both.
    * @throws \CRM_Core_Exception
    */
   public function testRecurringPaymentNormalizedMessages(): void {
@@ -181,7 +183,7 @@ class PayPalRecurringDonationsQueueTest extends BaseQueueTestCase {
       'country' => '',
       'state_province' => '',
       'email' => 'bob-the-mouse@example.org',
-      'gateway' => 'paypal',
+      'gateway' => 'paypal_ec',
     ];
     $this->processRecurringSignup($values);
 
