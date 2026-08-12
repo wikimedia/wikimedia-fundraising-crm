@@ -57,6 +57,7 @@ function wmf_civicrm_civicrm_config(&$config) {
 
   $dispatcher->addListener('hook_civicrm_pre::Individual', ['Civi\WMFHook\Contact', 'pre']);
   $dispatcher->addListener('hook_civicrm_pre::Organization', ['Civi\WMFHook\Contact', 'pre']);
+  $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\Data', 'contributionPre']);
 }
 
 /**
