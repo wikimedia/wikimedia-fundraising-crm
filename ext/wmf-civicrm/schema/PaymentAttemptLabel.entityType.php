@@ -15,7 +15,6 @@ return [
 
     // ---- Primary key ----
     'id' => [
-      'name' => 'id',
       'sql_type' => 'int unsigned',
       'required' => TRUE,
       'primary_key' => TRUE,
@@ -24,7 +23,6 @@ return [
       'title' => E::ts('ID'),
     ],
     'order_id' => [
-      'name' => 'order_id',
       'sql_type' => 'varchar(64)',
       'input_type' => 'Text',
       'title' => E::ts('Order ID (Invoice ID)'),
@@ -35,7 +33,6 @@ return [
       ],
     ],
     'is_fraud' => [
-      'name' => 'is_fraud',
       'sql_type' => 'boolean',
       'input_type' => 'CheckBox',
       'title' => E::ts('Is Fraud'),
