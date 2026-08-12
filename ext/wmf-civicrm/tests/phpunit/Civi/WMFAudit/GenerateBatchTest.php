@@ -33,6 +33,9 @@ class GenerateBatchTest extends BaseAuditTestCase {
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'adyen_33%')
       ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'dlocal_337%')
+      ->execute();
     parent::tearDown();
   }
 
@@ -91,6 +94,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $row = $matches[0];
     $this->assertEquals('60.00', (string) $row['CREDIT'], 'Expected grouped credit to equal sum of donation amounts');
     $this->assertEquals('0.00', (string) $row['DEBIT'], 'Expected donations to be credit-only in this dataset');
+    $this->assertEquals('V01670', $row['GLENTRY_VENDORID']);
     $this->assertSame(3, $this->memoCount($row), 'Expected MEMO count to equal number of contributions grouped');
   }
 
@@ -323,6 +327,49 @@ class GenerateBatchTest extends BaseAuditTestCase {
       ->setIsDryRun(TRUE)
       ->setIsOutputRows(TRUE)
       ->execute();
+  }
+
+  /**
+   * The generated journal rows' vendor ID should come from the configured
+   * GatewayAccount record for the batch's gateway, not a hard-coded array -
+   * and different gateways should get their own distinct code.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testGeneratedRowsUseVendorCodeFromGatewayAccount(): void {
+    $settlementDate = '2026-01-23';
+
+    $adyenBatchName = 'adyen_337_USD';
+    $this->createContribution([
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $adyenBatchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settlement_currency' => 'USD',
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $adyenResult = $this->runGenerate($adyenBatchName, 'USD', $settlementDate, 10, 1, 'adyen_337');
+    $adyenRows = $adyenResult[0]['csv_rows'] ?? [];
+    $this->assertNotEmpty($adyenRows);
+    // Vendor code from GatewayAccount_adyen in GatewayAccount.mgd.php.
+    $this->assertEquals('V01670', $adyenRows[0]['GLENTRY_VENDORID']);
+
+    $dlocalBatchName = 'dlocal_337_USD';
+    $this->createContribution([
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $dlocalBatchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settlement_currency' => 'USD',
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $dlocalResult = $this->runGenerate($dlocalBatchName, 'USD', $settlementDate, 10, 1, 'dlocal_337');
+    $dlocalRows = $dlocalResult[0]['csv_rows'] ?? [];
+    $this->assertNotEmpty($dlocalRows);
+    // Vendor code from GatewayAccount_dlocal in GatewayAccount.mgd.php.
+    $this->assertEquals('V04134', $dlocalRows[0]['GLENTRY_VENDORID']);
   }
 
   /**

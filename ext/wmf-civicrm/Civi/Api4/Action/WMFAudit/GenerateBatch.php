@@ -9,6 +9,7 @@ use Civi\Api4\Batch;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\FinanceIntegration;
+use Civi\Api4\GatewayAccount;
 use Civi\WMFBatch\BatchFile;
 use CRM_Core_DAO;
 use League\Csv\Writer;
@@ -113,6 +114,29 @@ class GenerateBatch extends AbstractAction {
   private array $batches;
 
   private array $incomingFiles;
+
+  /**
+   * GatewayAccount records, indexed by name. Lazy-loaded & cached for the
+   * duration of the run - see getGatewayAccounts().
+   *
+   * @var array|null
+   */
+  private ?array $gatewayAccounts = NULL;
+
+  /**
+   * Get the configured GatewayAccount records, indexed by name.
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  private function getGatewayAccounts(): array {
+    if ($this->gatewayAccounts === NULL) {
+      $this->gatewayAccounts = (array) GatewayAccount::get(FALSE)
+        ->addSelect('name', 'is_endowment', 'vendor_code_foundation', 'vendor_code_endowment', 'balancing_account_foundation')
+        ->execute()->indexBy('name');
+    }
+    return $this->gatewayAccounts;
+  }
 
   /**
    * This function updates the settled transaction with new fee & currency conversion data.
@@ -312,9 +336,9 @@ class GenerateBatch extends AbstractAction {
   }
 
   private function mapVendorToEndowmentVendor($mainVendorCode): string {
-    foreach ($this->getVendorCodesForGateways() as $codes) {
-      if ($codes['main'] === $mainVendorCode) {
-        return $codes['endowment'];
+    foreach ($this->getGatewayAccounts() as $account) {
+      if ($account['vendor_code_foundation'] === $mainVendorCode && !empty($account['vendor_code_endowment'])) {
+        return $account['vendor_code_endowment'];
       }
     }
     throw new \CRM_Core_Exception('Vendor not mapped :' . $mainVendorCode . ' see https://docs.google.com/spreadsheets/d/1FFIhblreQKSiPBxfatc5XhDdjqoaR7R280r9TTOlQcw/edit?gid=1609952585#gid=1609952585');
@@ -435,9 +459,9 @@ END";
    */
   public function getVendorCode($batchName): string {
     $gateway = $this->getGateway($batchName);
-    $codes = $this->getVendorCodesForGateways();
-    if (isset($codes[$gateway])) {
-      return $codes[$gateway]['main'];
+    $accounts = $this->getGatewayAccounts();
+    if (!empty($accounts[$gateway]['vendor_code_foundation'])) {
+      return $accounts[$gateway]['vendor_code_foundation'];
     }
     throw new \CRM_Core_Exception('batch vendor ID missing for ' . $gateway);
   }
@@ -900,23 +924,22 @@ END";
   }
 
   /**
+   * Get the configured vendor codes for each gateway, keyed by GatewayAccount
+   * name, in the ['main' => ..., 'endowment' => ...] shape.
+   *
    * @see https://docs.google.com/spreadsheets/d/1FFIhblreQKSiPBxfatc5XhDdjqoaR7R280r9TTOlQcw/edit?gid=1609952585#gid=1609952585
    * @return array[]
+   * @throws \CRM_Core_Exception
    */
   public function getVendorCodesForGateways(): array {
-    return [
-      'adyen' => ['main' => 'V01670', 'endowment' => 'V04988'],
-      'braintree' => ['main' => 'V05089', 'endowment' => 'V04991'],
-      'paypal' => ['main' => 'V00282', 'endowment' => 'V04989'],
-      'paypalfrup' => ['main' => 'V05040', 'endowment' => 'V05001'],
-      'dlocal' => ['main' => 'V04134', 'endowment' => 'V04990'],
-      'engage' => ['main' => 'V01948', 'endowment' => 'V04993'],
-      'stripe' => ['main' => 'V04137', 'endowment' => 'V04994'],
-      'stripemg' => ['main' => 'V04137', 'endowment' => 'V04994'],
-      'trustly' => ['main' => 'V05354', 'endowment' => 'V04995'],
-      'chariot' => ['main' => 'V05811', 'endowment' => 'V05002'],
-      'checkoutcom' => ['main' => 'V06128'],
-    ];
+    $codes = [];
+    foreach ($this->getGatewayAccounts() as $name => $account) {
+      $codes[$name] = array_filter([
+        'main' => $account['vendor_code_foundation'],
+        'endowment' => $account['vendor_code_endowment'],
+      ]);
+    }
+    return $codes;
   }
 
   /**
