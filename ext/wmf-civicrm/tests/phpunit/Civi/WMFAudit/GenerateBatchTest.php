@@ -11,6 +11,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
+use League\Csv\Reader;
 
 /**
  * @group Adyen
@@ -35,6 +36,9 @@ class GenerateBatchTest extends BaseAuditTestCase {
       ->execute();
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'dlocal_337%')
+      ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'chariot_339%')
       ->execute();
     parent::tearDown();
   }
@@ -370,6 +374,54 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $this->assertNotEmpty($dlocalRows);
     // Vendor code from GatewayAccount_dlocal in GatewayAccount.mgd.php.
     $this->assertEquals('V04134', $dlocalRows[0]['GLENTRY_VENDORID']);
+  }
+
+  /**
+   * The reversal row written to the journal CSV should use chariot's own
+   * balancing_account_foundation (10951) from its GatewayAccount record,
+   * not the common 11250 default that most other non-dlocal/paypal
+   * gateway falls back to.
+   *
+   * @throws \League\Csv\Exception
+   * @throws \League\Csv\UnavailableStream
+   */
+  public function testGeneratedJournalUsesBalancingAccountFromGatewayAccount(): void {
+    $prefix = 'chariot_339';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-01-24';
+
+    $this->createContribution([
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $this->createBatch($batchName, $currency, $settlementDate, 10, 1);
+    try {
+      $result = WMFAudit::generateBatch(FALSE)
+        ->setBatchPrefix($prefix)
+        ->setIsDryRun(TRUE)
+        ->setIsOutputRows(TRUE)
+        ->setIsOutputCsv(TRUE)
+        ->execute();
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail($e->getMessage());
+    }
+
+    $journalFile = $result[0]['csv']['journal_file']['file'] ?? NULL;
+    $this->assertNotEmpty($journalFile, 'Expected a journal csv file to have been written');
+
+    $reader = Reader::from($journalFile);
+    $reader->setHeaderOffset(0);
+    $balancingRows = array_values(array_filter(iterator_to_array($reader), function ($row) {
+      return (string) ($row['ACCT_NO'] ?? '') === '10951';
+    }));
+    $this->assertNotEmpty($balancingRows, 'Expected a reversal row using chariot\'s own balancing account (10951)');
   }
 
   /**

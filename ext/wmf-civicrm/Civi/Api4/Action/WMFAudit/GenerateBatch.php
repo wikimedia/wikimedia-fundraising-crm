@@ -535,16 +535,19 @@ END";
   }
 
   private function getReversalAccountCode($currency, $vendor): int {
-    foreach ($this->getVendorCodesForGateways() as $key => $vendorAccounts) {
-      if ($vendorAccounts['main'] === $vendor) {
-        $gateway = $key;
+    $balancingAccount = NULL;
+    foreach ($this->getGatewayAccounts() as $account) {
+      if ($account['vendor_code_foundation'] === $vendor) {
+        $balancingAccount = $account['balancing_account_foundation'];
         break;
       }
     }
-    if ($gateway === 'dlocal') {
-      return 10835;
+    if ($balancingAccount === NULL) {
+      throw new \CRM_Core_Exception('balancing account missing for vendor ' . $vendor);
     }
-    if ($gateway === 'paypal') {
+    if ($balancingAccount === self::BALANCING_ACCOUNT_HARD_CODED) {
+      // Varies by currency - not yet representable as a single value on the
+      // GatewayAccount record (see GatewayAccount_paypal in GatewayAccount.mgd.php).
       $codes = [
         'USD' => 10900,
         'CAD' => 10901,
@@ -573,7 +576,7 @@ END";
       ];
       return $codes[$currency];
     }
-    return 11250;
+    return (int) $balancingAccount;
   }
 
   /**
