@@ -7,6 +7,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\CustomField;
 use Civi\Api4\CustomGroup;
+use Civi\Api4\GatewayAccount;
 use Civi\Api4\Relationship;
 use Civi\Core\Event\PreEvent;
 use Civi\WMFHelper\CustomData;
@@ -108,6 +109,49 @@ class Data {
           'contact_id_a' => $relatedContactID,
           'relationship_type_id.name_a_b' => 'Holds a Donor Advised Fund of',
         ])->execute();
+      }
+    }
+  }
+
+  /**
+   * Implements hook_civicrm_pre::Batch.
+   *
+   * Keeps batch_data.settlement_gateway (a plain name string, kept for
+   * backward compatibility with existing consumers/analytics) in sync with
+   * batch_data.settlement_gateway_account_id (a proper EntityReference to
+   * GatewayAccount, storing GatewayAccount.id).
+   *
+   * If both are submitted in the same save with conflicting values, the
+   * id field wins, since it's the more precise reference. If only one is
+   * submitted, the other is derived from it. If the referenced
+   * GatewayAccount can't be found (e.g. a stale/typo'd name, or a deleted
+   * account id), neither field is touched.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public static function batchPre(PreEvent $event): void {
+    if ($event->action === 'delete') {
+      return;
+    }
+    $accountID = $event->getValue('batch_data.settlement_gateway_account_id');
+    $gatewayName = $event->getValue('batch_data.settlement_gateway');
+
+    if (!empty($accountID)) {
+      $name = GatewayAccount::get(FALSE)
+        ->addWhere('id', '=', $accountID)
+        ->addSelect('name')
+        ->execute()->first()['name'] ?? NULL;
+      if ($name !== NULL) {
+        $event->setValue('batch_data.settlement_gateway', $name);
+      }
+    }
+    elseif (!empty($gatewayName)) {
+      $id = GatewayAccount::get(FALSE)
+        ->addWhere('name', '=', $gatewayName)
+        ->addSelect('id')
+        ->execute()->first()['id'] ?? NULL;
+      if ($id !== NULL) {
+        $event->setValue('batch_data.settlement_gateway_account_id', $id);
       }
     }
   }
