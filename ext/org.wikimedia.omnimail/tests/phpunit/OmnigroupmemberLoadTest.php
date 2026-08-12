@@ -121,7 +121,8 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     PhoneConsent::create(FALSE)
       ->setValues([
         'country_code' => 1,
-        'master_recipient_id' => 123457,
+        // Deliberately not the id in the csv - an existing consent doesn't get an updated one
+        'master_recipient_id' => 123459,
         'phone_number' => 23456788,
         'consent_date' => '2023-01-01',
         'consent_source' => 'somehow',
@@ -147,6 +148,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       ->addWhere('phone_number', '=', 23456788)
       ->execute()->single();
     $this->assertFalse($consent['opted_in']);
+    $this->assertEquals(123459, $consent['master_recipient_id']);
   }
 
   /**

@@ -91,6 +91,7 @@ class RemoteUpdate extends AbstractUpdateAction {
     ]);
     $orphanCsv->insertOne(['RECIPIENT_ID', 'is_orphan']);
 
+    $orphanRows = FALSE;
     foreach ($items as $item) {
       $addEmailCsv->insertOne([
         'Email' => $item['phone.contact_id.email_primary.email'],
@@ -102,7 +103,12 @@ class RemoteUpdate extends AbstractUpdateAction {
         'CONSENT_STATUS_CODE' => $item['opted_in'] ? 'OPTED-IN' : 'OPTED-OUT',
         'CONSENT_SOURCE' => $item['consent_source'],
       ]);
-      $orphanCsv->insertOne([$item['master_recipient_id'], 'Yes']);
+      if ($item['master_recipient_id']) {
+        // Consents that did not come from Acoustic - eg. from the donation form -
+        // have no phone-only record to mark as an orphan.
+        $orphanCsv->insertOne([$item['master_recipient_id'], 'Yes']);
+        $orphanRows = TRUE;
+      }
     }
     \Civi::log('omnimail')->info('output to file {path}', ['path' => $path]);
     $result = Omnicontact::upload(FALSE)
@@ -130,10 +136,12 @@ class RemoteUpdate extends AbstractUpdateAction {
           ->setClient($this->getClient())
           ->setIsAlreadyUploaded($this->getIsTest())
           ->setCsvFile($addConsentCsv->getPathname())->execute();
-        Omnicontact::upload(FALSE)
-          ->setClient($this->getClient())
-          ->setIsAlreadyUploaded($this->getIsTest())
-          ->setCsvFile($orphanCsv->getPathname())->execute();
+        if ($orphanRows) {
+          Omnicontact::upload(FALSE)
+            ->setClient($this->getClient())
+            ->setIsAlreadyUploaded($this->getIsTest())
+            ->setCsvFile($orphanCsv->getPathname())->execute();
+        }
         return $items;
 
       }
