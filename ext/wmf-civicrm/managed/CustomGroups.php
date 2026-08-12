@@ -2399,6 +2399,23 @@ function _wmf_civicrm_get_batch_data_fields(): array {
       'is_active' => 1,
       'weight' => 3,
     ],
+    // Entity-reference companion to settlement_gateway above, storing
+    // GatewayAccount.id rather than GatewayAccount.name. The two fields are
+    // kept in sync by Civi\WMFHook\Data::batchPre()
+    // (see hook_civicrm_pre::Batch). settlement_gateway itself is left in
+    // place because other code/analytics already depend on the name string;
+    // consolidating onto just this field is a possible future cleanup, but
+    // would need those other consumers updated too.
+    'settlement_gateway_account_id' => [
+      'name' => 'settlement_gateway_account_id',
+      'column_name' => 'settlement_gateway_account_id',
+      'label' => 'Settlement Gateway Account',
+      'html_type' => 'Autocomplete-Select',
+      'data_type' => 'EntityReference',
+      'fk_entity' => 'GatewayAccount',
+      'is_active' => 1,
+      'weight' => 20,
+    ],
     'settled_fee_amount' => [
       'name' => 'settled_fee_amount',
       'column_name' => 'settled_fee_amount',
