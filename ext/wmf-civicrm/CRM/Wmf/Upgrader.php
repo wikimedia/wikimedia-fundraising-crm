@@ -5130,6 +5130,25 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Fix option values whose name has diverged from its label.
+   *
+   * Stricter import validation has resulted in errors because
+   * it matches both the label Mr. and the name Mr. (different option)
+   *
+   * Bug: T434727
+   *
+   * @return bool
+   */
+  public function upgrade_5085(): bool {
+    CRM_Core_DAO::executeQuery('
+      UPDATE civicrm_option_value
+      SET name = label
+      WHERE option_group_id IN (6, 7)
+        AND name <> label');
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
