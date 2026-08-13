@@ -53,6 +53,7 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'group_identifier' => 123,
       'group_id' => $group['id'],
     ]);
+    $this->assertStringContainsString('<EXPORT_TYPE>OPT_IN</EXPORT_TYPE>', urldecode(implode($this->getRequestBodies())));
     $groupMembers = $this->callAPISuccess('GroupContact', 'get', ['group_id' => $group['id']]);
     $this->assertEquals(3, $groupMembers['count']);
     $contacts = $this->getGroupMemberDetails($groupMembers);
@@ -140,7 +141,10 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       ->setClient($client)
       ->setLimit(5)
       ->setIsConsentOptOutGroup(TRUE)
+      ->setIsIncludeOptOut(TRUE)
       ->execute();
+    $this->assertStringContainsString('<EXPORT_TYPE>ALL</EXPORT_TYPE>', urldecode(implode($this->getRequestBodies())));
+
     $consent = PhoneConsent::get(FALSE)
       ->addWhere('phone_number', '=', 23456789)
       ->execute()->single();

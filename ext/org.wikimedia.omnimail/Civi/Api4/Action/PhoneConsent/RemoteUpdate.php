@@ -69,6 +69,14 @@ class RemoteUpdate extends AbstractUpdateAction {
    * 2) re-consent the mobile_phone (will only update existing record)
    * 3) update the orphan record as being an orphan (will only update existing record, based on phone match).
    *
+   * Because we have HONOR_OPT_OUT_STATUS true in OmniContact/Update, we don't overwrite opt outs
+   * that happened in Acoustic even if we upload opt-in status here. However, an orphan contact might be opted out
+   * in Acoustic by texting stop and we will still upload them as opted-in to the non-orphan contact - which could result in
+   * SMS being sent to the contact that has opted out between when the orphan contact was created and our upload takes place.
+   * Should be fine because we run this job nightly, so would only affect contacts who already have a matching phone number
+   * in CiviCRM and who opted out of the SMS before the job runs (which is unlikely). Once the non-orphan contact is in
+   * Acoustic, they'll be opted out too.
+   *
    * @param array $items
    *
    * @return array
