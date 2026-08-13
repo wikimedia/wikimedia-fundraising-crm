@@ -16,7 +16,6 @@ return [
   'getFields' => function () {
     $fields = [
       'entity_id' => [
-        'name' => 'entity_id',
         'sql_type' => 'int unsigned',
         'input_type' => 'EntityRef',
         'title' => E::ts('Contact ID'),
@@ -30,7 +29,6 @@ return [
     ];
     foreach ((new CalculatedData())->getLoggedFields() as $fieldName => $field) {
       $fields[$fieldName] = [
-        'name' => $fieldName,
         'sql_type' => strtolower($field['data_type']),
         'input_type' => $field['html_type'],
         'title' => $field['label'],
@@ -40,7 +38,6 @@ return [
       ];
     }
     $fields['changed_fields'] = [
-      'name' => 'changed_fields',
       'sql_type' => 'varchar(255)',
       'input_type' => 'Select',
       'title' => E::ts('Changed Fields'),
@@ -52,7 +49,6 @@ return [
       ],
     ];
     $fields['log_date'] = [
-      'name' => 'log_date',
       'sql_type' => 'timestamp',
       'input_type' => 'Date',
       'title' => E::ts('Log Date'),
@@ -60,7 +56,6 @@ return [
       'default' => 'CURRENT_TIMESTAMP',
     ];
     $fields['log_id'] = [
-      'name' => 'log_id',
       'sql_type' => 'bigint unsigned',
       'input_type' => 'Number',
       'title' => E::ts('Log ID'),

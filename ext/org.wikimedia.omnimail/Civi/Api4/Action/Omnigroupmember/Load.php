@@ -297,11 +297,14 @@ class Load extends Omniaction {
             ->execute()->first();
 
           $idValue = $existingConsent ? ['id' => $existingConsent['id']] : [];
+          // Only set master_recipient_id on create. If we overwrite a null or existing
+          // value we will end up pushing up the new master_recipient_id as is_orphan,
+          // when it would be a non-orphan full contact.
+          $recipientValue = $existingConsent ? [] : ['master_recipient_id' => $groupMember['recipient_id']];
           PhoneConsent::save(FALSE)
-            ->addRecord($idValue + [
+            ->addRecord($idValue + $recipientValue + [
               'country_code' => $countryCode,
               'phone_number' => $phone,
-              'master_recipient_id' => $groupMember['recipient_id'],
               // Since these contacts are ONLY opted in to SMS we assume these values
               // apply to SMS.
               'consent_date' => $remoteContact['sms_consent_datetime'],

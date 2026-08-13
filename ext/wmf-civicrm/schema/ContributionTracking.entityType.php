@@ -121,7 +121,7 @@ return [
     'is_recurring' => [
       'title' => E::ts('Is Recurring?'),
       'sql_type' => 'boolean',
-      'input_type' => 'Boolean',
+      'input_type' => 'CheckBox',
     ],
     'referrer' => [
       'title' => E::ts('Referrer'),
