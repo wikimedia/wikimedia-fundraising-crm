@@ -5149,6 +5149,14 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Create GatewayAccount table from entityType.
+   */
+  public function upgrade_5095(): bool {
+    E::schema()->createEntityTable('schema/GatewayAccount.entityType.php');
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

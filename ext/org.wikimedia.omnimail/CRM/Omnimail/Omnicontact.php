@@ -193,7 +193,8 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
       return $return;
     }
     catch (Exception $e) {
-      throw new CRM_Core_Exception($e->getMessage());
+      $identifier = $params['recipient_id'] ? 'recipient ' . $params['recipient_id'] : 'email ' . $params['email'];
+      throw new CRM_Core_Exception('Acoustic lookup failed for ' . $identifier . ' in database ' . $params['database_id'] . ': ' . $e->getMessage() . ' (error id ' . $e->getCode() . ')', $e->getCode(), [], $e);
     }
 
   }

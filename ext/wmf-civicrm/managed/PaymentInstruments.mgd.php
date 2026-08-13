@@ -19,13 +19,17 @@ $instruments = [
   'Apple Pay: Discover' => 'Apple Pay: Discover',
   'Apple Pay: Visa Electron' => 'Apple Pay: Visa Electron',
   'Apple Pay: JCB' => 'Apple Pay: JCB',
+  'Apple Pay: Maestro' => 'Apple Pay: Maestro',
   'Apple Pay: MasterCard' => 'Apple Pay: MasterCard',
+  'Apple Pay: NYCE' => 'Apple Pay: NYCE',
+  'Apple Pay: Pulse' => 'Apple Pay: Pulse',
   'Apple Pay: Accel' => 'Apple Pay: Accel',
   'Google Pay' => 'Google Pay',
   'Google Pay: American Express' => 'Google Pay: American Express',
   'Google Pay: Discover' => 'Google Pay: Discover',
   'Google Pay: Visa Electron' => 'Google Pay: Visa Electron',
   'Google Pay: Google' => 'Google Pay: Google',
+  'Google Pay: Maestro' => 'Google Pay: Maestro',
   'Google Pay: MasterCard' => 'Google Pay: MasterCard',
   'Google Pay: Visa' => 'Google Pay: Visa',
   'Bitcoin' => 'Bitcoin',
@@ -53,15 +57,17 @@ $instruments = [
   'Credit Card: Accel' => 'Credit Card: Accel',
   // Credit Card: Laser exists on live but no contributions.
   'Credit Card: Laser' => 'Credit Card: Laser',
-  // Credit Card: Maestro exists on live but no contributions.
   'Credit Card: Maestro' => 'Credit Card: Maestro',
   // Chilean credit card Credit Card: Magna exists on live but no contributions.
   'Credit Card: Magna' => 'Credit Card: Magna',
   'Credit Card: MasterCard' => 'Credit Card: MasterCard',
+  'Credit Card: NYCE' => 'Credit Card: NYCE',
   // Chilean credit card Credit Card: Presto exists on live but no contributions
   'Credit Card: Presto' => 'Credit Card: Presto',
+  'Credit Card: Pulse' => 'Credit Card: Pulse',
   // Credit Card: Solo exists on live but no contributions
   'Credit Card: Solo' => 'Credit Card: Solo',
+  'Credit Card: STAR' => 'Credit Card: STAR',
   'Credit Card: Visa' => 'Credit Card: Visa',
   // Credit Card: Visa Beneficial exists on live but no contributions
   'Credit Card: Visa Beneficial' => 'Credit Card: Visa Beneficial',
