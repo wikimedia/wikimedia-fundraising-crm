@@ -2,10 +2,12 @@
 namespace Civi\Api4\Action\Omnigroupmember;
 
 use Civi\Api4\Action\Omniaction;
+use Civi\Api4\Activity;
 use Civi\Api4\Email;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\GroupContact;
 use Civi\Api4\Omnicontact;
+use Civi\Api4\Phone;
 use Civi\Api4\PhoneConsent;
 use GuzzleHttp\Client;
 use League\Csv\Exception;
@@ -299,6 +301,7 @@ class Load extends Omniaction {
             ->setRecipientID($groupMember['recipient_id'])
             ->execute()->first();
 
+          $optedIn = $remoteContact['sms_consent_status'] === 'OPTED-IN';
           $idValue = $existingConsent ? ['id' => $existingConsent['id']] : [];
           // Only set master_recipient_id on create. If we overwrite a null or existing
           // value we will end up pushing up the new master_recipient_id as is_orphan,
@@ -312,9 +315,13 @@ class Load extends Omniaction {
               // apply to SMS.
               'consent_date' => $remoteContact['sms_consent_datetime'],
               'consent_source' => $remoteContact['sms_consent_source'],
-              'opted_in' => $remoteContact['sms_consent_status'] === 'OPTED-IN',
+              'opted_in' => $optedIn,
             ])
             ->execute();
+
+          if (!$existingConsent || ($existingConsent['opted_in'] !== $optedIn)) {
+            $this->createConsentActivity($phone, $optedIn, $remoteContact);
+          }
         }
       }
       $count++;
@@ -370,6 +377,35 @@ class Load extends Omniaction {
         'default' => FALSE,
       ],
     ];
+  }
+
+  /**
+   * Record an SMS consent change on the CiviCRM contacts with the number.
+   *
+   * If there is no contact, we don't create an activity.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function createConsentActivity(string $phone, bool $optedIn, array $remoteContact): void {
+    $phoneRecords = Phone::get(FALSE)
+      ->addWhere('phone_numeric', '=', $phone)
+      ->addSelect('id', 'contact_id')
+      ->execute()->indexBy('contact_id');
+    foreach ($phoneRecords as $phoneRecord) {
+      Activity::create(FALSE)
+        ->setValues([
+          'activity_type_id:name' => $optedIn ? 'sms_consent_given' : 'sms_consent_revoked',
+          'activity_date_time' => $remoteContact['sms_consent_datetime'],
+          'status_id:name' => 'Completed',
+          'source_contact_id' => $phoneRecord['contact_id'],
+          'subject' => ($optedIn ? 'SMS consent given for ' : 'SMS consent revoked for ') . $phone,
+          'details' => 'Acoustic consent source: ' . $remoteContact['sms_consent_source'],
+          'phone_number' => $phone,
+          'phone_id' => $phoneRecord['id'],
+          'SMS_consent.Consent_source:name' => 'Acoustic',
+        ])
+        ->execute();
+    }
   }
 
   /**

@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\Activity;
+use Civi\Api4\Contact;
 use Civi\Api4\GroupContact;
 use Civi\Api4\Omnigroupmember;
 use Civi\Api4\PhoneConsent;
@@ -111,6 +113,11 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       'last_name' => 'Mouse',
       'email_primary.email' => 'bob@example.org',
     ], 'mouse');
+    $this->createTestEntity('Contact', [
+      'first_name' => 'Sms',
+      'last_name' => 'Revoker',
+      'phone_primary.phone' => '23456788',
+    ], 'revoker');
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnigroupmembers_load', TRUE, 'phone-consent-list.csv');
     $this->addMockResponse(file_get_contents(__DIR__ . '/Responses/SelectRecipientData.txt'));
     $consentResponse = file_get_contents(__DIR__ . '/Responses/ConsentInformationResponse.txt');
@@ -149,6 +156,22 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       ->execute()->single();
     $this->assertFalse($consent['opted_in']);
     $this->assertEquals(123459, $consent['master_recipient_id']);
+
+    $activities = Activity::get(FALSE)
+      ->addWhere('activity_type_id:name', '=', 'sms_consent_revoked')
+      ->addWhere('source_contact_id', '=', $this->ids['Contact']['revoker'])
+      ->addSelect('phone_number', 'source_contact_id', 'subject', 'SMS_consent.Consent_source:name')
+      ->execute();
+    $this->assertCount(1, $activities);
+    $this->assertEquals('23456788', $activities->first()['phone_number']);
+    $this->assertEquals($this->ids['Contact']['revoker'], $activities->first()['source_contact_id']);
+    $this->assertEquals('SMS consent revoked for 23456788', $activities->first()['subject']);
+    $this->assertEquals('Acoustic', $activities->first()['SMS_consent.Consent_source:name']);
+
+    // 23456789 is not a phone number for any contact, so there is no activity.
+    $this->assertCount(0, (array) Activity::get(FALSE)
+      ->addWhere('phone_number', '=', '123456789')
+      ->execute());
   }
 
   /**
