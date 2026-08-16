@@ -73,13 +73,14 @@ class AdyenAuditProcessor extends BaseAuditProcessor implements MultipleFileType
    */
   protected function send_queue_message($body, $type) {
     unset($body['modification_reference']);
-    // The processor_contact_id will be used for get tokenization for recurring donations.
-    if (!empty($body['recurring'])) {
-      $body['processor_contact_id'] = $body['order_id'];
-    }
+
     if (
       $body['gateway'] === 'adyen' && TokenizeRecurringJob::donationNeedsTokenizing($body)
     ) {
+      // The processor_contact_id will be used for get tokenization for recurring donations.
+      if (!empty($body['recurring'])) {
+        $body['processor_contact_id'] = $body['order_id'];
+      }
       $job = TokenizeRecurringJob::fromDonationMessage($body);
       QueueWrapper::push('jobs-adyen', $job, TRUE);
       return;

@@ -1,0 +1,13 @@
+<div af-fieldset="" store-values="1">
+  <div class="af-container af-layout-cols">
+    <af-field name="Contact_RelationshipCache_Contact_01.relationship_created_date" defn="{input_type: 'Select', search_range: true, input_attrs: {}, label: 'Employer added date'}" />
+    <af-field name="employer_id" defn="{label: 'Employer', input_attrs: {}}" />
+    <af-field name="wmf_donor.donor_segment_overall" defn="{input_attrs: {multiple: true}, label: 'Segment'}" />
+  </div>
+  <div class="af-container af-layout-cols">
+    <af-field name="Contact_ContributionSoft_contact_id_01_ContributionSoft_Contribution_contribution_id_01.receive_date" defn="{input_type: 'Select', search_range: true, input_attrs: {}, label: 'Without matched donation', afform_default: 'this.year'}" />
+    <af-field name="Contact_ContributionSoft_contact_id_02_ContributionSoft_Contribution_contribution_id_01.receive_date" defn="{input_type: 'Select', search_range: true, input_attrs: {}, label: 'Most recent matched donation', afform_default: 'previous.year'}" />
+  </div>
+  <div class="af-container af-layout-cols"></div>
+  <crm-search-display-table search-name="Employed_contacts_without_matched_gifts" display-name="Employed_contacts_without_matched_gifts"></crm-search-display-table>
+</div>

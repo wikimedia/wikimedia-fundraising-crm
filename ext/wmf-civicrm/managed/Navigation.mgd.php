@@ -447,6 +447,29 @@ $navigation = [
       ],
     ],
   ],
+  [
+    'name' => 'Navigation_Major_gifts_reports',
+    'entity' => 'Navigation',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'label' => 'Major gifts reports',
+        'name' => 'Major gifts reports',
+        'permission' => [
+          'access CiviCRM',
+        ],
+        'permission_operator' => 'AND',
+        'parent_id.name' => 'Reports',
+        'weight' => 73,
+      ],
+      'match' => [
+        'name',
+        'domain_id',
+      ],
+    ],
+  ],
 ];
 
 if (Civi::settings()->get('environment') === 'Development') {
