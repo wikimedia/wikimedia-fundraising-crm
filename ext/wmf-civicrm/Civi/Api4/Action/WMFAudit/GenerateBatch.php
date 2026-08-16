@@ -912,6 +912,7 @@ END";
       'dlocal' => ['main' => 'V04134', 'endowment' => 'V04990'],
       'engage' => ['main' => 'V01948', 'endowment' => 'V04993'],
       'stripe' => ['main' => 'V04137', 'endowment' => 'V04994'],
+      'stripemg' => ['main' => 'V04137', 'endowment' => 'V04994'],
       'trustly' => ['main' => 'V05354', 'endowment' => 'V04995'],
       'chariot' => ['main' => 'V05811', 'endowment' => 'V05002'],
       'checkoutcom' => ['main' => 'V06128'],
