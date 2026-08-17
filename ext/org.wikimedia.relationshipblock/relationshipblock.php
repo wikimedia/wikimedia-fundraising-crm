@@ -48,9 +48,9 @@ function relationshipblock_civicrm_pageRun(&$page) {
       try {
         if (CRM_Relationshipblock_Utils_RelationshipBlock::getDisplayedRelationshipTypes($contactID)) {
           CRM_Relationshipblock_Page_Inline_RelationshipBlock::addKeyRelationshipsBlock($page, $contactID);
-          CRM_Core_Region::instance('contact-basic-info-right')->add(array(
+          CRM_Core_Region::instance('contact-basic-info-right')->add([
             'template' => "CRM/Relationshipblock/ContactSummaryBlock.tpl",
-          ));
+          ]);
         }
       }
       catch(Exception $e) {

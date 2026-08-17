@@ -22,11 +22,11 @@ class CRM_Relationshipblock_Form_Inline_RelationshipBlock extends CRM_Contact_Fo
       if (!empty($relationshipType["contact_sub_type_$b"])) {
         $params['contact_sub_type'] = $relationshipType["contact_sub_type_$b"];
       }
-      $props = array(
-        'api' => array('params' => $params),
+      $props = [
+        'api' => ['params' => $params],
         'create' => TRUE,
         'multiple' => TRUE,
-      );
+      ];
       $this->addEntityRef($key, $relationshipType['label'], $props, FALSE);
     }
 
@@ -73,9 +73,9 @@ class CRM_Relationshipblock_Form_Inline_RelationshipBlock extends CRM_Contact_Fo
         }
       }
     }
-    $this->ajaxResponse['updateTabs'] = array(
+    $this->ajaxResponse['updateTabs'] = [
       '#tab_rel' => CRM_Contact_BAO_Contact::getCountComponent('rel', $this->_contactId),
-    );
+    ];
     $this->log();
     $this->response();
   }
@@ -102,7 +102,7 @@ class CRM_Relationshipblock_Form_Inline_RelationshipBlock extends CRM_Contact_Fo
     // auto-rendered in the loop -- such as "qfKey" and "buttons".  These
     // items don't have labels.  We'll identify renderable by filtering on
     // the 'label'.
-    $elementNames = array();
+    $elementNames = [];
     foreach ($this->_elements as $element) {
       /** @var HTML_QuickForm_Element $element */
       $label = $element->getLabel();
