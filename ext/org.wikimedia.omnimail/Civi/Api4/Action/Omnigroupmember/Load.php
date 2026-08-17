@@ -9,6 +9,7 @@ use Civi\Api4\Omnicontact;
 use Civi\Api4\PhoneConsent;
 use GuzzleHttp\Client;
 use League\Csv\Exception;
+use League\Csv\UnavailableStream;
 use Omnimail\Silverpop\Responses\Contact;
 
 /**
@@ -187,6 +188,18 @@ class Load extends Omniaction {
         'offset' => 0,
       ]);
       return;
+    }
+    catch (UnavailableStream $e) {
+      // The csv could not be loaded - forget about it and request it again.
+      // The file is deleted from the remote once downloaded, so if our copy is
+      // gone the stored retrieval parameters are dead & would wedge the job
+      // forever. last_timestamp is left alone so we restart from known success.
+      $job->saveJobSetting([
+        'progress_end_timestamp' => 'null',
+        'offset' => 'null',
+        'retrieval_parameters' => 'null',
+      ], 'omnigroupmember_file_failed');
+      throw new \CRM_Core_Exception('file error - try again');
     }
 
     $offset = $job->getOffset();

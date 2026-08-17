@@ -129,7 +129,7 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
         'id' => $contribution['id'],
         'url' => \CRM_Utils_System::url('civicrm/contact/view/contribution', [
           'id' => $contribution['id'],
-          'action' =>' view',
+          'action' => 'view',
           'reset' => 1,
         ], TRUE, NULL, FALSE)
       ]);
