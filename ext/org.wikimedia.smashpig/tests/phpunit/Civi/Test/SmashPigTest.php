@@ -1096,6 +1096,88 @@ class SmashPigTest extends SmashPigBaseTestClass {
   }
 
   /**
+   * A recurring charge for a 'Bank Transfer: Pix' contribution should be
+   * routed to Gravy's 'bt' payment method with 'pix' as the payment
+   * submethod, matching the option value seeded in PaymentInstruments.mgd.php
+   * and produced by Civi\WMFHelper\FinanceInstrument::BT_SUBMETHOD_LIST.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecurringChargeIncludesPixSubmethodForGravy(): void {
+    \Civi::settings()->set(
+      'smashpig_recurring_use_queue', '0'
+    );
+    \Civi::settings()->set(
+      'smashpig_recurring_catch_up_days', '1'
+    );
+
+    // PIX is a Bank Transfer instrument, routed to the 'bt' payment method,
+    // so we need a mock provider registered for that method in addition to
+    // the 'cc' one the base setUp() provides.
+    $ctx = TestingContext::get();
+    $providerConfig = $ctx->providerConfigurationOverride;
+    $bankTransferProvider = $this->getMockBuilder(
+      'SmashPig\PaymentProviders\Gravy\BankPaymentProvider'
+    )->disableOriginalConstructor()->getMock();
+    $providerConfig->overrideObjectInstance('payment-provider/bt', $bankTransferProvider);
+
+    // simulate a Gravy PIX payment
+    $contact = $this->createContact();
+    $token = $this->createToken($contact['id'], ['payment_processor_id.name' => 'gravy']);
+    $contributionRecur = $this->createContributionRecur($token, [
+      'gateway' => 'GRAVY',
+      'payment_processor_id.name' => 'gravy',
+      'currency' => 'BRL',
+    ]);
+    $contribution = $this->createContribution($contributionRecur, [
+      'payment_instrument_id:name' => 'Bank Transfer: Pix',
+      'currency' => 'BRL',
+    ]);
+    [, $expectedPaymentInvoiceId] = $this->getExpectedIds($contribution);
+    $expectedDescription = $this->getExpectedDescription();
+
+    $bankTransferProvider->expects($this->once())
+      ->method('createPayment')
+      ->with([
+        'recurring_payment_token' => $token['token'],
+        'amount' => 12.34,
+        'country' => 'US',
+        'currency' => 'BRL',
+        'first_name' => 'Harry',
+        'last_name' => 'Henderson',
+        'email' => 'harry@hendersons.net',
+        'order_id' => $expectedPaymentInvoiceId,
+        'installment' => 'recurring',
+        'description' => $expectedDescription,
+        'processor_contact_id' => $contributionRecur['invoice_id'],
+        'fiscal_number' => '1122334455',
+        'recurring' => TRUE,
+        'user_ip' => '12.34.56.78',
+        'payment_service_id' => NULL,
+        'payment_submethod' => 'pix',
+      ])
+      ->willReturn(
+        (new CreatePaymentResponse())
+          ->setGatewayTxnId('pix-txn-123')
+          ->setStatus(FinalStatus::COMPLETE)
+          ->setSuccessful(TRUE)
+      );
+    $bankTransferProvider->expects($this->never())
+      ->method('approvePayment');
+
+    // The default 'cc' provider from setUp() should not be used for a PIX payment.
+    $this->hostedCheckoutProvider->expects($this->never())
+      ->method('createPayment');
+
+    $result = civicrm_api3('Job', 'process_smashpig_recurring', []);
+
+    $this->assertEquals(
+      ['ids' => [$contributionRecur['id']]],
+      $result['values']['success']
+    );
+  }
+
+  /**
    * @throws \CRM_Core_Exception
    * @throws \PHPQueue\Exception\JobNotFoundException
    * @dataProvider failDataProvider

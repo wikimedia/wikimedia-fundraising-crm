@@ -343,6 +343,8 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
         return 'sepadirectdebit';
       case 'Bank Transfer: UPI':
         return 'upi';
+      case 'Bank Transfer: Pix':
+        return 'pix';
       case 'Bank Transfer: PayTM Wallet':
         return 'paytmwallet';
       case 'Cash':
