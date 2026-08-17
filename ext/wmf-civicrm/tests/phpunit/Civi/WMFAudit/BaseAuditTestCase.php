@@ -182,7 +182,7 @@ class BaseAuditTestCase extends TestCase {
   /**
    * Run the audit process.
    */
-  protected function runAuditor($fileName = NULL, string $gatewayAccountString = ''): Result {
+  protected function runAuditor($fileName = NULL, string $gatewayAccountString = '', bool $isMakeMissing = FALSE): Result {
     try {
       $result = WMFAudit::parse()
         ->setGateway($this->gateway)
@@ -191,6 +191,7 @@ class BaseAuditTestCase extends TestCase {
         ->setGatewayAccountString($gatewayAccountString)
         ->setSettleMode('queue')
         ->setIsMoveCompletedFile(FALSE)
+        ->setIsMakeMissing($isMakeMissing)
         ->execute();
       foreach ($result as $item) {
         $this->ids['Batch'][$item['settlement_batch_reference']] = $item['id'];
@@ -223,10 +224,10 @@ class BaseAuditTestCase extends TestCase {
    *
    * @return array
    */
-  public function runAuditBatch(string $directory, string $fileName, string $batchName = '', string $gatewayAccountString = ''): array {
+  public function runAuditBatch(string $directory, string $fileName, string $batchName = '', string $gatewayAccountString = '', bool $isMakeMissing = FALSE): array {
     $this->prepareForAuditProcessing($directory, $fileName);
 
-    $auditResult['batch'] = $this->runAuditor($fileName, $gatewayAccountString);
+    $auditResult['batch'] = $this->runAuditor($fileName, $gatewayAccountString, $isMakeMissing);
     $this->processQueues();
     if ($batchName) {
       try {

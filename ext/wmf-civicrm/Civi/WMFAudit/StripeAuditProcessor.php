@@ -2,6 +2,7 @@
 
 namespace Civi\WMFAudit;
 
+use Civi\WMFHelper\Contact;
 use SmashPig\PaymentProviders\Stripe\Audit\StripeAudit;
 
 /**
@@ -57,5 +58,24 @@ class StripeAuditProcessor extends BaseAuditProcessor {
    */
 	protected function regexForFilesToIgnore(): string {
 		return '/(^\.|\.(tmp|part|swp)$|^readme.*\.txt$)/i';
+	}
+
+  /**
+   * Give Lively's "Giving Basket" feature sends us a single Stripe Connect
+   * transfer per charity, bundling many small gifts with no per-donor
+   * billing details. SmashPig's Stripe audit parser flags these by setting
+   * organization_name (see BaseParser::getOrganizationFields()); here we
+   * resolve that to a contact_id so the donation queue links the gift to
+   * the existing Give Lively organization contact instead of creating a
+   * blank individual.
+   */
+	protected function normalize_partial( $record ) {
+		if ( empty( $record['contact_id'] ) && !empty( $record['organization_name'] ) ) {
+			$organizationID = Contact::getOrganizationID( $record['organization_name'] );
+			if ( $organizationID ) {
+				$record['contact_id'] = $organizationID;
+			}
+		}
+		return $record;
 	}
 }

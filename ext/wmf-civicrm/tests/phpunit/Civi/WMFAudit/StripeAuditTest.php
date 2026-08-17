@@ -1,13 +1,11 @@
 <?php
 
+use Civi\Api4\Contribution;
 use Civi\Api4\ContributionTracking;
 use Civi\WMFAudit\BaseAuditTestCase;
-use Civi\WMFAudit\StripeAuditProcessor;
-use PHPUnit\Framework\TestCase;
 use SmashPig\Core\UtcDate;
-use SmashPig\PaymentProviders\Stripe\Audit\StripeAudit;
 
-class StripeAuditProcessorTest extends BaseAuditTestCase {
+class StripeAuditTest extends BaseAuditTestCase {
   protected string $gateway = 'stripe';
 
   public function tearDown(): void {
@@ -28,6 +26,53 @@ class StripeAuditProcessorTest extends BaseAuditTestCase {
     $output = $this->runAuditBatch('reports', 'settlement_report.csv', 'stripe_123_USD');
     $batch = $output['batch']->first();
     $this->assertEquals(25, $batch['settled_total_amount']);
+  }
+
+  /**
+   * Give Lively's "Giving Basket" feature sends us a single Stripe Connect
+   * transfer per charity, bundling many small gifts with no per-donor
+   * billing details at all. settlement_report_giving_basket.csv has two
+   * donations: an ordinary card donation with full billing details (Homer
+   * Simpson), and a Giving Basket transfer (no billing details,
+   * description contains "Give Lively / Giving Basket"). Running in
+   * make-missing mode should link the Giving Basket gift to the existing
+   * "Give Lively" organization contact instead of creating a blank
+   * individual.
+   *
+   * Unlike testSettlementReportDataset(), this deliberately does not use
+   * runAuditBatch()/prepareForAuditProcessing(): this class's
+   * createTransactionLog() override would seed a matching TransactionLog
+   * row for every CSV row, which makes the audit treat every transaction
+   * as already found rather than missing - defeating the point of this
+   * make-missing test.
+   *
+   * Homer's donation is expected to be rejected rather than created:
+   * Stripe's raw payment_method_type ('card') isn't yet mapped to a
+   * canonical payment instrument for make-missing messages (a known,
+   * separate gap - normally a TransactionLog match supplies the real
+   * canonical payment method, but make-missing has no log to fall back
+   * on). The queue consumer handles that per-message and does not stop
+   * the Giving Basket donation from still being processed.
+   */
+  public function testGivingBasketDonationLinksToOrganization(): void {
+    $organizationID = $this->createOrganization(['organization_name' => 'Give Lively'], 'give_lively');
+
+    $this->setAuditDirectory('reports');
+    $this->runAuditor('settlement_report_giving_basket.csv', '', TRUE);
+    $this->processQueues();
+
+    $givingBasketContribution = Contribution::get(FALSE)
+      ->addWhere('invoice_id', '=', '24316.1')
+      ->addSelect('id', 'contact_id', 'total_amount')
+      ->execute()->single();
+    $this->assertEquals($organizationID, $givingBasketContribution['contact_id']);
+    $this->assertEquals(1780.11, $givingBasketContribution['total_amount']);
+    $this->ids['Contribution'][] = $givingBasketContribution['id'];
+
+    $homerContribution = Contribution::get(FALSE)
+      ->addWhere('invoice_id', '=', '24315.1')
+      ->execute()->first();
+    $this->assertNull($homerContribution);
   }
 
   public function createTransactionLog(array $row): void {
