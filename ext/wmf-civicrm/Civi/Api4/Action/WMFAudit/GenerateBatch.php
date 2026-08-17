@@ -33,6 +33,8 @@ class GenerateBatch extends AbstractAction {
 
   const NUMBER_OF_DAYS_OLD = 2;
 
+  const BALANCING_ACCOUNT_HARD_CODED = 'determined_in_code';
+
   /**
    * Is this a dry run (if so do not close batches or push to the api).
    *
@@ -913,11 +915,6 @@ END";
       'trustly' => ['main' => 'V05354', 'endowment' => 'V04995'],
       'chariot' => ['main' => 'V05811', 'endowment' => 'V05002'],
       'checkoutcom' => ['main' => 'V06128'],
-      // V00343	& V04999 Wikimedia Deutschland
-      // V01729	& V05000Wikimedia CH
-      // fundraise up - paypal V05040, V05001
-      // overflow app V05045, V04996
-      // checkoutcom
     ];
   }
 
