@@ -1,0 +1,31 @@
+<af-form ctrl="afform">
+  <div ng-controller="WmfFinanceBatchCtrl as batchCtrl">
+    <af-entity url-autofill="1" type="Batch" name="Batch1" label="New Manual Finance Batch" actions="{create: true, update: true}" security="RBAC" />
+    <fieldset af-fieldset="Batch1" class="af-container">
+      <af-field name="name" defn="{input_attrs: {}, input_type: 'Hidden'}" />
+      <div class="af-container af-layout-cols">
+        <af-field name="batch_data.settlement_gateway_account_id" defn="{label: 'Gateway Account', input_attrs: {}, required: true}" />
+        <af-field name="batch_data.settlement_date" defn="{label: 'Settlement Date', input_attrs: {}, required: true}" />
+        <af-field name="batch_data.settlement_currency" defn="{label: 'Settlement Currency', input_attrs: {}, required: true}" />
+        <af-field defn="{name: 'reference', label: 'Reference', input_type: 'Text', input_attrs: {}}" />
+      </div>
+      <div class="af-container af-layout-cols">
+        <af-field name="batch_data.settled_donation_amount" defn="{label: 'Donation Amount', input_attrs: {}, required: true}" />
+        <af-field name="batch_data.settled_net_amount" defn="{label: 'Net Amount', input_attrs: {}, required: true}" />
+        <af-field name="batch_data.settled_fee_amount" defn="{label: 'Fee Amount', input_attrs: {}, required: true, afform_default: 0}" />
+      </div>
+      <!-- total_manually_entered (9): Civi\WMFHook\Batch/UserJob move this to
+           total_verified (6) once batch data entry/import completes, so the
+           existing WMFAudit.generateBatch validation flow picks it up the
+           same way audit-driven batches are. -->
+      <af-field name="status_id" defn="{afform_default: 9, input_attrs: {}, input_type: 'Hidden'}" />
+      <af-field name="type_id" defn="{afform_default: 1, input_attrs: {}, input_type: 'Hidden'}" />
+      <af-field name="item_count" defn="{label: 'Number of contributions', input_attrs: {}, required: true}" />
+      <!-- mode_id 2 = Automatic Batch: makes this batch eligible for the
+           normal generateBatch validation/export flow once its status
+           reaches total_verified, same as audit-created batches. -->
+      <af-field name="mode_id" defn="{input_type: 'Hidden', input_attrs: {}, afform_default: 2}" />
+    </fieldset>
+    <button class="af-button btn btn-primary" crm-icon="fa-check" ng-click="batchCtrl.onSubmit()" ng-if="afform.showSubmitButton">Submit</button>
+  </div>
+</af-form>

@@ -77,6 +77,7 @@
     <mixin>entity-types-php@2.0.0</mixin>
     <mixin>smarty@1.0.3</mixin>
     <mixin>scan-classes@1.0.0</mixin>
+    <mixin>ang-php@1.0.0</mixin>
   </mixins>
   <upgrader>CiviMix\Schema\WmfCivicrm\AutomaticUpgrader</upgrader>
 </extension>
