@@ -101,7 +101,11 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
    * @throws \CRM_Core_Exception
    */
   protected function getExistingContributionID(int $id): ?int {
-    $result = ContributionTracking::get(FALSE)->addWhere('id', '=', $id)->execute()->first();
+    $result = ContributionTracking::get(FALSE)
+      ->addWhere('id', '=', $id)
+      ->setSelect(['contribution_id'])
+      ->execute()
+      ->first();
     return !empty($result['contribution_id']) ? (int) $result['contribution_id'] : NULL;
   }
 
