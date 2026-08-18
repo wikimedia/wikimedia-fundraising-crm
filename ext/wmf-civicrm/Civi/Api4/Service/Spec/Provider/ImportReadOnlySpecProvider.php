@@ -19,6 +19,14 @@ class ImportReadOnlySpecProvider implements Generic\SpecProviderInterface {
       'contribution_extra.backend_processor',
       'contribution_extra.backend_processor_txn_id',
       'contribution_extra.payment_orchestrator_reconciliation_id',
+      'contribution_settlement.settlement_batch_reference',
+      'contribution_settlement.settlement_batch_reversal_reference',
+      'contribution_settlement.settlement_currency',
+      'contribution_settlement.settlement_date',
+      'contribution_settlement.settled_donation_amount',
+      'contribution_settlement.settled_fee_amount',
+      'contribution_settlement.settled_reversal_amount',
+      'contribution_settlement.settled_fee_reversal_amount',
     ];
     foreach ($fieldNames as $fieldName) {
       $field = $spec->getFieldByName($fieldName);
