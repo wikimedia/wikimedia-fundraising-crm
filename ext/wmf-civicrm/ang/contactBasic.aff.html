@@ -2,7 +2,7 @@
     {{ts('No contact id provided')}}
   </div>
   <div ng-if="options.contact_id"
-    af-api4="['Contact', 'get', {select: ['first_name','last_name','is_opt_out','email_primary.email', 'email_primary.on_hold', 'email_primary.hold_date', 'middle_name', 'display_name', 'contact_type', 'nick_name', 'address_primary.street_address', 'address_primary.city', 'Partner.Partner', 'activity.id'],
+    af-api4="['Contact', 'get', {select: ['first_name','last_name','is_opt_out','email_primary.email', 'email_primary.on_hold', 'email_primary.hold_date', 'middle_name', 'display_name', 'contact_type', 'nick_name', 'address_primary.street_address', 'address_primary.city', 'Partner.Partner', 'activity.id', 'wmf_donor.all_funds_last_donation_date'],
     join: [['Activity AS activity', 'LEFT', ['activity.target_contact_id', '=', 'id'], ['activity.activity_type_id', '=', 220], ['activity.status_id', '=', 2], ['email_primary.email', '=', 'activity.subject']]],
     where: [['id', '=', options.contact_id]]}]"
     af-api4-ctrl="contact"
@@ -64,10 +64,7 @@
         </button>
       </span>
     </div>
-    <div ng-if="options.contact_id"
-       af-api3="['Contribution', 'get', {contact_id: options.contact_id, 'sequential': 1, return : 'receive_date', options: {limit: 1, sort: 'receive_date DESC'}}]"
-       af-api3-ctrl="contribution">
-    <div ng-show="contribution.result.values[0]"><div>{{ ts('Last Contributed on')}}</div><div></div><strong>{{contribution.result.values[0].receive_date}}</strong></div></div>
+    <div ng-show="contact['result'][0]['wmf_donor.all_funds_last_donation_date']"><strong class="basic-contact-field">{{ ts('Last Donation')}}</strong>: {{contact['result'][0]['wmf_donor.all_funds_last_donation_date'] | limitTo: 10 }}</div>
   </form>
 </div>
 

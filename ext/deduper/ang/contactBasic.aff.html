@@ -53,9 +53,9 @@
       </span>
     </div>
     <div ng-if="options.contact_id"
-       af-api3="['Contribution', 'get', {contact_id: options.contact_id, 'sequential': 1, return : 'receive_date', options: {limit: 1, sort: 'receive_date DESC'}}]"
-       af-api3-ctrl="contribution">
-    <div ng-show="contribution.result.values[0]"><div>{{ ts('Last Contributed on')}}</div><div></div><strong>{{contribution.result.values[0].receive_date}}</strong></div></div>
+       af-api4="['Contribution', 'get', {select: ['receive_date'], where: [['contact_id', '=', options.contact_id]], orderBy: {receive_date: 'DESC'}, limit: 1}]"
+       af-api4-ctrl="contribution">
+    <div ng-show="contribution.result[0]"><strong class="basic-contact-field">{{ ts('Last Contributed on')}}</strong>: {{contribution.result[0].receive_date | limitTo: 10 }}</div></div>
   </form>
 </div>
 

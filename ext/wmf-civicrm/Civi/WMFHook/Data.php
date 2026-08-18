@@ -7,7 +7,9 @@ use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\CustomField;
 use Civi\Api4\CustomGroup;
+use Civi\Api4\GatewayAccount;
 use Civi\Api4\Relationship;
+use Civi\Core\Event\PreEvent;
 use Civi\WMFHelper\CustomData;
 use CRM_Wmf_ExtensionUtil as E;
 
@@ -26,9 +28,6 @@ class Data {
    * @throws \CRM_Core_Exception
    */
   public static function customPre(string $op, int $groupID, int $entityID, array &$params): void {
-    if ($op !== 'delete') {
-      self::createDonorAdvisedRelationshipFromCustomField($groupID, $entityID, $params);
-    }
     if (empty(self::getDateTrackingFields())) {
       return;
     }
@@ -61,35 +60,98 @@ class Data {
   }
 
   /**
+   * Implements hook_civicrm_pre::Contribution.
+   *
    * @throws \CRM_Core_Exception
    */
-  protected static function createDonorAdvisedRelationshipFromCustomField(int $groupID, int $entityID, array $params) {
-    $groupName = CustomGroup::get(FALSE)
-      ->addWhere('id', '=', $groupID)
-      ->execute()->single()['name'];
-    if ($groupName === 'donor_advised_fund') {
-      foreach ($params as $field) {
-        if ($field['column_name'] !== 'owns_donor_advised_for' || empty($field['value'])) {
-          continue;
-        }
-        $relatedContactID = (int) $field['value'];
-        $contactID = Contribution::get(FALSE)->addWhere('id', '=', $entityID)
-          ->addSelect('contact_id')
-          ->execute()->single()['contact_id'];
-        if (!count(Relationship::get(FALSE)
-          ->addWhere('contact_id_b', '=', $contactID)
-          ->addWhere('contact_id_a', '=', $relatedContactID)
-          ->addWhere('relationship_type_id.name_a_b', '=', 'Holds a Donor Advised Fund of')
-          ->addSelect('id')->execute())) {
-          // Relationship type is a required field so if not found this would
-          // throw an error and the line import would be rolled back. There would be
-          // an error line in the csv presented to the user.
-          Relationship::create(FALSE)->setValues([
-            'contact_id_b' => $contactID,
-            'contact_id_a' => $relatedContactID,
-            'relationship_type_id.name_a_b' => 'Holds a Donor Advised Fund of',
-          ])->execute();
-        }
+  public static function contributionPre(PreEvent $event): void {
+    if ($event->action === 'delete') {
+      return;
+    }
+    $value = $event->getValue('donor_advised_fund.owns_donor_advised_for');
+    if (empty($value)) {
+      return;
+    }
+    // contact_id is submitted alongside the custom field on create (when
+    // the contribution doesn't have an id yet); on edit it may not be
+    // resubmitted, in which case createDonorAdvisedRelationshipFromCustomField()
+    // falls back to looking it up via entityID.
+    $contactID = $event->getValue('contact_id');
+    self::createDonorAdvisedRelationshipFromCustomField(
+      (int) $event->id,
+      [['column_name' => 'owns_donor_advised_for', 'value' => $value]],
+      $contactID ? (int) $contactID : NULL
+    );
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  protected static function createDonorAdvisedRelationshipFromCustomField(int $entityID, array $params, ?int $contactID = NULL): void {
+    foreach ($params as $field) {
+      if ($field['column_name'] !== 'owns_donor_advised_for') {
+        continue;
+      }
+      $relatedContactID = (int) $field['value'];
+      $contactID = $contactID ?? Contribution::get(FALSE)->addWhere('id', '=', $entityID)
+        ->addSelect('contact_id')
+        ->execute()->single()['contact_id'];
+      if (!count(Relationship::get(FALSE)
+        ->addWhere('contact_id_b', '=', $contactID)
+        ->addWhere('contact_id_a', '=', $relatedContactID)
+        ->addWhere('relationship_type_id.name_a_b', '=', 'Holds a Donor Advised Fund of')
+        ->addSelect('id')->execute())) {
+        // Relationship type is a required field so if not found this would
+        // throw an error and the line import would be rolled back. There would be
+        // an error line in the csv presented to the user.
+        Relationship::create(FALSE)->setValues([
+          'contact_id_b' => $contactID,
+          'contact_id_a' => $relatedContactID,
+          'relationship_type_id.name_a_b' => 'Holds a Donor Advised Fund of',
+        ])->execute();
+      }
+    }
+  }
+
+  /**
+   * Implements hook_civicrm_pre::Batch.
+   *
+   * Keeps batch_data.settlement_gateway (a plain name string, kept for
+   * backward compatibility with existing consumers/analytics) in sync with
+   * batch_data.settlement_gateway_account_id (a proper EntityReference to
+   * GatewayAccount, storing GatewayAccount.id).
+   *
+   * If both are submitted in the same save with conflicting values, the
+   * id field wins, since it's the more precise reference. If only one is
+   * submitted, the other is derived from it. If the referenced
+   * GatewayAccount can't be found (e.g. a stale/typo'd name, or a deleted
+   * account id), neither field is touched.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public static function batchPre(PreEvent $event): void {
+    if ($event->action === 'delete') {
+      return;
+    }
+    $accountID = $event->getValue('batch_data.settlement_gateway_account_id');
+    $gatewayName = $event->getValue('batch_data.settlement_gateway');
+
+    if (!empty($accountID)) {
+      $name = GatewayAccount::get(FALSE)
+        ->addWhere('id', '=', $accountID)
+        ->addSelect('name')
+        ->execute()->first()['name'] ?? NULL;
+      if ($name !== NULL) {
+        $event->setValue('batch_data.settlement_gateway', $name);
+      }
+    }
+    elseif (!empty($gatewayName)) {
+      $id = GatewayAccount::get(FALSE)
+        ->addWhere('name', '=', $gatewayName)
+        ->addSelect('id')
+        ->execute()->first()['id'] ?? NULL;
+      if ($id !== NULL) {
+        $event->setValue('batch_data.settlement_gateway_account_id', $id);
       }
     }
   }

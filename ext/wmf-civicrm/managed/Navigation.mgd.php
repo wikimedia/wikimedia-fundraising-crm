@@ -463,6 +463,7 @@ $navigation = [
         'permission_operator' => 'AND',
         'parent_id.name' => 'Reports',
         'weight' => 73,
+        'domain_id' => 'current_domain',
       ],
       'match' => [
         'name',
