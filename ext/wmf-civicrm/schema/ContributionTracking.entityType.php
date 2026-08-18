@@ -316,11 +316,5 @@ return [
       'input_type' => 'Number',
       'description' => E::ts('Device screen height.'),
     ],
-    'app_install_id' => [
-      'title' => E::ts('Wikipedia App Install ID'),
-      'sql_type' => 'varchar(255)',
-      'input_type' => 'Text',
-      'description' => E::ts('Wikipedia App install ID.'),
-    ],
   ],
 ];
