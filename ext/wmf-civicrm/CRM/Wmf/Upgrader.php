@@ -5173,6 +5173,24 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Backfill Consent_source on existing SMS consent activities.
+   *
+   * All current ones are from Acoustic except a small number that look to be testing.
+   *
+   * Bug: T423967
+   *
+   * @return bool
+   */
+  public function upgrade_5110(): bool {
+    Activity::update(FALSE)
+      ->addWhere('activity_type_id:name', 'IN', ['sms_consent_given', 'sms_consent_revoked'])
+      ->addWhere('details', 'REGEXP', 'Acoustic')
+      ->addValue('SMS_consent.Consent_source:name', 'Acoustic')
+      ->execute();
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

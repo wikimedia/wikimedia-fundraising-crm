@@ -135,6 +135,7 @@ class Update extends AbstractAction {
           'source_contact_id' => $this->getContactID(),
           'subject' => $details['sms_consent_status'] === 'OPTED-IN' ? 'SMS consent given for ' . $details['mobile_phone'] : 'SMS consent revoked for ' . $details['mobile_phone'],
           'details' => 'Acoustic opt in information : ' . $details['sms_consent_source'],
+          'SMS_consent.Consent_source:name' => 'Acoustic',
           // These fields are kinda legacy but since they exist I guess we stick data in them.
           'phone_number' => $phoneNumber,
           'phone_id' => $this->getPhoneID(),
