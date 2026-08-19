@@ -2,6 +2,7 @@
 namespace Civi\Api4;
 
 use Civi\Api4\Action\Omniphone\BatchUpdate;
+use Civi\Api4\Action\Omniphone\OptIn;
 use Civi\Api4\Action\Omniphone\Update;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
@@ -46,6 +47,22 @@ class Omniphone extends Generic\AbstractEntity {
    */
   public static function batchUpdate(bool $checkPermissions = TRUE): BatchUpdate {
     return (new BatchUpdate(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Omniphone opt in.
+   *
+   * Sends a virtual mobile originated (MO) message to Acoustic
+   * (as if the contact sent a start message), which opts the
+   * phone number into the SMS program it is sent to.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\Omniphone\OptIn
+   */
+  public static function optIn(bool $checkPermissions = TRUE): OptIn {
+    return (new OptIn(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 
