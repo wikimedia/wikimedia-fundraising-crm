@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bbbefbcac44fd3b7b79c4a9ffcb56567",
+    "content-hash": "bcc892f58b995106a7aa89a40c241ac3",
     "packages": [
         {
             "name": "adrienrn/php-mimetyper",
@@ -8857,11 +8857,11 @@
         },
         {
             "name": "wikimedia/omnimail-silverpop",
-            "version": "1.35",
+            "version": "1.36",
             "source": {
                 "type": "git",
                 "url": "https://github.com/eileenmcnaughton/omnimail-silverpop.git",
-                "reference": "f85589fbe2733fe0acfe2eca3a137bfbcfd94f7e"
+                "reference": "6f56409ecde7e0137f918d8f3f6a1d8751cf3c02"
             },
             "require": {
                 "league/csv": "^9",
@@ -8901,7 +8901,7 @@
                 "omnimail",
                 "silverpop"
             ],
-            "time": "2026-08-07T04:43:56+00:00"
+            "time": "2026-08-19T00:48:18+00:00"
         },
         {
             "name": "wikimedia/smash-pig",

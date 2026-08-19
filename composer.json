@@ -33,7 +33,7 @@
         "jackgleeson/stats-collector": "^1.4",
         "ext-json": "*",
         "ext-zip": "*",
-        "wikimedia/omnimail-silverpop": "1.35"
+        "wikimedia/omnimail-silverpop": "*"
     },
     "repositories": [
       {
