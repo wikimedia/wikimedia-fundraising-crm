@@ -1387,19 +1387,8 @@ class Save extends AbstractAction {
   private function createPhoneConsent($contact_id) {
     if (isset($this->message['sms_opt_in']) && (bool)$this->message['sms_opt_in'] === TRUE) {
       $date = (new \DateTime('@' . $this->message['date']))->format('Y-m-d H:i:s');
-      // Right now they are US only and may or may not start with 1
-      // No US area codes start with 0 or 1
       // TODO: Normalize this in the form with better UI and only pass over numbers
-
-      // Get only the numbers
-      $phoneNumber = preg_replace('/[^\d]/', '', $this->message['phone']);
-
-      if (str_starts_with($phoneNumber, '1')) {
-        $countryCode = substr($phoneNumber, 0, 1);
-        $phoneNumber = substr($phoneNumber, 1);
-      } else {
-        $countryCode = 1;
-      }
+      ['country_code' => $countryCode, 'phone_number' => $phoneNumber] = \Civi\WMFHelper\Phone::splitUsNumber($this->message['phone']);
 
       $record = [
         'country_code' => $countryCode,

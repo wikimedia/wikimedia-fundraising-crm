@@ -76,6 +76,7 @@ class OmniphoneUpdateTest extends OmnimailBaseTestClass {
       ->addWhere('activity_type_id:name', '=', 'sms_consent_given')
       ->execute()->single();
     $this->assertEquals('SMS consent given for 19099909021', $activity['subject']);
+    $this->assertEquals(9099909021, $activity['phone_number']);
   }
 
   /**

@@ -1415,6 +1415,7 @@ class Message {
         $phoneFields['phone_primary.phone_data.phone_source'] = 'Payments Form';
         // Matching what acoustic consents look like
         $phoneFields['phone_primary.location_type_id:name'] = 'sms_mobile';
+        $phoneFields['phone_primary.phone'] = \Civi\WMFHelper\Phone::splitUsNumber($this->message['phone'])['phone_number'];
       }
     }
     // The recipient ID is a value sent from Acoustic which can be used to look

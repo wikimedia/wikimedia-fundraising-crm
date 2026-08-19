@@ -841,7 +841,8 @@ class DonationQueueTest extends BaseQueueTestCase {
       'gross' => '1.23',
       'payment_method' => 'cc',
       'payment_submethod' => 'visa',
-      'phone' => $phoneNumber,
+      // Submitted with a leading US country code digit that should get stripped.
+      'phone' => '1' . $phoneNumber,
       'sms_opt_in' => 1
     ];
 
