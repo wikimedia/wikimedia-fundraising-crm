@@ -105,19 +105,18 @@ class Update extends AbstractAction {
 
     // This if is cos it feels like we should check 'something'
     if (!empty($details['sms_consent_status'])) {
-      // So far we can assume the number is from US & leads with a 1.
-      // ie. single digit - is US the only single digit?
+      ['country_code' => $countryCode, 'phone_number' => $phoneNumber] = \Civi\WMFHelper\Phone::splitUsNumber($details['mobile_phone']);
       Phone::update(FALSE)
         ->addWhere('id', '=', $this->getPhoneID())
         ->setValues([
-          'phone' => substr($details['mobile_phone'], 1),
+          'phone' => $phoneNumber,
           'phone_data.update_date' => $details['sms_consent_datetime'],
         ])
         ->execute();
 
       $record = [
-        'country_code' => substr($details['mobile_phone'], 0, 1),
-        'phone_number' => substr($details['mobile_phone'], 1),
+        'country_code' => $countryCode,
+        'phone_number' => $phoneNumber,
         'master_recipient_id' => $this->getRecipientID(),
         'consent_date' => $details['sms_consent_datetime'],
         'consent_source' => $details['sms_consent_source'],
@@ -136,8 +135,9 @@ class Update extends AbstractAction {
           'source_contact_id' => $this->getContactID(),
           'subject' => $details['sms_consent_status'] === 'OPTED-IN' ? 'SMS consent given for ' . $details['mobile_phone'] : 'SMS consent revoked for ' . $details['mobile_phone'],
           'details' => 'Acoustic opt in information : ' . $details['sms_consent_source'],
+          'SMS_consent.Consent_source:name' => 'Acoustic',
           // These fields are kinda legacy but since they exist I guess we stick data in them.
-          'phone_number' => $details['mobile_phone'],
+          'phone_number' => $phoneNumber,
           'phone_id' => $this->getPhoneID(),
         ])
         ->execute();

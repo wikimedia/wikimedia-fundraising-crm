@@ -280,17 +280,7 @@ class Load extends Omniaction {
       }
       if (!empty($groupMember['phone'])) {
         // This is an SMS contact.
-        if (str_starts_with($groupMember['phone'], 1)) {
-          // 1 = United States = Weird
-          $countryCode = substr($groupMember['phone'], 0, 1);
-          $phone = substr($groupMember['phone'], 1);
-        }
-        else {
-          // We only have United States at the moment but if we ever have others
-          // they are 2 digit codes.
-          $countryCode = substr($groupMember['phone'], 0, 2);
-          $phone = substr($groupMember['phone'], 2);
-        }
+        ['country_code' => $countryCode, 'phone_number' => $phone] = \Civi\WMFHelper\Phone::splitUsNumber($groupMember['phone']);
         $existingConsent = PhoneConsent::get(FALSE)
           ->addWhere('phone_number', '=', $phone)
           ->addWhere('country_code', '=', $countryCode)

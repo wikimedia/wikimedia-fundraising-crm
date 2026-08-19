@@ -5157,6 +5157,40 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Save app_install_id to its own contribution_tracking field
+   *
+   *
+   * Bug: T433883
+   *
+   * @return bool
+   */
+  public function upgrade_5105(): bool {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_contribution_tracking', 'app_install_id', FALSE)) {
+      $fields = (require E::path('schema/ContributionTracking.entityType.php'))['getFields']();
+      E::schema()->alterSchemaField('ContributionTracking', 'app_install_id', $fields['app_install_id']);
+    }
+    return TRUE;
+  }
+
+  /**
+   * Backfill Consent_source on existing SMS consent activities.
+   *
+   * All current ones are from Acoustic except a small number that look to be testing.
+   *
+   * Bug: T423967
+   *
+   * @return bool
+   */
+  public function upgrade_5110(): bool {
+    Activity::update(FALSE)
+      ->addWhere('activity_type_id:name', 'IN', ['sms_consent_given', 'sms_consent_revoked'])
+      ->addWhere('details', 'REGEXP', 'Acoustic')
+      ->addValue('SMS_consent.Consent_source:name', 'Acoustic')
+      ->execute();
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

@@ -113,7 +113,7 @@ class PreferencesLink {
   /**
    * Get the url to link to the donor portal, if eligible or '' otherwise.
    *
-   * A donor is eligible if they have a segment > 200 and not 1000 (they aren't a major or mid-tier donor or a non-donor)
+   * A donor is eligible if they have a segment > 300 and not 990 (they aren't a major, mid value plus or mid value donor or a non-donor)
    * and they do not have an active paypal (via paypal but not via gravy) recurring that can't be edited in the portal
    * and their language is English.
    *
@@ -125,8 +125,8 @@ class PreferencesLink {
     $contact = Contact::get(FALSE)
       ->addSelect('id')
       ->addWhere('id', '=', $contactID)
-      ->addWhere('wmf_donor.donor_segment_id', '>', 200)
-      ->addWhere('wmf_donor.donor_segment_id', '!=', 1000)
+      ->addWhere('wmf_donor.donor_segment_overall', '>', 300)
+      ->addWhere('wmf_donor.donor_segment_overall', '!=', 990)
       ->addWhere('preferred_language', 'LIKE', 'en%')
       ->addJoin('ContributionRecur AS recur',
         'EXCLUDE',

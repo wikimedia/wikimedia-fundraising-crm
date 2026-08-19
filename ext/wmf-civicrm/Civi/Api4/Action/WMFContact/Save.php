@@ -95,8 +95,9 @@ class Save extends AbstractAction {
       // For updates we are still using our own process which may or may not confer benefits
       // For inserts however we can rely on the core api.
       // for payment method from third party like apple venmo paypal assign different email type
-      if (isset($msg['payment_method']) && $this->getIsLowConfidenceNameSource()) {
-        $contact['email_primary.location_type_id:name'] = $msg['payment_method'] === 'ach' ? 'achForm' : $msg['payment_method'];
+      $paymentMethod = $this->getPaymentMethod();
+      if (!empty($paymentMethod) && $this->getIsLowConfidenceNameSource()) {
+        $contact['email_primary.location_type_id:name'] = $paymentMethod === 'ach' ? 'achForm' : $paymentMethod;
       }
     }
     // for gravy ACH, additional billing email might be provided here.
@@ -437,7 +438,8 @@ class Save extends AbstractAction {
     // filtering out some fields here probably persists more because we
     // have not been brave enough to change historical code than an underlying reason.
     $incomingHighConfidence = !$this->getIsLowConfidenceNameSource();
-    $existingLowConfidence = $existingContact['email_primary.location_type_id:name'] && $this->getIsLowConfidenceNameSource($existingContact['email_primary.location_type_id:name']);
+    $existingLowConfidence = !empty($existingContact['email_primary.location_type_id:name'])
+      && $this->isLowConfidenceLocationType($existingContact['email_primary.location_type_id:name']);
     foreach (['first_name', 'last_name'] as $field) {
       if (!empty($this->message[$field]) && (empty($existingContact[$field]) || $existingLowConfidence || $incomingHighConfidence)) {
         // When new name fields only differ from old name fields in case, only update
@@ -668,11 +670,11 @@ class Save extends AbstractAction {
    */
   private function emailUpdate($msg, $contact_id) {
     try {
-      $paymentMethod = isset($msg['payment_method']) ? strtolower($msg['payment_method']) : '';
+      $paymentMethod = $this->getPaymentMethod();
       $incomingTrusted = $this->isEmailSourceTrusted($paymentMethod);
 
       if (!$incomingTrusted) {
-        $msg['email_location_type_id'] = strtolower($msg['payment_method']);
+        $msg['email_location_type_id'] = $paymentMethod;
       }
 
       $loc_type_id = $this->getEmailLocationTypeId($msg);
@@ -815,7 +817,7 @@ class Save extends AbstractAction {
       }
       // if current primary match is ach still update to the latest location type id
       // $loc_type_id might be home or billing since it's trusted email source
-      if ($emailContext['exactMatchPrimary']['location_type_id:name'] == 'achForm' && $this->getMessage()['payment_method'] ?? '' !== 'ach') {
+      if ($emailContext['exactMatchPrimary']['location_type_id:name'] == 'achForm' && $this->getPaymentMethod() !== 'ach') {
         $this->updatePrimaryEmailLocation($emailContext['exactMatchPrimary']['id']);
       }
     } else {
@@ -959,7 +961,7 @@ class Save extends AbstractAction {
 
     // Venmo-specific logic: try phone or email first cause username is changeable, we want to avoid false match
     // if username is taken by another contact. where phone and email is also changeable but can not be taken by other user easily
-    if ($msg['payment_method'] === 'venmo' && !empty($msg['phone'])) {
+    if ($this->getPaymentMethod() === 'venmo' && !empty($msg['phone'])) {
       $contact = $this->matchVenmoByPhone($msg);
       if ($contact) {
         return $contact;
@@ -1065,13 +1067,13 @@ class Save extends AbstractAction {
     $locationMatches = [];
     $lowConfidence = [];
 
+    $paymentMethod = $this->getPaymentMethod();
+    $paymentMethodLocationType = $paymentMethod === 'ach' ? 'achForm' : $paymentMethod;
     foreach ($matches as $candidate) {
       $isNameMatch = $this->isNameMatch($candidate, $msg);
       $isPrimary = $candidate['email.is_primary'];
       $isLowConfidence = $this->getIsLowConfidenceNameSource($candidate['email.location_type_id:name']);
-      $isLocationMatch = strcasecmp(
-        $msg['payment_method'] == 'ach' ? 'achForm' : $msg['payment_method'],
-        $candidate['email.location_type_id:name']) === 0;
+      $isLocationMatch = strcasecmp($paymentMethodLocationType, $candidate['email.location_type_id:name']) === 0;
 
       // 1) primary email + name
       if ($isNameMatch && $isPrimary) {
@@ -1244,21 +1246,21 @@ class Save extends AbstractAction {
    *  Some donation data sources provide unreliable contact name data e.g. Apple
    *  Pay. Knowing this allows us to give less weight to data from unreliable
    *  sources during the dedupe processes.
+   *  This operates in the context of the passed in type and the incoming donation,
+   *  if you just want to check a specific type use isLowConfidenceLocationType().
    *
    * @param null $primaryEmailType
    * @return bool
    */
   protected function getIsLowConfidenceNameSource($primaryEmailType = NULL): bool {
-    $paymentMethodsReturnLowConfidenceName = array_map('strtolower', \Civi::settings()->get('deduper_clean_location_types_to_keep_email'));
     // check if currency primary not trusted source, then no need to check first name and last name, otherwise check incoming payment_method.
-    if (!empty($primaryEmailType) && in_array(strtolower($primaryEmailType), $paymentMethodsReturnLowConfidenceName)) {
+    if (!empty($primaryEmailType) && $this->isLowConfidenceLocationType($primaryEmailType)) {
       return true;
     } else {
-      if (
-        !empty($this->getMessage()['payment_method'])
-      ) {
+      $paymentMethod = $this->getPaymentMethod();
+      if (!empty($paymentMethod)) {
         // those 3rd party contact might have their own name, opt out name check for dedupe if external identifier matched
-        $this->isLowConfidenceNameSource = in_array(strtolower($this->getMessage()['payment_method']), $paymentMethodsReturnLowConfidenceName);
+        $this->isLowConfidenceNameSource = $this->isLowConfidenceLocationType($paymentMethod);
       }
       else {
         // If contribution recur ID is populated we are not dealing with something they just entered on
@@ -1267,6 +1269,36 @@ class Save extends AbstractAction {
       }
     }
     return $this->isLowConfidenceNameSource;
+  }
+
+  /**
+   * Get the message's payment method
+   *
+   * Prefers payment_method, but old-style Paypal recurrings only have gateway
+   * and no payment_method, so we use gateway for paypal and paypal_ec.
+   *
+   * @return string
+   */
+  private function getPaymentMethod(): string {
+    $msg = $this->getMessage();
+    if (!empty($msg['payment_method'])) {
+      return strtolower($msg['payment_method']);
+    }
+    if (in_array($msg['gateway'] ?? NULL, ['paypal','paypal_ec'])) {
+      return 'paypal';
+    }
+    return '';
+  }
+
+  /**
+   * Does the given email location type indicate a low-confidence name source.
+   *
+   * @param string $locationType
+   * @return bool
+   */
+  private function isLowConfidenceLocationType(string $locationType): bool {
+    $paymentMethodsReturnLowConfidenceName = array_map('strtolower', \Civi::settings()->get('deduper_clean_location_types_to_keep_email'));
+    return in_array(strtolower($locationType), $paymentMethodsReturnLowConfidenceName);
   }
 
   /**
@@ -1355,19 +1387,8 @@ class Save extends AbstractAction {
   private function createPhoneConsent($contact_id) {
     if (isset($this->message['sms_opt_in']) && (bool)$this->message['sms_opt_in'] === TRUE) {
       $date = (new \DateTime('@' . $this->message['date']))->format('Y-m-d H:i:s');
-      // Right now they are US only and may or may not start with 1
-      // No US area codes start with 0 or 1
       // TODO: Normalize this in the form with better UI and only pass over numbers
-
-      // Get only the numbers
-      $phoneNumber = preg_replace('/[^\d]/', '', $this->message['phone']);
-
-      if (str_starts_with($phoneNumber, '1')) {
-        $countryCode = substr($phoneNumber, 0, 1);
-        $phoneNumber = substr($phoneNumber, 1);
-      } else {
-        $countryCode = 1;
-      }
+      ['country_code' => $countryCode, 'phone_number' => $phoneNumber] = \Civi\WMFHelper\Phone::splitUsNumber($this->message['phone']);
 
       $record = [
         'country_code' => $countryCode,
