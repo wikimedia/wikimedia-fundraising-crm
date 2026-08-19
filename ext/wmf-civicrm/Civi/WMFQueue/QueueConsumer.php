@@ -211,9 +211,12 @@ abstract class QueueConsumer extends BaseQueueConsumer {
         'Message was removed from queue `{queue}` and sent to the damaged message table', [
           'message' => $ex->getMessage(),
           'original_message' => $ex->getPrevious() ? $ex->getPrevious()->getMessage() : '',
-          'subject' => 'Removal : of ' . $ex->type . ' from ' . $this->queueName . " " . gethostname() . " " . __CLASS__,
+          // Arbitrary max of 150 - hopefully as much info as we can grok.
+          'subject' => substr('Removal : from ' . $this->queueName . ' : O' . $ex->getMessage(), 150),
           'details' => $mailableDetails,
           'queue' => $this->queueName,
+          'error_type' => $ex->type,
+          'host' => gethostname(),
           'consumer' => __CLASS__,
         ]
       );
@@ -247,9 +250,10 @@ abstract class QueueConsumer extends BaseQueueConsumer {
    * @return string
    */
   public static function itemUrl(int $damagedId): string {
-    global $base_url;
     // Example URL https://civicrm.wikimedia.org/civicrm/damaged/?action=update&id=1234&reset=1
-    return "$base_url/civicrm/damaged/edit?action=update&id=$damagedId&reset=1";
+    return \CRM_Utils_System::url("civicrm/damaged/edit", [
+      'action' => 'update', 'id' => $damagedId, 'reset' => 1
+    ], TRUE, NULL, FALSE);
   }
 
   protected function modifyDuplicateInvoice(array $message) {
