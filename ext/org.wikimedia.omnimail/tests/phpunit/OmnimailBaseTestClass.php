@@ -258,11 +258,13 @@ class OmnimailBaseTestClass extends TestCase {
     ]);
     $this->callAPISuccess('MailingProviderData', 'create', [
       'contact_id' => $this->ids['Contact']['marie'],
-      'event_type' => 'Open',
+      'event_type' => 'Click',
       'email' => 'bob@example.com',
       'mailing_identifier' => 'xyz',
       'recipient_action_datetime' => '2017-03-03',
       'contact_identifier' => 'b',
+      'click_name' => 'Donate Now',
+      'click_url' => 'https://donate.wikimedia.org/',
     ]);
     $this->callAPISuccess('MailingProviderData', 'create', [
       'contact_id' => $this->ids['Contact']['isaac'],
@@ -270,6 +272,7 @@ class OmnimailBaseTestClass extends TestCase {
       'mailing_identifier' => 'xyuuuz',
       'recipient_action_datetime' => '2017-04-04',
       'contact_identifier' => 'c',
+      'suppression_reason' => 3,
     ]);
     $this->callAPISuccess('MailingProviderData', 'create', [
       'contact_id' => $this->ids['Contact']['isaac'],

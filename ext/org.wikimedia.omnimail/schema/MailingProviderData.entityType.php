@@ -106,5 +106,29 @@ return [
       'input_type' => 'CheckBox',
       'description' => E::ts('Has the action been synchronised through to CiviCRM'),
     ],
+    'click_name' => [
+      'title' => E::ts('Click Name'),
+      'sql_type' => 'varchar(512)',
+      'input_type' => 'Text',
+      'description' => E::ts('Name of the link that was clicked'),
+      'add' => '5.81',
+    ],
+    'click_url' => [
+      'title' => E::ts('Click Url'),
+      'sql_type' => 'varchar(1024)',
+      'input_type' => 'Text',
+      'description' => E::ts('URL of the link that was clicked'),
+      'add' => '5.81',
+    ],
+    'suppression_reason' => [
+      'title' => E::ts('Suppression Reason'),
+      'sql_type' => 'int',
+      'input_type' => 'Select',
+      'description' => E::ts('Reason the recipient was suppressed by the mailing provider'),
+      'pseudoconstant' => [
+        'option_group_name' => 'suppression_reason',
+      ],
+      'add' => '5.81',
+    ],
   ],
 ];

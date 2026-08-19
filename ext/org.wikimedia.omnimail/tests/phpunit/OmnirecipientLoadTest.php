@@ -50,6 +50,9 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
         'recipient_action_datetime' => '2017-06-30 23:32:00',
         'contact_id' => '',
         'is_civicrm_updated' => '0',
+        'click_name' => '',
+        'click_url' => '',
+        'suppression_reason' => '',
       ],
       1 => [
         'contact_identifier' => '15915939159',
@@ -59,6 +62,9 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
         'recipient_action_datetime' => '2017-06-30 23:32:00',
         'contact_id' => '',
         'is_civicrm_updated' => '0',
+        'click_name' => '',
+        'click_url' => '',
+        'suppression_reason' => '',
       ],
       2 => [
         'contact_identifier' => '248248624848',
@@ -68,6 +74,9 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
         'recipient_action_datetime' => '2017-06-30 23:32:00',
         'contact_id' => '123',
         'is_civicrm_updated' => '0',
+        'click_name' => '',
+        'click_url' => '',
+        'suppression_reason' => '',
       ],
       3 => [
         'contact_identifier' => '508505678505',
@@ -77,6 +86,9 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
         'recipient_action_datetime' => '2017-07-01 17:28:00',
         'contact_id' => '456',
         'is_civicrm_updated' => '0',
+        'click_name' => '',
+        'click_url' => '',
+        'suppression_reason' => '',
       ],
     ], $providers);
     $this->assertEquals(['last_timestamp' => '2017-03-02 23:00:00'], $this->getUtcDateFormattedJobSettings());
@@ -153,6 +165,9 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
         'recipient_action_datetime' => date('Y-m-d H:i:s', strtotime('2017-06-30 23:32:00 GMT')),
         'contact_id' => '',
         'is_civicrm_updated' => '0',
+        'click_name' => '',
+        'click_url' => '',
+        'suppression_reason' => '',
       ],
       1 => [
         'contact_identifier' => '15915939159',
@@ -162,6 +177,9 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
         'recipient_action_datetime' => date('Y-m-d H:i:s', strtotime('2017-06-30 23:32:00 GMT')),
         'contact_id' => '',
         'is_civicrm_updated' => '0',
+        'click_name' => '',
+        'click_url' => '',
+        'suppression_reason' => '',
       ],
     ], $providers);
 
@@ -354,6 +372,9 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
         'recipient_action_datetime' => '2017-06-30 23:32:00',
         'contact_id' => '123',
         'is_civicrm_updated' => '0',
+        'click_name' => '',
+        'click_url' => '',
+        'suppression_reason' => '',
       ],
       1 => [
         'contact_identifier' => '508505678505',
@@ -363,6 +384,9 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
         'recipient_action_datetime' => '2017-07-01 17:28:00',
         'contact_id' => $this->ids['Contact']['mergeTo'],
         'is_civicrm_updated' => '0',
+        'click_name' => '',
+        'click_url' => '',
+        'suppression_reason' => '',
       ],
     ], $data);
   }

@@ -168,6 +168,35 @@ ADD COLUMN created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
   }
 
   /**
+   * Add click_name, click_url & suppression_reason to civicrm_mailing_provider_data.
+   */
+  public function upgrade_1011(): bool {
+    $this->ctx->log->info('Applying update 1011, adding click_name, click_url & suppression_reason fields');
+    E::schema()->alterSchemaField('MailingProviderData', 'click_name', [
+      'title' => E::ts('Click Name'),
+      'sql_type' => 'varchar(512)',
+      'input_type' => 'Text',
+      'description' => E::ts('Name of the link that was clicked'),
+    ]);
+    E::schema()->alterSchemaField('MailingProviderData', 'click_url', [
+      'title' => E::ts('Click Url'),
+      'sql_type' => 'varchar(1024)',
+      'input_type' => 'Text',
+      'description' => E::ts('URL of the link that was clicked'),
+    ]);
+    E::schema()->alterSchemaField('MailingProviderData', 'suppression_reason', [
+      'title' => E::ts('Suppression Reason'),
+      'sql_type' => 'int',
+      'input_type' => 'Select',
+      'description' => E::ts('Reason the recipient was suppressed by the mailing provider'),
+      'pseudoconstant' => [
+        'option_group_name' => 'suppression_reason',
+      ],
+    ]);
+    return TRUE;
+  }
+
+  /**
    * Example: Run an external SQL script.
    *
    * @return TRUE on success
