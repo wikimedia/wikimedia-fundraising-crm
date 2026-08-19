@@ -40,7 +40,99 @@ class GenerateBatchTest extends BaseAuditTestCase {
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'chariot_339%')
       ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'adyen_338%')
+      ->execute();
     parent::tearDown();
+  }
+
+  /**
+   * getBatches() used to only fetch total_verified/validated batches, so a
+   * needs_attention batch could never be picked up for re-validation unless
+   * a fresh audit run first promoted it back to total_verified. It should
+   * also be picked up directly once it has evidence of a successful total
+   * verification (batch_data.last_successful_total_verification_date) -
+   * i.e. it was previously confirmed correct, not just newly created.
+   */
+  public function testNeedsAttentionBatchWithSuccessfulVerificationIsPickedUp(): void {
+    $prefix = 'adyen_338';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-01-26';
+
+    $this->createContribution([
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $this->createTestEntity('Batch', [
+      'name' => $batchName,
+      'mode_id:name' => 'Automatic Batch',
+      'status_id:name' => 'needs_attention',
+      'item_count' => 1,
+      'batch_data.settlement_currency' => $currency,
+      'batch_data.settlement_date' => $settlementDate,
+      'batch_data.settled_donation_amount' => 10.00,
+      'batch_data.settled_reversal_amount' => 0,
+      'batch_data.settled_fee_amount' => 0,
+      'batch_data.settled_net_amount' => 10.00,
+      'batch_data.last_successful_total_verification_date' => date('Y-m-d H:i:s'),
+    ], $batchName);
+
+    $result = WMFAudit::generateBatch(FALSE)
+      ->setBatchPrefix($prefix)
+      ->setIsDryRun(TRUE)
+      ->setIsOutputRows(TRUE)
+      ->execute();
+
+    $this->assertNotEmpty($result, 'A needs_attention batch with a successful verification date should be picked up');
+    $this->assertEquals($batchName, $result[0]['batch']['name']);
+  }
+
+  /**
+   * Companion to the above - a needs_attention batch that has never had a
+   * successful total verification (last_successful_total_verification_date
+   * is empty) should not be swept up for re-validation.
+   */
+  public function testNeedsAttentionBatchWithoutSuccessfulVerificationIsNotPickedUp(): void {
+    $prefix = 'adyen_338';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-01-26';
+
+    $this->createContribution([
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $this->createTestEntity('Batch', [
+      'name' => $batchName,
+      'mode_id:name' => 'Automatic Batch',
+      'status_id:name' => 'needs_attention',
+      'item_count' => 1,
+      'batch_data.settlement_currency' => $currency,
+      'batch_data.settlement_date' => $settlementDate,
+      'batch_data.settled_donation_amount' => 10.00,
+      'batch_data.settled_reversal_amount' => 0,
+      'batch_data.settled_fee_amount' => 0,
+      'batch_data.settled_net_amount' => 10.00,
+    ], $batchName);
+
+    $result = WMFAudit::generateBatch(FALSE)
+      ->setBatchPrefix($prefix)
+      ->setIsDryRun(TRUE)
+      ->setIsOutputRows(TRUE)
+      ->execute();
+
+    $this->assertCount(0, $result, 'A needs_attention batch with no successful verification date should not be picked up');
   }
 
   public function testChannelsWithSameGlCodeAreGroupedIntoSingleJournalRow(): void {

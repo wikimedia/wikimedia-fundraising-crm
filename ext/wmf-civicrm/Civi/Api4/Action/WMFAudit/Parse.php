@@ -224,7 +224,7 @@ class Parse extends AbstractAction {
       $batch['settled_fee_amount'] = (string) $batch['settled_fee_amount']->getAmount();
       $batch['settled_reversal_amount'] = (string) $batch['settled_reversal_amount']->getAmount();
       $batch['settled_donation_amount'] = (string) $batch['settled_donation_amount']->getAmount();
-      if (!empty($existing['status_id:name']) && !in_array($existing['status_id:name'], ['Reopened', 'Open'], TRUE)) {
+      if (!empty($existing['status_id:name']) && !in_array($existing['status_id:name'], ['Reopened', 'Open', 'needs_attention'], TRUE)) {
         $result[] = ['id' => $existing['id']] + $batch;
         // Once it is verified or exported we don't overwrite it.
         continue;

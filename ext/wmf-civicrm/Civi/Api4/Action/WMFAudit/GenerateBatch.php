@@ -834,10 +834,9 @@ END";
   private function getBatches(): array {
     if (!isset($this->batches)) {
       $this->batches = [];
+      $batchGet = Batch::get(FALSE)->addSelect('batch_data.*', '*', 'status_id:name');
       if ($this->id) {
-        $this->batches = (array) Batch::get(FALSE)
-          ->addWhere('id', '=', $this->id)
-          ->addSelect('batch_data.*', '*', 'status_id:name')
+        $this->batches = (array) $batchGet->addWhere('id', '=', $this->id)
           ->execute()->indexBy('name');
         $batch = reset($this->batches);
         if (!$this->isDryRun && !in_array($batch['status_id:name'], ['validated', 'total_verified'])) {
@@ -845,18 +844,19 @@ END";
           throw new \CRM_Core_Exception('batch status of ' . $batch['status_id:name'] . ' is not valid for export');
         }
       }
-      elseif ($this->batchPrefix) {
-        $this->batches = (array) Batch::get(FALSE)
-          ->addWhere('name', 'LIKE', '%' . $this->batchPrefix . '_%')
-          ->addWhere('status_id:name', 'IN', ['total_verified', 'validated'])
-          ->addSelect('batch_data.*', '*', 'status_id:name')
-          ->execute()->indexBy('name');
-      }
       else {
-        $this->batches = (array) Batch::get(FALSE)
-          ->addWhere('status_id:name', 'IN', ['total_verified', 'validated'])
-          ->addSelect('batch_data.*', '*', 'status_id:name')
-          ->execute()->indexBy('name');
+        $batchGet->addClause('OR',
+          ['status_id:name', 'IN', ['total_verified', 'validated']],
+          ['AND', [
+            ['status_id:name', '=', 'needs_attention'],
+            ['batch_data.last_successful_total_verification_date', 'IS NOT NULL'],
+          ]]
+        );
+
+        if ($this->batchPrefix) {
+          $batchGet->addWhere('name', 'LIKE', '%' . $this->batchPrefix . '_%');
+        }
+        $this->batches = (array) $batchGet->execute()->indexBy('name');
       }
       if (empty($this->batches)) {
         return [];
@@ -1306,7 +1306,7 @@ GROUP BY s.settlement_batch_reference
         ->addValue('batch_data.last_successful_validation_date',  gmdate('Y-m-d H:i:s'))
         ->addWhere('id', '=', $batch['id']);
       if (in_array($batch['status_id:name'], ['total_verified', 'needs_attention'], TRUE)
-        && !empty($batch['batch_data.last_attempted_total_verification_date'])
+        && !empty($batch['batch_data.last_successful_total_verification_date'])
       ) {
         $update->addValue('status_id:name', 'validated');
         $this->batches[$batch['name']]['status_id:name'] = 'validated';
