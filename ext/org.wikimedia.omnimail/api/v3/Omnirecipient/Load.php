@@ -80,11 +80,14 @@ function civicrm_api3_omnirecipient_load($params) {
           'String',
         ],
         6 => [(string) $contactId ?: 'NULL', 'String'],
+        7 => [(string) ($row['Click Name'] ?? ''), 'String'],
+        8 => [(string) ($row['URL'] ?? ''), 'String'],
+        9 => [(string) ($row['Suppression Reason'] ?? '') ?: 'NULL', 'String'],
       ];
       $rowsLeftBeforeThrottle--;
       $count++;
 
-      $valueStrings[] = CRM_Core_DAO::composeQuery("(%1, %2, %3, %4, %5, %6 )", $insertValues);
+      $valueStrings[] = CRM_Core_DAO::composeQuery("(%1, %2, %3, %4, %5, %6, %7, %8, %9 )", $insertValues);
       $valueStrings = _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, $insertBatchSize, $omnimail, $progressSettings, $omnimail->getOffset() + $count);
 
       if ($throttleStagePoint && (strtotime('now') > $throttleStagePoint)) {
@@ -154,7 +157,7 @@ function _civicrm_api3_omnirecipient_load_batch_write_to_db($valueStrings, $inse
     $values = str_replace("'NULL'", 'NULL', $values);
     CRM_Core_DAO::executeQuery('
          INSERT IGNORE INTO civicrm_mailing_provider_data
-         (`contact_identifier`, `mailing_identifier`, `email`, `event_type`, `recipient_action_datetime`, `contact_id`)
+         (`contact_identifier`, `mailing_identifier`, `email`, `event_type`, `recipient_action_datetime`, `contact_id`, `click_name`, `click_url`, `suppression_reason`)
          values' . $values
     );
     $job->saveJobSetting(array_merge($jobSettings, ['offset' => $newOffSet]), $loggingContext);
