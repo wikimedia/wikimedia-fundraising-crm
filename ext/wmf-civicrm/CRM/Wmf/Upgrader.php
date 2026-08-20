@@ -5205,6 +5205,30 @@ v.channel IS NULL AND c.id = 131486342;",
       WHERE bd.settlement_gateway IS NOT NULL
       AND bd.settlement_gateway_account_id IS NULL
     ');
+    return True;
+  }
+
+  /*
+   * Backfill OS, browser, and versions on payment_attempt table
+   *
+   * Bug: T423967
+   *
+   * @return bool
+   */
+  public function upgrade_5120(): bool {
+    $sql = "
+      UPDATE civicrm_payment_attempt a
+      JOIN civicrm_contribution_tracking t on a.contribution_tracking_id = t.id
+      SET a.browser = t.browser,
+          a.browser_version = t.browser_version,
+          a.os = t.os,
+          a.os_version = t.os_version
+      WHERE (a.browser IS NULL AND t.browser IS NOT NULL)
+        OR (a.os IS NULL AND t.os IS NOT NULL)
+        OR (a.browser_version IS NULL AND t.browser_version IS NOT NULL)
+        OR (a.os_version IS NULL AND t.os_version IS NOT NULL)
+      LIMIT 50000";
+    $this->queueSQL($sql);
     return TRUE;
   }
 
