@@ -12,6 +12,7 @@ return [
       'values' => [
         'name' => 'Matched_Gift_LYBUNT',
         'label' => E::ts('Matched gifts: LYBUNT'),
+        'description' => E::ts('Cannot be edited via UI without breaking the "Has donation within selected timeframe" filter.'),
         'api_entity' => 'Contact',
         'api_params' => [
           'version' => 4,
@@ -19,7 +20,7 @@ return [
             'sort_name',
             'employer_id.display_name',
             'COUNT(DISTINCT Contact_ContributionSoft_contact_id_01.contribution_id) AS COUNT_Contact_ContributionSoft_contact_id_01_contribution_id',
-            'MAX(Contact_Contribution_contact_id_01.receive_date) AS MAX_Contact_ContributionSoft_contact_id_01_contribution_id_receive_date',
+            'MAX(Contact_ContributionSoft_contact_id_01_ContributionSoft_Contribution_contribution_id_01.receive_date) AS MAX_Contact_ContributionSoft_contact_id_01_contribution_id_receive_date',
             'wmf_donor.donor_segment_overall:label',
             'IF(Contact_Contribution_contact_id_01.id, 1, 0) AS has_contribution_this_year',
             'GROUP_CONCAT(DISTINCT Contact_Contribution_contact_id_01.receive_date ORDER BY Contact_Contribution_contact_id_01.receive_date DESC) AS GROUP_CONCAT_Contact_Contribution_contact',
@@ -40,6 +41,12 @@ return [
                 'Contact_ContributionSoft_contact_id_01.soft_credit_type_id:name',
                 '=',
                 '"matched_gift"',
+              ],
+              // Very slow unless we exclude anonymous
+              [
+                'Contact_ContributionSoft_contact_id_01.contact_id',
+                '<>',
+                72,
               ],
             ],
             [
