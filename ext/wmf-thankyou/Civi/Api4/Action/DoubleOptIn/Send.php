@@ -18,6 +18,7 @@ use Civi\WMFThankYou\From;
  * @method $this setDisplayName(string $displayName)
  * @method $this setEmail(string $email)
  * @method $this setPreferredLanguage(string $preferredLanguage)
+ * @method $this setWorkflow(string $workflow)
  */
 class Send extends AbstractAction {
   /**
@@ -47,6 +48,11 @@ class Send extends AbstractAction {
   protected $preferredLanguage = 'en_US';
 
   /**
+   * @var string
+   */
+  protected $workflow = 'double_opt_in';
+
+  /**
    * @inheritDoc
    *
    * @param \Civi\Api4\Generic\Result $result
@@ -57,11 +63,11 @@ class Send extends AbstractAction {
     $message = WorkflowMessage::render(FALSE)
       ->setLanguage($this->preferredLanguage)
       ->setValues(['contactID' => $this->contactID])
-      ->setWorkflow('double_opt_in')->execute()->first();
+      ->setWorkflow($this->workflow)->execute()->first();
 
     $email = [
-      'from_name' => From::getFromName('double_opt_in'),
-      'from_address' => From::getFromAddress('double_opt_in'),
+      'from_name' => From::getFromName($this->workflow),
+      'from_address' => From::getFromAddress($this->workflow),
       'to_name' => $this->displayName,
       'to_address' => $this->email,
       'locale' => $this->preferredLanguage,
@@ -70,7 +76,7 @@ class Send extends AbstractAction {
     ];
 
     \Civi::log('wmf')->info(
-      'thank_you: Sending double opt-in email to: {to_address}',
+      'Sending double opt-in email to: {to_address}',
       ['to_address' => $email['to_address']]
     );
     $sendResult = [
@@ -85,7 +91,7 @@ class Send extends AbstractAction {
         'activity_type_id:name' => 'Email',
         'activity_date_time' => 'now',
         'subject' => $message['subject'],
-        'details' => $message['html'],
+        'details' => "Template: {$this->workflow}",
         'status_id:name' => 'Completed',
       ])->execute();
     }
