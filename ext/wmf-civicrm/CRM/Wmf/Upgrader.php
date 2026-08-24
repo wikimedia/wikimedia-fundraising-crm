@@ -5233,6 +5233,26 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Add GatewayAccount.gateway - the trxn_id prefix used by the audit
+   * process for this account. Usually the same as name, but for accounts
+   * like stripemg the underlying transactions are still audited (and
+   * trxn_id-prefixed) as 'stripe'.
+   *
+   * Bug: T432813
+   *
+   * @return bool
+   */
+  public function upgrade_5125(): bool {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_gateway_account', 'gateway', FALSE)) {
+      $fields = (require E::path('schema/GatewayAccount.entityType.php'))['getFields']();
+      E::schema()->alterSchemaField('GatewayAccount', 'gateway', $fields['gateway']);
+    }
+    CRM_Core_DAO::executeQuery('UPDATE civicrm_gateway_account SET gateway = name WHERE gateway IS NULL OR gateway = \'\'');
+    CRM_Core_DAO::executeQuery('UPDATE civicrm_gateway_account SET gateway = \'stripe\' WHERE name = \'stripemg\'');
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

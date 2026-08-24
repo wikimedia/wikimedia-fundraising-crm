@@ -43,6 +43,9 @@ class GenerateBatchTest extends BaseAuditTestCase {
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'adyen_338%')
       ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'stripemg_340%')
+      ->execute();
     parent::tearDown();
   }
 
@@ -423,6 +426,68 @@ class GenerateBatchTest extends BaseAuditTestCase {
       ->setIsDryRun(TRUE)
       ->setIsOutputRows(TRUE)
       ->execute();
+  }
+
+  /**
+   * Stripe Major Gifts (stripemg) transactions are actually audited, and
+   * trxn_id-prefixed, as 'stripe' - see GatewayAccount.gateway and T432813.
+   *
+   * getGatewayLevelTransactionExcludeClause() used to build its trxn_id LIKE
+   * patterns from the raw batch name prefix ('stripemg'), so a gateway-level
+   * fee row (trxn_id 'stripe fee ...') was never recognised as such: it fell
+   * through into the per-transaction "Donation Fees" bucket instead of the
+   * "Invoice Fees" bucket, and its row was silently dropped from the batch's
+   * item count, causing a batch that should validate to report a discrepancy.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testGatewayLevelFeeIsClassifiedCorrectlyForStripeMg(): void {
+    $prefix = 'stripemg_340';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-01-27';
+
+    $this->createContribution([
+      'trxn_id' => 'stripe fee 555',
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settled_fee_amount' => -1.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+
+    $this->createTestEntity('Batch', [
+      'name' => $batchName,
+      'mode_id:name' => 'Automatic Batch',
+      'status_id:name' => 'total_verified',
+      // The donation row and the gateway-level fee row each count as one item.
+      'item_count' => 2,
+      'batch_data.settlement_currency' => $currency,
+      'batch_data.settlement_date' => $settlementDate,
+      'batch_data.settled_donation_amount' => 10.00,
+      'batch_data.settled_reversal_amount' => 0,
+      'batch_data.settled_fee_amount' => -1.00,
+      'batch_data.settled_net_amount' => 9.00,
+    ], $batchName);
+
+    $result = WMFAudit::generateBatch(FALSE)
+      ->setBatchPrefix($prefix)
+      ->setIsDryRun(TRUE)
+      ->setIsOutputRows(TRUE)
+      ->execute();
+
+    $this->assertNotEmpty($result, 'Expected at least one batch result');
+    $batchResult = $result[0];
+    $this->assertEquals($batchName, $batchResult['batch']['name']);
+    $this->assertEquals(0, array_sum($batchResult['validation']), 'Batch should validate once the gateway-level fee is correctly classified: ' . print_r($batchResult['validation'], TRUE));
+
+    $rows = $batchResult['csv_rows'] ?? [];
+    $feeRows = array_values(array_filter($rows, fn($r) => str_contains((string) ($r['MEMO'] ?? ''), 'Fees')));
+    $this->assertCount(1, $feeRows, 'Expected a single fee row');
+    $this->assertStringEndsWith('Invoice Fees', $feeRows[0]['MEMO'], 'Gateway-level stripe fee should be classified as an Invoice Fee, not a Donation Fee');
   }
 
   /**

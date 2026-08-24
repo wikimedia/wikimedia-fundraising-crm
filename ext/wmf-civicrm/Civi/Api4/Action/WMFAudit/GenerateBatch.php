@@ -132,7 +132,7 @@ class GenerateBatch extends AbstractAction {
   private function getGatewayAccounts(): array {
     if ($this->gatewayAccounts === NULL) {
       $this->gatewayAccounts = (array) GatewayAccount::get(FALSE)
-        ->addSelect('name', 'is_endowment', 'vendor_code_foundation', 'vendor_code_endowment', 'balancing_account_foundation')
+        ->addSelect('name', 'gateway', 'is_endowment', 'vendor_code_foundation', 'vendor_code_endowment', 'balancing_account_foundation')
         ->execute()->indexBy('name');
     }
     return $this->gatewayAccounts;
@@ -1127,7 +1127,7 @@ GROUP BY s.settlement_batch_reference
    * @return void
    */
   private function getGatewayLevelTransactionExcludeClause($batchName): string {
-    $gateway = $this->getGateway($batchName);
+    $gateway = $this->getAuditGateway($batchName);
     return "(trxn_id NOT LIKE '{$gateway} transaction%'
       AND trxn_id NOT LIKE '{$gateway} invoice%'
       AND trxn_id NOT LIKE '{$gateway} rounding%'
@@ -1137,10 +1137,29 @@ GROUP BY s.settlement_batch_reference
   }
 
   private function getGatewayLevelTransactionExcludeAdjustmentClause($batchName): string {
-    $gateway = $this->getGateway($batchName);
+    $gateway = $this->getAuditGateway($batchName);
     return "(
       trxn_id NOT LIKE '{$gateway} adjustment%'
     )";
+  }
+
+  /**
+   * Get the gateway name used as the trxn_id prefix by the audit process.
+   *
+   * This is usually the same as the batch's gateway (per getGateway()), but
+   * some GatewayAccount records (e.g. stripemg) settle transactions that are
+   * actually audited, and trxn_id-prefixed, under a different gateway's name
+   * (stripe) - see GatewayAccount.gateway.
+   *
+   * @param $batchName
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  private function getAuditGateway($batchName): string {
+    $gateway = $this->getGateway($batchName);
+    $accounts = $this->getGatewayAccounts();
+    return $accounts[$gateway]['gateway'] ?? $gateway;
   }
 
   /**

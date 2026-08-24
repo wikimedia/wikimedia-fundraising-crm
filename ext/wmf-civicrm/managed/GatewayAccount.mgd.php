@@ -12,6 +12,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'adyen',
+        'gateway' => 'adyen',
         'label' => 'Adyen',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V01670',
@@ -32,6 +33,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'braintree',
+        'gateway' => 'braintree',
         'label' => 'Braintree',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V05089',
@@ -52,6 +54,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'paypal',
+        'gateway' => 'paypal',
         'label' => 'PayPal',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V00282',
@@ -72,6 +75,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'paypalfrup',
+        'gateway' => 'paypalfrup',
         'label' => 'PayPal FundraiseUp',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V05040',
@@ -92,6 +96,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'dlocal',
+        'gateway' => 'dlocal',
         'label' => 'dLocal',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V04134',
@@ -112,6 +117,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'engage',
+        'gateway' => 'engage',
         'label' => 'Engage (Foundation)',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V01948',
@@ -132,6 +138,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'engageendowment',
+        'gateway' => 'engage',
         'label' => 'Engage (Endowment)',
         'is_endowment' => TRUE,
         'vendor_code_foundation' => 'V01948',
@@ -152,6 +159,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'stripe',
+        'gateway' => 'stripe',
         'label' => 'Stripe',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V04137',
@@ -172,6 +180,9 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'stripemg',
+        // Stripe Major Gifts transactions are audited under the 'stripe' gateway -
+        // trxn_ids are prefixed 'stripe', not 'stripemg'. See T432813.
+        'gateway' => 'stripe',
         'label' => 'Stripe Major Gifts',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V04137',
@@ -192,6 +203,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'trustly',
+        'gateway' => 'trustly',
         'label' => 'Trustly',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V05354',
@@ -212,6 +224,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'chariot',
+        'gateway' => 'chariot',
         'label' => 'Chariot',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V05811',
@@ -232,6 +245,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'checkoutcom',
+        'gateway' => 'checkoutcom',
         'label' => 'Checkout.com',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V06128',
@@ -253,6 +267,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'overflow',
+        'gateway' => 'overflow',
         'label' => 'Overflow',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V05045',
@@ -273,6 +288,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'overflowendowment',
+        'gateway' => 'overflow',
         'label' => 'Overflow (Endowment)',
         'is_endowment' => TRUE,
         'vendor_code_foundation' => 'V05045',
@@ -293,6 +309,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'wikimediade',
+        'gateway' => 'wikimedia',
         'label' => 'Wikimedia Deutschland',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V00343',
@@ -313,6 +330,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'wikimediach',
+        'gateway' => 'wikimedia',
         'label' => 'Wikimedia CH',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V01729',
@@ -333,6 +351,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'chisholm',
+        'gateway' => 'chisholm',
         'label' => 'Chisholm Chisholm & Kilpatrick',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V04824',
@@ -354,6 +373,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'bankofamerica',
+        'gateway' => 'bankofamerica',
         'label' => 'Bank of America',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V06144',
@@ -375,6 +395,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'bankofamericaendowment',
+        'gateway' => 'bankofamerica',
         'label' => 'Bank of America (Endowment)',
         'is_endowment' => TRUE,
         'vendor_code_foundation' => 'V06144',
@@ -399,6 +420,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'bank',
+        'gateway' => 'bank',
         'label' => 'Wire/ACH',
         'is_endowment' => FALSE,
         'balancing_account_foundation' => '11250',
@@ -417,6 +439,7 @@ return [
       'version' => 4,
       'values' => [
         'name' => 'bankendowment',
+        'gateway' => 'bank',
         'label' => 'Wire/ACH (Endowment)',
         'is_endowment' => TRUE,
         'balancing_account_foundation' => '11250',
