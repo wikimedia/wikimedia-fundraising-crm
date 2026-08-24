@@ -5191,6 +5191,48 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Backfill batch_data.settlement_gateway_account_id from the existing
+   * batch_data.settlement_gateway name, for batches that predate the new
+   * field. Civi\WMFHook\Data::batchPre() keeps the two in sync going
+   * forward, but that only fires on save - this is a one-off catch-up for
+   * existing rows.
+   */
+  public function upgrade_5115(): bool {
+    CRM_Core_DAO::executeQuery('
+      UPDATE civicrm_batch_data bd
+      INNER JOIN civicrm_gateway_account ga ON ga.name = bd.settlement_gateway
+      SET bd.settlement_gateway_account_id = ga.id
+      WHERE bd.settlement_gateway IS NOT NULL
+      AND bd.settlement_gateway_account_id IS NULL
+    ');
+    return True;
+  }
+
+  /*
+   * Backfill OS, browser, and versions on payment_attempt table
+   *
+   * Bug: T423967
+   *
+   * @return bool
+   */
+  public function upgrade_5120(): bool {
+    $sql = "
+      UPDATE civicrm_payment_attempt a
+      JOIN civicrm_contribution_tracking t on a.contribution_tracking_id = t.id
+      SET a.browser = t.browser,
+          a.browser_version = t.browser_version,
+          a.os = t.os,
+          a.os_version = t.os_version
+      WHERE (a.browser IS NULL AND t.browser IS NOT NULL)
+        OR (a.os IS NULL AND t.os IS NOT NULL)
+        OR (a.browser_version IS NULL AND t.browser_version IS NOT NULL)
+        OR (a.os_version IS NULL AND t.os_version IS NOT NULL)
+      LIMIT 50000";
+    $this->queueSQL($sql);
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

@@ -403,6 +403,26 @@ return [
       'input_type' => 'Text',
       'title' => E::ts('Language from request header'),
     ],
+    'browser' => [
+      'sql_type' => 'varchar(255)',
+      'input_type' => 'Text',
+      'title' => E::ts('Browser'),
+    ],
+    'browser_version' => [
+      'sql_type' => 'varchar(255)',
+      'input_type' => 'Text',
+      'title' => E::ts('Browser version'),
+    ],
+    'os' => [
+      'sql_type' => 'varchar(255)',
+      'input_type' => 'Text',
+      'title' => E::ts('OS'),
+    ],
+    'os_version' => [
+      'sql_type' => 'varchar(255)',
+      'input_type' => 'Text',
+      'title' => E::ts('OS version'),
+    ],
     'user_ip' => [
       'sql_type' => 'varchar(16)',
       'input_type' => 'Text',
@@ -460,3 +480,4 @@ return [
     ],
   ],
 ];
+

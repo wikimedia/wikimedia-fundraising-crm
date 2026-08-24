@@ -59,6 +59,7 @@ class AuditMessage extends DonationMessage {
    *    first_name: string,
    *    last_name: string,
    *    full_name: string,
+   *    organization_name: string,
    *    email: string,
    *    phone: string,
    *    country: string,

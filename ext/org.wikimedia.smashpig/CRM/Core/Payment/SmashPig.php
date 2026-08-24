@@ -100,37 +100,35 @@ class CRM_Core_Payment_SmashPig extends CRM_Core_Payment {
     Civi::log('wmf')->debug('Raw response: ' . print_r($createPaymentResponse->getRawResponse(), true));
 
     if (!$createPaymentResponse->isSuccessful()) {
+      $errorParts = [
+        'payment_method' => $paymentMethod,
+        'payment_submethod' => $paymentSubmethod,
+        'request' => (json_encode($request, JSON_UNESCAPED_SLASHES) ?: 'Request encoding failed'),
+      ];
       foreach ($createPaymentResponse->getErrors() as $error) {
-        $message = 'Payment Error during recurring charge'
-          . '. Message: ' . $error->getDebugMessage()
-          . '. Payment Method: ' . $paymentMethod
-          . '. Payment Submethod: ' . $paymentSubmethod
-          . '. Request: ' . (json_encode($request, JSON_UNESCAPED_SLASHES) ?: 'Request encoding failed');
+        $errorParts['message'] = $error->getDebugMessage();
+        $errorParts['subject'] = 'Payment Error during recurring charge';
         if ($createPaymentResponse->getRawResponse()) {
-          $message .= '. Response: ' . (json_encode($createPaymentResponse->getRawResponse(), JSON_UNESCAPED_SLASHES) ?: 'Response encoding failed');
+          $errorParts['response'] = (json_encode($createPaymentResponse->getRawResponse(), JSON_UNESCAPED_SLASHES) ?: 'Response encoding failed');
         }
         // most validation error like below validation errors, where map to tax id or cvv and so on,
         // if failed to categorized as validation error must be some non-general errors, then should get a failmail to alert us to fix it
+        $message = implode(', ', array_map(fn ($k, $v) => "$k: $v", array_keys($errorParts), array_values($errorParts)));
         if ($error->getErrorCode() == ErrorCode::VALIDATION) {
           if ($this->isErrorSuppressed($error)) {
-            Civi::log('wmf')->warning('Suppressed ' . $message);
+            Civi::log('wmf')->warning('Suppressed ' . $message, $errorParts);
           }
           else {
-            Civi::log('wmf')->alert($message);
+            Civi::log('wmf')->alert($message, $errorParts);
           }
         }
         else {
-          Civi::log('wmf')->debug($message);
+          Civi::log('wmf')->debug($message, $errorParts);
         }
       }
       foreach ($createPaymentResponse->getValidationErrors() as $error) {
-        $errorParts = [
-          'subject' => 'Validation error during recurring charge, in field: ' . $error->getField(),
-          'message' => 'Message: ' . $error->getDebugMessage(),
-          'payment_method' => $paymentMethod,
-          'payment_submethod' => $paymentSubmethod,
-          'request' => 'Request: ' . (json_encode($request, JSON_UNESCAPED_SLASHES) ?: 'Request encoding failed'),
-        ];
+        $errorParts['subject'] = 'Validation error during recurring charge, in field: ' . $error->getField();
+        $errorParts['message'] = 'Message: ' . $error->getDebugMessage();
         if ($createPaymentResponse->getRawResponse()) {
           $errorParts['response'] = 'Response: ' . (json_encode($createPaymentResponse->getRawResponse(), JSON_UNESCAPED_SLASHES) ?: 'Response encoding failed');
         }
