@@ -91,7 +91,7 @@ class Send extends AbstractAction {
         'activity_type_id:name' => 'Email',
         'activity_date_time' => 'now',
         'subject' => $message['subject'],
-        'details' => "Template: {$this->workflow}",
+        'Email.Workflow' => $this->workflow,
         'status_id:name' => 'Completed',
       ])->execute();
     }
