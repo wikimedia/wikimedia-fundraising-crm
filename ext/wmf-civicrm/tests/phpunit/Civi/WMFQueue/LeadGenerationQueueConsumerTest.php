@@ -56,7 +56,7 @@ class LeadGenerationQueueConsumerTest extends BaseQueueTestCase {
 
   protected function getDoubleOptInEmailActivities(int $contactID): array {
     return (array) Activity::get(FALSE)
-      ->addSelect('*', 'status_id:name', 'target_contact_id', 'source_contact_id')
+      ->addSelect('*', 'status_id:name', 'target_contact_id', 'source_contact_id', 'Email.Workflow')
       ->addWhere('activity_type_id:name', '=', 'Email')
       ->addWhere('target_contact_id', 'CONTAINS', $contactID)
       ->execute();
@@ -92,7 +92,7 @@ class LeadGenerationQueueConsumerTest extends BaseQueueTestCase {
 
     $emailActivities = $this->getDoubleOptInEmailActivities($contactID);
     $this->assertCount(1, $emailActivities);
-    $this->assertEquals('Template: double_opt_in_lead_gen', reset($emailActivities)['details']);
+    $this->assertEquals('double_opt_in_lead_gen', reset($emailActivities)['Email.Workflow']);
   }
 
   public function testActivityIsCreated(): void {
