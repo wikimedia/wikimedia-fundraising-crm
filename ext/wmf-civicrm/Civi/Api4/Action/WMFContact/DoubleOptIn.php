@@ -8,6 +8,7 @@ use Civi\Api4\Generic\Result;
 use Civi\Api4\Email;
 use Civi\Api4\Contact;
 use Civi\Api4\Activity;
+use Civi\Api4\WMFContact;
 
 /**
  * Verify and record a double opt-in activity.
@@ -82,6 +83,8 @@ class DoubleOptIn extends AbstractAction {
     if (!$emailID) {
       throw new \CRM_Core_Exception("Provided email is not the primary email for Contact ID {$this->contact_id}.");
     }
+
+    WMFContact::optIn(FALSE)->setEmail($this->email)->setCheckSnooze(FALSE)->execute();
 
     $activity = Activity::create(FALSE)
       ->addValue('source_record_id', $emailID)
