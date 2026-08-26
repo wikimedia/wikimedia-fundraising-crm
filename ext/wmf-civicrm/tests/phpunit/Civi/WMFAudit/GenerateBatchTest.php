@@ -31,6 +31,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
 
   public function tearDown():void {
     Connection::resetTestClient();
+    Connection::resetTestXmlClient();
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'adyen_33%')
       ->execute();
@@ -603,6 +604,14 @@ class GenerateBatchTest extends BaseAuditTestCase {
         'handler' => $handlerStack,
       ]);
       Connection::setTestClient($this->mockApiClient);
+      // Also intercept the XML gateway (process_log pushes triggered as a
+      // side effect of each successful journal push) - without this, if
+      // real FINANCE_OAUTH constants happen to be configured, PushJournal
+      // would attempt a live HTTP call to Intacct's XML endpoint. The exact
+      // content doesn't matter - PushProcessLog doesn't parse the response.
+      Connection::setTestXmlClient(new Client([
+        'handler' => HandlerStack::create(new MockHandler(array_fill(0, 10, new Response(200, [], '<response>success</response>')))),
+      ]));
       $connection = $this->createMock(Connection::class);
       $connection
         ->method('getApiClient')

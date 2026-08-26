@@ -25,6 +25,8 @@ class Connection {
 
   private static ?Client $testClient = NULL;
 
+  private static ?Client $testXmlClient = NULL;
+
   public function __construct($instance = 'wmf', $isStaging = TRUE) {
     $this->instance = $instance;
     $this->isStaging = $isStaging;
@@ -36,6 +38,22 @@ class Connection {
 
   public static function resetTestClient(): void {
     self::$testClient = NULL;
+  }
+
+  /**
+   * Set a test client for the XML gateway (process_log) connection.
+   *
+   * Kept separate from setTestClient() - that one backs the REST journal
+   * API, and sharing a single mock queue between the two transports causes
+   * XML calls to silently consume responses meant for the REST mock (e.g.
+   * in GenerateBatchTest), desyncing the queue.
+   */
+  public static function setTestXmlClient(?Client $client): void {
+    self::$testXmlClient = $client;
+  }
+
+  public static function resetTestXmlClient(): void {
+    self::$testXmlClient = NULL;
   }
 
 
@@ -72,10 +90,20 @@ class Connection {
    */
   public function getXmlApi(): XmlApi {
     if (!$this->xmlApi) {
-      $this->xmlApi = new XmlApi($this->getCredentials());
+      $this->xmlApi = new XmlApi($this->getCredentials(), self::$testXmlClient);
     }
 
     return $this->xmlApi;
+  }
+
+  /**
+   * Username these credentials authenticate to Intacct as.
+   *
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  public function getUsername(): string {
+    return (string) ($this->getCredentials()['username'] ?? '');
   }
 
   /**
@@ -141,6 +169,17 @@ class Connection {
    * @throws \CRM_Core_Exception
    */
   private function getCredentials(): array {
+    if (self::$testXmlClient) {
+      return [
+        'client_id' => 'test-client-id',
+        'secret' => 'test-secret',
+        'username' => 'test-user',
+        'company_id' => 'test-company',
+        'sender_id' => 'test-sender',
+        'sender_password' => 'test-sender-password',
+        'password' => 'test-password',
+      ];
+    }
     if ($this->isStaging) {
       if ($this->instance === 'endowment') {
         $key = 'STAGING_ENDOWMENT_FINANCE_OAUTH';

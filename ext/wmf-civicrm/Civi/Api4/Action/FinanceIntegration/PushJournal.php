@@ -6,6 +6,7 @@ use Brick\Money\Exception\MoneyMismatchException;
 use Brick\Money\Exception\UnknownCurrencyException;
 use Brick\Money\Money;
 use Brick\Math\RoundingMode;
+use Civi\Api4\FinanceIntegration;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\FinanceIntegration\Connection;
@@ -90,6 +91,7 @@ class PushJournal extends AbstractAction {
           // Do an extra journal fetch to populate the Web Url.
           $this->getExistingJournal($this->batchName);
           $this->validateExistingBatch($record['remote_journal_id'], $this->batchName);
+          $this->pushSuccessProcessLog($this->batchName, $batch['journal_entry'], $record['remote_journal_id']);
         }
         $record += $this->batches[$batchName];
         $record['log'] = $this->log[$batchName] ?? [];
@@ -98,12 +100,66 @@ class PushJournal extends AbstractAction {
       }
     }
     catch (GuzzleException $e) {
+      $this->pushFailureProcessLog($this->batchName, $e);
       $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
       $body   = $e->hasResponse() ? (string) $e->getResponse()->getBody() : $e->getMessage();
 
       throw new \CRM_Core_Exception(
         'Intacct journal POST failed' . ($status ? " (HTTP $status)" : '') . ': ' . $body
       );
+    }
+  }
+
+  /**
+   * Record a successful journal push in Intacct's process_log.
+   *
+   * Failures pushing this log itself are swallowed (and logged) so they do
+   * not turn a genuinely successful journal push into a reported failure.
+   *
+   * @param string $batchName
+   * @param array $journalEntry
+   * @param string $remoteJournalId
+   */
+  private function pushSuccessProcessLog(string $batchName, array $journalEntry, string $remoteJournalId): void {
+    $lineCount = count($journalEntry['lines'] ?? []);
+    try {
+      FinanceIntegration::pushProcessLog(FALSE)
+        ->setIsEndowment($this->instance === 'endowment')
+        ->setName($batchName)
+        ->setDescription($journalEntry['description'] ?? '')
+        ->setStatus('Complete')
+        ->setSummary("Journal import: {$lineCount} lines")
+        ->setComment('Intacct journal id ' . $remoteJournalId)
+        ->setDocid((string) ($this->batches[$batchName]['txn_number'] ?? ''))
+        ->setResultsUrl($this->batches[$batchName]['url'] ?? '')
+        ->execute();
+    }
+    catch (\Exception $logException) {
+      \Civi::log('finance_integration')->error('Failed to push success process log: ' . $logException->getMessage());
+    }
+  }
+
+  /**
+   * Record a failed journal push in Intacct's process_log.
+   *
+   * Failures pushing this log itself are swallowed (and logged) so they do
+   * not mask the original journal-push failure.
+   *
+   * @param string $batchName
+   * @param GuzzleException $e
+   */
+  private function pushFailureProcessLog(string $batchName, GuzzleException $e): void {
+    try {
+      FinanceIntegration::pushProcessLog(FALSE)
+        ->setIsEndowment($this->instance === 'endowment')
+        ->setName($batchName)
+        ->setStatus('Failed')
+        ->setSummary('Journal push to Intacct failed')
+        ->setComment($e->getMessage())
+        ->execute();
+    }
+    catch (\Exception $logException) {
+      \Civi::log('finance_integration')->error('Failed to push failure process log: ' . $logException->getMessage());
     }
   }
 
