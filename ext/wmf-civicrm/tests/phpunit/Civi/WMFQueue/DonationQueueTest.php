@@ -21,6 +21,13 @@ use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\WMFQueueMessage\Message;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use Civi\WMFStatistic\ImportStatsCollector;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Response;
+use SilverpopConnector\SilverpopRestConnector;
+use SilverpopConnector\SilverpopXmlConnector;
 use SmashPig\Core\DataStores\PendingDatabase;
 use Civi\WMFException\WMFException;
 
@@ -32,6 +39,18 @@ class DonationQueueTest extends BaseQueueTestCase {
   protected string $queueName = 'test';
 
   protected string $queueConsumer = 'Donation';
+
+  /**
+   * PhoneConsent isn't tied to a contact id, so it's not covered by the
+   * Contact/Contribution cleanup in WMFEnvironmentTrait::tearDownWMFEnvironment()
+   * - clean up the phone numbers used by the sms_opt_in tests here instead.
+   */
+  public function tearDown(): void {
+    PhoneConsent::delete(FALSE)
+      ->addWhere('phone_number', 'IN', ['3151234567', '3151234599', '3151234588', '3151234568'])
+      ->execute();
+    parent::tearDown();
+  }
 
   /**
    * Process an ordinary (one-time) donation message
@@ -831,6 +850,8 @@ class DonationQueueTest extends BaseQueueTestCase {
    */
   public function testPhoneWithSmsOptin(): void {
     $phoneNumber = '3151234567';
+    $this->setSetting('omnimail_sms_campaign_id', '99887766');
+    $this->mockAcoustic($requests);
     $msg = [
       'currency' => 'USD',
       'country' => 'US',
@@ -847,6 +868,7 @@ class DonationQueueTest extends BaseQueueTestCase {
     ];
 
     $this->processDonationMessage($msg);
+    $this->runSmsOptInQueue();
     $contribution = $this->getContributionForMessage($msg);
 
     $phone = Phone::get(FALSE)
@@ -864,8 +886,237 @@ class DonationQueueTest extends BaseQueueTestCase {
       ->execute()->single();
 
     $this->assertEquals(1, $consent['country_code']);
-    $this->assertEquals('Payments Form', $consent['consent_source']);
+    $this->assertEquals('Donation form', $consent['consent_source']);
     $this->assertEquals(TRUE, $consent['opted_in']);
+
+    // Check the contact was sent to Acoustic, matching on email. The donor has
+    // not opted out of email so they are sent up as mailable.
+    $addRecipient = $this->getAcousticRequestBody($requests, 0);
+    $this->assertStringContainsString('<UPDATE_IF_FOUND>TRUE</UPDATE_IF_FOUND>', $addRecipient);
+    $this->assertStringContainsString('<NAME>Email</NAME><VALUE>mouse@wikimedia.org</VALUE>', $addRecipient);
+    $this->assertStringContainsString('<NAME>mobile_phone</NAME><VALUE>1' . $phoneNumber . '</VALUE>', $addRecipient);
+    // We don't specify opt in or status explicitly, just the implicit opt in
+    $this->assertStringNotContainsString('OPT_OUT', $addRecipient);
+
+    // Check the opt in was sent to Acoustic.
+    $this->assertEquals(
+      'https://api-campaign-us-4.goacoustic.com/rest/channels/sms/programs/99887766/virtualmo',
+      (string) $requests[1]['request']->getUri()
+    );
+    $this->assertEquals('{"phoneNumber":"1' . $phoneNumber . '"}', (string) $requests[1]['request']->getBody());
+
+    $activity = Activity::get(FALSE)
+      ->addWhere('activity_type_id:name', '=', 'sms_consent_given')
+      ->addWhere('source_contact_id', '=', $contribution['contact_id'])
+      ->addSelect('SMS_consent.Consent_source:name')
+      ->execute()->single();
+    $this->assertEquals('Donation_form', $activity['SMS_consent.Consent_source:name']);
+  }
+
+  /**
+   * Test a second sms_opt_in donation from a phone number that already has
+   * an active PhoneConsent on file.
+   *
+   * We should not re-save the PhoneConsent, re-send the opt in to Acoustic,
+   * or create a duplicate sms_consent_given activity.
+   */
+  public function testPhoneWithSmsOptinAlreadyConsented(): void {
+    $phoneNumber = '3151234599';
+    $email = 'repeat.mouse@wikimedia.org';
+    $this->setSetting('omnimail_sms_campaign_id', '99887766');
+    $this->mockAcoustic($requests);
+    $msg = [
+      'currency' => 'USD',
+      'country' => 'US',
+      'date' => time(),
+      'email' => $email,
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'phone' => $phoneNumber,
+      'sms_opt_in' => 1,
+    ];
+    $this->processDonationMessage($msg);
+    $contribution = $this->getContributionForMessage($msg);
+
+    $msg['gateway_txn_id'] = mt_rand();
+    $this->processDonationMessage($msg);
+    $this->runSmsOptInQueue();
+    $secondContribution = $this->getContributionForMessage($msg);
+    $this->assertEquals($contribution['contact_id'], $secondContribution['contact_id']);
+
+    // Still only one PhoneConsent record for the phone number.
+    $consents = PhoneConsent::get(FALSE)
+      ->addWhere('phone_number', '=', $phoneNumber)
+      ->execute();
+    $this->assertCount(1, $consents);
+
+    // No Acoustic calls were made for the second donation.
+    $this->assertCount(2, $requests);
+
+    // No duplicate sms_consent_given activity was created.
+    $activities = Activity::get(FALSE)
+      ->addWhere('activity_type_id:name', '=', 'sms_consent_given')
+      ->addWhere('source_contact_id', '=', $contribution['contact_id'])
+      ->execute();
+    $this->assertCount(1, $activities);
+  }
+
+  /**
+   * Test a sms_opt_in donation from a phone number that already has an
+   * sms_consent_given activity, but no active PhoneConsent - e.g. the donor
+   * opted out since their last donation and is now opting back in.
+   *
+   * This should be treated as a fresh opt in: PhoneConsent & Acoustic are
+   * updated again, and a new activity is recorded even though one already
+   * exists, since the existing one no longer reflects their current consent.
+   */
+  public function testPhoneWithSmsOptinReconsentAfterOptOut(): void {
+    $phoneNumber = '3151234588';
+    $email = 'reconsenting.mouse@wikimedia.org';
+    $this->setSetting('omnimail_sms_campaign_id', '99887766');
+    $this->mockAcoustic($requests);
+    $msg = [
+      'currency' => 'USD',
+      'country' => 'US',
+      'date' => time(),
+      'email' => $email,
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'phone' => $phoneNumber,
+      'sms_opt_in' => 1,
+    ];
+    $this->processDonationMessage($msg);
+    $contribution = $this->getContributionForMessage($msg);
+
+    // Simulate the donor opting out since the first donation.
+    PhoneConsent::update(FALSE)
+      ->addWhere('phone_number', '=', $phoneNumber)
+      ->setValues(['opted_in' => FALSE])
+      ->execute();
+
+    $msg['gateway_txn_id'] = mt_rand();
+    $this->processDonationMessage($msg);
+    $this->runSmsOptInQueue();
+    $secondContribution = $this->getContributionForMessage($msg);
+    $this->assertEquals($contribution['contact_id'], $secondContribution['contact_id']);
+
+    // The PhoneConsent record is re-used (matched on phone_number) and flipped back to opted in
+    $consents = PhoneConsent::get(FALSE)
+      ->addWhere('phone_number', '=', $phoneNumber)
+      ->execute();
+    $this->assertCount(1, $consents);
+    $this->assertEquals(TRUE, $consents->first()['opted_in']);
+
+    // The re-consent was sent to Acoustic again.
+    $this->assertCount(4, $requests);
+
+    // A second activity was created
+    $activities = Activity::get(FALSE)
+      ->addWhere('activity_type_id:name', '=', 'sms_consent_given')
+      ->addWhere('source_contact_id', '=', $contribution['contact_id'])
+      ->execute();
+    $this->assertCount(2, $activities);
+  }
+
+  /**
+   * Test an sms_opt_in from a contact who is not emailable.
+   *
+   * We still send the contact up so the consent is not orphaned, but it must
+   * not make them mailable at Acoustic.
+   */
+  public function testPhoneWithSmsOptinNotEmailable(): void {
+    $phoneNumber = '3151234568';
+    $email = 'opted.out.mouse@wikimedia.org';
+    $contact = $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Mickey',
+      'last_name' => 'Mouse',
+      'email_primary.email' => $email,
+      'is_opt_out' => TRUE,
+    ]);
+    $this->mockAcoustic($requests);
+    $msg = [
+      'currency' => 'USD',
+      'country' => 'US',
+      'date' => time(),
+      'email' => $email,
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => mt_rand(),
+      'gross' => '1.23',
+      'payment_method' => 'cc',
+      'payment_submethod' => 'visa',
+      'phone' => $phoneNumber,
+      'sms_opt_in' => 1,
+    ];
+
+    $this->processDonationMessage($msg);
+    $this->runSmsOptInQueue();
+    $contribution = $this->getContributionForMessage($msg);
+    // Make sure we don't create a new contact
+    $this->assertEquals($contact['id'], $contribution['contact_id']);
+
+    $addRecipient = $this->getAcousticRequestBody($requests, 0);
+    $this->assertStringContainsString('<NAME>mobile_phone</NAME><VALUE>1' . $phoneNumber . '</VALUE>', $addRecipient);
+    $this->assertStringContainsString('<NAME>OPT_OUT</NAME><VALUE>true</VALUE>', $addRecipient);
+
+    // The sms opt in still happens - it is the email status we are protecting.
+    $this->assertEquals('{"phoneNumber":"1' . $phoneNumber . '"}', (string) $requests[1]['request']->getBody());
+  }
+
+  /**
+   * Point the Acoustic connectors at a mock client.
+   *
+   * The client cannot be passed in from here so we set it on the two singletons
+   * the requests will use - the XML one for the contact & the REST one for the
+   * opt in.
+   *
+   * @param array $requests Filled with the outgoing requests.
+   */
+  private function mockAcoustic(?array &$requests): void {
+    $requests = [];
+    $handler = HandlerStack::create(new MockHandler([
+      // Push in extra responses so we won't hit an exception in the case where we send two sets of requests.
+      new Response(200, [], '<Envelope><Body><RESULT><SUCCESS>TRUE</SUCCESS><RecipientId>569624660942</RecipientId></RESULT></Body></Envelope>'),
+      new Response(200, [], '{"status": "success"}'),
+      new Response(200, [], '<Envelope><Body><RESULT><SUCCESS>TRUE</SUCCESS><RecipientId>569624660942</RecipientId></RESULT></Body></Envelope>'),
+      new Response(200, [], '{"status": "success"}'),
+    ]));
+    $handler->push(Middleware::history($requests));
+    $client = new Client([
+      'base_uri' => 'https://api-campaign-us-4.goacoustic.com/',
+      'handler' => $handler,
+    ]);
+    SilverpopXmlConnector::getInstance()->setClient($client);
+    SilverpopRestConnector::getInstance()->setClient($client);
+  }
+
+  /**
+   * Get an outgoing Acoustic request body, with the xml whitespace flattened.
+   *
+   * @param array $requests
+   * @param int $index
+   *
+   * @return string
+   */
+  private function getAcousticRequestBody(array $requests, int $index): string {
+    return preg_replace('/\s+/', '', urldecode((string) $requests[$index]['request']->getBody()));
+  }
+
+  /**
+   * Run the queued Acoustic SMS opt-in tasks (see WMFContact::optInSmsProgram()).
+   */
+  private function runSmsOptInQueue(): void {
+    $runner = new \CRM_Queue_Runner([
+      'queue' => \Civi::queue('omni-sms-optin'),
+      'errorMode' => \CRM_Queue_Runner::ERROR_ABORT,
+    ]);
+    $runner->runAll();
   }
 
 

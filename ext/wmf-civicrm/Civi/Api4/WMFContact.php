@@ -8,6 +8,7 @@ use Civi\Api4\Action\WMFContact\Save;
 use Civi\Api4\Action\WMFContact\UpdateCommunicationsPreferences;
 use Civi\Api4\Action\WMFContact\DoubleOptIn;
 use Civi\Api4\Action\WMFContact\BulkEmailable;
+use Civi\Api4\Action\WMFContact\OptInSmsProgram;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
 /**
@@ -96,6 +97,17 @@ class WMFContact extends Generic\AbstractEntity {
    */
   public static function bulkEmailable(bool $checkPermissions = FALSE): BulkEmailable {
     return (new BulkEmailable(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Opt a phone number into the Acoustic SMS program.
+   *
+   * @param bool $checkPermissions
+   * @return \Civi\Api4\Action\WMFContact\OptInSmsProgram
+   */
+  public static function optInSmsProgram(bool $checkPermissions = FALSE): OptInSmsProgram {
+    return (new OptInSmsProgram(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 

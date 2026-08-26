@@ -1394,29 +1394,76 @@ class Save extends AbstractAction {
         'country_code' => $countryCode,
         'phone_number' => $phoneNumber,
         'consent_date' => $date,
-        'consent_source' => 'Payments Form',
+        'consent_source' => 'Donation form',
         'opted_in' => 1,
       ];
 
-      // This is duplicated in the omnimail extension
-      PhoneConsent::save(FALSE)
-        ->setMatch(['phone_number'])
-        ->addRecord($record)
-        ->execute();
+      $existingPhoneConsent = PhoneConsent::get(FALSE)
+        ->addWhere('country_code', '=', $countryCode)
+        ->addWhere('phone_number', '=', $phoneNumber)
+        ->addWhere('opted_in', '=', TRUE)
+        ->execute()->first();
+      if (!$existingPhoneConsent) {
+        // This is duplicated in the omnimail extension
+        PhoneConsent::save(FALSE)
+          ->setMatch(['phone_number'])
+          ->addRecord($record)
+          ->execute();
+        $this->optInToSMSProgram($countryCode . $phoneNumber);
+      }
 
-    Activity::create(FALSE)
-      ->setValues([
-        'activity_type_id:name' => 'sms_consent_given',
-        'activity_date_time' => $date,
-        'status_id:name' => 'Completed',
-        'source_contact_id' =>  $contact_id,
-        'subject' => 'SMS consent given for ' . $phoneNumber,
-        'details' => 'Opted in from payments form',
-        // These fields are kinda legacy but since they exist I guess we stick data in them.
-        'phone_number' => $phoneNumber
-      ])
-      ->execute();
+      // Only create an activity if we don't already have an SMS opt in activity
+      // with consent source "Donation form" (we need this for Acoustic export)
+      // or there is no existing PhoneConsent (so they are not currently subscribed)
+      if (!$existingPhoneConsent || !Activity::get(FALSE)
+        ->addWhere('activity_type_id:name', '=', 'sms_consent_given')
+        ->addWhere('source_contact_id', '=', $contact_id)
+        ->addWhere('phone_number', '=', $phoneNumber)
+        ->addWhere('status_id:name', '=', 'Completed')
+        ->addWhere('SMS_consent.Consent_source:name', '=', 'Donation_form')
+        ->execute()->first()) {
+        Activity::create(FALSE)
+          ->setValues([
+            'activity_type_id:name' => 'sms_consent_given',
+            'activity_date_time' => $date,
+            'status_id:name' => 'Completed',
+            'source_contact_id' => $contact_id,
+            'subject' => 'SMS consent given for ' . $phoneNumber,
+            'details' => 'Opted in from donation form',
+            // This field is kinda legacy but since it exists I guess we stick data in.
+            'phone_number' => $phoneNumber,
+            'SMS_consent.Consent_source:name' => 'Donation_form'
+          ])
+          ->execute();
+      }
     }
+  }
+
+  /**
+   * Queue opting the phone number into the SMS program at Acoustic.
+   *
+   * @param string $phoneNumber Phone number including country code.
+   */
+  private function optInToSMSProgram(string $phoneNumber): void {
+    $queue = \Civi::queue('omni-sms-optin', [
+      'type' => 'Sql',
+      'runner' => 'task',
+      'retry_limit' => 3,
+      'retry_interval' => 60,
+      'error' => 'abort',
+    ]);
+    $queue->createItem(new \CRM_Queue_Task('civicrm_api4_queue',
+      [
+        'WMFContact',
+        'optInSmsProgram',
+        [
+          'email' => $this->message['email'],
+          'phoneNumber' => $phoneNumber,
+          'checkPermissions' => FALSE,
+        ],
+      ],
+      'Opt into Acoustic SMS program'
+    ));
   }
 
 }
