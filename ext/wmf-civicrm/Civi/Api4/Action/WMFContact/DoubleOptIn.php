@@ -94,7 +94,7 @@ class DoubleOptIn extends AbstractAction {
       ->addValue('activity_tracking.activity_campaign', $this->campaign)
       ->addValue('activity_tracking.activity_medium', $this->medium)
       ->addValue('activity_tracking.activity_source', $this->source)
-      ->addValue('activity_type_id', 220)
+      ->addValue('activity_type_id:name', 'Double Opt-In')
       ->execute()->first();
     if (!$activity) {
       throw new \CRM_Core_Exception("Activity create failed for Contact ID {$this->contact_id}.");
