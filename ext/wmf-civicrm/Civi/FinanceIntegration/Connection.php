@@ -64,6 +64,20 @@ class Connection {
     return $this->apiClient;
   }
 
+  private ?XmlApi $xmlApi = NULL;
+
+  /**
+   * @return XmlApi
+   * @throws \CRM_Core_Exception
+   */
+  public function getXmlApi(): XmlApi {
+    if (!$this->xmlApi) {
+      $this->xmlApi = new XmlApi($this->getCredentials());
+    }
+
+    return $this->xmlApi;
+  }
+
   /**
    * @return string
    * @throws GuzzleException
