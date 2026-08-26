@@ -469,6 +469,9 @@ class PayPalRecurringDonationsQueueTest extends BaseQueueTestCase {
     $contributionRecur = $this->getContributionRecurForMessage($values);
     // Verify record is cancelled
     $this->assertEquals('Cancelled', $contributionRecur['contribution_status_id:name']);
+    $this->assertNotEmpty($contributionRecur['cancel_date']);
+    $this->assertNotEmpty($contributionRecur['cancel_reason']);
+    $this->assertNotEmpty($contributionRecur['end_date']);
 
     // Import new Subscription payment on cancelled recur record
     $message = $this->getRecurringPaymentMessage($values);
@@ -480,6 +483,10 @@ class PayPalRecurringDonationsQueueTest extends BaseQueueTestCase {
     $this->assertNotEmpty($contributionRecur['payment_processor_id']);
     $this->assertEmpty($contributionRecur['failure_retry_date']);
     $this->assertEquals('In Progress', $contributionRecur['contribution_status_id:name']);
+    // Cancellation fields should be wiped on reactivation.
+    $this->assertEmpty($contributionRecur['cancel_date']);
+    $this->assertEmpty($contributionRecur['cancel_reason']);
+    $this->assertEmpty($contributionRecur['end_date']);
   }
 
   /**

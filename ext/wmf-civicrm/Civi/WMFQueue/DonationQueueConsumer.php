@@ -481,6 +481,9 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
         $recurUpdate = ContributionRecur::update(FALSE)
           ->setValues([
             'contribution_status_id:name' => 'In Progress',
+            'cancel_date' => NULL,
+            'cancel_reason' => NULL,
+            'end_date' => NULL,
           ])
           ->addWhere('id', '=', $message->getContributionRecurID());
         if ($message->isPaypal()) {
