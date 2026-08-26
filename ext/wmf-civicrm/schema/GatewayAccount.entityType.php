@@ -28,6 +28,12 @@ return [
       'title' => E::ts('Name'),
       'description' => E::ts('Machine name for the gateway account. This maps to the value held in contribution_extra.backend_processor'),
     ],
+    'gateway' => [
+      'sql_type' => 'varchar(255)',
+      'input_type' => 'Text',
+      'title' => E::ts('Gateway'),
+      'description' => E::ts('The gateway name - eg. adyen, stripe. Importantly this is stripe for both stripe and stripemg gateway accounts'),
+    ],
     'label' => [
       'sql_type' => 'varchar(128)',
       'input_type' => 'Text',

@@ -20,7 +20,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 1]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 10]],
   ],
   'wmf_thank_you_from_address' => [
     'group_name' => 'WMF Thank You Settings',
@@ -36,7 +36,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 2]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 20]],
   ],
   'wmf_endowment_thank_you_from_name' => [
     'group_name' => 'WMF Thank You Settings',
@@ -52,7 +52,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 11]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 30]],
   ],
   'wmf_endowment_thank_you_from_address' => [
     'group_name' => 'WMF Thank You Settings',
@@ -68,7 +68,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 12]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 40]],
   ],
   'wmf_monthly_convert_from_name' => [
     'group_name' => 'WMF Thank You Settings',
@@ -84,7 +84,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 21]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 50]],
   ],
   'wmf_monthly_convert_from_address' => [
     'group_name' => 'WMF Thank You Settings',
@@ -100,7 +100,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 22]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 60]],
   ],
   'wmf_eoy_thank_you_from_name' => [
     'group_name' => 'WMF Thank You Settings',
@@ -116,7 +116,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 31]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 70]],
   ],
   'wmf_eoy_thank_you_from_address' => [
     'group_name' => 'WMF Thank You Settings',
@@ -132,7 +132,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 32]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 80]],
   ],
   'wmf_double_opt_in_from_name' => [
     'group_name' => 'WMF Thank You Settings',
@@ -148,7 +148,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 33]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 90]],
   ],
   'wmf_double_opt_in_from_address' => [
     'group_name' => 'WMF Thank You Settings',
@@ -164,7 +164,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 34]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 100]],
   ],
   'wmf_double_opt_in_lead_gen_from_name' => [
     'group_name' => 'WMF Thank You Settings',
@@ -180,7 +180,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 35]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 110]],
   ],
   'wmf_double_opt_in_lead_gen_from_address' => [
     'group_name' => 'WMF Thank You Settings',
@@ -196,7 +196,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 36]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 120]],
   ],
   'wmf_new_checksum_link_from_name' => [
     'group_name' => 'WMF Thank You Settings',
@@ -212,7 +212,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 35]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 130]],
   ],
   'wmf_new_checksum_link_from_address' => [
     'group_name' => 'WMF Thank You Settings',
@@ -228,7 +228,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 36]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 140]],
   ],
   'wmf_set_primary_email_from_name' => [
     'group_name' => 'WMF Thank You Settings',
@@ -244,7 +244,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 37]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 150]],
   ],
   'wmf_set_primary_email_from_address' => [
     'group_name' => 'WMF Thank You Settings',
@@ -260,7 +260,7 @@ return [
     'html_attributes' => [
       'size' => 80,
     ],
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 38]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 160]],
   ],
 
   'thank_you_days' => [
@@ -275,7 +275,7 @@ return [
      ],
     'is_domain' => 1,
     'is_contact' => 0,
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 40]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 170]],
   ],
 
   'thank_you_add_civimail_records' => [
@@ -286,7 +286,7 @@ return [
     'default' => TRUE,
     'is_domain' => 1,
     'is_contact' => 0,
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 45]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 180]],
   ],
   'thank_you_civimail_rate' => [
     'name' => 'thank_you_civimail_rate',
@@ -301,7 +301,7 @@ return [
     'is_contact' => 0,
     'title' => E::ts('CiviMail sample rate, from 0 (never) to 1 (always)'),
     'help_text' => '',
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 50]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 190]],
   ],
   'thank_you_failure_threshold' => [
     'name' => 'thank_you_failure_threshold',
@@ -316,7 +316,7 @@ return [
     'is_contact' => 0,
     'title' => E::ts('Number of consecutive failures to allow before disabling thank you job'),
     'help_text' => '',
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 55]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 200]],
   ],
 
   'thank_you_batch' => [
@@ -332,7 +332,7 @@ return [
     'is_domain' => 1,
     'is_contact' => 0,
     'help_text' => '',
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 55]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 210]],
   ],
 
   'thank_you_batch_time' => [
@@ -349,7 +349,7 @@ return [
     'is_domain' => 1,
     'is_contact' => 0,
      'help_text' => '',
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 60]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 220]],
   ],
 
   'thank_you_double_opt_in_countries' => [
@@ -372,6 +372,6 @@ return [
     ],
     'is_domain' => 1,
     'is_contact' => 0,
-    'settings_pages' => ['wmf-thankyou' => ['weight' => 45]],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 230]],
   ],
 ];

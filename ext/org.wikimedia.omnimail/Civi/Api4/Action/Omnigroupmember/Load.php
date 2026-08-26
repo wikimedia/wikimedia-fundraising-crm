@@ -41,6 +41,7 @@ use Omnimail\Silverpop\Responses\Contact;
  * @method string getMailProvider()
  * @method $this setIsConsentOptOutGroup(bool $isConsentOptOutGroup)
  * @method $this setIsConsentOptInGroup(bool $isConsentOptInGroup)
+ * @method $this setIsIncludeOptOut(bool $isIncludeOptOut)
  * @method $this setClient(Client$client) Generally Silverpop....
  * @method null|Client getClient()
  *
@@ -143,6 +144,16 @@ class Load extends Omniaction {
    */
   protected bool $isConsentOptInGroup = FALSE;
 
+  /**
+   * Include contacts who are opted out of email in the export.
+   *
+   * This is the email opt-out status, not SMS consent. We may need to
+   * include opted out email contacts when finding opted in SMS contacts.
+   *
+   * @var bool
+   */
+  protected bool $isIncludeOptOut = FALSE;
+
   public function getJobIdentifier(): string {
     return $this->jobIdentifier ?: ($this->getIsSuppressionList() ? 'suppress_' : '') . $this->getGroupIdentifier();
   }
@@ -175,7 +186,7 @@ class Load extends Omniaction {
       'offset' => $this->getOffset(),
       'timeout' => $this->getTimeout(),
       'start_date' => $this->start ?: NULL,
-      'is_include_opt_out' => $this->getIsSuppressionList() || $this->isConsentOptOutGroup,
+      'is_include_opt_out' => $this->getIsSuppressionList() || $this->isIncludeOptOut,
     ];
 
     $job = new \CRM_Omnimail_Omnigroupmembers($params);
@@ -373,6 +384,12 @@ class Load extends Omniaction {
       [
         'name' => 'isConsentOptOutGroup',
         'label' => 'Is this a group of recipients who have opted out of SMS?',
+        'data_type' => 'Boolean',
+        'default' => FALSE,
+      ],
+      [
+        'name' => 'isIncludeOptOut',
+        'label' => 'Include recipients who are opted out of email?',
         'data_type' => 'Boolean',
         'default' => FALSE,
       ],
