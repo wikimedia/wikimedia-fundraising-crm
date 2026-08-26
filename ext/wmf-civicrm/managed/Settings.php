@@ -19,6 +19,7 @@ $settings = [
   'omnimail_field_mapping' => [
     'first_name' => 'firstname',
     'last_name' => 'lastname' ,
+    'mobile_phone' => 'mobile_phone',
   ],
   // Prevents acl cache clearing (as of recording already set on prod/staging)
   'acl_cache_refresh_mode' => 'deterministic',
