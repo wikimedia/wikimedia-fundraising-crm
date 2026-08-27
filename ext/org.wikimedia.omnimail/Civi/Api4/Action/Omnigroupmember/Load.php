@@ -299,13 +299,14 @@ class Load extends Omniaction {
           ->addWhere('country_code', '=', $countryCode)
           ->execute()->first();
 
-        if (!$existingConsent
-          || ($this->isConsentOptOutGroup && $existingConsent['opted_in'])
-          || ($this->isConsentOptInGroup && !$existingConsent['opted_in'])
+        if ((!$existingConsent && !$this->isConsentOptOutGroup)
+          || ($this->isConsentOptOutGroup && ($existingConsent['opted_in'] ?? NULL))
+          || ($this->isConsentOptInGroup && (!$existingConsent['opted_in'] ?? NULL))
         ) {
-          // Consent needs updating if there is no existing consent or the existing
-          // consent differs to the remote. We only check the remote if it seems
-          // likely to be different based on isConsentOptOutGroup/isConsentOptInGroup
+          // Consent needs updating if it is opt in and there is no existing consent
+          // or the existing consent differs to the remote.
+          // We only check the remote if it seems likely to be different based on
+          // isConsentOptOutGroup/isConsentOptInGroup
           // This is to save us looking up every single one - the group criteria
           // at the Acoustic end is set to opt in our out.
           $remoteContact = Omnicontact::get(FALSE)

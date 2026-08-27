@@ -122,8 +122,6 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnigroupmembers_load', TRUE, 'phone-consent-list.csv');
     $this->addMockResponse(file_get_contents(__DIR__ . '/Responses/SelectRecipientData.txt'));
     $consentResponse = file_get_contents(__DIR__ . '/Responses/ConsentInformationResponse.txt');
-    $this->addMockResponse($consentResponse);
-    $this->addMockResponse(file_get_contents(__DIR__ . '/Responses/SelectRecipientData.txt'));
     $this->addMockResponse(str_replace('OPTED-IN', 'OPTED-OUT', $consentResponse));
 
     PhoneConsent::create(FALSE)
@@ -145,15 +143,10 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
       ->execute();
     $this->assertStringContainsString('<EXPORT_TYPE>ALL</EXPORT_TYPE>', urldecode(implode($this->getRequestBodies())));
 
-    $consent = PhoneConsent::get(FALSE)
+    // IsConsentOptOutGroup runs don't create a PhoneConsent record where none existed.
+    $this->assertCount(0, PhoneConsent::get(FALSE)
       ->addWhere('phone_number', '=', 23456789)
-      ->execute()->single();
-    $this->assertEquals(1, $consent['country_code']);
-    $this->assertEquals(123456, $consent['master_recipient_id']);
-    $this->assertEquals(23456789, $consent['phone_number']);
-    $this->assertEquals('2024-11-27 00:08:59', $consent['consent_date']);
-    $this->assertEquals('Sms Consent Kafka Streams', $consent['consent_source']);
-    $this->assertTrue($consent['opted_in']);
+      ->execute());
 
     $consent = PhoneConsent::get(FALSE)
       ->addWhere('phone_number', '=', 23456788)
@@ -408,8 +401,9 @@ class OmnigroupmemberLoadTest extends OmnimailBaseTestClass {
     $downloadDirectory = $this->getDownloadDirectory();
     // Note that the copy-to is the same for all tests - because otherwise we would need
     // the file name altered in the responses (above) too - the file name is data from Acoustic.
-    copy(__DIR__ . '/Responses/' . $fileName, $downloadDirectory . '/20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv');
-    fopen($downloadDirectory . '/' . $fileName . '.complete', 'c');
+    $downloadedFileName = '20170509_noCID - All - Jul 5 2017 06-27-45 AM.csv';
+    copy(__DIR__ . '/Responses/' . $fileName, $downloadDirectory . '/' . $downloadedFileName);
+    fopen($downloadDirectory . '/' . $downloadedFileName . '.complete', 'c');
     if ($isUpdateSetting) {
       $this->createSetting(['job' => $job, 'job_identifier' => 'load', 'mailing_provider' => 'Silverpop', 'last_timestamp' => '1487890800']);
     }
