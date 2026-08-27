@@ -8,6 +8,7 @@ use Civi\Api4\Generic\Result;
 use Civi\Api4\WorkflowMessage;
 use Civi\Omnimail\MailFactory;
 use Civi\WMFThankYou\From;
+use PHPMailer\PHPMailer\Exception;
 
 /**
  * Class Send.
@@ -83,17 +84,24 @@ class Send extends AbstractAction {
       'email' => $email,
       'is_success' => FALSE
     ];
-    if (MailFactory::singleton()->send($email, [])) {
-      $sendResult['is_success'] = TRUE;
-      Activity::create(FALSE)->setValues([
-        'source_contact_id' => $this->contactID,
-        'target_contact_id' => $this->contactID,
-        'activity_type_id:name' => 'Email',
-        'activity_date_time' => 'now',
-        'subject' => $message['subject'],
-        'Email.Workflow' => $this->workflow,
-        'status_id:name' => 'Completed',
-      ])->execute();
+    try {
+      if (MailFactory::singleton()->send($email, [])) {
+        $sendResult['is_success'] = TRUE;
+        Activity::create(FALSE)->setValues([
+          'source_contact_id' => $this->contactID,
+          'target_contact_id' => $this->contactID,
+          'activity_type_id:name' => 'Email',
+          'activity_date_time' => 'now',
+          'subject' => $message['subject'],
+          'Email.Workflow' => $this->workflow,
+          'status_id:name' => 'Completed',
+        ])->execute();
+      }
+    } catch (Exception $e) {
+      if (!str_contains($e->getMessage(), 'Invalid address:')) {
+        throw $e;
+      }
+      \Civi::log('wmf')->warning('Double opt-in skipped, invalid address: {message}', ['message' => $e->getMessage()]);
     }
     $result[] = $sendResult;
   }

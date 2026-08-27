@@ -3,6 +3,7 @@
 namespace Civi\Omnimail;
 
 use Civi\WMFException\WMFException;
+use PHPMailer\PHPMailer\Exception;
 
 /**
  * Class Mailer
@@ -90,6 +91,7 @@ class MailFactory {
    * @param array $headers
    *
    * @return bool
+   * @throws Exception|WMFException
    */
   public function send($email, $headers): bool {
     return (bool) $this->getMailer()->send(

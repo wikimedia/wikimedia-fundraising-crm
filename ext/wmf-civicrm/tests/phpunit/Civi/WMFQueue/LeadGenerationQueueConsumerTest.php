@@ -5,6 +5,8 @@ namespace Civi\WMFQueue;
 use Civi\Api4\Activity;
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
+use Civi\Omnimail\MailFactory;
+use Civi\Omnimail\SMTPMailer;
 use Civi\WMFException\WMFException;
 use SmashPig\Core\UtcDate;
 
@@ -210,5 +212,24 @@ class LeadGenerationQueueConsumerTest extends BaseQueueTestCase {
       ->execute()->first()['email_settings.snooze_date'];
     $this->assertEquals(gmdate('Y-m-d', strtotime('+1 day')), gmdate('Y-m-d', strtotime($snoozeDate)));
   }
+  public function testInvalidEmailDoesNotThrow(): void {
+    $this->email = 'foo.@gmail.com.au';
+    // The test mailer accepts anything, so swap in the real one. PHPMailer
+    // validates the address before it connects, so no SMTP server is needed.
+    $mailer = new SMTPMailer();
+    $mailer->setSmtpHost('localhost');
+    MailFactory::singleton()->setActiveMailer(NULL, $mailer);
 
+    // Fails on an uncaught PHPMailer\PHPMailer\Exception without the fix.
+    $this->processMessageWithoutQueuing($this->getMessage());
+
+    $contacts = $this->getContactsForEmail();
+    $this->assertCount(1, $contacts);
+    $contactID = key($contacts);
+
+    // The signup is still recorded ...
+    $this->assertCount(1, $this->getLeadGenerationActivities($contactID));
+    // ... but there is no double opt-in email activity, as the send failed.
+    $this->assertCount(0, $this->getDoubleOptInEmailActivities($contactID));
+  }
 }
