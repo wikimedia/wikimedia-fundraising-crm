@@ -908,6 +908,7 @@ class DonationQueueTest extends BaseQueueTestCase {
     $activity = Activity::get(FALSE)
       ->addWhere('activity_type_id:name', '=', 'sms_consent_given')
       ->addWhere('source_contact_id', '=', $contribution['contact_id'])
+      ->addWhere('target_contact_id', 'CONTAINS', [$contribution['contact_id']])
       ->addSelect('SMS_consent.Consent_source:name')
       ->execute()->single();
     $this->assertEquals('Donation_form', $activity['SMS_consent.Consent_source:name']);
@@ -960,6 +961,7 @@ class DonationQueueTest extends BaseQueueTestCase {
     $activities = Activity::get(FALSE)
       ->addWhere('activity_type_id:name', '=', 'sms_consent_given')
       ->addWhere('source_contact_id', '=', $contribution['contact_id'])
+      ->addWhere('target_contact_id', 'CONTAINS', [$contribution['contact_id']])
       ->execute();
     $this->assertCount(1, $activities);
   }
@@ -1020,6 +1022,7 @@ class DonationQueueTest extends BaseQueueTestCase {
     $activities = Activity::get(FALSE)
       ->addWhere('activity_type_id:name', '=', 'sms_consent_given')
       ->addWhere('source_contact_id', '=', $contribution['contact_id'])
+      ->addWhere('target_contact_id', 'CONTAINS', [$contribution['contact_id']])
       ->execute();
     $this->assertCount(2, $activities);
   }
