@@ -5253,6 +5253,21 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Fix custom group style casing so Adjustment & Gift_Data show on the
+   * Contribution view/edit screen on existing dev installs.
+   *
+   * @return bool
+   */
+  public function upgrade_5130(): bool {
+    CustomGroup::update(FALSE)
+      ->addWhere('name', 'IN', ['Adjustment', 'Gift_Data'])
+      ->addWhere('style', '=', 'inline')
+      ->addValue('style', 'Inline')
+      ->execute();
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
