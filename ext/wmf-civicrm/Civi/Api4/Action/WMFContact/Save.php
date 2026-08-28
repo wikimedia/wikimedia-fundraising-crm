@@ -1428,6 +1428,7 @@ class Save extends AbstractAction {
             'activity_date_time' => $date,
             'status_id:name' => 'Completed',
             'source_contact_id' => $contact_id,
+            'target_contact_id' => $contact_id,
             'subject' => 'SMS consent given for ' . $phoneNumber,
             'details' => 'Opted in from donation form',
             // This field is kinda legacy but since it exists I guess we stick data in.
