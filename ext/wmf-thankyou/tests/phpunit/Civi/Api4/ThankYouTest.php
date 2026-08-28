@@ -49,39 +49,6 @@ class ThankYouTest extends TestCase {
   }
 
   /**
-   * Create a contribution, with some defaults.
-   *
-   * @param array $params
-   * @param int|string $key
-   *   Identifier to refer to contribution by.
-   *
-   * @return int
-   */
-  public function createContribution(array $params, int|string $key): int {
-    try {
-      $this->ids['Contribution'][$key] = Contribution::create(FALSE)
-        ->setValues(array_merge([
-          'currency' => 'USD',
-          'contact_id' => $this->ids['Contact']['default'],
-          'receive_date' => 'now',
-          'payment_instrument_id:name' => 'Credit Card',
-          'financial_type_id:name' => 'Donation',
-          'total_amount' => 1.23,
-          'contribution_extra.original_amount' => $params['total_amount'] ?? 1.23,
-          'contribution_extra.original_currency' => 'USD',
-          'contribution_extra.gateway' => 'thank_you_test_gateway',
-          'contribution_extra.gateway_txn_id' => 'thank_you_test_gateway 12345',
-        ], $params))
-        ->execute()
-        ->first()['id'];
-    }
-    catch (\CRM_Core_Exception $e) {
-      $this->fail($e->getMessage());
-    }
-    return $this->ids['Contribution'][$key];
-  }
-
-  /**
    * Post test cleanup.
    *
    * @throws \CRM_Core_Exception

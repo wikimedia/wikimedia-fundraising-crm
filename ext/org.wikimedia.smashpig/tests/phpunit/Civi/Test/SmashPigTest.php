@@ -212,7 +212,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       // Direct Mail Appeal field
       'Gift_Data.Appeal' => 'Mobile Giving',
     ];
-    $contribution = $this->createContribution($contributionRecur, $giftData);
+    $contribution = $this->createContributionFromRecur($contributionRecur, $giftData);
 
     [, $expectedInvoiceId] = $this->getExpectedIds($contribution);
 
@@ -322,7 +322,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       // this is deliberately different from the below contribution amount
     ]);
 
-    $contribution = $this->createContribution($contributionRecur, [
+    $contribution = $this->createContributionFromRecur($contributionRecur, [
       'invoice_id' => $contributionRecur['invoice_id'],
       'contribution_recur_id' => NULL,
       'amount' => 12.00,
@@ -430,7 +430,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     ]);
 
     // create the original contribution that relates to the recurring subscription
-    $contribution = $this->createContribution($contributionRecur, [
+    $contribution = $this->createContributionFromRecur($contributionRecur, [
       'invoice_id' => $contributionRecur['invoice_id'],
       'contribution_recur_id' => NULL,
       'amount' => 12.00,
@@ -598,7 +598,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $contact = $this->createContact();
     $token = $this->createToken($contact['id']);
     $contributionRecur = $this->createContributionRecur($token);
-    $contribution = $this->createContribution($contributionRecur);
+    $contribution = $this->createContributionFromRecur($contributionRecur);
     [$ctId, $expectedInvoiceId] = $this->getExpectedIds($contribution);
     $this->hostedCheckoutProvider->expects($this->once())
       ->method('createPayment')
@@ -663,7 +663,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       // this is deliberately different from the below contribution amount
     ]);
 
-    $contribution = $this->createContribution($contributionRecur, [
+    $contribution = $this->createContributionFromRecur($contributionRecur, [
       'invoice_id' => $contributionRecur['invoice_id'],
       'contribution_recur_id' => NULL,
       'amount' => 12.00,
@@ -733,7 +733,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $contributionRecur = $this->createContributionRecur($token, [
       'contribution_recur_smashpig.initial_scheme_transaction_id' => 'ABC123YouAndMe',
     ]);
-    $contribution = $this->createContribution($contributionRecur);
+    $contribution = $this->createContributionFromRecur($contributionRecur);
 
     [$ctId, $expectedInvoiceId, $next] = $this->getExpectedIds($contribution);
 
@@ -800,7 +800,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'amount' => '11.22',
     ]);
     // Contribution table gets converted USD amount
-    $contribution = $this->createContribution($contributionRecur);
+    $contribution = $this->createContributionFromRecur($contributionRecur);
     [$ctId, $expectedInvoiceId, $next] = $this->getExpectedIds($contribution);
     $expectedDescription = $this->getExpectedDescription();
     $this->hostedCheckoutProvider->expects($this->once())
@@ -879,7 +879,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'payment_processor_id.name' => 'gravy',
     ]);
 
-    $contribution = $this->createContribution($contributionRecur);
+    $contribution = $this->createContributionFromRecur($contributionRecur);
     [, $expectedPaymentInvoiceId] = $this->getExpectedIds($contribution);
     $expectedDescription = $this->getExpectedDescription();
 
@@ -971,7 +971,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'payment_processor_id.name' => 'gravy',
     ]);
 
-    $contribution = $this->createContribution($contributionRecur);
+    $contribution = $this->createContributionFromRecur($contributionRecur);
     [, $expectedNextPaymentInvoiceId] = $this->getExpectedIds($contribution);
     $expectedDescription = $this->getExpectedDescription();
 
@@ -1066,7 +1066,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'payment_processor_id.name' => 'gravy',
     ]);
 
-    $contribution = $this->createContribution($contributionRecur);
+    $contribution = $this->createContributionFromRecur($contributionRecur);
     [, $expectedNextPaymentInvoiceId] = $this->getExpectedIds($contribution);
 
     $this->hostedCheckoutProvider->expects($this->once())
@@ -1129,7 +1129,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'payment_processor_id.name' => 'gravy',
       'currency' => 'BRL',
     ]);
-    $contribution = $this->createContribution($contributionRecur, [
+    $contribution = $this->createContributionFromRecur($contributionRecur, [
       'payment_instrument_id:name' => 'Bank Transfer: Pix',
       'currency' => 'BRL',
     ]);
@@ -1191,7 +1191,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'failure_count' => $failureCount,
       'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-1 second')),
     ]);
-    $this->createContribution($contributionRecur);
+    $this->createContributionFromRecur($contributionRecur);
     $response = (new CreatePaymentResponse())->addErrors(
       new PaymentError(
         ErrorCode::DECLINED,
@@ -1344,7 +1344,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $contributionRecur = $this->createContributionRecur($token, [
       'failure_count' => 0,
     ]);
-    $this->createContribution($contributionRecur);
+    $this->createContributionFromRecur($contributionRecur);
 
     // set up our fail response
     $response = (new CreatePaymentResponse())->addErrors(
@@ -1407,7 +1407,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $contributionRecur = $this->createContributionRecur($token, [
       'failure_count' => 1,
     ]);
-    $this->createContribution($contributionRecur);
+    $this->createContributionFromRecur($contributionRecur);
 
     // set up our fail response
     $response = (new CreatePaymentResponse())->addErrors(
@@ -1478,7 +1478,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $contributionRecur = $this->createContributionRecur($token, [
       'failure_count' => 2,
     ]);
-    $this->createContribution($contributionRecur);
+    $this->createContributionFromRecur($contributionRecur);
 
     // set up our fail response
     $response = (new CreatePaymentResponse())->addErrors(
@@ -1551,7 +1551,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       // set this to 1 month in the past so it doesn't get run
       'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('-12 hours')),
     ]);
-    $this->createContribution($contributionRecur1);
+    $this->createContributionFromRecur($contributionRecur1);
 
     // add second (newer) recurring that's already been charged
     $this->createToken((int) $contact['id']);
@@ -1561,7 +1561,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'next_sched_contribution_date' => gmdate('Y-m-d H:i:s', strtotime('+14 days')),
       'trxn_id' => 3456789,
     ]);
-    $this->createContribution($contributionRecur2);
+    $this->createContributionFromRecur($contributionRecur2);
 
     // set up our fail DO NOT RETRY response for when our old recurring
     // is charged. We could see this when a card is stopped due to
@@ -1653,7 +1653,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'contribution_status_id' => $failingStatus,
       'failure_count' => 2,
     ]);
-    $this->createContribution($contributionRecur);
+    $this->createContributionFromRecur($contributionRecur);
     $response = (new CreatePaymentResponse())->addErrors(
       new PaymentError(
         ErrorCode::DECLINED,
@@ -1741,7 +1741,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $contact = $this->createContact();
     $token = $this->createToken($contact['id']);
     $contributionRecur = $this->createContributionRecur($token);
-    $contribution = $this->createContribution($contributionRecur);
+    $contribution = $this->createContributionFromRecur($contributionRecur);
     [
       $ctId,
       $expectedInvoiceId,
@@ -1853,7 +1853,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $overrides['failure_count'] = 1;
 
     $contributionRecur = $this->createContributionRecur($token, $overrides);
-    $contribution = $this->createContribution($contributionRecur);
+    $contribution = $this->createContributionFromRecur($contributionRecur);
 
     // Get the expected invoice ids taking into account the failures
     [

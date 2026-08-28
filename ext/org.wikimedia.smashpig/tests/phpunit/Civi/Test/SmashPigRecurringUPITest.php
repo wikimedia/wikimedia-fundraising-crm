@@ -79,7 +79,7 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
       'contribution_recur_smashpig.processor_contact_id' => '123456.1',
       'contribution_recur_smashpig.rescue_reference' => NULL
     ]);
-    $this->createContribution($contributionRecur, [
+    $this->createContributionFromRecur($contributionRecur, [
       'payment_instrument_id:name' => 'Bank Transfer: UPI',
       'invoice_id' => $expectedOrderIdWithSequence . '|recur-' . $this->generateRandomOrderId(),
     ]);
@@ -132,7 +132,7 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
       'trxn_id' => $this->generateRandomOrderId(),
       'invoice_id' => $expectedOrderIdWithSequence,
     ]);
-    $this->createContribution($contributionRecur, [
+    $this->createContributionFromRecur($contributionRecur, [
       'payment_instrument_id:name' => 'Bank Transfer: UPI',
       'invoice_id' => $expectedOrderIdWithSequence . '|recur-' . $this->generateRandomOrderId(),
     ]);
@@ -171,7 +171,7 @@ class SmashPigRecurringUPITest extends SmashPigBaseTestClass {
       'trxn_id' => $this->generateRandomOrderId(),
       'invoice_id' => $expectedOrderIdWithSequence,
     ]);
-    $this->createContribution($initialContributionRecur, [
+    $this->createContributionFromRecur($initialContributionRecur, [
       'payment_instrument_id:name' => 'Bank Transfer: UPI',
       'invoice_id' => $expectedOrderIdWithSequence . '|recur-' . $this->generateRandomOrderId(),
     ]);

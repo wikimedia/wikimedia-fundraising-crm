@@ -282,6 +282,35 @@ trait WMFEnvironmentTrait {
   }
 
   /**
+   * Create a Contribution, with some defaults
+   *
+   * Defaults to the caller's default Contact if one has been created
+   * otherwise creates a fresh Individual.
+   *
+   * @param array $params
+   * @param int|string $identifier
+   *    Identifier to refer to contribution by.
+   *
+   * @return array
+   */
+  public function createContribution(array $params = [], int|string $identifier = 'default'): array {
+    if (empty($params['contact_id'])) {
+      $params['contact_id'] = $this->ids['Contact']['default'] ?? $this->createIndividual();
+    }
+    return $this->createTestEntity('Contribution', array_merge([
+      'currency' => 'USD',
+      'payment_instrument_id:name' => 'Credit Card',
+      'financial_type_id:name' => 'Donation',
+      'total_amount' => 1.23,
+      'receive_date' => 'now',
+      'contribution_extra.original_amount' => $params['total_amount'] ?? 1.23,
+      'contribution_extra.original_currency' => 'USD',
+      'contribution_extra.gateway' => 'thank_you_test_gateway',
+      'contribution_extra.gateway_txn_id' => 'thank_you_test_gateway 12345',
+    ], $params), (string) $identifier);
+  }
+
+  /**
    * Clean up a contribution
    *
    * @param int $id

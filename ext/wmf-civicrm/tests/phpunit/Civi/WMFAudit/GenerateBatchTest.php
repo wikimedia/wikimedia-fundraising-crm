@@ -63,7 +63,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $currency = 'USD';
     $settlementDate = '2026-01-26';
 
-    $this->createContribution([
+    $this->createQueueContribution([
       'Gift_Data.Channel' => 'Mobile Banner',
       'Gift_Data.Fund' => 'Unrestricted',
       'Gift_Data.is_major_gift' => 0,
@@ -107,7 +107,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $currency = 'USD';
     $settlementDate = '2026-01-26';
 
-    $this->createContribution([
+    $this->createQueueContribution([
       'Gift_Data.Channel' => 'Mobile Banner',
       'Gift_Data.Fund' => 'Unrestricted',
       'Gift_Data.is_major_gift' => 0,
@@ -145,7 +145,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $settlementDate = '2026-01-20';
 
     // Mobile Banner / Desktop Banner / Other Banner => all map to ACCT_NO 43481 in getAccountClause().
-    $this->createContribution([
+    $this->createQueueContribution([
       'Gift_Data.Channel' => 'Mobile Banner',
       'Gift_Data.Fund' => 'Unrestricted',
       'Gift_Data.is_major_gift' => 0,
@@ -154,7 +154,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
       'contribution_settlement.settlement_currency' => $currency,
       'contribution_settlement.settlement_date' => $settlementDate,
     ]);
-    $this->createContribution([
+    $this->createQueueContribution([
       'Gift_Data.Channel' => 'Desktop Banner',
       'Gift_Data.Fund' => 'Unrestricted',
       'Gift_Data.is_major_gift' => 0,
@@ -163,7 +163,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
       'contribution_settlement.settlement_currency' => $currency,
       'contribution_settlement.settlement_date' => $settlementDate,
     ]);
-    $this->createContribution([
+    $this->createQueueContribution([
       'Gift_Data.channel' => 'Other Banner',
       'Gift_Data.fund' => 'Unrestricted',
       'Gift_Data.is_major_gift' => 0,
@@ -209,7 +209,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $settlementDate = '2026-01-20';
 
     // Mobile Banner / Desktop Banner / Other Banner => all map to ACCT_NO 43481 in getAccountClause().
-    $this->createContribution([
+    $this->createQueueContribution([
       'financial_type_id:name' => 'Endowment Gift',
       'Gift_Data.Channel' => 'Mobile Banner',
       'Gift_Data.Fund' => 'Unrestricted',
@@ -219,7 +219,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
       'contribution_settlement.settlement_currency' => $currency,
       'contribution_settlement.settlement_date' => $settlementDate,
     ]);
-    $this->createContribution([
+    $this->createQueueContribution([
       'Gift_Data.Channel' => 'Desktop Banner',
       'Gift_Data.Fund' => 'Unrestricted',
       'Gift_Data.is_major_gift' => 0,
@@ -252,7 +252,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $settlementDate = '2026-01-21';
 
     // Both channels map to 43484, but different Fund => GROUP BY Fund, ACCT_NO, is_major_gift => should become 2 rows.
-    $this->createContribution([
+    $this->createQueueContribution([
       'Gift_Data.Channel' => 'SMS', // 43484
       'Gift_Data.Fund' => 'Unrestricted',
       'Gift_Data.is_major_gift' => 0,
@@ -261,7 +261,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
       'contribution_settlement.settlement_currency' => $currency,
       'contribution_settlement.settlement_date' => $settlementDate,
     ]);
-    $this->createContribution([
+    $this->createQueueContribution([
       'Gift_Data.Channel' => 'Other Online', // 43484
       'Gift_Data.Fund' => 'Restricted - Foo', // different Fund => separate group
       'Gift_Data.is_major_gift' => 0,
@@ -295,7 +295,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $currency = 'USD';
     $settlementDate = '2026-01-22';
 
-    $this->createContribution([
+    $this->createQueueContribution([
       'Gift_Data.Channel' => 'Totally Unknown Channel',
       'Gift_Data.Fund' => 'Unrestricted',
       'Gift_Data.is_major_gift' => 0,
@@ -340,7 +340,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
   /**
    * Create a contribution and set the Gift Data + Settlement custom fields entirely via API4.
    */
-  private function createContribution(array $spec): void {
+  private function createQueueContribution(array $spec): void {
     $defaults = [
       'receive_date' => date('Y-m-d H:i:s'),
       'total_amount' => 10.0,
@@ -447,7 +447,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $currency = 'USD';
     $settlementDate = '2026-01-27';
 
-    $this->createContribution([
+    $this->createQueueContribution([
       'trxn_id' => 'stripe fee 555',
       'Gift_Data.Channel' => 'Mobile Banner',
       'Gift_Data.Fund' => 'Unrestricted',
@@ -501,7 +501,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $settlementDate = '2026-01-23';
 
     $adyenBatchName = 'adyen_337_USD';
-    $this->createContribution([
+    $this->createQueueContribution([
       'Gift_Data.Channel' => 'Mobile Banner',
       'Gift_Data.Fund' => 'Unrestricted',
       'Gift_Data.is_major_gift' => 0,
@@ -517,7 +517,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $this->assertEquals('V01670', $adyenRows[0]['GLENTRY_VENDORID']);
 
     $dlocalBatchName = 'dlocal_337_USD';
-    $this->createContribution([
+    $this->createQueueContribution([
       'Gift_Data.Channel' => 'Mobile Banner',
       'Gift_Data.Fund' => 'Unrestricted',
       'Gift_Data.is_major_gift' => 0,
@@ -548,7 +548,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $currency = 'USD';
     $settlementDate = '2026-01-24';
 
-    $this->createContribution([
+    $this->createQueueContribution([
       'Gift_Data.Channel' => 'Mobile Banner',
       'Gift_Data.Fund' => 'Unrestricted',
       'Gift_Data.is_major_gift' => 0,

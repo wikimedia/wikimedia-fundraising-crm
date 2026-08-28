@@ -251,7 +251,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
    *
    * @return array
    */
-  protected function createContribution(array $contributionRecur, array $overrides = []): array {
+  protected function createContributionFromRecur(array $contributionRecur, array $overrides = []): array {
     $params = $overrides + [
         'contact_id' => $contributionRecur['contact_id'],
         'currency' => 'USD',
@@ -353,7 +353,7 @@ class SmashPigBaseTestClass extends TestCase implements HeadlessInterface {
     $contact = $this->createContact();
     $token = $this->createToken((int) $contact['id']);
     $contributionRecur = $this->createContributionRecur($token);
-    $this->createContribution($contributionRecur);
+    $this->createContributionFromRecur($contributionRecur);
     return $contributionRecur;
   }
 

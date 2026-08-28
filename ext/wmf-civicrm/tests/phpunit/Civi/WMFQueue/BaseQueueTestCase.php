@@ -212,7 +212,7 @@ class BaseQueueTestCase extends TestCase implements HeadlessInterface {
    *
    * @return array
    */
-  protected function createContribution(array $values = [], string $identifier = 'danger'): array {
+  protected function createQueueContribution(array $values = [], string $identifier = 'danger'): array {
     if (empty($values['contact_id'])) {
       $values['contact_id'] = $this->createIndividual();
     }
