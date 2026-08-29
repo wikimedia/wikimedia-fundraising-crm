@@ -374,8 +374,6 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
   }
 
   public function testSetSnoozePreference() {
-    $credentials = \Civi::settings()->get('omnimail_credentials');
-    $this->setSetting('omnimail_credentials', ['Silverpop' => array_merge($credentials['Silverpop'] ?? [], ['database_id' => [50]])]);
     $this->contactID = Contact::create(FALSE)->setValues([
       'first_name' => 'Bob',
       'last_name' => 'McTest',

@@ -196,9 +196,6 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
    * @throws \CRM_Core_Exception
    */
   public function testQueueEmailEdit(): void {
-    // We don't send calls in this test but get an e-notice on CI if there is
-    // no Acoustic configured.
-    $this->setDatabaseID(1234);
     $contactID = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Daisy',

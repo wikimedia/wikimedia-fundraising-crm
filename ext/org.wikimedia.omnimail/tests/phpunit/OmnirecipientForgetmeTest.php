@@ -71,7 +71,6 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass {
     $this->makeScientists();
     $this->setUpForErase();
     $this->addTestClientToRestSingleton();
-    $settings = $this->setDatabaseID([50]);
 
     $this->callAPISuccess('Contact', 'forgetme', ['id' => $this->ids['Contact']['charlie_clone']]);
     $this->callAPISuccess('Omnirecipient', 'process_forgetme', ['mail_provider' => 'Silverpop', 'retry_delay' => 0]);
@@ -79,7 +78,6 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass {
     // Check the request we sent out had the right email in it.
     $requests = $this->getRequestBodies();
     $this->assertEquals("Email,charlie@example.com\n", $requests[0], print_r($requests, 1));
-    Civi::settings()->set('omnimail_credentials', $settings);
   }
 
 }

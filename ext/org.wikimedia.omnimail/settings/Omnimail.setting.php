@@ -94,7 +94,7 @@ return [
     'group' => 'omnimail',
     'name' => 'omnimail_credentials',
     'type' => 'Array',
-    'default' => [],
+    'default' => ['Silverpop' => ['database_id' => [1234]]],
     'title' => 'Omnimail Credentials',
     'is_domain' => '1',
     'is_contact' => 0,
