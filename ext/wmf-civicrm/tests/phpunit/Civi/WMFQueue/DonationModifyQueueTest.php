@@ -4,6 +4,7 @@ namespace Civi\WMFQueue;
 
 use Civi\Api4\Activity;
 use Civi\Api4\ContributionRecur;
+use Civi\SmashPig\RecurringFailureHandler;
 
 class DonationModifyQueueTest extends BaseQueueTestCase {
 
@@ -90,6 +91,71 @@ class DonationModifyQueueTest extends BaseQueueTestCase {
     );
   }
 
+  /**
+   * Ensure we don't record another Recurring Failure activity or
+   * increment failure_count if there's another activity in the
+   * past day
+   * @return void
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  public function testRetryableACHFailureAlreadyRecorded(): void {
+    $this->createIndividual(['hash' => 'mousy_mouse']);
+    $this->createPaymentProcessor();
+    $msg = $this->getInitialContributionMessage();
+    $this->processDonationMessage($msg, FALSE);
+    $initialContribution = $this->getContributionForMessage($msg);
+    $retryCadence = explode(',', \Civi::settings()->get('smashpig_recurring_retry_cadence'));
+    $failureHandler = new RecurringFailureHandler($retryCadence);
+    $failureHandler->recordFailedPayment(
+      ContributionRecur::get(FALSE)
+        ->addWhere('id', '=', $initialContribution['contribution_recur_id'])
+        ->addSelect('*')
+        ->addSelect('custom.*')
+        ->execute()
+        ->first(),
+      'Original failure reason',
+      TRUE
+    );
+    $this->processDonationModifyMessage([
+      'contribution_status_id:name' => 'Cancelled',
+      'gateway_txn_id' => '338b9bc1-ff9f-48b9-a66c-742380770e96',
+      'payment_method' => 'ach',
+      'order_id' => '1234.1',
+      'gross_currency' => 'USD',
+      'gross' => 25.00,
+      'backend_processor' => 'trustly',
+      'backend_processor_txn_id' => '567890',
+      'date' => 1784939264,
+      'gateway' => 'gravy',
+      'reason' => 'insufficient_funds',
+      'can_retry' => true,
+      'is_suspected_fraud' => false,
+    ]);
+    $contribution = $this->getContributionForMessage($msg);
+    $contributionRecur = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $contribution['contribution_recur_id'])
+      ->setSelect(['failure_count', 'contribution_status_id:name', 'cancel_date'])
+      ->execute()
+      ->first();
+    $this->assertEquals('Cancelled', $contribution['contribution_status_id:name']);
+    $this->assertEquals('2026-07-25 00:27:44', $contribution['cancel_date']);
+    $this->assertEquals('insufficient_funds', $contribution['cancel_reason']);
+    $this->assertEquals('Failing', $contributionRecur['contribution_status_id:name']);
+    // Recurring record should still just have failure count = 1
+    $this->assertEquals(1, $contributionRecur['failure_count']);
+    $this->assertNull($contributionRecur['cancel_date']);
+    $activityResult = Activity::get(FALSE)
+      ->addWhere('source_record_id', '=', $contribution['contribution_recur_id'])
+      ->addWhere('activity_type_id:name', '=', 'Recurring Failure')
+      ->execute();
+    // We should not record another failure
+    $this->assertEquals(1, $activityResult->count());
+    $this->assertEquals(
+      'Payment of 25 USD failed with Original failure reason',
+      $activityResult->first()['subject']
+    );
+  }
   protected function getInitialContributionMessage(): array {
     return [
       'first_name' => 'Lex',

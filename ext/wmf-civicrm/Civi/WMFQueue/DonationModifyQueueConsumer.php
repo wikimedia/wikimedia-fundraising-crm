@@ -55,22 +55,44 @@ class DonationModifyQueueConsumer extends TransactionalQueueConsumer {
       ->addValue('cancel_date', $message->getDate())
       ->execute();
 
-    if ($contribution['contribution_recur_id']) {
-      $contributionRecur = ContributionRecur::get(FALSE)
-        ->addWhere('id', '=', $contribution['contribution_recur_id'])
-        ->addSelect('*')
-        ->addSelect('custom.*')
-        ->execute()->first();
-
-      // Handle the recurring failure
-      $retryCadence = explode(',', \Civi::settings()->get('smashpig_recurring_retry_cadence'));
-      $failureHandler = new RecurringFailureHandler($retryCadence);
-
-      $failureHandler->recordFailedPayment(
-        $contributionRecur,
-        $message->getReason(),
-        $message->canRetry()
-      );
+    if (!$contribution['contribution_recur_id']) {
+      return;
     }
+
+    $contributionRecur = ContributionRecur::get(FALSE)
+      ->addWhere('id', '=', $contribution['contribution_recur_id'])
+      ->addSelect('*')
+      ->addSelect('contribution_status_id:name')
+      ->addSelect('custom.*')
+      ->execute()->first();
+
+    if (in_array($contributionRecur['contribution_status_id:name'], ['Failed', 'Cancelled'])) {
+      // Already failed, no need to do anything more
+      return;
+    }
+
+    if ($contributionRecur['contribution_status_id:name'] === 'Failing') {
+      // If we've already recorded a 'Recurring Failure' activity in the past hour
+      // for this contribution_recur, stop. That means the failure was handled
+      // synchronously in the recurring charge job.
+      $existingActivity = Civi\Api4\Activity::get(FALSE)
+        ->addWhere('activity_type_id:name', '=', 'Recurring Failure')
+        ->addWhere('source_record_id', '=', $contributionRecur['id'])
+        ->addWhere('activity_date_time', '>', '-1 HOUR')
+        ->execute()->first();
+      if ($existingActivity) {
+        return;
+      }
+    }
+
+    // Record the recurring failure and update the contribution_recur row
+    $retryCadence = explode(',', \Civi::settings()->get('smashpig_recurring_retry_cadence'));
+    $failureHandler = new RecurringFailureHandler($retryCadence);
+
+    $failureHandler->recordFailedPayment(
+      $contributionRecur,
+      $message->getReason(),
+      $message->canRetry()
+    );
   }
 }
