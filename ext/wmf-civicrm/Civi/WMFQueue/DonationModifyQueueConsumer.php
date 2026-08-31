@@ -2,6 +2,7 @@
 
 namespace Civi\WMFQueue;
 
+use Civi;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\ExchangeRates\ExchangeRatesException;
@@ -41,6 +42,12 @@ class DonationModifyQueueConsumer extends TransactionalQueueConsumer {
   protected function updateCancelledContribution(DonationModifyMessage $message): void {
     // right now exclusive to ACH but do others fall into this situation, e.g. iDEAL?
     $contribution = $message->getContribution();
+    if (!$contribution) {
+      Civi::log('wmf')->info(
+        "updateCancelledContribution: no contribution with gateway_txn_id {$message->getGatewayTxnId()}"
+      );
+      return;
+    }
     Contribution::update(FALSE)
       ->addValue('contribution_status_id:name', 'Cancelled')
       ->addWhere('id', '=', $contribution['id'])
@@ -49,14 +56,15 @@ class DonationModifyQueueConsumer extends TransactionalQueueConsumer {
       ->execute();
 
     if ($contribution['contribution_recur_id']) {
-      // Handle the recurring failure
-      $retryCadence = explode(',', \Civi::settings()->get('smashpig_recurring_retry_cadence'));
-      $failureHandler = new RecurringFailureHandler($retryCadence);
       $contributionRecur = ContributionRecur::get(FALSE)
         ->addWhere('id', '=', $contribution['contribution_recur_id'])
         ->addSelect('*')
         ->addSelect('custom.*')
         ->execute()->first();
+
+      // Handle the recurring failure
+      $retryCadence = explode(',', \Civi::settings()->get('smashpig_recurring_retry_cadence'));
+      $failureHandler = new RecurringFailureHandler($retryCadence);
 
       $failureHandler->recordFailedPayment(
         $contributionRecur,
