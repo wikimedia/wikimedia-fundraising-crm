@@ -12,9 +12,11 @@ use Civi\Api4\Email;
 use Civi\Api4\MessageTemplate;
 use Civi\Api4\PaymentToken;
 use Civi\Api4\Queue;
+use Civi\Api4\WMFQueue;
 use Civi\Test\Api3TestTrait;
 use Civi\Test\ContactTestTrait;
 use Civi\WMFException\WMFException;
+use SmashPig\Core\DataStores\QueueWrapper;
 
 /**
  * @group queues
@@ -139,6 +141,83 @@ class RecurringQueueTest extends BaseQueueTestCase {
       ->execute()->single();
     // The address created by the sign up (Lockwood Rd) should not have been overwritten by the blank.
     $this->assertEquals('5109 Lockwood Rd', $address['street_address']);
+  }
+
+  /**
+   * When the number of deadlocked messages in a single run reaches
+   * wmf_deadlock_halt_threshold, the run should halt to flag a
+   * possible systemic problem.
+   */
+  public function testRepeatedDeadlocksHaltTheRun(): void {
+    $threshold = (int) \Civi::settings()->get('wmf_deadlock_halt_threshold');
+    $messages = [];
+    for ($i = 0; $i < $threshold + 1; $i++) {
+      $message = $this->getRecurringSignupMessage(['subscr_id' => mt_rand()]);
+      $messages[] = $message;
+      QueueWrapper::push('recurring', $message);
+    }
+
+    try {
+      WMFQueue::consume()
+        ->setQueueName('recurring')
+        ->setQueueConsumer('RecurDeadlock')
+        ->execute();
+      $this->fail('Expected the run to halt after repeated deadlocks');
+    }
+    catch (WMFException $e) {
+      // RecurringQueueConsumer converts the DBQueryException into a WMFException
+      $this->assertEquals(WMFException::DATABASE_CONTENTION, $e->getCode());
+    }
+
+    $lastMessage = $messages[$threshold];
+    $this->assertCount(0, $this->getDamagedRows($lastMessage), 'The message queued after the halt threshold should never have been attempted');
+  }
+
+  /**
+   * A message that is being processed when a process halts should stay on the
+   * queue (because of popAtomic()) and not be sent to damaged for retry or worse
+   * lost entirely.
+   */
+  public function testHaltedRunLeavesQueueRecoverable(): void {
+    $threshold = (int) \Civi::settings()->get('wmf_deadlock_halt_threshold');
+    $messages = [];
+    for ($i = 0; $i < $threshold + 1; $i++) {
+      $message = $this->getRecurringSignupMessage(['subscr_id' => mt_rand()]);
+      $messages[] = $message;
+      QueueWrapper::push('recurring', $message);
+    }
+
+    try {
+      WMFQueue::consume()
+        ->setQueueName('recurring')
+        ->setQueueConsumer('RecurDeadlock')
+        ->execute();
+      $this->fail('Expected the run to halt after repeated deadlocks');
+    }
+    catch (WMFException $e) {
+      // Expected - the run halts after wmf_deadlock_halt_threshold deadlocks.
+    }
+
+    // Messages before the last failure were sent to damaged for retry.
+    for ($i = 0; $i < $threshold - 1; $i++) {
+      $this->assertCount(1, $this->getDamagedRows($messages[$i]), "Message $i should have been requeued to damaged before the halt");
+    }
+
+    // The message that triggered the halt, and anything queued after it,
+    // are left only on the live queue.
+    for ($i = $threshold - 1; $i < $threshold + 1; $i++) {
+      $this->assertCount(0, $this->getDamagedRows($messages[$i]), "Message $i should not have been requeued to damaged - it should still be on the live queue");
+    }
+
+    // Process the queue with a consumer that doesn't deadlock.
+    $this->processQueue('recurring', 'Recurring');
+
+    for ($i = $threshold - 1; $i < $threshold + 1; $i++) {
+      $contributionRecur = ContributionRecur::get(FALSE)
+        ->addWhere('trxn_id', '=', (string) $messages[$i]['subscr_id'])
+        ->execute()->first();
+      $this->assertNotEmpty($contributionRecur, "Message $i should have been left on the live queue and processed");
+    }
   }
 
   public function testRecurringPaymentPaypalNoSubscrId(): void {

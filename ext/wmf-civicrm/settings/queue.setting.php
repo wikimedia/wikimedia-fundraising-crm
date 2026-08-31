@@ -95,6 +95,42 @@ return [
     ],
     'settings_pages' => ['wmf-queue' => ['weight' => 40]],
   ],
+  'wmf_requeue_delay_deadlock' => [
+    'group_name' => 'wmf Settings',
+    'group' => 'wmf',
+    'name' => 'wmf_requeue_delay_deadlock',
+    'title' => E::ts('Requeue Delay (Deadlock)'),
+    'default' => 60,
+    'type' => 'Integer',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts(
+      'Seconds to wait for the first retry for a message that failed due to a database deadlock or lock timeout (we do not need to wait long for transient DB deadlocks)'
+    ),
+    'html_type' => 'number',
+    'html_attributes' => [
+      'size' => '5',
+    ],
+    'settings_pages' => ['wmf-queue' => ['weight' => 45]],
+  ],
+  'wmf_deadlock_halt_threshold' => [
+    'group_name' => 'wmf Settings',
+    'group' => 'wmf',
+    'name' => 'wmf_deadlock_halt_threshold',
+    'title' => E::ts('Deadlock Halt Threshold'),
+    'default' => 3,
+    'type' => 'Integer',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts(
+      'Number of deadlocked messages to requeue in a single consume run before halting the run to flag a possible systemic problem (e.g. a long-running query)'
+    ),
+    'html_type' => 'number',
+    'html_attributes' => [
+      'size' => '5',
+    ],
+    'settings_pages' => ['wmf-queue' => ['weight' => 46]],
+  ],
   'wmf_requeue_max' => [
     'group_name' => 'wmf Settings',
     'group' => 'wmf',

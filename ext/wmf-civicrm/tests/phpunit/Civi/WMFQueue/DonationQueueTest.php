@@ -20,6 +20,7 @@ use Civi\Api4\StateProvince;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\WMFQueueMessage\Message;
 use Civi\WMFQueueMessage\RecurDonationMessage;
+use Civi\WMFStatistic\DonationStatsCollector;
 use Civi\WMFStatistic\ImportStatsCollector;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
@@ -28,7 +29,10 @@ use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 use SilverpopConnector\SilverpopRestConnector;
 use SilverpopConnector\SilverpopXmlConnector;
+use SmashPig\Core\DataStores\DamagedDatabase;
 use SmashPig\Core\DataStores\PendingDatabase;
+use SmashPig\Core\DataStores\QueueWrapper;
+use SmashPig\Core\UtcDate;
 use Civi\WMFException\WMFException;
 
 /**
@@ -49,6 +53,8 @@ class DonationQueueTest extends BaseQueueTestCase {
     PhoneConsent::delete(FALSE)
       ->addWhere('phone_number', 'IN', ['3151234567', '3151234599', '3151234588', '3151234568'])
       ->execute();
+    DonationDeadlockQueueConsumer::$errorCode = -31;
+    DonationDeadlockQueueConsumer::$deadlockTxnId = NULL;
     parent::tearDown();
   }
 
@@ -3102,6 +3108,192 @@ class DonationQueueTest extends BaseQueueTestCase {
     catch (\CRM_Core_Exception $e) {
       $this->fail('failed recurring contribution lookup');
     }
+  }
+
+  /**
+   * A deadlock on one message should not prevent a later message in the
+   * same batch from being processed (unless we reach the
+   * wmf_deadlock_halt_threshold).
+   */
+  public function testDeadlockDoesNotHaltBatch(): void {
+    DonationDeadlockQueueConsumer::$errorCode = -31;
+    $deadlockedMessage = $this->getDonationMessage();
+    $okMessage = $this->getDonationMessage();
+    DonationDeadlockQueueConsumer::$deadlockTxnId = $deadlockedMessage['gateway_txn_id'];
+    QueueWrapper::push('test', $deadlockedMessage);
+    QueueWrapper::push('test', $okMessage);
+    $this->processQueue('test', 'DonationDeadlock');
+
+    $rows = $this->getDamagedRows($deadlockedMessage);
+    $this->assertCount(1, $rows, 'Deadlocked message should be sent to the damaged store');
+    $this->assertNotNull($rows[0]['retry_date'], 'Deadlocked message should be requeued, not permanently rejected');
+
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('contribution_extra.gateway', '=', $okMessage['gateway'])
+      ->addWhere('contribution_extra.gateway_txn_id', '=', $okMessage['gateway_txn_id'])
+      ->execute()->first();
+    $this->assertNotEmpty($contribution, 'Message queued after the deadlocked one should still be processed in the same run');
+  }
+
+  /**
+   * When the number of deadlocked messages in a single run reaches
+   * wmf_deadlock_halt_threshold, the run should halt instead of retrying
+   * every message indefinitely, to flag a possible systemic problem.
+   */
+  public function testRepeatedDeadlocksHaltTheRun(): void {
+    DonationDeadlockQueueConsumer::$errorCode = -31;
+    // NULL means every message hitting this consumer deadlocks.
+    DonationDeadlockQueueConsumer::$deadlockTxnId = NULL;
+
+    $threshold = (int) \Civi::settings()->get('wmf_deadlock_halt_threshold');
+    $messages = [];
+    for ($i = 0; $i < $threshold + 1; $i++) {
+      $message = $this->getDonationMessage();
+      $messages[] = $message;
+      QueueWrapper::push('test', $message);
+    }
+
+    try {
+      \Civi\Api4\WMFQueue::consume()
+        ->setQueueName('test')
+        ->setQueueConsumer('DonationDeadlock')
+        ->execute();
+      $this->fail('Expected the run to halt after repeated deadlocks');
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->assertStringContainsString('deadlock', $e->getMessage());
+    }
+
+    $lastMessage = $messages[$threshold];
+    $this->assertCount(0, $this->getDamagedRows($lastMessage), 'The message queued after the halt threshold should never have been attempted');
+  }
+
+  /**
+   * A message that is being processed when a process halts should stay on the
+   * queue (because of popAtomic()) and not be sent to damaged for retry or worse
+   * lost entirely.
+   */
+  public function testHaltedRunLeavesQueueRecoverable(): void {
+    DonationDeadlockQueueConsumer::$errorCode = -31;
+    DonationDeadlockQueueConsumer::$deadlockTxnId = NULL;
+
+    $threshold = (int) \Civi::settings()->get('wmf_deadlock_halt_threshold');
+    $messages = [];
+    for ($i = 0; $i < $threshold + 1; $i++) {
+      $message = $this->getDonationMessage();
+      $messages[] = $message;
+      QueueWrapper::push('test', $message);
+    }
+
+    try {
+      \Civi\Api4\WMFQueue::consume()
+        ->setQueueName('test')
+        ->setQueueConsumer('DonationDeadlock')
+        ->execute();
+      $this->fail('Expected the run to halt after repeated deadlocks');
+    }
+    catch (\CRM_Core_Exception $e) {
+      // Expected - the run halts after wmf_deadlock_halt_threshold deadlocks.
+    }
+    // Clean up as we left this dangling
+    // ideally we'd fix this so it cleans up after itself when the process ends by exception
+    DonationStatsCollector::tearDown();
+
+    // Messages before the last failure were sent to damaged for retry.
+    for ($i = 0; $i < $threshold - 1; $i++) {
+      $this->assertCount(1, $this->getDamagedRows($messages[$i]), "Message $i should have been requeued to damaged before the halt");
+    }
+
+    // The message that triggered the halt, and anything queued after it,
+    // are left only on the live queue.
+    for ($i = $threshold - 1; $i < $threshold + 1; $i++) {
+      $this->assertCount(0, $this->getDamagedRows($messages[$i]), "Message $i should not have been requeued to damaged - it should still be on the live queue");
+    }
+
+    // Process the queue with a consumer that doesn't deadlock.
+    $this->processQueue('test', 'Donation');
+
+    for ($i = $threshold - 1; $i < $threshold + 1; $i++) {
+      $contribution = Contribution::get(FALSE)
+        ->addWhere('contribution_extra.gateway', '=', $messages[$i]['gateway'])
+        ->addWhere('contribution_extra.gateway_txn_id', '=', $messages[$i]['gateway_txn_id'])
+        ->execute()->single();
+      $this->assertNotEmpty($contribution, "Message $i should have been left on the live queue and processed");
+    }
+  }
+
+  /**
+   * A constraint violation should produce exactly one damaged row (not a
+   * duplicate from falling through to the generic handling) and should not
+   * halt the rest of the batch immediately.
+   */
+  public function testConstraintViolationSingleDamagedRow(): void {
+    DonationDeadlockQueueConsumer::$errorCode = -3;
+    $constraintMessage = $this->getDonationMessage();
+    $okMessage = $this->getDonationMessage();
+    DonationDeadlockQueueConsumer::$deadlockTxnId = $constraintMessage['gateway_txn_id'];
+    QueueWrapper::push('test', $constraintMessage);
+    QueueWrapper::push('test', $okMessage);
+    $this->processQueue('test', 'DonationDeadlock');
+
+    $rows = $this->getDamagedRows($constraintMessage);
+    $this->assertCount(1, $rows, 'Constraint violation should produce exactly one damaged row');
+    $this->assertNotNull($rows[0]['retry_date'], 'Constraint violation should be requeued, not permanently rejected');
+
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('contribution_extra.gateway', '=', $okMessage['gateway'])
+      ->addWhere('contribution_extra.gateway_txn_id', '=', $okMessage['gateway_txn_id'])
+      ->execute()->first();
+    $this->assertNotEmpty($contribution, 'Message queued after the constraint violation should still be processed in the same run');
+  }
+
+  /**
+   * A deadlock reaching handleError() directly as a raw DBQueryException
+   * should use the fast wmf_requeue_delay_deadlock setting (default 60s).
+   */
+  public function testDeadlockUsesFastRetryDelay(): void {
+    DonationDeadlockQueueConsumer::$errorCode = -31;
+    $message = $this->getDonationMessage();
+    DonationDeadlockQueueConsumer::$deadlockTxnId = $message['gateway_txn_id'];
+    QueueWrapper::push('test', $message);
+    $before = time();
+    $this->processQueue('test', 'DonationDeadlock');
+
+    $rows = $this->getDamagedRows($message);
+    $this->assertCount(1, $rows);
+    $retryDate = UtcDate::getUtcTimestamp($rows[0]['retry_date']);
+    // wmf_requeue_delay_deadlock default is 60s - allow slack for test execution time.
+    $this->assertGreaterThanOrEqual($before + 30, $retryDate, 'First deadlock retry should use the fast delay');
+    $this->assertLessThanOrEqual($before + 300, $retryDate, 'First deadlock retry should use the fast delay, not the normal one');
+  }
+
+  /**
+   * A second deadlock on the same message (after it has already had one
+   * fast retry) should fall back to the normal wmf_requeue_delay.
+   */
+  public function testDeadlockSecondRetryUsesNormalDelay(): void {
+    DonationDeadlockQueueConsumer::$errorCode = -31;
+    $message = $this->getDonationMessage();
+    DonationDeadlockQueueConsumer::$deadlockTxnId = $message['gateway_txn_id'];
+    QueueWrapper::push('test', $message);
+    $this->processQueue('test', 'DonationDeadlock');
+
+    $rows = $this->getDamagedRows($message);
+    $this->assertCount(1, $rows);
+    $retriedMessage = json_decode($rows[0]['message'], TRUE);
+    $this->assertTrue($retriedMessage['_deadlock_retried'] ?? FALSE, 'Message should be marked after its first deadlock retry');
+    // RequeueDelayedMessages deletes the damaged row once it re-pushes the message - mirror that here.
+    DamagedDatabase::get()->deleteMessage(['damaged_id' => $rows[0]['id']]);
+
+    QueueWrapper::push('test', $retriedMessage);
+    $before = time();
+    $this->processQueue('test', 'DonationDeadlock');
+
+    $rows = $this->getDamagedRows($message);
+    $this->assertCount(1, $rows, 'Should still be a single damaged row for this message after the second deadlock');
+    $retryDate = UtcDate::getUtcTimestamp($rows[0]['retry_date']);
+    // wmf_requeue_delay default is 1200s - allow slack for test execution time.
+    $this->assertGreaterThanOrEqual($before + 900, $retryDate, 'Second deadlock retry should fall back to the normal delay');
   }
 
 }
