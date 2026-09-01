@@ -19,7 +19,7 @@ class DonationModifyMessage extends DonationMessage {
     return $this->message['can_retry'];
   }
 
-  public function getContribution(): array {
+  public function getContribution(): ?array {
     return Contribution::get(FALSE)
       ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
       ->addWhere('contribution_extra.gateway_txn_id', '=', $this->message['gateway_txn_id'])

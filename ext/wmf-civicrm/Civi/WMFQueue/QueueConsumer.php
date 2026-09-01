@@ -18,6 +18,14 @@ use Throwable;
  */
 abstract class QueueConsumer extends BaseQueueConsumer {
 
+  /**
+   * Count of deadlock/constraint-violation messages requeued so far in
+   * this consume run.
+   *
+   * @var int
+   */
+  protected int $databaseContentionCount = 0;
+
   protected function handleError(array $message, Throwable $ex) {
     $context = QueueContext::singleton()->pop();
     if (isset($message['gateway']) && isset($message['order_id'])) {
@@ -45,16 +53,19 @@ abstract class QueueConsumer extends BaseQueueConsumer {
           'error' => $ex->getUserInfo()
         ]
       );
+      $this->haltOnRepeatedDatabaseContention($ex);
       $this->handleWMFException($message, $newException, $logId);
+      return;
     }
     if ($ex instanceof DBQueryException && in_array($ex->getDBErrorMessage(), ['deadlock', 'database lock timeout'], TRUE)) {
       $newException = new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $ex->getErrorData(), $ex);
       \Civi::log('wmf')->error(
-        'WMFQueue: Message not saved due to database load: {message}',
-        ['message' => $ex->getMessage()]
+        'WMFQueue: Message not saved due to database load: {message} {error}',
+        ['message' => $ex->getMessage(), 'error' => $ex->getUserInfo()]
       );
+      $this->haltOnRepeatedDatabaseContention($ex);
       $this->handleWMFException($message, $newException, $logId, $context);
-      throw $ex;
+      return;
     }
     if ($context && $ex instanceof \CRM_Core_Exception) {
       // If this was initiated in a queue context then we can use that to generate a WMFException.
@@ -68,6 +79,13 @@ abstract class QueueConsumer extends BaseQueueConsumer {
         ['message' => $ex->getMessage()]
       );
 
+      if ($ex->getCode() === WMFException::DATABASE_CONTENTION) {
+        // RecurringQueueConsumer wraps DBQueryException into a
+        // DATABASE_CONTENTION WMFException itself (to shield it from a
+        // broader catch), so it never arrives here as a
+        // DBQueryException - but we handle it in the same way.
+        $this->haltOnRepeatedDatabaseContention($ex);
+      }
       $this->handleWMFException($message, $ex, $logId, NULL, $context);
     }
     else {
@@ -83,6 +101,30 @@ abstract class QueueConsumer extends BaseQueueConsumer {
         ]
       );
       $this->sendToDamagedStore($message, $ex);
+      throw $ex;
+    }
+  }
+
+  /**
+   * Halt the consume run if too many deadlock/constraint-violation messages
+   * have hit this run, to flag a possible systemic problem (e.g. a
+   * long-running query) rather than silently retrying forever. Call before
+   * handleWMFException requeues the message, so that a halted message is left
+   * only on the live queue, not also requeued to the damaged store.
+   *
+   * @throws \Throwable
+   */
+  private function haltOnRepeatedDatabaseContention(Throwable $ex): void {
+    $this->databaseContentionCount++;
+    $haltThreshold = (int) \Civi::settings()->get('wmf_deadlock_halt_threshold');
+    if ($haltThreshold > 0 && $this->databaseContentionCount >= $haltThreshold) {
+      \Civi::log('wmf')->alert(
+        '{count} messages hit database contention in a single consume run for queue `{queue}` - halting to flag a possible systemic problem (e.g. a long-running query)', [
+          'count' => $this->databaseContentionCount,
+          'queue' => $this->queueName,
+          'subject' => 'Repeated database contention on ' . $this->queueName . ' ' . gethostname() . ' ' . __CLASS__,
+        ]
+      );
       throw $ex;
     }
   }
@@ -105,9 +147,18 @@ abstract class QueueConsumer extends BaseQueueConsumer {
     $requeued = FALSE;
 
     if ($ex->isRequeue()) {
-      $delay = (int) \Civi::settings()->get('wmf_requeue_delay');
+      $normalDelay = (int) \Civi::settings()->get('wmf_requeue_delay');
+      if ($ex->getCode() === WMFException::DATABASE_CONTENTION && empty($message['_deadlock_retried'])) {
+        // Deadlocks are usually transient, so retry the first time on a short
+        // delay. If it deadlocks again, fall back to the normal requeue delay.
+        $delay = (int) \Civi::settings()->get('wmf_requeue_delay_deadlock');
+        $message['_deadlock_retried'] = TRUE;
+      }
+      else {
+        $delay = $normalDelay;
+      }
       $maxTries = (int) \Civi::settings()->get('wmf_requeue_max');
-      $ageLimit = $delay * $maxTries;
+      $ageLimit = $normalDelay * $maxTries;
       // TODO: add a requeueMessage hook that allows modifying
       // the message or the decision to requeue it. Or maybe a
       // more generic (WMF)Exception handling hook?

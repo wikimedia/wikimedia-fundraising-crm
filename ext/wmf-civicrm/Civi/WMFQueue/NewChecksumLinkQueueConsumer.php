@@ -3,6 +3,7 @@
 namespace Civi\WMFQueue;
 
 use Civi;
+use Civi\Api4\Activity;
 use Civi\Omnimail\MailFactory;
 use Civi\WMFException\WMFException;
 use Civi\WMFHook\PreferencesLink;
@@ -98,7 +99,18 @@ class NewChecksumLinkQueueConsumer extends QueueConsumer {
       'from_address' => $fromAddress,
       'from_name' => $fromName,
     ];
-    MailFactory::singleton()->getMailer()->send($params);
+    $success = MailFactory::singleton()->getMailer()->send($params);
+    if ($success) {
+      Activity::create(FALSE)->setValues([
+        'target_contact_id' => $contactID,
+        'source_contact_id' => $contactID,
+        'subject' => $email['subject'],
+        'details' => 'Requested page: ' . $message['page'],
+        'activity_type_id:name' => 'Email',
+        'activity_date_time' => 'now',
+        'Email.Workflow' => NewChecksumLinkMessage::WORKFLOW,
+      ])->execute();
+    }
   }
 
 }

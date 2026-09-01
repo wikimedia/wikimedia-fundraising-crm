@@ -5268,6 +5268,16 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Oops, we meant to exclude this table from logging but typo-ed the name
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_5135(): bool {
+    CRM_Core_BAO_SchemaHandler::dropTable('log_civicrm_payment_attempt');
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
