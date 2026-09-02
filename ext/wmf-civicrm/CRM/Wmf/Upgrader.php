@@ -5302,6 +5302,20 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Add JA4 fields for civicrm_payment_attempt
+   *
+   * @return bool
+   */
+  public function upgrade_5145(): bool {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_payment_attempt', 'ja4', FALSE)) {
+      $fields = (require E::path('schema/PaymentAttempt.entityType.php'))['getFields']();
+      E::schema()->alterSchemaField('PaymentAttempt', 'ja4', $fields['ja4']);
+      E::schema()->alterSchemaField('PaymentAttempt', 'ja4h', $fields['ja4h']);
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
