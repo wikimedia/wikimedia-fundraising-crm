@@ -3,6 +3,7 @@
 namespace Civi\WMFQueue;
 
 use Civi\Api4\PaymentAttempt;
+use Civi\Api4\PaymentAttemptModelScore;
 use Civi\WMFException\FredgeDataValidationException;
 use Civi\WMFException\WMFException;
 use Civi\WMFQueueMessage\FredgeMessage;
@@ -33,14 +34,22 @@ class PaymentAttemptQueueConsumer extends QueueConsumer {
     }
     $logId = "payment_attempt_{$message['order_id']}";
     \Civi::log('wmf')->info(
-      'fredge: Beginning processing of civicrm_payment_attempt message for {log_id}',
-      ['log_id' => $logId]
+      "Beginning processing of civicrm_payment_attempt {type} message for {log_id}",
+      [
+        'log_id' => $logId,
+        'type' => $message['type'] ?? 'unknown'
+      ]
     );
 
-    if (($message['type'] ?? NULL) === 'outcome') {
-      $this->updatePaymentAttemptData($message, $logId);
-    } else {
-      $this->storePaymentAttemptData($message, $logId);
+    switch ($message['type']) {
+      case 'outcome':
+        $this->updatePaymentAttemptData($message, $logId);
+        break;
+      case 'scores':
+        $this->storePaymentAttemptScores($message);
+        break;
+      default:
+        $this->storePaymentAttemptData($message, $logId);
     }
   }
 
@@ -90,6 +99,29 @@ class PaymentAttemptQueueConsumer extends QueueConsumer {
       $update->addValue($field, $value);
     }
     $update->execute();
+  }
+
+  private function storePaymentAttemptScores(array $message) {
+    $orderID = $message['order_id'];
+    foreach ($message['scores'] as $score) {
+      $data = [
+        'order_id' => $orderID,
+        'score' => $score['score'],
+        'model_version' => $score['model_version'],
+        'model_role' => $score['model_role'],
+      ];
+
+      $existing = PaymentAttemptModelScore::get(FALSE)
+        ->addWhere('order_id', '=', $orderID)
+        ->addWhere('model_version', '=', $score['model_version'])
+        ->execute()->first();
+      if ($existing) {
+        $data['id'] = $existing['id'];
+      }
+
+      PaymentAttemptModelScore::save(FALSE)
+        ->addRecord($data)->execute();
+    }
   }
 
 }

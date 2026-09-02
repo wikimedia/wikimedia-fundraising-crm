@@ -5278,6 +5278,30 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Create or update PaymentAttemptModelScore table from entityType.
+   */
+  public function upgrade_5140() {
+    $filePath = __DIR__ . '/../../schema/PaymentAttemptModelScore.entityType.php';
+    $entityDefn = include $filePath;
+    $sql = Civi::schemaHelper()->arrayToSql($entityDefn);
+    CRM_Core_DAO::executeQuery($sql);
+    $this->queueSQL(
+      "INSERT INTO civicrm_payment_attempt_model_score (order_id, score, model_role, model_version)
+      SELECT a.order_id, MAX(pfb.risk_score) / 10, 'production', '0.2'
+      FROM civicrm_payment_attempt a
+      INNER JOIN payments_fraud pf ON pf.order_id = a.order_id
+      INNER JOIN payments_fraud_breakdown pfb ON pfb.payments_fraud_id = pf.id
+        AND pfb.filter_name = 'ml_service'
+      LEFT JOIN civicrm_payment_attempt_model_score ms ON ms.order_id = a.order_id
+        AND ms.model_version = '0.2'
+      WHERE ms.id IS NULL
+      GROUP BY a.order_id
+      LIMIT 50000"
+    );
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
