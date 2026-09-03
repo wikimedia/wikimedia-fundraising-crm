@@ -82,9 +82,10 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
     // @todo - pass through any other contribution fields? Perhaps this can
     // be an import target if we do - ie we set up DafGift as an entity that extends
     // contribution and cn be selected for import.
-    $gatewayAccount = 'Chariot Disbursements';
-    if ($record['payment_method'] === 'Check' ){
-      $gatewayAccount = 'Chariot Digital Mailbox';
+    $gatewayLabel = ucfirst($record['gateway']);
+    $gatewayAccount = $gatewayLabel . ' Disbursements';
+    if (($record['payment_method'] ?? NULL) === 'Check') {
+      $gatewayAccount = $gatewayLabel . ' Digital Mailbox';
     }
     $channel = ($record['gift_source'] ?? '') === 'Employee Giving' ? 'Workplace Giving' : 'Other Offline';
 
@@ -109,10 +110,10 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
         'contribution_settlement.settlement_currency' => 'USD',
         'contribution_settlement.settlement_batch_reference' => $record['settlement_batch_reference'],
         'Gift_Data.Channel' => $channel,
-        'Gift_Data.Appeal' => $record['direct_mail_appeal'],
+        'Gift_Data.Appeal' => $record['direct_mail_appeal'] ?? NULL,
         'Gift_Data.Fund' => 'Major Gifts - CC104',
         'Gift_Data.is_major_gift' => TRUE,
-        'Gift_Information.import_batch_number' => 'deposit_' . substr($record['settlement_batch_reference'], 8, -4),
+        'Gift_Information.import_batch_number' => $record['gateway'] === 'chariot' ? 'deposit_' . $this->getBatchDepositId($record) : NULL,
         'contribution_extra.source_enqueued_time' => date('Y-m-d H:i:s', $record['source_enqueued_time']),
         'contribution_extra.source_name' => $record['source_name'],
         'contribution_extra.source_type' => $record['source_type'],
@@ -135,6 +136,24 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
       ]);
     }
     return $contribution;
+  }
+
+  /**
+   * Strip the leading '<gateway>_' and trailing '_<currency>' off a
+   * settlement_batch_reference like 'chariot_01kqkv..._USD', leaving just
+   * the deposit/batch id.
+   *
+   * @param array $record
+   *
+   * @return string
+   */
+  private function getBatchDepositId(array $record): string {
+    $reference = $record['settlement_batch_reference'];
+    $prefix = $record['gateway'] . '_';
+    if (str_starts_with($reference, $prefix)) {
+      $reference = substr($reference, strlen($prefix));
+    }
+    return preg_replace('/_[A-Z]{3}$/', '', $reference);
   }
 
   private function getGiftType(string $giftSource): string {
