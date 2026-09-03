@@ -115,6 +115,8 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
         'contribution_settlement.settlement_date' => '@' . $record['settled_date'],
         'contribution_settlement.settlement_currency' => 'USD',
         'contribution_settlement.settlement_batch_reference' => $record['settlement_batch_reference'],
+        'contribution_settlement.settled_fee_amount' => $record['settled_fee_amount'] ?? '0',
+        'contribution_settlement.settled_donation_amount' => $record['settled_total_amount'],
         'Gift_Data.Channel' => $channel,
         'Gift_Data.Appeal' => $record['direct_mail_appeal'] ?? NULL,
         'Gift_Data.Fund' => $this->isEndowmentAccount($record) ? 'Endowment Fund' : 'Major Gifts - CC104',
