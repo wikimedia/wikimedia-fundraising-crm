@@ -154,6 +154,7 @@ class PushJournal extends AbstractAction {
         ->setIsEndowment($this->instance === 'endowment')
         ->setName($batchName)
         ->setStatus('Failed')
+        ->setProcessedPercentage(0)
         ->setSummary('Journal push to Intacct failed')
         ->setComment($e->getMessage())
         ->execute();

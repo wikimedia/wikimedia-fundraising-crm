@@ -17,9 +17,8 @@ class Label extends AbstractAction {
 
   /**
    * @var bool
-   * @required
    */
-  protected $isFraud;
+  protected $isFraud = 0;
 
   /**
    * @var string

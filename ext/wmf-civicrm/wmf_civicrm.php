@@ -216,6 +216,26 @@ function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermission
         'errorMsg' => E::ts('An error occurred while attempting to label %1 %2 as fraud.'),
       ],
     ];
+    $tasks['PaymentAttempt']['label_innocent'] = [
+      'title' => ts('Label as innocent'),
+      'entity' => 'PaymentAttempt',
+      'description' => ts('Manually label an attempt as not fraud, in case of false positives.'),
+      'icon' => 'fa-thumbs-o-up',
+      // Use get + chain to label
+      'apiBatch' => [
+        'action' => 'get',
+        'params' => [
+          'select' => ['order_id'],
+          'chain' => [
+            ['PaymentAttempt', 'label', ['orderID' => '$order_id', 'isFraud' => 0]],
+          ],
+        ],
+        'confirmMsg' => E::ts('Label %1 %2 as innocent?'),
+        'runMsg' => E::ts('Labeling %1 %2 as innocent...'),
+        'successMsg' => E::ts('Successfully labeled %1 %2 as innocent.'),
+        'errorMsg' => E::ts('An error occurred while attempting to label %1 %2 as innocent.'),
+      ],
+    ];
   }
 }
 

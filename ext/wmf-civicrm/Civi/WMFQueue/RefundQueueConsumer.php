@@ -205,7 +205,19 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
           ->execute();
         return;
       }
-      throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution is already refunded: {$contribution['id']}");
+      if ($contribution['contribution_status_id:name'] === 'Cancelled' && $messageObject->getContributionStatus() !== 'Cancelled') {
+        Contribution::update(FALSE)
+          ->setValues([
+              'contribution_status_id:name' => $messageObject->getContributionStatus(),
+              'contribution_extra.backend_processor_reversal_id' => $messageObject->getBackendProcessorReversalID(),
+              'contribution_extra.payment_orchestrator_reversal_id' => $messageObject->getPaymentOrchestratorReversalID(),
+              // Add Other Online as a default channel for these extraneous refunds / chargebacks
+            ] + array_filter($messageObject->getSettlementFields()))
+          ->execute();
+      }
+      else {
+        throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, "Contribution is already refunded: {$contribution['id']}");
+      }
     }
 
     // Check that we don't have an existing reversal with a different processor reference

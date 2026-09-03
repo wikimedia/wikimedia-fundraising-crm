@@ -1303,8 +1303,8 @@ GROUP BY s.settlement_batch_reference
     ];
     $result['expected'] = [
       'count' => $batch['item_count'],
-      'credit' => round($batch['batch_data.settled_donation_amount'], 2),
-      'debit' => round($batch['batch_data.settled_reversal_amount'], 2),
+      'credit' => round($batch['batch_data.settled_donation_amount'] ?? 0, 2),
+      'debit' => round($batch['batch_data.settled_reversal_amount'] ?? 0, 2),
       'fee' => $batch['batch_data.settled_fee_amount'],
       'settled' => round($batch['batch_data.settled_net_amount'], 2),
     ];

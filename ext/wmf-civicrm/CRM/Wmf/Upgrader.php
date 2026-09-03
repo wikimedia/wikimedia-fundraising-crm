@@ -5278,6 +5278,60 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Create or update PaymentAttemptModelScore table from entityType.
+   */
+  public function upgrade_5140() {
+    $filePath = __DIR__ . '/../../schema/PaymentAttemptModelScore.entityType.php';
+    $entityDefn = include $filePath;
+    $sql = Civi::schemaHelper()->arrayToSql($entityDefn);
+    CRM_Core_DAO::executeQuery($sql);
+    $this->queueSQL(
+      "INSERT INTO civicrm_payment_attempt_model_score (order_id, score, model_role, model_version)
+      SELECT a.order_id, MAX(pfb.risk_score) / 10, 'production', '0.2'
+      FROM civicrm_payment_attempt a
+      INNER JOIN payments_fraud pf ON pf.order_id = a.order_id
+      INNER JOIN payments_fraud_breakdown pfb ON pfb.payments_fraud_id = pf.id
+        AND pfb.filter_name = 'ml_service'
+      LEFT JOIN civicrm_payment_attempt_model_score ms ON ms.order_id = a.order_id
+        AND ms.model_version = '0.2'
+      WHERE ms.id IS NULL
+      GROUP BY a.order_id
+      LIMIT 50000"
+    );
+    return TRUE;
+  }
+
+  /**
+   * Add JA4 fields for civicrm_payment_attempt
+   *
+   * @return bool
+   */
+  public function upgrade_5145(): bool {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_payment_attempt', 'ja4', FALSE)) {
+      $fields = (require E::path('schema/PaymentAttempt.entityType.php'))['getFields']();
+      E::schema()->alterSchemaField('PaymentAttempt', 'ja4', $fields['ja4']);
+      E::schema()->alterSchemaField('PaymentAttempt', 'ja4h', $fields['ja4h']);
+    }
+    return TRUE;
+  }
+
+  /**
+   * Add browser, os, and version fields for civicrm_payment_attempt (omitted in previous patch)
+   *
+   * @return bool
+   */
+  public function upgrade_5150(): bool {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_payment_attempt', 'os', FALSE)) {
+      $fields = (require E::path('schema/PaymentAttempt.entityType.php'))['getFields']();
+      E::schema()->alterSchemaField('PaymentAttempt', 'browser', $fields['browser']);
+      E::schema()->alterSchemaField('PaymentAttempt', 'browser_version', $fields['browser_version']);
+      E::schema()->alterSchemaField('PaymentAttempt', 'os', $fields['os']);
+      E::schema()->alterSchemaField('PaymentAttempt', 'os_version', $fields['os_version']);
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

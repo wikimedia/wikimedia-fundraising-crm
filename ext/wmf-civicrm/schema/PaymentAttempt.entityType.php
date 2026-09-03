@@ -423,6 +423,16 @@ return [
       'input_type' => 'Text',
       'title' => E::ts('OS version'),
     ],
+    'ja4' => [
+      'sql_type' => 'varchar(64)',
+      'input_type' => 'Text',
+      'title' => E::ts('JA4 TLS'),
+    ],
+    'ja4h' => [
+      'sql_type' => 'varchar(64)',
+      'input_type' => 'Text',
+      'title' => E::ts('JA4 HTTP'),
+    ],
     'user_ip' => [
       'sql_type' => 'varchar(16)',
       'input_type' => 'Text',
