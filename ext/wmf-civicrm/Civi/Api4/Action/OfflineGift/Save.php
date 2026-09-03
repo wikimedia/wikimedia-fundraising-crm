@@ -88,13 +88,17 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
       $gatewayAccount = $gatewayLabel . ' Digital Mailbox';
     }
     $channel = ($record['gift_source'] ?? '') === 'Employee Giving' ? 'Workplace Giving' : 'Other Offline';
+    // settled_fee_amount arrives negative from the audit parser (SmashPig
+    // convention). Core fee_amount is the opposite sign, so that
+    // total_amount - fee_amount = net_amount as CiviCRM expects.
+    $settledFeeAmount = (float) $record['settled_fee_amount'];
 
     $contribution = Contribution::create($this->checkPermissions)
       ->setValues($extraValues + [
         'contact_id' => $contactId,
-        'receive_date' => gmdate('Y-m-d', $record['date']),
+        'receive_date' => '@' . $record['date'],
         'total_amount' => $this->getProportionalGiftAmountInReportingCurrency($record['settled_total_amount'], $giftRatio),
-        'fee_amount' => CurrencyRoundingHelper::round($record['settled_fee_amount'], 'USD'),
+        'fee_amount' => CurrencyRoundingHelper::round($settledFeeAmount ? -$settledFeeAmount : 0.0, 'USD'),
         'payment_instrument_id:name' => $record['payment_method'],
         'financial_type_id:name' => 'Cash',
         'check_number' => $record['check_number'] ?? NULL,
@@ -106,7 +110,7 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
         'contribution_extra.gateway_txn_id' => $record['gateway_txn_id'],
         'contribution_extra.backend_processor' => $record['backend_processor'],
         'contribution_extra.backend_processor_txn_id' => $record['backend_processor_txn_id'],
-        'contribution_settlement.settlement_date' => gmdate('Y-m-d', $record['settled_date']),
+        'contribution_settlement.settlement_date' => '@' . $record['settled_date'],
         'contribution_settlement.settlement_currency' => 'USD',
         'contribution_settlement.settlement_batch_reference' => $record['settlement_batch_reference'],
         'Gift_Data.Channel' => $channel,
