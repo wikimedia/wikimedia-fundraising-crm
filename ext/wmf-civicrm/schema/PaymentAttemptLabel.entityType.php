@@ -8,6 +8,7 @@ return [
   'table' => 'civicrm_payment_attempt_label',
   'getInfo' => fn() => [
     'title' => E::ts('Payment Attempt Label'),
+    'title_plural' => E::ts('Payment Attempt Labels'),
     'description' => E::ts('Labels for individual payment attempts from payments-wiki.'),
   ],
 

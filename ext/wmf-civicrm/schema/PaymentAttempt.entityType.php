@@ -8,6 +8,7 @@ return [
   'table' => 'civicrm_payment_attempt',
   'getInfo' => fn() => [
     'title' => E::ts('Payment Attempt'),
+    'title_plural' => E::ts('Payment Attempts'),
     'description' => E::ts('Individual payment attempts from payments-wiki.'),
   ],
 
