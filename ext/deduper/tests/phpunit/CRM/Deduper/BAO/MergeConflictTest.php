@@ -1,6 +1,7 @@
 <?php
 
 use Civi\Api4\Address;
+use Civi\Api4\CustomGroup;
 use Civi\Api4\OptionValue;
 use Civi\Api4\Phone;
 use Civi\Test\Api3TestTrait;
@@ -39,11 +40,11 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    * @throws \CRM_Extension_Exception_ParseException
    * @throws \CRM_Core_Exception
    */
-  public function setUpHeadless() {
+  public function setUpHeadless(): \Civi\Test\CiviEnvBuilder {
     return \Civi\Test::headless()
       ->installMe(__DIR__)
       ->callback(function () {
-        \Civi\Api4\CustomGroup::create(FALSE)
+        CustomGroup::create(FALSE)
           ->setValues(['extends' => 'Email', 'name' => 'test_email', 'title' => 'Email test data'])
           ->execute();
         \Civi\Api4\CustomField::create(FALSE)
@@ -466,7 +467,7 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
    *
    * @noinspection SpellCheckingInspection
    */
-  public function testMergeMisSpeltContacts(bool $isReverse) {
+  public function testMergeMisSpeltContacts(bool $isReverse): void {
     $this->createDuplicateIndividuals([['first_name' => 'Benjamin'], ['first_name' => 'Benjamain']]);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('Benjamin', $mergedContact['first_name']);
@@ -486,6 +487,78 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
     $this->createDuplicateIndividuals([['first_name' => 'Theodore'], ['first_name' => 'Ted']]);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('Ted', $mergedContact['first_name']);
+  }
+
+  /**
+   * Test that contacts can be resolved to the nickname, despite case mismatch on the nickname.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testMergePreferNickNameWithCaseMismatchOnNickName(bool $isReverse): void {
+    $this->setSetting('deduper_equivalent_name_handling', 'prefer_nick_name');
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['earliest_created_contact']);
+    $this->createDuplicateIndividuals([['first_name' => 'Theodore'], ['first_name' => 'ted']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Ted', $mergedContact['first_name']);
+  }
+
+  /**
+   * Test that contacts can be resolved to the nickname, despite case mismatch on the first_name.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testMergePreferNickNameWithCaseMismatchOnFirstName(bool $isReverse): void {
+    $this->setSetting('deduper_equivalent_name_handling', 'prefer_nick_name');
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['earliest_created_contact']);
+    $this->createDuplicateIndividuals([['first_name' => 'Ted'], ['first_name' => 'theodore']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Ted', $mergedContact['first_name']);
+  }
+
+  /**
+   * Test that a nickname pair with only an inferior_version_of relationship
+   * recorded for the misspelling does not fatal when the equivalent-name
+   * handling setting is enabled.
+   *
+   * 'Benjamain' is only ever recorded as an inferior spelling of 'Benjamin',
+   * never as an 'alternative_of' any name, so hasAlternatives() must cope
+   * with that key being absent.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @dataProvider booleanDataProvider
+   *
+   * @noinspection SpellCheckingInspection
+   */
+  public function testMergeMisSpeltContactsWithNicknameSettingDoesNotFatal(bool $isReverse): void {
+    $this->setSetting('deduper_equivalent_name_handling', 'prefer_nick_name');
+    $this->createDuplicateIndividuals([['first_name' => 'Benjamin'], ['first_name' => 'Benjamain']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Benjamin', $mergedContact['first_name']);
+  }
+
+  /**
+   * Test that unrelated first names with no inferior/alternative relationship
+   * do not fatal under prefer_preferred_contact_value, and are correctly
+   * left as an unresolved conflict (so the merge is skipped).
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testMergePreferPreferredContactUnrelatedNamesDoesNotFatal(bool $isReverse): void {
+    $this->setSetting('deduper_equivalent_name_handling', 'prefer_preferred_contact_value');
+    $this->setSetting('deduper_resolver_preferred_contact_resolution', ['earliest_created_contact']);
+    $this->createDuplicateIndividuals([['first_name' => 'Anthony'], ['first_name' => 'Bradford']]);
+    $this->doNotDoMerge($isReverse);
   }
 
   /**
