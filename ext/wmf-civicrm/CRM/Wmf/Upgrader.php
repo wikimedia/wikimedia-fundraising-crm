@@ -5316,6 +5316,22 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Add browser, os, and version fields for civicrm_payment_attempt (omitted in previous patch)
+   *
+   * @return bool
+   */
+  public function upgrade_5150(): bool {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_payment_attempt', 'os', FALSE)) {
+      $fields = (require E::path('schema/PaymentAttempt.entityType.php'))['getFields']();
+      E::schema()->alterSchemaField('PaymentAttempt', 'browser', $fields['browser']);
+      E::schema()->alterSchemaField('PaymentAttempt', 'browser_version', $fields['browser_version']);
+      E::schema()->alterSchemaField('PaymentAttempt', 'os', $fields['os']);
+      E::schema()->alterSchemaField('PaymentAttempt', 'os_version', $fields['os_version']);
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
