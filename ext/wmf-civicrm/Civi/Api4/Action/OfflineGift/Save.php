@@ -82,10 +82,12 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
     // @todo - pass through any other contribution fields? Perhaps this can
     // be an import target if we do - ie we set up DafGift as an entity that extends
     // contribution and cn be selected for import.
-    $gatewayLabel = ucfirst($record['gateway']);
-    $gatewayAccount = $gatewayLabel . ' Disbursements';
-    if (($record['payment_method'] ?? NULL) === 'Check') {
-      $gatewayAccount = $gatewayLabel . ' Digital Mailbox';
+    if (!empty($record['gateway_account'])) {
+      $gatewayAccount = $record['gateway_account'];
+    } else {
+      // Chariot doesn't supply gateway_account itself, so make one up.
+      $gatewayLabel = ucfirst($record['gateway']);
+      $gatewayAccount = ($record['payment_method'] ?? NULL) === 'Check' ? $gatewayLabel . ' Digital Mailbox' : $gatewayLabel . ' Disbursements';
     }
     $channel = ($record['gift_source'] ?? '') === 'Employee Giving' ? 'Workplace Giving' : 'Other Offline';
     // settled_fee_amount arrives negative from the audit parser (SmashPig
@@ -115,7 +117,7 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
         'contribution_settlement.settlement_batch_reference' => $record['settlement_batch_reference'],
         'Gift_Data.Channel' => $channel,
         'Gift_Data.Appeal' => $record['direct_mail_appeal'] ?? NULL,
-        'Gift_Data.Fund' => 'Major Gifts - CC104',
+        'Gift_Data.Fund' => $this->isEndowmentAccount($record) ? 'Endowment Fund' : 'Major Gifts - CC104',
         'Gift_Data.is_major_gift' => TRUE,
         'Gift_Information.import_batch_number' => $record['gateway'] === 'chariot' ? 'deposit_' . $this->getBatchDepositId($record) : NULL,
         'contribution_extra.source_enqueued_time' => date('Y-m-d H:i:s', $record['source_enqueued_time']),
@@ -140,6 +142,15 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
       ]);
     }
     return $contribution;
+  }
+
+  /**
+   * @param array $record
+   *
+   * @return bool
+   */
+  protected function isEndowmentAccount(array $record): bool {
+    return strtolower(trim((string) ($record['gateway_account'] ?? ''))) === 'endowment';
   }
 
   /**
