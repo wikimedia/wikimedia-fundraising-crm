@@ -45,14 +45,6 @@ class StripeAuditTest extends BaseAuditTestCase {
    * row for every CSV row, which makes the audit treat every transaction
    * as already found rather than missing - defeating the point of this
    * make-missing test.
-   *
-   * Homer's donation is expected to be rejected rather than created:
-   * Stripe's raw payment_method_type ('card') isn't yet mapped to a
-   * canonical payment instrument for make-missing messages (a known,
-   * separate gap - normally a TransactionLog match supplies the real
-   * canonical payment method, but make-missing has no log to fall back
-   * on). The queue consumer handles that per-message and does not stop
-   * the Giving Basket donation from still being processed.
    */
   public function testGivingBasketDonationLinksToOrganization(): void {
     $organizationID = $this->createOrganization(['organization_name' => 'Give Lively'], 'give_lively');
@@ -72,7 +64,7 @@ class StripeAuditTest extends BaseAuditTestCase {
     $homerContribution = Contribution::get(FALSE)
       ->addWhere('invoice_id', '=', '24315.1')
       ->execute()->first();
-    $this->assertNull($homerContribution);
+    $this->assertNotNull($homerContribution);
   }
 
   public function createTransactionLog(array $row): void {
