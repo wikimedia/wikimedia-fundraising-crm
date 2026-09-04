@@ -135,11 +135,11 @@ class PushProcessLog extends AbstractAction {
       'docid' => $this->docid,
       'results_url' => $this->resultsUrl,
     ];
-
     // Don't send empty optional fields.
     $fields = array_filter($fields, static fn($value) => $value !== '');
 
-    $content = $xmlApi->createProcessLog($fields);
+    $objectName = (string) \Civi::settings()->get('intacct_process_log_object');
+    $content = $xmlApi->createProcessLog($fields, $objectName);
     $response = $xmlApi->execute($content);
 
     $result[] = [

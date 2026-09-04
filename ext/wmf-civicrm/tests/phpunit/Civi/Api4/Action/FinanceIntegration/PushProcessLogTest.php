@@ -135,6 +135,38 @@ class PushProcessLogTest extends TestCase implements HeadlessInterface {
     $this->assertStringContainsString('<comment>Intacct journal POST failed (HTTP 500): boom</comment>', $body);
   }
 
+  /**
+   * The Intacct object created should be the one named by the
+   * intacct_process_log_object setting, defaulting to
+   * pmt_orch_process_and_error_log.
+   */
+  public function testProcessLogObjectDefaultsToConfiguredSetting(): void {
+    $this->mockClient(new Response(200, [], '<response/>'));
+
+    FinanceIntegration::pushProcessLog(FALSE)
+      ->setName('adyen_338_USD')
+      ->execute();
+
+    $body = (string) $this->requestHistory[0]['request']->getBody();
+    $this->assertStringContainsString('<pmt_orch_process_and_error_log>', $body);
+  }
+
+  /**
+   * Overriding intacct_process_log_object should change the object the
+   * log is created against.
+   */
+  public function testProcessLogObjectRespectsSettingOverride(): void {
+    \Civi::settings()->set('intacct_process_log_object', 'process_log');
+    $this->mockClient(new Response(200, [], '<response/>'));
+
+    FinanceIntegration::pushProcessLog(FALSE)
+      ->setName('adyen_338_USD')
+      ->execute();
+
+    $body = (string) $this->requestHistory[0]['request']->getBody();
+    $this->assertStringContainsString('<process_log>', $body);
+  }
+
   private function mockClient(Response $response): void {
     $mock = new MockHandler([$response]);
     $handlerStack = HandlerStack::create($mock);
