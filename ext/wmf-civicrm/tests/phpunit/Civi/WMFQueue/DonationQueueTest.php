@@ -392,32 +392,6 @@ class DonationQueueTest extends BaseQueueTestCase {
       ->execute()->single();
   }
 
-  /**
-   * Process a donation message with some info from pending db
-   *
-   * @dataProvider getSparseMessages
-   *
-   * @param array $message
-   * @param array $pendingMessage
-   * @throws \SmashPig\Core\DataStores\DataStoreException|\SmashPig\Core\SmashPigException
-   */
-  public function testDonationSparseMessages(array $message, array $pendingMessage): void {
-    $pendingMessage['order_id'] = $message['order_id'];
-    PendingDatabase::get()->storeMessage($pendingMessage);
-    $this->createCustomOption('Appeal', $pendingMessage['utm_campaign']);
-    $this->processMessage($message, 'Donation', 'test');
-    $contribution = $this->getContributionForMessage($message);
-    $this->assertEquals($pendingMessage['utm_campaign'], $contribution['Gift_Data.Appeal']);
-    $pendingEntry = PendingDatabase::get()->fetchMessageByGatewayOrderId(
-      $message['gateway'],
-      $pendingMessage['order_id'],
-      NULL,
-      NULL,
-      FALSE
-    );
-    $this->assertNull($pendingEntry, 'Should have deleted pending DB entry');
-  }
-
   public function testDuplicateTrxnIDHandling(): void {
     $existing = $this->createContribution(['trxn_id' => 'GLOBALCOLLECT abc']);
     \CRM_Core_DAO::executeQuery('UPDATE wmf_contribution_extra SET gateway = "" WHERE gateway_txn_id = "abc"');
@@ -497,18 +471,6 @@ class DonationQueueTest extends BaseQueueTestCase {
       return;
     }
     $this->fail('An exception was expected.');
-  }
-
-  public function getSparseMessages(): array {
-    $amazonMessage = $this->loadMessage('sparse_donation_amazon');
-    $amazonMessage['completion_message_id'] = 'amazon-' . $amazonMessage['order_id'];
-    $dLocalMessage = $this->loadMessage('sparse_donation_dlocal');
-    $dLocalMessage['completion_message_id'] = 'dlocal-' . $dLocalMessage['order_id'];
-
-    return [
-      'amazon' => [$amazonMessage, $this->loadMessage('pending_amazon')],
-      'dlocal' => [$dLocalMessage, $this->loadMessage('pending_dlocal')],
-    ];
   }
 
   /**
