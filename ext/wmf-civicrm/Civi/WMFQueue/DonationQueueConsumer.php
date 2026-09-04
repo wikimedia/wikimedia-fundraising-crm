@@ -8,9 +8,11 @@ use Civi\Api4\ContributionRecur;
 use Civi\Api4\PaymentToken;
 use Civi\Api4\WMFContact;
 use Civi\WMFException\WMFException;
+use Civi\WMFHelper\Contribution as ContributionHelper;
 use Civi\WMFHelper\ContributionRecur as ContributionRecurHelper;
 use Civi\WMFHelper\PaymentProcessor as PaymentProcessorHelper;
 use Civi\WMFQueueMessage\DonationMessage;
+use Civi\WMFQueueMessage\DonationModifyMessage;
 use Civi\WMFQueueMessage\Message;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use Civi\WMFStatistic\DonationStatsCollector;
@@ -99,6 +101,13 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    * @throws \Statistics\Exception\StatisticsCollectorException
    */
   public function processMessage(array $message): void {
+    // Handle cancellations, sent to this queue so they are processed after
+    // any related message
+    if ($message['contribution_status_id:name'] ?? '' === 'Cancelled') {
+      $messageObject = new DonationModifyMessage($message);
+      ContributionHelper::updateCancelledContribution($messageObject);
+      return;
+    }
     // import the contribution here!
     $contribution = $this->doImport($message);
 
