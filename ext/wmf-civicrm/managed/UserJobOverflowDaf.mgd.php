@@ -1,0 +1,340 @@
+<?php
+return [
+  [
+    'name' => 'UserJob_import_Overflow_DAF_import',
+    'entity' => 'UserJob',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'name' => 'import_Overflow DAF import',
+        'status_id' => 2,
+        'job_type' => 'contribution_import',
+        'metadata' => [
+          'submitted_values' => [
+            'contactType' => NULL,
+            'contactSubType' => NULL,
+            'dateFormats' => NULL,
+            'savedMapping' => NULL,
+            'userJobTemplate' => '2446',
+            'dataSource' => 'CRM_Import_DataSource_CSV',
+            'use_existing_upload' => NULL,
+            'dedupe_rule_id' => NULL,
+            'onDuplicate' => NULL,
+            'disableUSPS' => NULL,
+            'doGeocodeAddress' => NULL,
+            'multipleCustomData' => NULL,
+            'mapper' => NULL,
+            'skipColumnHeader' => '1',
+            'fieldSeparator' => ',',
+          ],
+          'template_id' => 3494,
+          'Template' => [
+            'mapping_id' => 273,
+          ],
+          'DataSource' => [
+            'column_headers' => [
+              'Contribution ID',
+              'Deposit / Batch ID',
+              'Deposit Date',
+              'Donor ID',
+              'Donor First Name',
+              'Donor Last Name',
+              'Donor Email',
+              'Donor Phone',
+              'Address Line 1',
+              'Address Line 2',
+              'City',
+              'State',
+              'Postal Code',
+              'Country',
+              'Initiated Date',
+              'Received for Liquidation Date',
+              'Contribution Date',
+              'Contribution Received Date',
+              'Created At',
+              'Status',
+              'Asset',
+              'Quantity',
+              'Ticker',
+              'Gross Value',
+              'Donor Covered Fees',
+              'Frequency',
+              'Payment Method',
+              'DAF Account',
+              'DAF External Grant Id',
+              'DAF Tracking Id',
+              'Source',
+              'Anonymous',
+              'Dedication',
+              'Donor Notes',
+              'Integration Details',
+              'Campaign',
+              'Subcampaign',
+              '',
+              '',
+              '',
+              '',
+              '',
+              '',
+              '',
+              '',
+            ],
+            'number_of_columns' => 37,
+          ],
+          'entity_configuration' => [
+            'Contribution' => [
+              'action' => 'create',
+            ],
+            'Contact' => [
+              'action' => 'save',
+              'contact_type' => 'Individual',
+              'dedupe_rule' => [
+                'Email_OR_first_last_street_ref_Melanie_',
+              ],
+            ],
+            'SoftCreditContact' => [
+              'contact_type' => 'Organization',
+              'soft_credit_type_id' => '13',
+              'action' => 'select',
+              'dedupe_rule' => [
+                'Organization_Name',
+              ],
+            ],
+          ],
+          'import_mappings' => [
+            [
+              'name' => '',
+              'default_value' => NULL,
+              'column_number' => 0,
+            ],
+            [
+              'name' => '',
+              'default_value' => NULL,
+              'column_number' => 1,
+            ],
+            [
+              'name' => '',
+              'default_value' => NULL,
+              'column_number' => 2,
+            ],
+            [
+              'name' => '',
+              'default_value' => NULL,
+              'column_number' => 3,
+            ],
+            [
+              'name' => 'Contact.first_name',
+              'default_value' => NULL,
+              'column_number' => 4,
+            ],
+            [
+              'name' => 'Contact.last_name',
+              'default_value' => NULL,
+              'column_number' => 5,
+            ],
+            [
+              'name' => 'Contact.email_primary.email',
+              'default_value' => NULL,
+              'column_number' => 6,
+            ],
+            [
+              'name' => 'Contact.phone_primary.phone',
+              'default_value' => NULL,
+              'column_number' => 7,
+            ],
+            [
+              'name' => 'Contact.address_primary.street_address',
+              'default_value' => NULL,
+              'column_number' => 8,
+            ],
+            [
+              'name' => 'SoftCreditContact.address_primary.supplemental_address_1',
+              'default_value' => NULL,
+              'column_number' => 9,
+            ],
+            [
+              'name' => 'Contact.address_primary.city',
+              'default_value' => NULL,
+              'column_number' => 10,
+            ],
+            [
+              'name' => 'Contact.address_primary.state_province_id',
+              'default_value' => NULL,
+              'column_number' => 11,
+            ],
+            [
+              'name' => 'Contact.address_primary.postal_code',
+              'default_value' => NULL,
+              'column_number' => 12,
+            ],
+            [
+              'name' => 'Contact.address_primary.country_id',
+              'default_value' => 'United States',
+              'column_number' => 13,
+            ],
+            [
+              'name' => '',
+              'default_value' => '',
+              'column_number' => 14,
+            ],
+            [
+              'name' => '',
+              'default_value' => NULL,
+              'column_number' => 15,
+            ],
+            [
+              'name' => 'Contribution.receive_date',
+              'default_value' => NULL,
+              'column_number' => 16,
+            ],
+            [
+              'name' => '',
+              'default_value' => NULL,
+              'column_number' => 17,
+            ],
+            [
+              'name' => '',
+              'default_value' => NULL,
+              'column_number' => 18,
+            ],
+            [
+              'name' => '',
+              'default_value' => '',
+              'column_number' => 19,
+            ],
+            [
+              'name' => '',
+              'default_value' => '',
+              'column_number' => 20,
+            ],
+            [
+              'name' => '',
+              'default_value' => '',
+              'column_number' => 21,
+            ],
+            [
+              'name' => '',
+              'default_value' => '',
+              'column_number' => 22,
+            ],
+            [
+              'name' => 'Contribution.total_amount',
+              'default_value' => '',
+              'column_number' => 23,
+            ],
+            [
+              'name' => '',
+              'default_value' => '',
+              'column_number' => 24,
+            ],
+            [
+              'name' => '',
+              'default_value' => '',
+              'column_number' => 25,
+            ],
+            [
+              'default_value' => NULL,
+              'column_number' => 26,
+            ],
+            [
+              'name' => 'SoftCreditContact.organization_name',
+              'default_value' => NULL,
+              'column_number' => 27,
+            ],
+            [
+              'default_value' => NULL,
+              'column_number' => 28,
+            ],
+            [
+              'name' => 'Contribution.contribution_extra.gateway_txn_id',
+              'default_value' => NULL,
+              'column_number' => 29,
+            ],
+            [
+              'default_value' => NULL,
+              'column_number' => 30,
+            ],
+            [
+              'default_value' => NULL,
+              'column_number' => 31,
+            ],
+            [
+              'default_value' => NULL,
+              'column_number' => 32,
+            ],
+            [
+              'default_value' => NULL,
+              'column_number' => 33,
+            ],
+            [
+              'default_value' => NULL,
+              'column_number' => 34,
+            ],
+            [
+              'default_value' => NULL,
+              'column_number' => 35,
+            ],
+            [
+              'default_value' => NULL,
+              'column_number' => 36,
+            ],
+            [
+              'name' => 'Contribution.contribution_extra.gateway',
+              'default_value' => 'Overflow',
+              'column_number' => 37,
+            ],
+            [
+              'name' => 'Contribution.financial_type_id',
+              'default_value' => 'Cash',
+              'column_number' => 38,
+            ],
+            [
+              'name' => 'Contribution.payment_instrument_id',
+              'default_value' => 'EFT',
+              'column_number' => 39,
+            ],
+            [
+              'name' => 'Contribution.Gift_Data.Fund',
+              'default_value' => 'Major Gifts - CC104',
+              'column_number' => 40,
+            ],
+            [
+              'name' => 'Contribution.Gift_Data.Channel',
+              'default_value' => 'Other Offline',
+              'column_number' => 41,
+            ],
+            [
+              'name' => 'Contribution.Gift_Data.Campaign',
+              'default_value' => 'Donor Advised Fund',
+              'column_number' => 42,
+            ],
+            [
+              'name' => 'Contribution.Gift_Data.Appeal',
+              'default_value' => 'White Mail',
+              'column_number' => 43,
+            ],
+            [
+              'column_number' => 44,
+            ],
+          ],
+          'import_options' => [
+            'date_format' => '2',
+          ],
+          'bundled_actions' => [
+            [
+              'entity' => 'SoftCreditContact',
+              'action' => 'add_to_group.imported_duplicates',
+              'condition' => 'on_multiple_match',
+            ],
+          ],
+        ],
+        'is_template' => TRUE,
+      ],
+      'match' => [
+        'name',
+      ],
+    ],
+  ],
+];

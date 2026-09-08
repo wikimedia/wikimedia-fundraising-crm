@@ -73,7 +73,7 @@ class Audit extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   public function _run(Result $result): void {
-    if (!empty($this->values['is_daf']) || !empty($this->values['is_matching_gift']) || $this->values['gateway'] === 'chariot') {
+    if (!empty($this->values['is_daf']) || !empty($this->values['is_matching_gift']) || in_array($this->values['gateway'], ['chariot', 'overflow'], TRUE)) {
       $message = new OfflineAuditMessage($this->values);
     }
     else {

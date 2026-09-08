@@ -82,18 +82,25 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
     // @todo - pass through any other contribution fields? Perhaps this can
     // be an import target if we do - ie we set up DafGift as an entity that extends
     // contribution and cn be selected for import.
-    $gatewayAccount = 'Chariot Disbursements';
-    if ($record['payment_method'] === 'Check' ){
-      $gatewayAccount = 'Chariot Digital Mailbox';
+    if (!empty($record['gateway_account'])) {
+      $gatewayAccount = $record['gateway_account'];
+    } else {
+      // Chariot doesn't supply gateway_account itself, so make one up.
+      $gatewayLabel = ucfirst($record['gateway']);
+      $gatewayAccount = ($record['payment_method'] ?? NULL) === 'Check' ? $gatewayLabel . ' Digital Mailbox' : $gatewayLabel . ' Disbursements';
     }
     $channel = ($record['gift_source'] ?? '') === 'Employee Giving' ? 'Workplace Giving' : 'Other Offline';
+    // settled_fee_amount arrives negative from the audit parser (SmashPig
+    // convention). Core fee_amount is the opposite sign, so that
+    // total_amount - fee_amount = net_amount as CiviCRM expects.
+    $settledFeeAmount = (float) $record['settled_fee_amount'];
 
     $contribution = Contribution::create($this->checkPermissions)
       ->setValues($extraValues + [
         'contact_id' => $contactId,
-        'receive_date' => gmdate('Y-m-d', $record['date']),
+        'receive_date' => '@' . $record['date'],
         'total_amount' => $this->getProportionalGiftAmountInReportingCurrency($record['settled_total_amount'], $giftRatio),
-        'fee_amount' => CurrencyRoundingHelper::round($record['settled_fee_amount'], 'USD'),
+        'fee_amount' => CurrencyRoundingHelper::round($settledFeeAmount ? -$settledFeeAmount : 0.0, 'USD'),
         'payment_instrument_id:name' => $record['payment_method'],
         'financial_type_id:name' => 'Cash',
         'check_number' => $record['check_number'] ?? NULL,
@@ -105,14 +112,16 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
         'contribution_extra.gateway_txn_id' => $record['gateway_txn_id'],
         'contribution_extra.backend_processor' => $record['backend_processor'],
         'contribution_extra.backend_processor_txn_id' => $record['backend_processor_txn_id'],
-        'contribution_settlement.settlement_date' => gmdate('Y-m-d', $record['settled_date']),
+        'contribution_settlement.settlement_date' => '@' . $record['settled_date'],
         'contribution_settlement.settlement_currency' => 'USD',
         'contribution_settlement.settlement_batch_reference' => $record['settlement_batch_reference'],
+        'contribution_settlement.settled_fee_amount' => $record['settled_fee_amount'] ?? '0',
+        'contribution_settlement.settled_donation_amount' => $record['settled_total_amount'],
         'Gift_Data.Channel' => $channel,
-        'Gift_Data.Appeal' => $record['direct_mail_appeal'],
-        'Gift_Data.Fund' => 'Major Gifts - CC104',
+        'Gift_Data.Appeal' => $record['direct_mail_appeal'] ?? NULL,
+        'Gift_Data.Fund' => $this->isEndowmentAccount($record) ? 'Endowment Fund' : 'Major Gifts - CC104',
         'Gift_Data.is_major_gift' => TRUE,
-        'Gift_Information.import_batch_number' => 'deposit_' . substr($record['settlement_batch_reference'], 8, -4),
+        'Gift_Information.import_batch_number' => $record['gateway'] === 'chariot' ? 'deposit_' . $this->getBatchDepositId($record) : NULL,
         'contribution_extra.source_enqueued_time' => date('Y-m-d H:i:s', $record['source_enqueued_time']),
         'contribution_extra.source_name' => $record['source_name'],
         'contribution_extra.source_type' => $record['source_type'],
@@ -135,6 +144,33 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
       ]);
     }
     return $contribution;
+  }
+
+  /**
+   * @param array $record
+   *
+   * @return bool
+   */
+  protected function isEndowmentAccount(array $record): bool {
+    return strtolower(trim((string) ($record['gateway_account'] ?? ''))) === 'endowment';
+  }
+
+  /**
+   * Strip the leading '<gateway>_' and trailing '_<currency>' off a
+   * settlement_batch_reference like 'chariot_01kqkv..._USD', leaving just
+   * the deposit/batch id.
+   *
+   * @param array $record
+   *
+   * @return string
+   */
+  private function getBatchDepositId(array $record): string {
+    $reference = $record['settlement_batch_reference'];
+    $prefix = $record['gateway'] . '_';
+    if (str_starts_with($reference, $prefix)) {
+      $reference = substr($reference, strlen($prefix));
+    }
+    return preg_replace('/_[A-Z]{3}$/', '', $reference);
   }
 
   private function getGiftType(string $giftSource): string {

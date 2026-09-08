@@ -59,18 +59,17 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     $message['recurring'] = TRUE;
     $messageObject = new RecurDonationMessage($message);
     $messageObject->validate();
-    $message = $messageObject->normalize();
-    $skipContributionTracking = $messageObject->isAmazon() || $messageObject->isAutoRescue();
-
-    if (!$skipContributionTracking && !$messageObject->getContributionTrackingID()) {
-      $message['contribution_tracking_id'] = $this->getContributionTracking($message);
-    }
 
     // route the message to the appropriate handler depending on transaction type
     if ($messageObject->isPayment()) {
+      $skipContributionTracking = $messageObject->isAmazon() || $messageObject->isAutoRescue();
+      if (!$skipContributionTracking && !$messageObject->getContributionTrackingID()) {
+        $message['contribution_tracking_id'] = $this->getContributionTracking($messageObject);
+      }
       $this->importSubscriptionPayment($messageObject, $message);
     }
     else {
+      $message = $messageObject->normalize();
       $this->importSubscriptionAccount($messageObject, $message);
     }
   }
@@ -90,7 +89,9 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    * @throws StatisticsCollectorException
    */
-  protected function importSubscriptionPayment(RecurDonationMessage $message, $msg) {
+  protected function importSubscriptionPayment(RecurDonationMessage $message, $originalMessage) {
+    // @todo - maybe do not normalize here - this is a refactor step
+    $msg = $message->normalize();
     /**
      * if the subscr_id is not set, we can't process it due to an error in the message.
      *
@@ -228,18 +229,16 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    * If they do, we'll use that contrib tracking id, otherwise we'll generate a new row in the
    * contrib tracking table.
    *
-   * @param array $msg
-   *
    * @return int contribution tracking id
    */
-  private function getContributionTracking($msg) {
-    if ($msg['txn_type'] == 'subscr_payment') {
+  private function getContributionTracking(RecurDonationMessage $message) {
+    if ($message->isPayment()) {
       $queryResult = ContributionRecur::get(FALSE)
         ->addSelect('MIN(contribution_tracking.id) AS ctid', 'MIN(contribution.id) AS contribution_id')
         ->addJoin('Contribution AS contribution', 'INNER')
         ->addJoin('ContributionTracking AS contribution_tracking', 'LEFT', ['contribution_tracking.contribution_id', '=', 'contribution.id'])
         ->addGroupBy('id')
-        ->addWhere('trxn_id', '=', $msg['subscr_id'])
+        ->addWhere('trxn_id', '=', $message->getSubscriptionID())
         ->setLimit(1)
         ->execute()
         ->first();
@@ -257,7 +256,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       if ($contribution_id && !$contribution_tracking_id) {
         $tracking = [
           'utm_medium' => 'civicrm',
-          'tracking_date' => empty($msg['payment_date']) ? $msg['date'] : $msg['payment_date'],
+          'tracking_date' => $message->getPaymentTimestamp(),
           'contribution_id' => $contribution_id,
         ];
         $contribution_tracking_id = $this->generateContributionTracking($tracking);

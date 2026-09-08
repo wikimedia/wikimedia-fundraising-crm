@@ -453,6 +453,20 @@ class Message {
         'data_type' => 'String',
         'used_for' => '*tbd',
       ],
+      'stock_ticker' => [
+        'name' => 'stock_ticker',
+        'data_type' => 'String',
+        'api_field' => 'Stock_Information.Stock Ticker',
+        'api_entity' => 'Contribution',
+        'used_for' => 'Overflow',
+      ],
+      'stock_quantity' => [
+        'name' => 'stock_quantity',
+        'data_type' => 'Float',
+        'api_field' => 'Stock_Information.Stock Quantity',
+        'api_entity' => 'Contribution',
+        'used_for' => 'Overflow',
+      ],
       'type' => [
         'description' => 'refund or chargeback or other to be documented',
         'data_type' => 'String',
