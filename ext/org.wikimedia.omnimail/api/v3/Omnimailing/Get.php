@@ -116,7 +116,7 @@ function mapMailing(\Omnimail\Silverpop\Responses\Mailing $mailing): array {
     \Civi::$statics[$mailingKey] = [
       'subject' => $mailing->getSubject(),
       'external_identifier' => $mailing->getMailingIdentifier(),
-      'name' => substr($mailing->getName(), 0, 128),
+      'name' => substr($mailing->getName(), 0, 255),
       'body_html' => $mailing->getHtmlBody(),
       'body_text' => $mailing->getTextBody(),
       'tags' => $mailing->getTags(),
