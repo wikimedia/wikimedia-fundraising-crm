@@ -82,6 +82,51 @@ class OmniphoneUpdateTest extends OmnimailBaseTestClass {
   }
 
   /**
+   * An existing consent's master_recipient_id is not overwritten when
+   * the same phone number is later resolved from a placeholder.
+   */
+  public function testUpdatePhoneDoesNotOverwriteExistingConsent(): void {
+    PhoneConsent::delete(FALSE)
+      ->addWhere('phone_number', '=', 9099909021)
+      ->execute();
+    Contact::create(FALSE)
+      ->setValues([
+        'contact_type' => 'Individual',
+        'first_name' => 'John',
+        'last_name' => 'Mouse',
+        'email_primary.email' => 'john@mouse.com',
+        'phone_primary.phone' => \CRM_Omnimail_Omnicontact::DUMMY_PHONE,
+        'phone_primary.phone_data.recipient_id' => 12345,
+        'phone_primary.location_type_id:name' => 'sms_mobile',
+      ])
+      ->execute();
+    $this->createTestEntity('PhoneConsent', [
+      'country_code' => 1,
+      'phone_number' => '9099909021',
+      'consent_date' => '2024-01-01 00:00:00',
+      'consent_source' => 'Donation form',
+      'opted_in' => TRUE,
+    ]);
+    $this->getMockRequest([
+      file_get_contents(__DIR__ . '/Responses/SelectRecipientData.txt'),
+      file_get_contents(__DIR__ . '/Responses/ConsentInformationResponse.txt'),
+    ]);
+
+    Omniphone::batchUpdate(FALSE)
+      ->setClient($this->getGuzzleClient())
+      ->setDatabaseID(345)
+      ->execute();
+
+    $consent = PhoneConsent::get(FALSE)
+      ->addWhere('phone_number', '=', 9099909021)
+      ->execute()->single();
+    $this->assertNull($consent['master_recipient_id']);
+    // Other fields still get refreshed from the resolved Acoustic consent.
+    $this->assertEquals('Sms Consent Kafka Streams', $consent['consent_source']);
+    $this->assertTrue($consent['opted_in']);
+  }
+
+  /**
    * Test pushing consent updates back to Acoustic.
    */
   public function testRemoteUpdate(): void {

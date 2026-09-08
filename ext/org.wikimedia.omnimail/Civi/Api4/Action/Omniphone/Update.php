@@ -114,14 +114,24 @@ class Update extends AbstractAction {
         ])
         ->execute();
 
+      $existingConsent = PhoneConsent::get(FALSE)
+        ->addWhere('country_code', '=', $countryCode)
+        ->addWhere('phone_number', '=', $phoneNumber)
+        ->execute()->first();
+
       $record = [
         'country_code' => $countryCode,
         'phone_number' => $phoneNumber,
-        'master_recipient_id' => $this->getRecipientID(),
         'consent_date' => $details['sms_consent_datetime'],
         'consent_source' => $details['sms_consent_source'],
         'opted_in' => $details['sms_consent_status'] === 'OPTED-IN',
       ];
+      // Only set master_recipient_id on create. If we overwrite a null or existing
+      // value on an existing consent we will end up pushing up the new
+      // master_recipient_id as is_orphan, when it would be a non-orphan full contact.
+      if (!$existingConsent) {
+        $record['master_recipient_id'] = $this->getRecipientID();
+      }
       PhoneConsent::save(FALSE)
         ->setMatch(['phone_number'])
         ->addRecord($record)
