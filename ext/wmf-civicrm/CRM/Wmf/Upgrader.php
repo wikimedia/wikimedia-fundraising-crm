@@ -5392,6 +5392,20 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Add column for storing a JSON blob of features that a specific ML model calculated for a payment attempt
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_5170(): bool {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_payment_attempt_model_score', 'features', FALSE)) {
+      $fields = (require E::path('schema/PaymentAttemptModelScore.entityType.php'))['getFields']();
+      E::schema()->alterSchemaField('PaymentAttemptModelScore', 'features', $fields['features']);
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
