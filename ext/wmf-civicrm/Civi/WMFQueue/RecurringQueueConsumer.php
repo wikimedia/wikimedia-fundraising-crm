@@ -89,9 +89,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
    * @throws \Civi\WMFException\WMFException
    * @throws StatisticsCollectorException
    */
-  protected function importSubscriptionPayment(RecurDonationMessage $message, $originalMessage) {
-    // @todo - maybe do not normalize here - this is a refactor step
-    $msg = $message->normalize();
+  protected function importSubscriptionPayment(RecurDonationMessage $message, $originalMessage): void {
     /**
      * if the subscr_id is not set, we can't process it due to an error in the message.
      *
@@ -137,14 +135,15 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       // messages lately. Insert a whole new contribution_recur record.
       $startMessage = [
         'txn_type' => 'subscr_signup',
-      ] + $msg;
+      ] + $message->normalize();
       $this->importSubscriptionSignup($message, $startMessage);
     }
     if (!$message->getContributionRecurID()) {
       Civi::log('wmf')->notice('recurring: Msg does not have a matching recurring record in civicrm_contribution_recur; requeueing for future processing.');
-      throw new WMFException(WMFException::MISSING_PREDECESSOR, "Missing the initial recurring record for subscr_id {$msg['subscr_id']}");
+      throw new WMFException(WMFException::MISSING_PREDECESSOR, "Missing the initial recurring record for subscr_id {$message->getSubscriptionID()}");
     }
 
+    $msg = $originalMessage;
     $msg['contact_id'] = $message->getExistingContributionRecurValue('contact_id');
     $msg['contribution_recur_id'] = $message->getContributionRecurID();
 
@@ -180,6 +179,10 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       // @todo - confirm this is unnecessary as done in the Donations queue & remove.
       $msg['financial_type_id'] = RecurHelper::getFinancialTypeForSubsequentContributions();
     }
+    // These 2 are set in RecurDonationMessage normalize - so we set them here as the next queue only uses
+    // DonationMessage.
+    $msg['payment_token_id'] = $message->getPaymentTokenId();
+    $msg['payment_processor_id'] = $message->getPaymentProcessorID();
     QueueWrapper::push('donations', $msg);
   }
 

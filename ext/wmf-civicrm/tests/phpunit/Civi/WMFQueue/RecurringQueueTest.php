@@ -303,6 +303,42 @@ class RecurringQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * Ensure a non-USD subsequent recurring payment is converted to USD exactly once.
+   *
+   * The message queued from the Recurring queue to the Donations queue used to be
+   * pre-normalized (converting 'gross' to USD) before being queued. DonationMessage's
+   * getReportingAmount() (& equivalent fee/net methods) recalculate the USD amount live
+   * from 'gross' & 'original_currency' every time they are called, rather than trusting
+   * a previously-normalized value, so when the Donations queue consumer normalized (&
+   * calculated the amounts for) the message a second time, the already-converted 'gross'
+   * got converted again - doubling the amount for any non-USD currency.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecurringPaymentNonUSDNotDoubleConverted(): void {
+    $subscr_id = mt_rand();
+    $this->processRecurringSignup(['subscr_id' => $subscr_id, 'currency' => 'CAD']);
+
+    $timestamp = time();
+    $this->setExchangeRates($timestamp, ['USD' => 1, 'CAD' => 2]);
+    $message = $this->processRecurringPaymentMessage([
+      'subscr_id' => $subscr_id,
+      'currency' => 'CAD',
+      'gross' => 10.00,
+      'fee' => 0,
+      'net' => 10.00,
+      'date' => $timestamp,
+    ]);
+
+    $contribution = $this->getContributionForMessage($message);
+    $this->assertEquals('USD', $contribution['currency']);
+    // 10 CAD at a rate of 2 should be 20 USD - not 40 (double-converted) or 10 (unconverted).
+    $this->assertEquals('20.00', $contribution['total_amount']);
+    $this->assertEquals('0.00', $contribution['fee_amount']);
+    $this->assertEquals('20.00', $contribution['net_amount']);
+  }
+
+  /**
    * Test that processing more than one recurring payment creates separate contributions.
    *
    * This is to ensure that (e.g.) monthly payments each get their own records.
