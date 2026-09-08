@@ -129,9 +129,8 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     // advice on how to deal with their ID migration, delete this.
     if (
       !$message->getContributionRecurID() &&
-      !empty($msg['email']) &&
-      $message->isPaypal() &&
-      strpos($msg['subscr_id'], 'I-') === 0
+      $message->hasEmail() &&
+      $message->isNewPaypalEcSubscriptionPayment()
     ) {
       Civi::log('wmf')->info('Creating new contribution_recur record while processing a subscr_payment');
       // PayPal has just not been sending subscr_signup messages for a lot of
