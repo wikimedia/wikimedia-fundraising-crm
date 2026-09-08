@@ -5332,6 +5332,29 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Add repeat counts for JA4 headers (using executeQuery to only alter table once)
+   *
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_5155(): bool {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_payment_attempt', 'ja4_repeat', FALSE)) {
+      CRM_Core_DAO::executeQuery("
+        ALTER TABLE civicrm_payment_attempt
+        ADD COLUMN ja4_repeat int(7) unsigned default 0,
+        ADD COLUMN ja4_repeat_fraud int(7) unsigned default 0,
+        ADD COLUMN ja4_repeat_decline int(7) unsigned default 0,
+        ADD COLUMN ja4_repeat_blocked int(7) unsigned default 0,
+        ADD COLUMN ja4h_repeat int(7) unsigned default 0,
+        ADD COLUMN ja4h_repeat_fraud int(7) unsigned default 0,
+        ADD COLUMN ja4h_repeat_decline int(7) unsigned default 0,
+        ADD COLUMN ja4h_repeat_blocked int(7) unsigned default 0;
+      ");
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

@@ -429,10 +429,50 @@ return [
       'input_type' => 'Text',
       'title' => E::ts('JA4 TLS'),
     ],
+    'ja4_repeat' => [
+      'sql_type' => 'int unsigned',
+      'input_type' => 'Number',
+      'title' => E::ts('JA4 TLS repeat count'),
+    ],
+    'ja4_repeat_fraud' => [
+      'sql_type' => 'int unsigned',
+      'input_type' => 'Number',
+      'title' => E::ts('JA4 TLS fraud repeat count'),
+    ],
+    'ja4_repeat_decline' => [
+      'sql_type' => 'int unsigned',
+      'input_type' => 'Number',
+      'title' => E::ts('JA4 TLS decline repeat count'),
+    ],
+    'ja4_repeat_blocked' => [
+      'sql_type' => 'int unsigned',
+      'input_type' => 'Number',
+      'title' => E::ts('JA4 TLS filter block repeat count'),
+    ],
     'ja4h' => [
       'sql_type' => 'varchar(64)',
       'input_type' => 'Text',
       'title' => E::ts('JA4 HTTP'),
+    ],
+    'ja4h_repeat' => [
+      'sql_type' => 'int unsigned',
+      'input_type' => 'Number',
+      'title' => E::ts('JA4 HTTP repeat count'),
+    ],
+    'ja4h_repeat_fraud' => [
+      'sql_type' => 'int unsigned',
+      'input_type' => 'Number',
+      'title' => E::ts('JA4 HTTP fraud repeat count'),
+    ],
+    'ja4h_repeat_decline' => [
+      'sql_type' => 'int unsigned',
+      'input_type' => 'Number',
+      'title' => E::ts('JA4 HTTP decline repeat count'),
+    ],
+    'ja4h_repeat_blocked' => [
+      'sql_type' => 'int unsigned',
+      'input_type' => 'Number',
+      'title' => E::ts('JA4 HTTP filter block repeat count'),
     ],
     'user_ip' => [
       'sql_type' => 'varchar(16)',
