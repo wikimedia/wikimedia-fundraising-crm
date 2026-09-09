@@ -73,4 +73,14 @@ return [
     'description' => 'Files to be uploaded with FinanceIntegration.pushJournal must be in one of these folders',
     'help_text' => 'You can set these using the $civicrm_settings global',
   ],
+  'intacct_process_log_object' => [
+    'name' => 'intacct_process_log_object',
+    'type' => 'String',
+    'default' => 'pmt_orch_process_and_error_log',
+    'title' => 'Intacct Process Log Object',
+    'is_domain' => '1',
+    'is_contact' => 0,
+    'description' => 'Intacct object name used by FinanceIntegration.pushProcessLog',
+    'help_text' => 'You can set these using the $civicrm_settings global',
+  ],
 ];

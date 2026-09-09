@@ -223,6 +223,7 @@ class DonationMessage extends Message {
     }
     $msg['Gift_Data.Appeal'] = $this->getAppeal();
     $msg['gateway_txn_id'] = $this->getGatewayTxnID();
+    $msg['gateway'] = $this->getGateway();
     $msg['trxn_id'] = $this->getTrxnID();
     $msg += $this->getPhoneFields();
 

@@ -103,14 +103,17 @@ class XmlApi {
   }
 
   /**
-   * Convenience wrapper for creating a process_log record.
+   * Convenience wrapper for creating a process log record.
    *
    * @param array $fields
+   * @param string $objectName
+   *   Intacct object name to log against - see the
+   *   intacct_process_log_object setting.
    *
    * @return string
    */
-  public function createProcessLog(array $fields): string {
-    return $this->createObject('process_log', $fields, 'create-process-log');
+  public function createProcessLog(array $fields, string $objectName = 'process_log'): string {
+    return $this->createObject($objectName, $fields, 'create-process-log');
   }
 
   /**

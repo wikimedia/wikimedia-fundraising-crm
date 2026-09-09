@@ -105,7 +105,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       throw new WMFException(WMFException::INVALID_RECURRING, 'Msg missing the subscr_id; cannot process.');
     }
 
-    if ($message->getContributionRecurID() && RecurHelper::gatewayManagesOwnRecurringSchedule($msg['gateway'])) {
+    if ($message->getContributionRecurID() && RecurHelper::gatewayManagesOwnRecurringSchedule($message->getGateway())) {
       // If parent record is mistakenly marked as Completed, Cancelled, Failing or Failed, reactivate it
       // @todo - confirm this duplicates the processing that happens once this
       // is pushed to the donation queue & remove from here.
@@ -283,7 +283,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
   protected function importSubscriptionSignup(RecurDonationMessage $message, array $msg): void {
     $contact = NULL;
     // ensure there is not already a record of this account - if so, mark the message as succesfuly processed
-    if (!empty($msg['contribution_recur_id'])) {
+    if ($message->getContributionRecurID()) {
       throw new WMFException(WMFException::DUPLICATE_CONTRIBUTION, 'Subscription account already exists');
     }
     $ctRecord = ContributionTracking::get(FALSE)
