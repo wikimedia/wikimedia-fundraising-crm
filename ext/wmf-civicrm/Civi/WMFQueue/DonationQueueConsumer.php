@@ -8,9 +8,11 @@ use Civi\Api4\ContributionRecur;
 use Civi\Api4\PaymentToken;
 use Civi\Api4\WMFContact;
 use Civi\WMFException\WMFException;
+use Civi\WMFHelper\Contribution as ContributionHelper;
 use Civi\WMFHelper\ContributionRecur as ContributionRecurHelper;
 use Civi\WMFHelper\PaymentProcessor as PaymentProcessorHelper;
 use Civi\WMFQueueMessage\DonationMessage;
+use Civi\WMFQueueMessage\DonationModifyMessage;
 use Civi\WMFQueueMessage\Message;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use Civi\WMFStatistic\DonationStatsCollector;
@@ -99,30 +101,12 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
    * @throws \Statistics\Exception\StatisticsCollectorException
    */
   public function processMessage(array $message): void {
-    // If more information is available, find it from the pending database
-    // FIXME: combine the information in a SmashPig job a la Adyen, not here
-    if (isset($message['completion_message_id'])) {
-      $pendingDbEntry = PendingDatabase::get()->fetchMessageByGatewayOrderId(
-        $message['gateway'],
-        $message['order_id'],
-        (string) $message['gateway_txn_id']
-      );
-      if ($pendingDbEntry) {
-        // Sparse messages should have no keys at all for the missing info,
-        // rather than blanks or junk data. And $msg should always have newer
-        // info than the pending db.
-        $message = $message + $pendingDbEntry;
-        // $pendingDbEntry has a pending_id key, but $msg doesn't need it
-        unset($message['pending_id']);
-      }
-      else {
-        // Throw an exception that tells the queue consumer to
-        // requeue the incomplete message with a delay.
-        $errorMessage = "Message {$message['gateway']}-{$message['gateway_txn_id']} " .
-          "indicates a pending DB entry with order ID {$message['order_id']}, " .
-          "but none was found.  Requeueing.";
-        throw new WMFException(WMFException::MISSING_PREDECESSOR, $errorMessage);
-      }
+    // Handle cancellations, sent to this queue so they are processed after
+    // any related message
+    if ($message['contribution_status_id:name'] ?? '' === 'Cancelled') {
+      $messageObject = new DonationModifyMessage($message);
+      ContributionHelper::updateCancelledContribution($messageObject);
+      return;
     }
     // import the contribution here!
     $contribution = $this->doImport($message);

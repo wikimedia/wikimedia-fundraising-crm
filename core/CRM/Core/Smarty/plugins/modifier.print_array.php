@@ -78,11 +78,6 @@ function smarty_modifier_print_array($var, $depth = 0, $length = 40) {
       break;
 
     case 'string':
-      $decoded = json_decode($var, true);
-      if ($decoded) {
-        $results = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        break;
-      }
       if (strlen($var) > $length) {
         $results = substr($var, 0, $length - 3) . '...';
       }
