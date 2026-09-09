@@ -349,13 +349,13 @@ class Contribution {
     }
 
     if ($contributionRecur['contribution_status_id:name'] === 'Failing') {
-      // If we've already recorded a 'Recurring Failure' activity in the past hour
-      // for this contribution_recur, stop. That means the failure was handled
-      // synchronously in the recurring charge job.
+      // If we've already recorded a 'Recurring Failure' activity in the past
+      // 18 hours for this contribution_recur, stop. That means the failure
+      // was handled synchronously in the recurring charge job.
       $existingActivity = Activity::get(FALSE)
         ->addWhere('activity_type_id:name', '=', 'Recurring Failure')
         ->addWhere('source_record_id', '=', $contributionRecur['id'])
-        ->addWhere('activity_date_time', '>', '-1 HOUR')
+        ->addWhere('activity_date_time', '>', '-18 HOUR')
         ->execute()->first();
       if ($existingActivity) {
         return;

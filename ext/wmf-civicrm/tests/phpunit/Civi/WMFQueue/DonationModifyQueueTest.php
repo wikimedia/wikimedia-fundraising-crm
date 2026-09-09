@@ -94,7 +94,7 @@ class DonationModifyQueueTest extends BaseQueueTestCase {
   /**
    * Ensure we don't record another Recurring Failure activity or
    * increment failure_count if there's another activity in the
-   * past day
+   * past 18 hours
    * @return void
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
