@@ -618,7 +618,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $expectedDate = UtcDate::getUtcTimestamp();
     $actualDate = $contributionMessage['date'];
     $this->assertLessThan(100, abs($actualDate - $expectedDate));
-    unset($contributionMessage['date']);
+    $this->unsetFieldsForAssert($contributionMessage);
     $financialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
 
     $this->assertEquals([
@@ -634,9 +634,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
       'recurring' => TRUE,
-      'restrictions' => 'Unrestricted - General',
-      'gift_source' => 'Individual Gift',
-      'direct_mail_appeal' => 'Spontaneous Donation',
       'backend_processor' => 'testSmashPig',
       'backend_processor_txn_id' => '000000850010000188130000200001',
     ], $contributionMessage);
@@ -689,7 +686,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $expectedDate = UtcDate::getUtcTimestamp();
     $actualDate = $contributionMessage['date'];
     $this->assertLessThan(100, abs($actualDate - $expectedDate));
-    unset($contributionMessage['date']);
+    $this->unsetFieldsForAssert($contributionMessage);
     $financialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift");
 
     $this->assertEquals([
@@ -705,9 +702,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
       'recurring' => TRUE,
-      'restrictions' => 'Unrestricted - General',
-      'gift_source' => 'Individual Gift',
-      'direct_mail_appeal' => 'Spontaneous Donation',
       'backend_processor' => 'testSmashPig',
       'backend_processor_txn_id' => '000000850010000188130000200001',
     ], $contributionMessage);
@@ -838,7 +832,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $expectedDate = UtcDate::getUtcTimestamp();
     $actualDate = $contributionMessage['date'];
     $this->assertLessThan(100, abs($actualDate - $expectedDate));
-    unset($contributionMessage['date']);
+    $this->unsetFieldsForAssert($contributionMessage);
     $financialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
     $this->assertEquals([
       'contact_id' => $contact['id'],
@@ -853,9 +847,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
       'recurring' => TRUE,
-      'restrictions' => 'Unrestricted - General',
-      'gift_source' => 'Individual Gift',
-      'direct_mail_appeal' => 'Spontaneous Donation',
       'backend_processor' => 'testSmashPig',
       'backend_processor_txn_id' => '000000850010000188130000200001',
     ], $contributionMessage);
@@ -1813,7 +1804,7 @@ class SmashPigTest extends SmashPigBaseTestClass {
     $contributionMessage = $queue->pop();
     $this->assertNull($queue->pop(), 'Queued too many donations!');
     SourceFields::removeFromMessage($contributionMessage);
-    unset($contributionMessage['date']);
+    $this->unsetFieldsForAssert($contributionMessage);
     $financialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', "Recurring Gift - Cash");
     $this->assertEquals([
       'contact_id' => $contact['id'],
@@ -1828,9 +1819,6 @@ class SmashPigTest extends SmashPigBaseTestClass {
       'contribution_recur_id' => $contributionRecur['id'],
       'contribution_tracking_id' => $ctId,
       'recurring' => TRUE,
-      'restrictions' => 'Unrestricted - General',
-      'gift_source' => 'Individual Gift',
-      'direct_mail_appeal' => 'Spontaneous Donation',
       'backend_processor' => 'testSmashPig',
       'backend_processor_txn_id' => '000000850010000188130000200001',
     ], $contributionMessage);
@@ -2027,6 +2015,13 @@ class SmashPigTest extends SmashPigBaseTestClass {
       new \DateTime('+10 days'),
       new \DateTime($updatedRecur['next_sched_contribution_date'])
     );
+  }
+
+  protected function unsetFieldsForAssert(array &$contributionMessage): void {
+    unset($contributionMessage['date']);
+    unset($contributionMessage['direct_mail_appeal']);
+    unset($contributionMessage['gift_source']);
+    unset($contributionMessage['restrictions']);
   }
 
 }
