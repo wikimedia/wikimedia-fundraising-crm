@@ -56,10 +56,14 @@ function wmf_civicrm_civicrm_config(&$config) {
 
   $dispatcher->addListener('hook_civicrm_pre::Individual', ['Civi\WMFHook\Contact', 'pre']);
   $dispatcher->addListener('hook_civicrm_pre::Organization', ['Civi\WMFHook\Contact', 'pre']);
+  // Gift coding runs last so it sees params as modified by the other listeners.
   $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\Data', 'contributionPre'], 20);
   $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\Contribution', 'pre'], 10);
+  $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\GiftCoding', 'contributionPre'], -100);
+  // TODO: add a isMajorGift listener here, which runs after GiftCoding because that may have changed the appeal
   $dispatcher->addListener('hook_civicrm_pre::Batch', ['Civi\WMFHook\Data', 'batchPre']);
-  $dispatcher->addListener('hook_civicrm_pre::ContributionSoft', ['Civi\WMFHook\ContributionSoft', 'pre']);
+  $dispatcher->addListener('hook_civicrm_pre::ContributionSoft', ['Civi\WMFHook\ContributionSoft', 'pre'], 10);
+  $dispatcher->addListener('hook_civicrm_pre::ContributionSoft', ['Civi\WMFHook\GiftCoding', 'contributionSoftPre'], -100);
 }
 
 /**

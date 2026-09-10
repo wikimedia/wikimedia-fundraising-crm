@@ -523,7 +523,6 @@ function _wmf_civicrm_get_gift_data_fields(): array {
       'label' => ts('Appeal'),
       'data_type' => 'String',
       'html_type' => 'Select',
-      'default_value' => 'spontaneous',
       'is_active' => 1,
       'is_required' => 1,
       'is_searchable' => 1,

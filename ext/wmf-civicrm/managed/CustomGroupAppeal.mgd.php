@@ -206,4 +206,44 @@ return [
       ],
     ],
   ],
+  [
+    'name' => 'CustomGroup_Mailing_Appeal',
+    'entity' => 'CustomGroup',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'name' => 'Mailing_Appeal',
+        'title' => 'Mailing Appeal',
+        'table_name' => 'civicrm_value_mailing_appeal',
+        'extends' => 'Mailing',
+        'collapse_adv_display' => TRUE,
+      ],
+      'match' => ['name'],
+    ],
+  ],
+  [
+    'name' => 'CustomGroup_Mailing_Appeal_CustomField_Appeal',
+    'entity' => 'CustomField',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'custom_group_id.name' => 'Mailing_Appeal',
+        'name' => 'Appeal',
+        'label' => 'Appeal',
+        'html_type' => 'Select',
+        'help_post' => 'Mailing appeal is used to code offline gifts for donors who received an email.',
+        'text_length' => 255,
+        'option_group_id.name' => 'appeal_20080709183729',
+        'column_name' => 'appeal',
+      ],
+      'match' => [
+        'name',
+        'custom_group_id',
+      ],
+    ],
+  ],
 ];
