@@ -5441,6 +5441,29 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Restrict Activity.direct_mail_data.direct_mail_appeal/direct_mail_package
+   * to the same option groups as Gift_Data.Appeal/Package.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5180(): bool {
+    CustomField::update(FALSE)
+      ->addValue('html_type', 'Select')
+      ->addValue('option_group_id.name', 'appeal_20080709183729')
+      ->addWhere('name', '=', 'direct_mail_appeal')
+      ->addWhere('custom_group_id:name', '=', 'direct_mail_data')
+      ->execute();
+    CustomField::update(FALSE)
+      ->addValue('html_type', 'Select')
+      ->addValue('option_group_id.name', 'Gift_Data_Package')
+      ->addWhere('name', '=', 'direct_mail_package')
+      ->addWhere('custom_group_id:name', '=', 'direct_mail_data')
+      ->execute();
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
