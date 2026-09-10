@@ -17,7 +17,8 @@
       $scope.contactTypes = vars.contactTypes;
       this.data = {
         layouts: vars.layouts,
-        tabs: vars.defaultTabs
+        // Filter out any tabs that no longer exist (e.g. removed/renamed afform)
+        tabs: vars.defaultTabs ? vars.defaultTabs.filter(tab => allTabs[tab.id]) : vars.defaultTabs
       };
       $scope.systemTabs = vars.tabs;
       $scope.systemBlocks = [];
@@ -442,7 +443,7 @@
             });
           });
           if (layout.tabs) {
-            layout.tabs.forEach((tab, pos) => {
+            layout.tabs.filter(tab => allTabs[tab.id]).forEach((tab, pos) => {
               const tabInfo = {
                 id: tab.id,
                 is_active: tab.is_active
