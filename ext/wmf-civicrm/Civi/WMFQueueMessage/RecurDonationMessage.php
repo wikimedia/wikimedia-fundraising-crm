@@ -40,7 +40,7 @@ class RecurDonationMessage extends DonationMessage {
     $message['subscr_id'] = $this->getSubscriptionID();
     $message['contribution_recur_id'] = $this->getContributionRecurID();
     $message['payment_token_id'] = $this->getPaymentTokenID();
-    $message['payment_processor_id'] = $this->getExistingPaymentTokenValue('payment_processor_id');
+    $message['payment_processor_id'] = $this->getPaymentProcessorID();
     if (isset($message['txn_type']) && $message['txn_type'] == 'subscr_failed') {
       if (empty($message['failure_count'])) {
         $message['failure_count'] = $this->getRecurringFailCount();
@@ -430,6 +430,14 @@ class RecurDonationMessage extends DonationMessage {
     }
     // The invoice_id column has a unique constraint.
     return $invoiceID . '|recur-' . time();
+  }
+
+  /**
+   * @return mixed|null
+   */
+  public function getPaymentProcessorID(): mixed {
+    $paymentProcessorID = $this->getExistingPaymentTokenValue('payment_processor_id');
+    return $paymentProcessorID;
   }
 
 }

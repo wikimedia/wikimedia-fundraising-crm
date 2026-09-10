@@ -36,6 +36,12 @@ return [
       'input_type' => 'Decimal',
       'title' => E::ts('Score'),
     ],
+    'features' => [
+      'sql_type' => 'text',
+      'input_type' => 'Text',
+      'title' => E::ts('Calculated features'),
+      'serialize' => constant('CRM_Core_DAO::SERIALIZE_JSON'),
+    ],
     'model_role' => [
       'sql_type' => 'varchar(32)',
       'input_type' => 'Text',

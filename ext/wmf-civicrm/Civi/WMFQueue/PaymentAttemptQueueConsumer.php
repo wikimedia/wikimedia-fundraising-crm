@@ -109,6 +109,7 @@ class PaymentAttemptQueueConsumer extends QueueConsumer {
         'score' => $score['score'],
         'model_version' => $score['model_version'],
         'model_role' => $score['model_role'],
+        'features' => $score['features'] ?? NULL,
       ];
 
       $existing = PaymentAttemptModelScore::get(FALSE)

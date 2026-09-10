@@ -27,17 +27,17 @@ class CRM_Contactlayout_Form_Inline_ProfileBlock extends CRM_Profile_Form_Edit {
 
   public function buildQuickForm(): void {
     parent::buildQuickForm();
-    $buttons = array(
-      array(
+    $buttons = [
+      [
         'type' => 'upload',
         'name' => E::ts('Save'),
         'isDefault' => TRUE,
-      ),
-      array(
+      ],
+      [
         'type' => 'cancel',
         'name' => E::ts('Cancel'),
-      ),
-    );
+      ],
+    ];
     $this->addButtons($buttons);
     $this->assign('help_pre', $this->_ufGroup['help_pre'] ?? NULL);
     $this->assign('help_post', $this->_ufGroup['help_post'] ?? NULL);

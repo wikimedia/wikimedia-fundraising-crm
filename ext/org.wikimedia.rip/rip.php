@@ -37,6 +37,10 @@ function rip_civicrm_enable() {
 function rip_civicrm_pre($op, $objectName, $id, &$params) {
   if ($objectName === 'Individual' && !empty($params['is_deceased'])) {
     $params['is_opt_out'] = 1;
+    $fields = ['do_not_email', 'do_not_phone', 'do_not_mail', 'do_not_sms', 'do_not_trade'];
+    foreach ($fields as $field) {
+      $params['privacy'][$field] = 1;
+    }
   }
 }
 
