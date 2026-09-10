@@ -207,6 +207,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       }
       if ($contribution['contribution_status_id:name'] === 'Cancelled' && $messageObject->getContributionStatus() !== 'Cancelled') {
         Contribution::update(FALSE)
+          ->addWhere('id', '=', $contribution['id'])
           ->setValues([
               'contribution_status_id:name' => $messageObject->getContributionStatus(),
               'contribution_extra.backend_processor_reversal_id' => $messageObject->getBackendProcessorReversalID(),

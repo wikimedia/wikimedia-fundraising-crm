@@ -312,7 +312,7 @@ class DonationMessage extends Message {
     // This is not applied to the OptInConsumer
     try {
       if ($contactID && !empty($this->message['contact_hash'])
-        && !empty($this->message['email']) && $this->message['email'] !== $this->lookup('Contact', 'email_primary.email')) {
+        && $this->hasEmail() && $this->message['email'] !== $this->lookup('Contact', 'email_primary.email')) {
         return NULL;
       }
     }
@@ -767,5 +767,11 @@ class DonationMessage extends Message {
     return parent::getTimestamp();
   }
 
+  /**
+   * @return bool
+   */
+  public function hasEmail(): bool {
+    return !empty($this->message['email']);
+  }
 
 }

@@ -196,6 +196,17 @@ class RecurDonationMessage extends DonationMessage {
     return (int) ($this->message['installments'] ?? 0);
   }
 
+  /**
+   * Is this a 'new' style payment messages for a subscriptions.
+   *
+   * PayPal sends us subscr_ids (I-%, which we associate with paypal_ec), without first
+   * sending us notice that a new subscription is starting.
+   *
+   * @return bool
+   */
+  public function isNewPaypalEcSubscriptionPayment(): bool {
+    return $this->isPaypal() && str_starts_with($this->message['subscr_id'], 'I-');
+  }
 
   public function isInvalidRecurring(): bool {
     return empty($this->message['recurring_payment_token']) && empty($this->message['subscr_id']);
