@@ -5406,6 +5406,41 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Add missing Gift_Data.Package option values for Direct Mail package codes.
+   *
+   * Activity.direct_mail_data.direct_mail_package is currently free text, but
+   * should be an option value. This adds the missing ones as option values in
+   * preparation for switching the field.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5175(): bool {
+    $packageOptionGroupID = OptionGroup::get(FALSE)
+      ->addWhere('name', '=', 'Gift_Data_Package')
+      ->execute()->single()['id'];
+
+    $missingPackages = CRM_Core_DAO::executeQuery("
+      SELECT DISTINCT dm.direct_mail_package AS package_value
+      FROM civicrm_value_direct_mail_data dm
+      LEFT JOIN civicrm_option_value ov
+        ON ov.value = dm.direct_mail_package AND ov.option_group_id = $packageOptionGroupID
+      WHERE dm.direct_mail_package IS NOT NULL
+        AND dm.direct_mail_package != ''
+        AND ov.id IS NULL
+    ");
+    while ($missingPackages->fetch()) {
+      OptionValue::create(FALSE)
+        ->addValue('option_group_id', $packageOptionGroupID)
+        ->addValue('name', $missingPackages->package_value)
+        ->addValue('label', $missingPackages->package_value)
+        ->addValue('value', $missingPackages->package_value)
+        ->execute();
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
