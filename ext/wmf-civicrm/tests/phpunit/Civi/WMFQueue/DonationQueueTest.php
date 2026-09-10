@@ -1278,7 +1278,7 @@ class DonationQueueTest extends BaseQueueTestCase {
         'message' => [
           'currency' => 'USD',
           'date' => '2024-03-01 00:00:00',
-          'direct_mail_appeal' => 'Spontaneous Donation',
+          'direct_mail_appeal' => 'spontaneous',
           'do_not_email' => '1',
           'do_not_mail' => '1',
           'do_not_phone' => '1',
@@ -1348,7 +1348,7 @@ class DonationQueueTest extends BaseQueueTestCase {
             'total_amount' => '1.23',
             'trxn_id' => "TEST_GATEWAY 67676767",
             'financial_type_id:name' => 'Cash',
-            'Gift_Data.Appeal' => 'Spontaneous Donation',
+            'Gift_Data.Appeal' => 'spontaneous',
             'Gift_Data.Campaign' => 'Legacy Gift',
             'contribution_extra.gateway' => 'test_gateway',
             'contribution_extra.gateway_txn_id' => '67676767',

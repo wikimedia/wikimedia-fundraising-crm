@@ -5365,6 +5365,33 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Fix Major Gifts Engagement activity type name (was missing spaces)
+   * and option group for Gift_Data.Appeal.
+   *
+   * Already fixed or not an issue on prod, but this will fix dev environments.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5165(): bool {
+    OptionValue::update(FALSE)
+      ->addWhere('option_group_id:name', '=', 'activity_type')
+      ->addWhere('name', '=', 'MajorGiftsEngagement')
+      ->addWhere('value', '=', 94)
+      ->addValue('name', 'Major Gifts Engagement')
+      ->execute();
+    CustomField::update(FALSE)
+      ->addValue('option_group_id.name', 'appeal_20080709183729')
+      ->addWhere('name', '=', 'Appeal')
+      ->addWhere('custom_group_id:name', '=', 'Gift_Data')
+      ->execute();
+    OptionGroup::delete(FALSE)
+      ->addWhere('name', '=', 'Gift_Data_Direct_Mail_Appeal')
+      ->execute();
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

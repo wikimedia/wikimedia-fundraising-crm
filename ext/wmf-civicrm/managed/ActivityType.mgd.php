@@ -321,7 +321,7 @@ return [
         'option_group_id.name' => 'activity_type',
         'label' => 'Major Gifts Engagement',
         'value' => 94,
-        'name' => 'MajorGiftsEngagement',
+        'name' => 'Major Gifts Engagement',
         'grouping' => NULL,
         'filter' => 0,
         'weight' => 94,

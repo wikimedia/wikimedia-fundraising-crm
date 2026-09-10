@@ -95,6 +95,7 @@ return [
         'note_columns' => 60,
         'note_rows' => 4,
         'option_group_id.name' => 'SMS_consent_Consent_source',
+        'is_view' => TRUE,
       ],
       'match' => [
         'name',
