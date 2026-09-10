@@ -5355,6 +5355,16 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Another table that doesn't need to be logged
+   * @return bool
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function upgrade_5160(): bool {
+    CRM_Core_BAO_SchemaHandler::dropTable('log_civicrm_payment_attempt_model_score');
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
