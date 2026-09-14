@@ -132,6 +132,9 @@ trait TemplateTrait {
       'groupName' => $groupName,
       'workflow' => $workflowName,
       'isTest' => $isTest,
+      // These two lines temporary just for logging
+      'messageTemplateEntityID' => $messageTemplate['id'] ?? NULL,
+      'actualLanguage' => $messageTemplate['actual_language'] ?? NULL,
     ];
 
     return [$mailContent, $messageTemplate['actual_language'] ?? NULL];

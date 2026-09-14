@@ -424,6 +424,15 @@ class CRM_Core_BAO_MessageTemplate extends CRM_Core_DAO_MessageTemplate implemen
     unset($params['isEmailPdf']);
     [$mailContent, $params] = self::renderTemplateRaw($params);
 
+    // Temporary logging
+    if (!empty($mailContent['messageTemplateEntityID']) && empty($mailContent['actualLanguage'])) {
+      \Civi::log('wmf')->warning('Message template {id} being sent from civicrm_msg_template to {contactId} ({toEmail}).', [
+        'id' => $mailContent['messageTemplateEntityID'],
+        'contactId' => $params['contactId'] ?? NULL,
+        'toEmail' => $params['toEmail'] ?? NULL,
+      ]);
+    }
+
     // create the params array
     $params['subject'] = $mailContent['subject'];
     $params['text'] = $mailContent['text'];
