@@ -30,6 +30,9 @@ class PaypalAuditTest extends BaseAuditTestCase {
     $transactions = [
       '1V551844CE5526421',
       '5W55',
+      '6WE406841H3050743',
+      '9YY111222H3050700',
+      '1V06',
     ];
     TransactionLog::delete(FALSE)
       ->addWhere('gateway_txn_id', 'IN', $transactions)->execute();
@@ -37,6 +40,8 @@ class PaypalAuditTest extends BaseAuditTestCase {
       ->addWhere('contribution_extra.gateway_txn_id', 'IN', $transactions)->execute();
     ContributionRecur::delete(FALSE)
       ->addWhere('trxn_id', 'IN', ['I-CRT'])->execute();
+    GrantTransaction::delete(FALSE)
+      ->addWhere('gateway_txn_id', '=', '1V06')->execute();
     parent::tearDown();
   }
 
@@ -145,6 +150,77 @@ class PaypalAuditTest extends BaseAuditTestCase {
     // Check batch exists.
     Batch::get(FALSE)
       ->addWhere('name', '=', 'paypalfrup_20260106_BRL')
+      ->execute()->single();
+  }
+
+  /**
+   * An unsolicited 'Send Money' donation seen only in the STL file has no
+   * order id or email, so there's nothing to build a contribution from -
+   * it's left alone rather than auto-created.
+   *
+   * @see https://phabricator.wikimedia.org/T437215
+   */
+  public function testSTLFileUnsolicitedDonationIgnored(): void {
+    $this->runAuditBatch('stl_unsolicited_donation', 'STL-20260904.01.001.csv');
+    $contributions = Contribution::get(FALSE)
+      ->addWhere('contribution_extra.gateway_txn_id', '=', '6WE406841H3050743')
+      ->execute();
+    $this->assertCount(0, $contributions);
+  }
+
+  /**
+   * The same transaction also appears in the TRR file, which does carry an
+   * email (PayPal's "Payer's Account ID"), so it gets created there even
+   * though isMakeMissing defaults to FALSE.
+   *
+   * @see https://phabricator.wikimedia.org/T437215
+   */
+  public function testTRRFileUnsolicitedDonation(): void {
+    // Runs first, as it would for real - still ignored with no email yet.
+    $this->runAuditBatch('stl_unsolicited_donation', 'STL-20260904.01.001.csv');
+
+    $this->runAuditBatch('trr_unsolicited_donation', 'TRR-20260904.01.001.csv');
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('contribution_extra.*', 'total_amount')
+      ->addWhere('contribution_extra.gateway', '=', 'paypal')
+      ->addWhere('contribution_extra.gateway_txn_id', '=', '6WE406841H3050743')
+      ->execute()->single();
+    $this->assertEquals('USD', $contribution['contribution_extra.original_currency']);
+    $this->assertEquals(10.40, $contribution['total_amount']);
+  }
+
+  /**
+   * A row with no order id but a real PayPal Reference ID
+   * (backend_processor_txn_id) is a checkout donation whose Invoice ID just
+   * didn't come through, not a genuine unsolicited one - it must not be
+   * auto-created via that path, even though it also has an email.
+   *
+   * @see https://phabricator.wikimedia.org/T437215
+   */
+  public function testMissingOrderIdWithReferenceIsNotAutoCreated(): void {
+    $this->runAuditBatch('trr_missing_order_id_with_reference', 'TRR-20260905.01.001.csv');
+    $contributions = Contribution::get(FALSE)
+      ->addWhere('contribution_extra.gateway_txn_id', '=', '9YY111222H3050700')
+      ->execute();
+    $this->assertCount(0, $contributions);
+  }
+
+  /**
+   * A PayPal DAF grant ('X has sent you money') that happens to carry an
+   * email must still only become a GrantTransaction, not also a duplicate
+   * Cash contribution via the unsolicited-donation path.
+   *
+   * @see https://phabricator.wikimedia.org/T437215
+   */
+  public function testGrantWithEmailIsNotDuplicatedAsDonation(): void {
+    $this->runAuditBatch('trr_grant_with_email', 'TRR-20260906.01.001.csv');
+    $contributions = Contribution::get(FALSE)
+      ->addWhere('contribution_extra.gateway_txn_id', '=', '1V06')
+      ->execute();
+    $this->assertCount(0, $contributions);
+    GrantTransaction::get(FALSE)
+      ->addWhere('gateway', '=', 'paypal DAF')
+      ->addWhere('gateway_txn_id', '=', '1V06')
       ->execute()->single();
   }
 
