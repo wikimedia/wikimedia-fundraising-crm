@@ -113,6 +113,7 @@ class CRM_Wmf_Form_RefundContribution extends CRM_Contribute_Form_Task {
             ->setProcessorName($contribution['contribution_extra.gateway'])
             ->setAmount($contribution['contribution_extra.original_amount'])
             ->setTransactionID($contribution['trxn_id'])
+            ->setInvoiceID($contribution['invoice_id'])
             ->setIsFraud($isFraud)
             ->execute()->first();
           $results[$contribution['id']]['trxn_id'] = $contribution['trxn_id'];
@@ -140,6 +141,7 @@ class CRM_Wmf_Form_RefundContribution extends CRM_Contribute_Form_Task {
       'contributionID' => $contribution['id'],
       'processorName' => $contribution['contribution_extra.gateway'],
       'amount' => $contribution['contribution_extra.original_amount'],
+      'invoiceID' => $contribution['invoice_id'],
       'transactionID' => $contribution['trxn_id'],
       'isFraud' => $isFraud,
     ];
