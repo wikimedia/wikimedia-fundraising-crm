@@ -62,6 +62,16 @@ function wmf_civicrm_civicrm_config(&$config) {
 }
 
 /**
+ * Implements hook_civicrm_permission().
+ */
+function wmf_civicrm_civicrm_permission(array &$permissions) {
+  $permissions['access Zendesk iframe'] = [
+    'label' => E::ts('WMF: Access Zendesk iframe'),
+    'description' => E::ts('See donor summaries in the Zendesk sidebar iframe.'),
+  ];
+}
+
+/**
  * Abuse the permissions hook to prevent de-duping without a limit
  *
  * @param string $permission

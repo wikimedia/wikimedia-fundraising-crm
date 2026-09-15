@@ -48,4 +48,10 @@
     <title>Contacts by Email</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>
+  <item>
+    <path>civicrm/donoriframe</path>
+    <page_callback>CRM_Wmf_Page_DonorIframe</page_callback>
+    <title>Donor Iframe</title>
+    <access_callback>Civi\AuthenticatedIframe\AccessGuard::checkMenu</access_callback>
+  </item>
 </menu>
