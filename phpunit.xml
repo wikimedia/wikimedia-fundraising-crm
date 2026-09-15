@@ -16,6 +16,9 @@
     <testsuite name="wmf-civicrm">
       <directory>ext/wmf-civicrm/tests/phpunit</directory>
     </testsuite>
+    <testsuite name="authenticatediframe_tests">
+      <directory>ext/authenticatediframe/tests/phpunit</directory>
+    </testsuite>
     <testsuite name="checksum_invalidator_tests">
       <directory>ext/checksum_invalidator/tests/phpunit</directory>
     </testsuite>
