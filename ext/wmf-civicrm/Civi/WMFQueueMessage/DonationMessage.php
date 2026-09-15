@@ -24,6 +24,7 @@ class DonationMessage extends Message {
    *   gateway_account: string,
    *   backend_processor: string,
    *   backend_processor_txn_id: string,
+   *   direct_mail_appeal: string,
    *   auth_id: string,
    *   capture_id: string,
    *   employer: string,

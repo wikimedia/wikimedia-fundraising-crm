@@ -5464,6 +5464,23 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Re-do the direct_mail_appeal field type change as it was
+   * rolled back due to side effects
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5181(): bool {
+    CustomField::update(FALSE)
+      ->addValue('html_type', 'Select')
+      ->addValue('option_group_id.name', 'appeal_20080709183729')
+      ->addWhere('name', '=', 'direct_mail_appeal')
+      ->addWhere('custom_group_id:name', '=', 'direct_mail_data')
+      ->execute();
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
