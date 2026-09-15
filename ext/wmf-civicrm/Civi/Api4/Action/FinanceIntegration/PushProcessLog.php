@@ -123,17 +123,19 @@ class PushProcessLog extends AbstractAction {
 
     $fields = [
       'name' => $this->name,
-      'description' => $this->description,
-      'file_format' => $this->fileFormat,
+      // 'description' => $this->description,
+      // 'file_format' => $this->fileFormat,
       'status' => $this->status,
-      'summary' => $this->summary,
+      // 'summary' => $this->summary,
       'comment' => $this->comment,
-      'process_type' => $this->processType,
-      'job_type' => $this->jobType,
-      'processed_percentage' => $this->processedPercentage,
-      'user' => $this->user !== '' ? $this->user : $connection->getUsername(),
-      'docid' => $this->docid,
-      'results_url' => $this->resultsUrl,
+      'integration_name' => 'CiviCRM',
+      'batch' => $this->name,
+      // 'process_type' => $this->processType,
+      // 'job_type' => $this->jobType,
+      // 'processed_percentage' => $this->processedPercentage,
+      // 'user' => $this->user !== '' ? $this->user : $connection->getUsername(),
+      // 'docid' => $this->docid,
+      // 'results_url' => $this->resultsUrl,
     ];
     // Don't send empty optional fields.
     $fields = array_filter($fields, static fn($value) => $value !== '');
