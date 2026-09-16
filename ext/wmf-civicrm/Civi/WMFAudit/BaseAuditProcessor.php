@@ -1504,6 +1504,11 @@ abstract class BaseAuditProcessor {
           $this->statistics[$file]['total_queued_from_transaction_log']++;
           $this->echo('%');
         }
+        elseif ($this->isUnrebuildableDonation($auditRecord)) {
+          $this->queueUnrebuildableDonation($auditRecord['message']);
+          $this->statistics[$file]['total_queued_from_transaction_log']++;
+          $this->echo('+');
+        }
         else {
           $key = $auditRecord['is_negative'] ? 'negative' : 'main';
           $this->missingTransactions[$key][] = $auditRecord['message'];
@@ -2100,6 +2105,43 @@ abstract class BaseAuditProcessor {
    */
   protected function isQueueableWithoutLogLookup(array $auditRecord): bool {
     return !$auditRecord['is_negative'] && !empty($auditRecord['message']['transaction_details']);
+  }
+
+  /**
+   * Is this a donation with no order id at all, that we know can never be
+   * found by searching the payments logs (for example an unsolicited
+   * donation made directly via the gateway's own 'send money' style
+   * feature, which never came through our normal checkout flow).
+   *
+   * Defaults to FALSE - gateways need to opt in, since for most gateways a
+   * missing order id on a main donation is unexpected and we would rather
+   * leave it for makemissing mode / manual review than auto-create it.
+   *
+   * @param array $auditRecord
+   *
+   * @return bool
+   */
+  protected function isUnrebuildableDonation(array $auditRecord): bool {
+    return FALSE;
+  }
+
+  /**
+   * Queue a donation that can never be rebuilt from the payments logs.
+   *
+   * @see isUnrebuildableDonation()
+   *
+   * @param array $message
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  protected function queueUnrebuildableDonation(array $message): void {
+    if (empty($message['contribution_tracking_id'])) {
+      $message = array_merge($message, $this->makeContributionTrackingData($message));
+    }
+    $sendMe = $this->normalize_partial($message);
+    unset($sendMe['transaction_details']);
+    $this->send_queue_message($sendMe, 'main');
   }
 
   /**
