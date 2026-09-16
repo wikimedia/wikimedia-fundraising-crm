@@ -1088,12 +1088,12 @@ WHERE (%1 = settlement_batch_reference)
 GROUP BY s.settlement_batch_reference
 UNION ALL
 -- Adjustments part.
--- currently using fee gl code 60917 - expect further directions from finance on that.
--- also dept_id based on fees until advised otherwise
+-- Deposit Corrections GL code 43495.
+-- dept_id based on fees until advised otherwise
 SELECT
 -- note GROUP BY here....
     CONCAT('Contribution Revenue ', '{$dateDescription}' ) as DESCRIPTION,
-    60917 as ACCT_NO,
+    43495 as ACCT_NO,
 -- @todo - not for endowment - need the number for that
     '100-WMF' as LOCATION_ID,
 -- cost centre - CC-1014 for all fees
