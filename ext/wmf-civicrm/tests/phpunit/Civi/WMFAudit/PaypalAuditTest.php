@@ -33,6 +33,7 @@ class PaypalAuditTest extends BaseAuditTestCase {
       '6WE406841H3050743',
       '9YY111222H3050700',
       '1V06',
+      '8ZZ222333H4060811',
     ];
     TransactionLog::delete(FALSE)
       ->addWhere('gateway_txn_id', 'IN', $transactions)->execute();
@@ -222,6 +223,25 @@ class PaypalAuditTest extends BaseAuditTestCase {
       ->addWhere('gateway', '=', 'paypal DAF')
       ->addWhere('gateway_txn_id', '=', '1V06')
       ->execute()->single();
+  }
+
+  /**
+   * A transaction with no order_id is unfindable in the payments log and
+   * would otherwise be silently dropped - but is created directly when an
+   * operator passes its gateway_txn_id in via --forceCreateReference,
+   * having confirmed by hand that it's genuine.
+   *
+   * @see https://phabricator.wikimedia.org/T436889
+   */
+  public function testForceCreateReferenceCreatesTargetedDonation(): void {
+    $this->runAuditBatch('force_create_reference', 'TRR-20260907.01.001.csv', '', '', FALSE, '8ZZ222333H4060811');
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('contribution_extra.*', 'total_amount')
+      ->addWhere('contribution_extra.gateway', '=', 'paypal')
+      ->addWhere('contribution_extra.gateway_txn_id', '=', '8ZZ222333H4060811')
+      ->execute()->single();
+    $this->assertEquals('USD', $contribution['contribution_extra.original_currency']);
+    $this->assertEquals(20.00, $contribution['total_amount']);
   }
 
   /**
