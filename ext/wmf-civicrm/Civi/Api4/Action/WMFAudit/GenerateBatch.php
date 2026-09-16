@@ -216,6 +216,11 @@ class GenerateBatch extends AbstractAction {
           }
           catch (\Exception $e) {
             $this->log('failed to upload to Intacct with error ' . $e->getMessage());
+            \Civi::log('wmf')->alert('{subject} {message}', [
+              'subject' => $batch['name'] . ' failed to upload to Intacct',
+              'message' => $e->getMessage(),
+              'batch' => $batch['name'],
+            ]);
             foreach ($result as $index => $row) {
               $result[$index]['upload_errors'] = 'journal upload failed';
             }
