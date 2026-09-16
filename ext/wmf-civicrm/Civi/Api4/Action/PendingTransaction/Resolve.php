@@ -7,6 +7,7 @@ use Civi\Api4\ContributionTracking;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Name;
+use Civi\Api4\PaymentAttempt;
 use Civi\Api4\PendingTransaction;
 use \DateTime;
 use SmashPig\Core\Context;
@@ -148,6 +149,7 @@ class Resolve extends AbstractAction {
 
     switch ($whatToDo) {
       case self::CAPTURE:
+        $this->labelAsInnocentIfNeeded($this->message['order_id']);
         $newStatus = $this->approvePaymentAndReturnStatus($provider, $latestPaymentDetailResult);
         break;
 
@@ -742,6 +744,34 @@ class Resolve extends AbstractAction {
     }
     if ($approveResult->getPaymentOrchestratorReconciliationId()) {
       $this->message['payment_orchestrator_reconciliation_id'] = $approveResult->getPaymentOrchestratorReconciliationId();
+    }
+  }
+
+  /**
+   * Adds a PaymentAttemptLabel indicating that this one was deemed innocent, to override
+   * the blocked_by_filter flag when training the next model.
+   *
+   * @param string $orderID
+   * @return void
+   * @throws \CRM_Core_Exception
+   * @throws \Civi\API\Exception\UnauthorizedException
+   */
+  protected function labelAsInnocentIfNeeded(string $orderID): void {
+    // Only label if it has a normal-looking order ID
+    if (preg_match('/^\d+.\d+$/', $orderID)) {
+      // And the attempt exists in the table (i.e. not a subsequent recurring installment)
+      if (
+        PaymentAttempt::get(FALSE)
+          ->setSelect(['id'])
+          ->addWhere('order_id', '=', $orderID)
+          ->execute()
+          ->count()
+      ) {
+        PaymentAttempt::label(FALSE)
+          ->setOrderID($orderID)
+          ->setIsFraud(FALSE)
+          ->execute();
+      }
     }
   }
 

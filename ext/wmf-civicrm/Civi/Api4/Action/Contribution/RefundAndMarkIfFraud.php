@@ -7,6 +7,7 @@ use Civi\Api4\Activity;
 use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\PaymentAttempt;
 use Civi\Api4\PaymentProcessor;
 
 /**
@@ -14,6 +15,7 @@ use Civi\Api4\PaymentProcessor;
  *
  * @method setProcessorName(string $processorName)
  * @method setAmount(float $amount)
+ * @method setInvoiceID(string $invoiceID)
  * @method setTransactionID(string $transactionID)
  * @method setContributionID(int $contributionID)
  * @method setIsFraud(bool $isFraud)
@@ -22,6 +24,7 @@ class RefundAndMarkIfFraud extends AbstractAction {
 
   protected $processorName;
   protected $amount;
+  protected $invoiceID;
   protected $transactionID;
   protected $contributionID;
   protected $isFraud;
@@ -46,6 +49,7 @@ class RefundAndMarkIfFraud extends AbstractAction {
     if ($refundResult['refund_status'] === 'Completed') {
       $this->markContributionRefunded($refundResult['processor_id']);
       $this->addRefundActivity($refundResult['processor_id']);
+      $this->labelAsFraudIfNeeded();
     }
     $result[] = $refundResult;
   }
@@ -104,5 +108,32 @@ class RefundAndMarkIfFraud extends AbstractAction {
       ->addValue('subject', 'Contribution was refunded')
       ->addValue('details', $details)
       ->execute();
+  }
+
+  /**
+   * Adds a PaymentAttemptLabel indicating that this one was fraudulent, overriding the
+   * fact that it got through our and the processor's filters the first time around.
+   *
+   * @return void
+   * @throws UnauthorizedException
+   * @throws \CRM_Core_Exception
+   */
+  protected function labelAsFraudIfNeeded(): void {
+    // Only label if it has a normal looking order_id
+    if ($this->isFraud && preg_match('/^\d+.\d+$/', $this->invoiceID)) {
+      // And the attempt exists in the table (i.e. not a subsequent recurring installment)
+      if (
+        PaymentAttempt::get(FALSE)
+          ->setSelect(['id'])
+          ->addWhere('order_id', '=', $this->invoiceID)
+          ->execute()
+          ->count()
+      ) {
+        PaymentAttempt::label(FALSE)
+          ->setOrderID($this->invoiceID)
+          ->setIsFraud(TRUE)
+          ->execute();
+      }
+    }
   }
 }
