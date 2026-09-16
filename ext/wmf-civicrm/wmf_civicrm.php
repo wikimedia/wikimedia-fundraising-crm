@@ -131,7 +131,7 @@ function wmf_civicrm_civicrm_searchTasks($objectType, &$tasks) {
       'class' => 'CRM_Wmf_Form_RefundContribution',
       'is_single_mode' => TRUE,
       'name' => E::ts('Refund'),
-      'url' => 'civicrm/refund_contribution',
+      'url' => 'civicrm/refund_contribution?reset=1',
       'weight' => 130,
     ];
   }
