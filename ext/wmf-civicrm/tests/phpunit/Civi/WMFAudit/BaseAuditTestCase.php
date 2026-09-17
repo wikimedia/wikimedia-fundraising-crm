@@ -182,7 +182,7 @@ class BaseAuditTestCase extends TestCase {
   /**
    * Run the audit process.
    */
-  protected function runAuditor($fileName = NULL, string $gatewayAccountString = '', bool $isMakeMissing = FALSE, string $forceCreateReference = ''): Result {
+  protected function runAuditor($fileName = NULL, string $gatewayAccountString = '', bool $isMakeMissing = FALSE, string $forceCreateReference = '', bool $isMoveCompletedFile = FALSE): Result {
     try {
       $result = WMFAudit::parse()
         ->setGateway($this->gateway)
@@ -190,7 +190,7 @@ class BaseAuditTestCase extends TestCase {
         ->setFile((string) $fileName)
         ->setGatewayAccountString($gatewayAccountString)
         ->setSettleMode('queue')
-        ->setIsMoveCompletedFile(FALSE)
+        ->setIsMoveCompletedFile($isMoveCompletedFile)
         ->setIsMakeMissing($isMakeMissing)
         ->setForceCreateReference($forceCreateReference ?: NULL)
         ->execute();

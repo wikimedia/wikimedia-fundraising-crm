@@ -132,6 +132,15 @@ class AdyenAuditTest extends BaseAuditTestCase {
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'adyen_112%')
       ->execute();
+    TransactionLog::delete(FALSE)
+      ->addWhere('gateway_txn_id', '=', 'MISM0001ABCD12345')
+      ->execute();
+    Contribution::delete(FALSE)
+      ->addWhere('contribution_extra.gateway_txn_id', '=', 'MISM0001ABCD12345')
+      ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'adyen_9999%')
+      ->execute();
     $this->tearDownWMFEnvironment();
   }
 
@@ -925,6 +934,21 @@ class AdyenAuditTest extends BaseAuditTestCase {
         'settled_fee_amount' => '-0.18',
         'settled_fee_reversal_amount' => '',
     ], $line, 'incorrect value from file ' . $path);
+  }
+
+  /**
+   * A batch whose declared (MerchantPayout) total doesn't match what we
+   * actually recorded from its transactions must not have its recon file
+   * archived out of incoming - otherwise it can never be caught and
+   * reconciled on a later run.
+   */
+  public function testFileNotMovedWhenBatchTotalMismatches(): void {
+    $directory = 'batch_mismatch';
+    $fileName = 'settlement_detail_report_batch_9999.csv';
+    $this->prepareForAuditProcessing($directory, $fileName);
+    $this->runAuditor($fileName, '', FALSE, '', TRUE);
+    $incomingPath = $this->getIncomingPath($directory) . $fileName;
+    $this->assertFileExists($incomingPath, 'A file whose batch failed total verification should not be archived out of incoming');
   }
 
   public function testEndowmentJournalsCsv(): void {
