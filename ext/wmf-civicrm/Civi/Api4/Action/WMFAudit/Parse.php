@@ -26,6 +26,7 @@ use CRM_SmashPig_ContextWrapper;
  * @method $this setFileLimit(?int $fileLimit)
  * @method $this setRowLimit(?int $rowLimit)
  * @method $this setOffset(int $offset)
+ * @method $this setForceCreateReference(?string $forceCreateReference)
  */
 class Parse extends AbstractAction {
 
@@ -167,6 +168,18 @@ class Parse extends AbstractAction {
    */
   protected string $gatewayAccountString = '';
 
+  /**
+   * Force-create a single transaction matching this gateway_txn_id,
+   * backend_processor_txn_id, or payment_orchestrator_reconciliation_id.
+   *
+   * For manually resolving one known-good transaction with no order_id
+   * (so unfindable in the payments log). Not for bulk backfill - use
+   * isMakeMissing for that.
+   *
+   * @var string|null
+   */
+  protected ?string $forceCreateReference = NULL;
+
   protected function getOptions(): array {
     return [
       'makemissing' => $this->isMakeMissing,
@@ -185,6 +198,7 @@ class Parse extends AbstractAction {
       'row_offset' => $this->offset,
       'is_check_log_files' => $this->isCheckLogFiles,
       'gateway_account' => $this->gatewayAccountString,
+      'force_create_reference' => $this->forceCreateReference,
     ];
   }
 

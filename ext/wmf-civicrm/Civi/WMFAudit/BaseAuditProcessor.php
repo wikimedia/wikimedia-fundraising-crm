@@ -1499,7 +1499,12 @@ abstract class BaseAuditProcessor {
           continue;
         }
 
-        if ($this->isQueueableWithoutLogLookup($auditRecord)) {
+        if ($this->isForceCreateTarget($auditRecord)) {
+          $this->forceCreateDonation($auditRecord['message']);
+          $this->statistics[$file]['total_queued_from_transaction_log']++;
+          $this->echo('F');
+        }
+        elseif ($this->isQueueableWithoutLogLookup($auditRecord)) {
           $this->queueMissingAuditMessage($auditRecord['message']);
           $this->statistics[$file]['total_queued_from_transaction_log']++;
           $this->echo('%');
@@ -2141,6 +2146,56 @@ abstract class BaseAuditProcessor {
     }
     $sendMe = $this->normalize_partial($message);
     unset($sendMe['transaction_details']);
+    $this->send_queue_message($sendMe, 'main');
+  }
+
+  /**
+   * Does this missing transaction match --forceCreateReference?
+   *
+   * Checked against gateway_txn_id, backend_processor_txn_id, or
+   * payment_orchestrator_reconciliation_id - whichever the operator has on
+   * hand. Excludes negatives; this is for resurrecting a missing donation,
+   * not actioning a refund/chargeback.
+   *
+   * @param array $auditRecord
+   *
+   * @return bool
+   */
+  protected function isForceCreateTarget(array $auditRecord): bool {
+    $forceCreateReference = $this->get_runtime_options('force_create_reference');
+    if (!$forceCreateReference || $auditRecord['is_negative']) {
+      return FALSE;
+    }
+    $message = $auditRecord['message'];
+    foreach (['gateway_txn_id', 'backend_processor_txn_id', 'payment_orchestrator_reconciliation_id'] as $field) {
+      if (($message[$field] ?? NULL) === $forceCreateReference) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  /**
+   * Force-create a donation matched by --forceCreateReference, skipping the
+   * payments-log lookup - an operator has already confirmed this specific
+   * record by hand.
+   *
+   * Still gets the normal smash-pig source fields, with the source name
+   * suffixed so the resulting contribution is easy to find later.
+   *
+   * @param array $message
+   *
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  protected function forceCreateDonation(array $message): void {
+    $this->echo("Force-creating donation for {$this->get_runtime_options('force_create_reference')}");
+    if (empty($message['contribution_tracking_id'])) {
+      $message = array_merge($message, $this->makeContributionTrackingData($message));
+    }
+    $sendMe = $this->normalize_partial($message);
+    unset($sendMe['transaction_details']);
+    \CRM_SmashPig_ContextWrapper::setMessageSource('audit', $this->name . ' Recon Auditor - forced incomplete donation');
     $this->send_queue_message($sendMe, 'main');
   }
 
