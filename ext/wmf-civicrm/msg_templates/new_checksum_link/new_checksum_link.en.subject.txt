@@ -1,1 +1,1 @@
-New link requested
+Your Wikimedia Foundation {if $targetPage == 'EmailPreferences'}communication preferences center{else}donor account{/if}
