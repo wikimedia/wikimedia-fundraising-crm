@@ -77,6 +77,18 @@ abstract class BaseAuditProcessor {
   private array $filesHeldForVerificationFailure = [];
 
   /**
+   * Files (keyed by file, for uniqueness) where a row, or the file as a
+   * whole, threw while being processed. Kept out of
+   * $filesEligibleForCompletion regardless of how "complete" the file
+   * otherwise looks, since a thrown error is itself a clear problem with
+   * the file - but processing continues for the file's other rows, and
+   * for other files, rather than aborting the run.
+   *
+   * @var array
+   */
+  private array $filesWithProcessingErrors = [];
+
+  /**
    * Number of file to parse per run, absent any incoming parameter.
    *
    * Note that 0 is equivalent to all or no limit.
@@ -667,33 +679,48 @@ abstract class BaseAuditProcessor {
     // confirmed / persisted as total_verified.
     $filesEligibleForCompletion = [];
     foreach ($files as $file) {
-      //parse the recon files into something relatively reasonable.
-      [$parsed, $file] = $this->parseReconciliationFile($file);
-      if (empty($parsed)) {
-        $this->echo(__FUNCTION__ . $file . ': No transactions to find. Returning.');
-        $filesEligibleForCompletion[] = $file;
-        continue;
-      }
+      try {
+        //parse the recon files into something relatively reasonable.
+        [$parsed, $file] = $this->parseReconciliationFile($file);
+        if (empty($parsed)) {
+          $this->echo(__FUNCTION__ . $file . ': No transactions to find. Returning.');
+          $filesEligibleForCompletion[] = $file;
+          continue;
+        }
 
-      //remove transactions we already know about
-      $this->startTiming(' get missing on ' . $file);
-      $missingCount = $this->getMissingTransactions($parsed, $file);
+        //remove transactions we already know about
+        $this->startTiming(' get missing on ' . $file);
+        $missingCount = $this->getMissingTransactions($parsed, $file);
 
-      $recon_file_stats[$file] = $this->getFileStatistic($file, 'total_missing');
-      $time = $this->stopTiming(' get missing on ' . $file);
-      $this->echo($missingCount . ' missing transactions (of a possible ' . $this->getFileStatistic($file, 'total_records') . ") identified in $time seconds\n");
-      if ($this->getFileStatistic($file, 'total_missing')) {
-        $queuedFromTransactionLog = $this->getFileStatistic($file, 'total_queued_from_transaction_log');
-        $this->echo($queuedFromTransactionLog . ' donations were found in the transaction log and queued. Still to find in logs: ' . (((int) $this->getFileStatistic($file, 'total_missing')) - $queuedFromTransactionLog));
+        $recon_file_stats[$file] = $this->getFileStatistic($file, 'total_missing');
+        $time = $this->stopTiming(' get missing on ' . $file);
+        $this->echo($missingCount . ' missing transactions (of a possible ' . $this->getFileStatistic($file, 'total_records') . ") identified in $time seconds\n");
+        if ($this->getFileStatistic($file, 'total_missing')) {
+          $queuedFromTransactionLog = $this->getFileStatistic($file, 'total_queued_from_transaction_log');
+          $this->echo($queuedFromTransactionLog . ' donations were found in the transaction log and queued. Still to find in logs: ' . (((int) $this->getFileStatistic($file, 'total_missing')) - $queuedFromTransactionLog));
+        }
+        //If the file is empty, move it off.
+        // Note that we are not archiving files that have missing transactions,
+        // which might be resolved below. Those are archived on the next run,
+        // once we can confirm they have hit Civi and are no longer missing.
+        // A file where a row (or the file itself) threw is never eligible,
+        // however complete it otherwise looks - that's a clear problem with
+        // the file, not something to silently archive away.
+        if (empty($this->filesWithProcessingErrors[$file])
+          && $missingCount <= $this->get_runtime_options('recon_complete_count')
+          && !$this->get_runtime_options('is_stop_on_first_missing')
+        ) {
+          $filesEligibleForCompletion[] = $file;
+        }
       }
-      //If the file is empty, move it off.
-      // Note that we are not archiving files that have missing transactions,
-      // which might be resolved below. Those are archived on the next run,
-      // once we can confirm they have hit Civi and are no longer missing.
-      if ($missingCount <= $this->get_runtime_options('recon_complete_count')
-        && !$this->get_runtime_options('is_stop_on_first_missing')
-      ) {
-        $filesEligibleForCompletion[] = $file;
+      catch (\Throwable $e) {
+        // Don't let one file's problem stop the rest of this run's files
+        // from being processed.
+        $this->filesWithProcessingErrors[$file] = TRUE;
+        \Civi::log('wmf')->error('Error processing file {file}: {message}', [
+          'file' => $file,
+          'message' => $e->getMessage(),
+        ]);
       }
     }
     $this->echo($this->statistics['total_missing'] . " total missing transactions identified at start");
@@ -1511,83 +1538,98 @@ abstract class BaseAuditProcessor {
       if ($offset && $rowNumber < $offset) {
         continue;
       }
-      // Intersperse any string to differentiate between (e.g.) main paypal account & fundraise up.
-      $auditRecord = WMFAudit::audit(FALSE)
-        ->setValues($transaction)
-        ->setGatewayAccountString((string) $this->get_runtime_options('gateway_account'))
-        ->setProcessSettlement($this->get_runtime_options('settle_mode'))
-        ->setIsSaveSettlementTransaction($this->get_runtime_options('is_save_settlement_transaction'))
-        ->execute()->single();
-      $counter++;
-      $count++;
-      if (($this->get_runtime_options('progress_log_count') ?: 100000) === $counter) {
-        $this->echo('Get missing progress : ' . $count . '   seconds taken ' . (microtime(true) - $timer) . '    number of missing found : ' . (count($this->missingTransactions['main'] ?? []) + count($this->missingTransactions['negative'] ?? [])));
-        $counter = 0;
-        $timer = microtime(true);
+      $isHitRowLimit = FALSE;
+      try {
+        // Intersperse any string to differentiate between (e.g.) main paypal account & fundraise up.
+        $auditRecord = WMFAudit::audit(FALSE)
+          ->setValues($transaction)
+          ->setGatewayAccountString((string) $this->get_runtime_options('gateway_account'))
+          ->setProcessSettlement($this->get_runtime_options('settle_mode'))
+          ->setIsSaveSettlementTransaction($this->get_runtime_options('is_save_settlement_transaction'))
+          ->execute()->single();
+        $counter++;
+        $count++;
+        if (($this->get_runtime_options('progress_log_count') ?: 100000) === $counter) {
+          $this->echo('Get missing progress : ' . $count . '   seconds taken ' . (microtime(true) - $timer) . '    number of missing found : ' . (count($this->missingTransactions['main'] ?? []) + count($this->missingTransactions['negative'] ?? [])));
+          $counter = 0;
+          $timer = microtime(true);
+        }
+
+        $this->recordStatistic($auditRecord, $file);
+
+        $messageType = $auditRecord['message']['type'] ?? NULL;
+        $isHitRowLimit = ($rowLimit && $count === $rowLimit);
+        if ($auditRecord['is_missing']) {
+
+          if (!$isHitRowLimit && ($messageType === 'fee' || $messageType === 'adjustment')) {
+            // I went back and forth on pushing this into the queue consumer.
+            // These are super low volume and it felt like a contortion to get the DonationQueueConsumer
+            // to handle them.
+            Contribution::save(FALSE)
+              ->addRecord([
+                'total_amount' => 0,
+                'net_amount' => $auditRecord['message']['settled_fee_amount'],
+                'fee_amount' => -$auditRecord['message']['settled_fee_amount'],
+                'contribution_settlement.settled_fee_amount' => $auditRecord['message']['settled_fee_amount'],
+                'source' => $auditRecord['message']['settlement_batch_reference'] . ' fee ' . -$auditRecord['message']['settled_fee_amount'],
+                // We record this fee transaction against the gateway contact.
+                'contact_id' => \Civi\WMFHelper\Contact::getGatewayContactID(),
+                // fee is unique within a batch but description might be date specific.
+                'trxn_id' => strtoupper($auditRecord['message']['audit_file_gateway']) . ' ' . $auditRecord['message']['gateway_txn_id'],
+                'contribution_extra.gateway' => $auditRecord['message']['audit_file_gateway'],
+                'contribution_extra.gateway_txn_id' => $auditRecord['message']['gateway_txn_id'],
+                'receive_date' => '@' . $auditRecord['message']['settled_date'],
+                'contribution_settlement.settlement_batch_reference' => $auditRecord['message']['settlement_batch_reference'],
+                'contribution_settlement.settlement_date' => '@' . $auditRecord['message']['settled_date'],
+                'contribution_settlement.settlement_currency' => $auditRecord['message']['settled_currency'],
+                'financial_type_id:name' => ($messageType === 'adjustment') ? 'Adjustment': 'Cash',
+                'contribution_status_id:name' => ($messageType === 'adjustment') ? 'adjustment': 'Completed',
+                'payment_instrument_id:name' => 'Cash',
+              ])->setMatch(['trxn_id'])->execute();
+            continue;
+          }
+
+          if (!$isHitRowLimit && $messageType === 'aggregate') {
+            // These are totals - we track them in recordStatistic but then discard.
+            continue;
+          }
+
+          if ($this->isForceCreateTarget($auditRecord)) {
+            $this->forceCreateDonation($auditRecord['message']);
+            $this->statistics[$file]['total_queued_from_transaction_log']++;
+            $this->echo('F');
+          }
+          elseif ($this->isQueueableWithoutLogLookup($auditRecord)) {
+            $this->queueMissingAuditMessage($auditRecord['message']);
+            $this->statistics[$file]['total_queued_from_transaction_log']++;
+            $this->echo('%');
+          }
+          elseif ($this->isUnrebuildableDonation($auditRecord)) {
+            $this->queueUnrebuildableDonation($auditRecord['message']);
+            $this->statistics[$file]['total_queued_from_transaction_log']++;
+            $this->echo('+');
+          }
+          else {
+            $key = $auditRecord['is_negative'] ? 'negative' : 'main';
+            $this->missingTransactions[$key][] = $auditRecord['message'];
+          }
+          if ($this->get_runtime_options('is_stop_on_first_missing')) {
+            \Civi::log('wmf')->info('stopping on first missing', $auditRecord + ['transaction' => $transaction]);
+            break;
+          }
+        }
       }
-
-      $this->recordStatistic($auditRecord, $file);
-
-      $messageType = $auditRecord['message']['type'] ?? NULL;
-      $isHitRowLimit = ($rowLimit && $count === $rowLimit);
-      if ($auditRecord['is_missing']) {
-
-        if (!$isHitRowLimit && ($messageType === 'fee' || $messageType === 'adjustment')) {
-          // I went back and forth on pushing this into the queue consumer.
-          // These are super low volume and it felt like a contortion to get the DonationQueueConsumer
-          // to handle them.
-          Contribution::save(FALSE)
-            ->addRecord([
-              'total_amount' => 0,
-              'net_amount' => $auditRecord['message']['settled_fee_amount'],
-              'fee_amount' => -$auditRecord['message']['settled_fee_amount'],
-              'contribution_settlement.settled_fee_amount' => $auditRecord['message']['settled_fee_amount'],
-              'source' => $auditRecord['message']['settlement_batch_reference'] . ' fee ' . -$auditRecord['message']['settled_fee_amount'],
-              // We record this fee transaction against the gateway contact.
-              'contact_id' => \Civi\WMFHelper\Contact::getGatewayContactID(),
-              // fee is unique within a batch but description might be date specific.
-              'trxn_id' => strtoupper($auditRecord['message']['audit_file_gateway']) . ' ' . $auditRecord['message']['gateway_txn_id'],
-              'contribution_extra.gateway' => $auditRecord['message']['audit_file_gateway'],
-              'contribution_extra.gateway_txn_id' => $auditRecord['message']['gateway_txn_id'],
-              'receive_date' => '@' . $auditRecord['message']['settled_date'],
-              'contribution_settlement.settlement_batch_reference' => $auditRecord['message']['settlement_batch_reference'],
-              'contribution_settlement.settlement_date' => '@' . $auditRecord['message']['settled_date'],
-              'contribution_settlement.settlement_currency' => $auditRecord['message']['settled_currency'],
-              'financial_type_id:name' => ($messageType === 'adjustment') ? 'Adjustment': 'Cash',
-              'contribution_status_id:name' => ($messageType === 'adjustment') ? 'adjustment': 'Completed',
-              'payment_instrument_id:name' => 'Cash',
-            ])->setMatch(['trxn_id'])->execute();
-          continue;
-        }
-
-        if (!$isHitRowLimit && $messageType === 'aggregate') {
-          // These are totals - we track them in recordStatistic but then discard.
-          continue;
-        }
-
-        if ($this->isForceCreateTarget($auditRecord)) {
-          $this->forceCreateDonation($auditRecord['message']);
-          $this->statistics[$file]['total_queued_from_transaction_log']++;
-          $this->echo('F');
-        }
-        elseif ($this->isQueueableWithoutLogLookup($auditRecord)) {
-          $this->queueMissingAuditMessage($auditRecord['message']);
-          $this->statistics[$file]['total_queued_from_transaction_log']++;
-          $this->echo('%');
-        }
-        elseif ($this->isUnrebuildableDonation($auditRecord)) {
-          $this->queueUnrebuildableDonation($auditRecord['message']);
-          $this->statistics[$file]['total_queued_from_transaction_log']++;
-          $this->echo('+');
-        }
-        else {
-          $key = $auditRecord['is_negative'] ? 'negative' : 'main';
-          $this->missingTransactions[$key][] = $auditRecord['message'];
-        }
-        if ($this->get_runtime_options('is_stop_on_first_missing')) {
-          \Civi::log('wmf')->info('stopping on first missing', $auditRecord + ['transaction' => $transaction]);
-          break;
-        }
+      catch (\Throwable $e) {
+        // Don't let one bad row stop the rest of this file's rows from
+        // being processed - but the file itself is now a clear problem,
+        // so it must not be archived to completed this run.
+        $this->filesWithProcessingErrors[$file] = TRUE;
+        \Civi::log('wmf')->error('Error processing row {row_number} of {file}: {message}', [
+          'row_number' => $rowNumber,
+          'file' => $file,
+          'message' => $e->getMessage(),
+        ]);
+        continue;
       }
       if ($isHitRowLimit) {
         break;
@@ -1777,6 +1819,16 @@ abstract class BaseAuditProcessor {
    */
   public function getFilesHeldForVerificationFailure(): array {
     return $this->filesHeldForVerificationFailure;
+  }
+
+  /**
+   * Files where a row, or the file as a whole, threw while being
+   * processed this run.
+   *
+   * @return string[]
+   */
+  public function getFilesWithProcessingErrors(): array {
+    return array_keys($this->filesWithProcessingErrors);
   }
 
   /**

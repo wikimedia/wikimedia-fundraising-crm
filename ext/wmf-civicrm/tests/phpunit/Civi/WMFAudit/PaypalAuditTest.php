@@ -9,6 +9,7 @@ use Civi\Api4\ContributionTracking;
 use Civi\Api4\GrantTransaction;
 use Civi\Api4\TransactionLog;
 use Civi\WMFAudit\BaseAuditTestCase;
+use Civi\WMFAudit\PaypalAuditProcessor;
 use League\Csv\Exception;
 use League\Csv\Reader;
 
@@ -34,6 +35,8 @@ class PaypalAuditTest extends BaseAuditTestCase {
       '9YY111222H3050700',
       '1V06',
       '8ZZ222333H4060811',
+      'THROWROW0000001',
+      'OKROW000000000001',
     ];
     TransactionLog::delete(FALSE)
       ->addWhere('gateway_txn_id', 'IN', $transactions)->execute();
@@ -242,6 +245,62 @@ class PaypalAuditTest extends BaseAuditTestCase {
       ->execute()->single();
     $this->assertEquals('USD', $contribution['contribution_extra.original_currency']);
     $this->assertEquals(20.00, $contribution['total_amount']);
+  }
+
+  /**
+   * A row that throws while being processed must not stop the file's
+   * other rows from being processed - but the file itself must not be
+   * moved to completed, since something clearly went wrong with it.
+   */
+  public function testRowErrorDoesNotStopOtherRowsOrFile(): void {
+    $directory = 'row_processing_error';
+    $fileName = 'TRR-20260910.01.001.csv';
+    $this->prepareForAuditProcessing($directory, $fileName);
+    // Normally done by WMFAudit.Parse::_run() - replicated here since this
+    // test instantiates the processor directly to access
+    // getFilesWithProcessingErrors() after the run.
+    \CRM_SmashPig_ContextWrapper::createContext('paypal_audit', 'paypal');
+
+    $processor = new class([
+      'file' => $fileName,
+      'incoming_directory' => '',
+      'gateway_account' => '',
+      'settle_mode' => 'queue',
+      'is_move_completed_file' => FALSE,
+      'is_check_log_files' => TRUE,
+      'is_save_settlement_transaction' => FALSE,
+      'is_stop_on_first_missing' => FALSE,
+      'is_completed' => FALSE,
+      'makemissing' => FALSE,
+      'recon_complete_count' => 0,
+      'file_limit' => NULL,
+      'row_limit' => NULL,
+      'row_offset' => 0,
+      'log_search_past_days' => 7,
+      'progress_log_count' => 10000,
+      'force_create_reference' => NULL,
+    ]) extends PaypalAuditProcessor {
+      protected function queueUnrebuildableDonation(array $message): void {
+        if (($message['gateway_txn_id'] ?? NULL) === 'THROWROW0000001') {
+          throw new \RuntimeException('Simulated row failure');
+        }
+        parent::queueUnrebuildableDonation($message);
+      }
+    };
+    $processor->run();
+    $this->processQueues();
+
+    $this->assertNotEmpty($processor->getFilesWithProcessingErrors(), 'File should be flagged as having a row processing error');
+
+    $okContribution = Contribution::get(FALSE)
+      ->addWhere('contribution_extra.gateway_txn_id', '=', 'OKROW000000000001')
+      ->execute();
+    $this->assertCount(1, $okContribution, 'The other row in the same file should still have been processed');
+
+    $failedContribution = Contribution::get(FALSE)
+      ->addWhere('contribution_extra.gateway_txn_id', '=', 'THROWROW0000001')
+      ->execute();
+    $this->assertCount(0, $failedContribution, 'The throwing row should not have created a contribution');
   }
 
   /**
