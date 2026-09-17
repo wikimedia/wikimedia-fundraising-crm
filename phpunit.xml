@@ -16,6 +16,15 @@
     <testsuite name="wmf-civicrm">
       <directory>ext/wmf-civicrm/tests/phpunit</directory>
     </testsuite>
+    <testsuite name="checksum_invalidator_tests">
+      <directory>ext/checksum_invalidator/tests/phpunit</directory>
+    </testsuite>
+    <testsuite name="rip_tests">
+      <directory>ext/org.wikimedia.rip/tests/phpunit</directory>
+    </testsuite>
+    <testsuite name="thethe_tests">
+      <directory>ext/org.wikimedia.thethe/tests/phpunit</directory>
+    </testsuite>
     <testsuite name="exchange_rates tests">
       <directory>ext/exchange_rates/tests/phpunit</directory>
     </testsuite>
