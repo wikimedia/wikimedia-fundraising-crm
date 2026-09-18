@@ -36,6 +36,8 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   use Test\Api3TestTrait;
   use WMFEnvironmentTrait;
 
+  private \CRM_Core_Permission_Base $originalUserPermissionClass;
+
   /**
    * @var int
    */
@@ -131,6 +133,8 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ->execute();
     $this->setUpWMFEnvironment();
     parent::setUp();
+    // imitateAdminUser() swaps userPermissionClass, so restore it
+    $this->originalUserPermissionClass = \CRM_Core_Config::singleton()->userPermissionClass;
   }
 
   /**
@@ -234,6 +238,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     // is preferred - we should migrate the rest over.
     $this->tearDownWMFEnvironment();
     \Civi::settings()->set('debug_enabled', $this->wasDebugEnabled);
+    \CRM_Core_Config::singleton()->userPermissionClass = $this->originalUserPermissionClass;
     parent::tearDown();
     unset(\Civi::$statics['wmf_contact']);
   }
@@ -406,6 +411,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   public function testImportDuplicateAnonymous(): void {
+    $this->imitateAdminUser();
     $this->createOrganization();
     $this->ensureAnonymousUserExists();
     $data = $this->setupImport(['Contribution.contribution_extra.gateway_txn_id' => '', 'Contact.email_primary.email' => '', 'Contribution.check_number' => 123456, 'Contact.first_name' => 'Anonymous', 'Contact.last_name' => 'Anonymous']);
@@ -422,6 +428,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   public function testImportToAnonymous(): void {
+    $this->imitateAdminUser();
     $this->ensureAnonymousUserExists();
     $anonymousID = \Civi\WMFHelper\Contact::getAnonymousContactID();
 
@@ -612,6 +619,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   public function testImportIndividualFindAmongMany(): void {
+    $this->imitateAdminUser();
     $organizationID = (int) $this->createTestEntity('Contact', [
       'contact_type' => 'Organization',
       'organization_name' => 'The Firm',
@@ -1082,6 +1090,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @return void
    */
   public function testImportFidelity(): void {
+    $this->imitateAdminUser();
     // Add hook to set our donation to be current (so ContributionSoft hook fires).
     \Civi::dispatcher()->addListener('hook_civicrm_importAlterMappedRow', [__CLASS__, 'hook_importAlterMappedRow'], 300);
     $softCreditEntityData = [
@@ -1202,6 +1211,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   public function testImportBenevitySucceedAll(): void {
+    $this->imitateAdminUser();
     // Add hook to set our donation to be current (so ContributionSoft hook fires).
     \Civi::dispatcher()->addListener('hook_civicrm_importAlterMappedRow', [__CLASS__, 'hook_importAlterMappedRow'], 300);
     $this->createAllBenevityImportOrganizations();
