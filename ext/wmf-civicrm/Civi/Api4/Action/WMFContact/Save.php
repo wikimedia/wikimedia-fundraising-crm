@@ -1386,6 +1386,10 @@ class Save extends AbstractAction {
    */
   private function createPhoneConsent($contact_id) {
     if (isset($this->message['sms_opt_in']) && (bool)$this->message['sms_opt_in'] === TRUE) {
+      if (empty($this->message['phone'])) {
+        \Civi::log('wmf')->warning('No phone number provided with sms_opt_in');
+        return;
+      }
       $date = (new \DateTime('@' . $this->message['date']))->format('Y-m-d H:i:s');
       // TODO: Normalize this in the form with better UI and only pass over numbers
       ['country_code' => $countryCode, 'phone_number' => $phoneNumber] = \Civi\WMFHelper\Phone::splitUsNumber($this->message['phone']);
