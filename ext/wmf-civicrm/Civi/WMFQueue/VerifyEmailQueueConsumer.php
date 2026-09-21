@@ -120,7 +120,7 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
       \CRM_Core_BAO_LocationType::getDefault()->id,
       \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Email', 'location_type_id', 'EmailPreference')
     ])) {
-      $updatePrimaryEmail = Email::save()
+      $updatePrimaryEmail = Email::save(FALSE)
         ->addRecord([
           'contact_id' => $contact['id'],
           'email' => $newEmail,
@@ -130,7 +130,7 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
         ->execute();
     }
     else {
-      $updatePrimaryEmail = Email::update()
+      $updatePrimaryEmail = Email::update(FALSE)
         ->addWhere('email', '=', $oldEmail)
         ->addWhere('contact_id', '=', $contact['id'])
         ->setValues([

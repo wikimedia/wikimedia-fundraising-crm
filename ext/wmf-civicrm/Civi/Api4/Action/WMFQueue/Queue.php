@@ -5,6 +5,7 @@ use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\DAFGift;
 use Civi\Api4\MatchingGift;
+use Civi\Api4\StockGift;
 
 /**
  * Class to queue messages.
@@ -69,6 +70,12 @@ class Queue extends AbstractAction {
     }
     if ($this->queueName === 'DAFGift') {
       $result = DAFGift::save($this->checkPermissions)
+        ->addRecord($this->message)
+        ->execute();
+      return;
+    }
+    if ($this->queueName === 'StockGift') {
+      $result = StockGift::save($this->checkPermissions)
         ->addRecord($this->message)
         ->execute();
       return;

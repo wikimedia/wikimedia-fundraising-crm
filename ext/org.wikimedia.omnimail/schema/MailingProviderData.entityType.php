@@ -64,10 +64,15 @@ return [
       'primary_key' => TRUE,
     ],
     'mailing_identifier' => [
-      'title' => E::ts('Mailing Identifier'),
+      'title' => E::ts('Mailing'),
       'sql_type' => 'varchar(255)',
-      'input_type' => 'Text',
+      'input_type' => 'EntityRef',
       'description' => E::ts('External Reference for the mailing'),
+      'entity_reference' => [
+        'entity' => 'Mailing',
+        'key' => 'hash',
+        'fk' => FALSE,
+      ],
     ],
     'email' => [
       'title' => E::ts('Email'),

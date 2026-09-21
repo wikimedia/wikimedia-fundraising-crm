@@ -48,6 +48,22 @@ abstract class BaseAuditProcessor {
   protected array $totals = [];
 
   /**
+   * Cache of getValidBatches(), so the file-completion check in run() and
+   * the later status persisted via getBatchInformation() agree, and a
+   * mismatch only gets logged once.
+   *
+   * @var array|null
+   */
+  private ?array $validBatches = NULL;
+
+  /**
+   * @see getFilesHeldForVerificationFailure()
+   *
+   * @var string[]
+   */
+  private array $filesHeldForVerificationFailure = [];
+
+  /**
    * Number of file to parse per run, absent any incoming parameter.
    *
    * Note that 0 is equivalent to all or no limit.
@@ -631,12 +647,18 @@ abstract class BaseAuditProcessor {
     if (empty($files)) {
       return;
     }
+    // Files aren't actually moved to completed until the very end of the run
+    // (see below) - not as each one is processed - so that a later file's
+    // exception, or a batch that fails total verification, can't leave an
+    // earlier file archived out of incoming while its own batch was never
+    // confirmed / persisted as total_verified.
+    $filesEligibleForCompletion = [];
     foreach ($files as $file) {
       //parse the recon files into something relatively reasonable.
       [$parsed, $file] = $this->parseReconciliationFile($file);
       if (empty($parsed)) {
         $this->echo(__FUNCTION__ . $file . ': No transactions to find. Returning.');
-        $this->move_completed_recon_file($file);
+        $filesEligibleForCompletion[] = $file;
         continue;
       }
 
@@ -658,7 +680,7 @@ abstract class BaseAuditProcessor {
       if ($missingCount <= $this->get_runtime_options('recon_complete_count')
         && !$this->get_runtime_options('is_stop_on_first_missing')
       ) {
-        $this->move_completed_recon_file($file);
+        $filesEligibleForCompletion[] = $file;
       }
     }
     $this->echo($this->statistics['total_missing'] . " total missing transactions identified at start");
@@ -677,6 +699,8 @@ abstract class BaseAuditProcessor {
     //
     //Handle the negatives now. That way, the parent transactions will probably exist.
     $this->handleNegatives($remaining);
+
+    $this->completeEligibleFiles($filesEligibleForCompletion);
 
     //Wrap it up and put a bow on it.
     //@TODO much later: Make a fredge table for these things and dump some messages over there about what we just did.
@@ -1384,6 +1408,30 @@ abstract class BaseAuditProcessor {
   }
 
   /**
+   * Move each file to completed, unless any batch it contributed to failed
+   * total verification - in which case it's left in incoming so the next
+   * run retries it, rather than being archived while its batch is stuck
+   * unverified with nothing left to re-check it against.
+   *
+   * @param string[] $files
+   *
+   * @return void
+   */
+  protected function completeEligibleFiles(array $files): void {
+    $validBatches = $this->getValidBatches();
+    foreach ($files as $file) {
+      $fileBatchNames = array_keys($this->batches[$file] ?? []);
+      $unverified = array_diff($fileBatchNames, array_keys($validBatches));
+      if ($unverified) {
+        $this->echo("Not moving $file to completed - failed total verification for batch(es): " . implode(', ', $unverified));
+        $this->filesHeldForVerificationFailure[] = $file;
+        continue;
+      }
+      $this->move_completed_recon_file($file);
+    }
+  }
+
+  /**
    * Make sure all the directories we need are there.
    *
    * @return boolean true on success, otherwise false
@@ -1701,6 +1749,16 @@ abstract class BaseAuditProcessor {
    */
   public function getMissingDonations(): array {
     return $this->missingTransactions['main'] ?? [];
+  }
+
+  /**
+   * Files withheld from move_completed_recon_file() this run because a
+   * batch they contributed to failed total verification.
+   *
+   * @return string[]
+   */
+  public function getFilesHeldForVerificationFailure(): array {
+    return $this->filesHeldForVerificationFailure;
   }
 
   /**
@@ -2032,6 +2090,9 @@ abstract class BaseAuditProcessor {
   }
 
   public function getValidBatches(): array {
+    if ($this->validBatches !== NULL) {
+      return $this->validBatches;
+    }
     $validBatches = [];
     foreach ($this->batches as $fileName => $fileBatches) {
       foreach ($fileBatches as $batchName => $batch) {
@@ -2069,6 +2130,7 @@ abstract class BaseAuditProcessor {
         }
       }
     }
+    $this->validBatches = $validBatches;
     return $validBatches;
   }
 
