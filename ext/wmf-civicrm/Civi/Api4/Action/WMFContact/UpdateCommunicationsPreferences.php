@@ -10,6 +10,7 @@ use Civi\Api4\Email;
 use Civi\Api4\Contact;
 use Civi\Api4\Address;
 use Civi\Api4\Activity;
+use Civi\Api4\WMFContact;
 use Civi\Api4\WorkflowMessage;
 use Civi\WMFHelper\Activity as ActivityHelper;
 use Civi\WMFThankYou\From;
@@ -114,7 +115,6 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     $outcome = [];
     $snoozeValues = [];
     $contactUpdateValues = [];
-    $oldOptInValue = $contact['Communication.opt_in'] ? 1 : 0;
     $oldSnoozeDateValue = $contact['email_primary.email_settings.snooze_date'];
     $oldLanguageValue = $contact['preferred_language'];
     $oldEmailValue = $contact['email.email'];
@@ -124,52 +124,61 @@ class UpdateCommunicationsPreferences extends AbstractAction {
       ->addWhere('is_primary', '=', 1)
       ->execute();
     $isEmailUpdated = $oldEmailValue !== $this->email;
-    // 1: send email update
-    if ($this->sendEmail !== null) {
-      $newOptIn = $this->sendEmail === 'true' ? 1 : 0;
-      // if update send email, or reset snooze date
-      if ($newOptIn != $oldOptInValue || (
-          $oldSnoozeDateValue !== null && $oldSnoozeDateValue !== date("Y-m-d", strtotime("+1 day"))
-        )) {
-        // Log the send_email activity for GDPR
-        $contactUpdateValues['Communication.opt_in'] = $this->sendEmail;
-        // if No Bulk emails is set, we need to remove it
-        // (this should be removable in the future when we fix the multiple optin/out fields problem)
-        if ($this->sendEmail && $contact['is_opt_out'] === TRUE) {
-          $contactUpdateValues['is_opt_out'] = FALSE;
-        }
-        // need to set snooze_date to tomorrow, if it has set and later than tomorrow
-        // still need to check snoozeValue here in case unsubscribe request send from fallback
-        if ($oldSnoozeDateValue !== null &&
-          strtotime($oldSnoozeDateValue) > strtotime('+1 day')) {
-          $snoozeValues['email_settings.snooze_date'] = date("Y-m-d", strtotime("+1 day"));
-          $detailsMessage .= ', since current snoozeValue was ' . $oldSnoozeDateValue . ', so set snoozeValue to ' . $snoozeValues['email_settings.snooze_date'];
-        }
-        $detailsMessage .= ", opt_in from {$oldOptInValue} to {$newOptIn}";
-        $subjectParts[] = $newOptIn ? 'Opted in' : 'Opted out';
-        $optInDetail = "Email Preference Center update opt_in from {$oldOptInValue} to {$newOptIn}";
-        if ($this->sendEmail === 'true') {
-          $this->logActivity("OptIn", $optInDetail, $this->contactID);
-          $countryID = $contact['address.country_id'];
-          if ($this->country) {
-            // If they are updating their country, use the new one
-            $countries = \CRM_Core_PseudoConstant::countryIsoCode(FALSE, FALSE);
-            $newCountryID = array_search($this->country, $countries);
-            if ($newCountryID) {
-              $countryID = $newCountryID;
-            }
+    // 1: send email update.
+    // A contact can't opt in by snoozing in EPC as they only see snooze if already opted in.
+    if ($this->sendEmail === 'true') {
+      // If we are changing the email, look at this contact alone as contacts sharing the new
+      // address are handled after verification. Otherwise look at all contact with the same primary.
+      $emailable = WMFContact::bulkEmailable(FALSE);
+      $optIn = WMFContact::optIn(FALSE);
+      if ($isEmailUpdated) {
+        $emailable->setContactID($this->contactID);
+        $optIn->setContactID($this->contactID);
+      }
+      else {
+        $emailable->setEmail($this->email);
+        $optIn->setEmail($this->email);
+      }
+      // Opt in if they are not emailable, or if they have unset opt_in to record consent.
+      if (!$oldEmailValue || $contact['Communication.opt_in'] !== TRUE || !$emailable->execute()->first()) {
+        $optIn->execute();
+        $outcome['id'] = $this->contactID;
+        $subjectParts[] = 'Opted in';
+        $optInDetail = 'Email Preference Center opted in this primary email';
+        $detailsMessage .= ', opted in this primary email';
+        $this->logActivity("OptIn", $optInDetail, $this->contactID);
+        $countryID = $contact['address.country_id'];
+        if ($this->country) {
+          // If they are updating their country, use the new one
+          $countries = \CRM_Core_PseudoConstant::countryIsoCode(FALSE, FALSE);
+          $newCountryID = array_search($this->country, $countries);
+          if ($newCountryID) {
+            $countryID = $newCountryID;
           }
-          if (
-            in_array($countryID,\Civi::settings()->get('thank_you_double_opt_in_countries')) &&
-            !$this->hasDoubleOptInActivity() &&
-            !$isEmailUpdated // On email change we will send a verification email in step 5
-          ) {
-            $this->sendDoubleOptInEmail($contact);
-          }
-        } else {
-          $this->logActivity("unsubscribe", $optInDetail, $this->contactID);
+        }
+        if (
+          in_array($countryID,\Civi::settings()->get('thank_you_double_opt_in_countries')) &&
+          !$this->hasDoubleOptInActivity() &&
+          !$isEmailUpdated // On email change we will send a verification email in step 5
+        ) {
+          $this->sendDoubleOptInEmail($contact);
         }
       }
+    }
+    // Opting out is a statement of consent, not a mailability state, so it is recorded
+    // whenever it differs from what we hold - they may be unmailable for other reasons.
+    elseif ($this->sendEmail === 'false' && $contact['Communication.opt_in'] !== FALSE) {
+      $oldOptInLabel = $contact['Communication.opt_in'] === NULL ? 'unset' : 1;
+      $contactUpdateValues['Communication.opt_in'] = FALSE;
+      $subjectParts[] = 'Opted out';
+      $detailsMessage .= ", opt_in from {$oldOptInLabel} to 0";
+      $this->logActivity("unsubscribe",
+        "Email Preference Center update opt_in from {$oldOptInLabel} to 0", $this->contactID);
+    }
+    elseif ($this->sendEmail !== NULL && !isset($this->getSendEmailOptions()[$this->sendEmail])) {
+      \Civi::log('wmf')->error(
+        "Unrecognised send_email value '$this->sendEmail' in e-mail preferences message for contact $this->contactID, no opt in change recorded."
+      );
     }
 
     // 2: language update
@@ -221,6 +230,9 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     // We just need to set this value here. The omnimail_civicrm_custom hook will pick up
     // the change and queue up an API request to Acoustic to actually snooze it.
     // 4: update snoozed_date
+    // On opt in WMFContact::optIn() clears any snooze. On opt out we just leave it
+    // We don't cancel a longer snooze on another contact who shares the primary email, but
+    // that's an edge case we can ignore (worst case they are snoozed a little longer).
     if (!empty($this->snoozeDate) && $this->snoozeDate !== $oldSnoozeDateValue) {
       $snoozeValues = ['email_settings.snooze_date' => $this->snoozeDate];
       $detailsMessage .= ", snooze date from {$oldSnoozeDateValue} to $this->snoozeDate";
@@ -417,6 +429,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
     return [
       'true' => 'true',
       'false' => 'false',
+      'snooze' => 'snooze',
     ];
   }
 

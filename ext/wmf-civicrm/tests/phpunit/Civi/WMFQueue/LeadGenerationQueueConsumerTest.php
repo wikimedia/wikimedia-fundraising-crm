@@ -224,6 +224,7 @@ class LeadGenerationQueueConsumerTest extends BaseQueueTestCase {
     $this->processMessageWithoutQueuing($this->getMessage());
 
     $contacts = $this->getContactsForEmail();
+    $this->ids['Contact']['lead'] = key($contacts);
     $this->assertCount(1, $contacts);
     $contactID = key($contacts);
 

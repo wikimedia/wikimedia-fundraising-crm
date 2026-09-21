@@ -46,6 +46,42 @@ class BulkEmailableTest extends TestCase {
     $this->assertTrue($result->first());
   }
 
+  /**
+   * A non-primary copy of the address does not affect whether the address is emailable.
+   */
+  public function testBulkEmailableIgnoresSecondaryEmails() {
+    $contactID = $this->createIndividual(['email_primary.email' => 'secondary@example.com'], 'emailable');
+    $holderID = $this->createIndividual([
+      'email_primary.email' => 'their_own@example.com',
+      'is_opt_out' => TRUE,
+    ], 'secondary_holder');
+    $this->createTestEntity('Email', [
+      'contact_id' => $holderID,
+      'email' => 'secondary@example.com',
+      'is_primary' => FALSE,
+      'on_hold' => TRUE,
+      'location_type_id:name' => 'Work',
+      'email_settings.snooze_date' => date('Y-m-d', strtotime('+10 days')),
+    ], 'secondary_email');
+
+    $this->assertTrue(WMFContact::bulkEmailable()->setEmail('secondary@example.com')->execute()->first());
+    $this->assertTrue(WMFContact::bulkEmailable()->setContactID($contactID)->execute()->first());
+    // The holder's own primary is what decides their emailability.
+    $this->assertFalse(WMFContact::bulkEmailable()->setContactID($holderID)->execute()->first());
+  }
+
+  public function testBulkEmailableContactIDOnly() {
+    $contactID = $this->createIndividual(['email_primary.email' => 'contactonly@example.com'], 'emailable');
+    $optedOutID = $this->createIndividual([
+      'email_primary.email' => 'contactonly@example.com',
+      'is_opt_out' => TRUE,
+    ], 'opted_out');
+
+    $this->assertTrue(WMFContact::bulkEmailable()->setContactID($contactID)->execute()->first());
+    $this->assertFalse(WMFContact::bulkEmailable()->setContactID($optedOutID)->execute()->first());
+    $this->assertFalse(WMFContact::bulkEmailable()->setEmail('contactonly@example.com')->execute()->first());
+  }
+
   public function testBulkEmailableOptOut() {
     $contact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
@@ -79,6 +115,16 @@ class BulkEmailableTest extends TestCase {
       ->execute();
 
     $this->assertFalse($resultWithDuplicate->first(), 'Should still be false if ANY contact with that email is opted out');
+
+    // Narrowing to one contact tells us which of them is the one blocking the address.
+    $this->assertTrue(WMFContact::bulkEmailable()
+      ->setEmail('optout@example.com')
+      ->setContactID($contact2['id'])
+      ->execute()->first());
+    $this->assertFalse(WMFContact::bulkEmailable()
+      ->setEmail('optout@example.com')
+      ->setContactID($contact['id'])
+      ->execute()->first());
   }
 
   public function testBulkEmailableOptInNo() {

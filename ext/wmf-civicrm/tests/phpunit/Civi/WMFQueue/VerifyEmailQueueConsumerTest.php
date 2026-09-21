@@ -401,6 +401,155 @@ class VerifyEmailQueueConsumerTest extends BaseQueueTestCase {
   }
 
   /**
+   * An opted-in contact verifying a new email opts in other contacts with that primary email
+   * — and cancels their snooze.
+   */
+  public function testOptedInContactOptsInOtherContactsWithNewEmail(): void {
+    $this->createEmail($this->primaryEmail);
+    $otherID = $this->createIndividual([
+      'email_primary.email' => $this->newEmail,
+      'Communication.opt_in' => FALSE,
+      'is_opt_out' => TRUE,
+      'email_primary.email_settings.snooze_date' => date('Y-m-d', strtotime('+10 days')),
+    ], 'other');
+
+    $this->processMessageWithoutQueuing([
+      'contact_id' => $this->getContactID(),
+      'email' => $this->newEmail,
+      'checksum' => $this->generateValidChecksum($this->getContactID()),
+    ]);
+
+    $other = Contact::get(FALSE)
+      ->addWhere('id', '=', $otherID)
+      ->addSelect('Communication.opt_in', 'is_opt_out', 'email_primary.email_settings.snooze_date')
+      ->execute()->first();
+    $this->assertTrue($other['Communication.opt_in']);
+    $this->assertFalse($other['is_opt_out']);
+    $this->assertEquals(date('Y-m-d', strtotime('+1 day')), $other['email_primary.email_settings.snooze_date']);
+  }
+
+  /**
+   * A contact who has snoozed themselves keeps that snooze, and leaves everyone else's alone.
+   */
+  public function testSnoozedContactKeepsSnoozesOnVerification(): void {
+    $snoozeDate = date('Y-m-d', strtotime('+10 days'));
+    $this->createEmail($this->primaryEmail);
+    Email::update(FALSE)
+      ->addWhere('contact_id', '=', $this->getContactID())
+      ->addWhere('is_primary', '=', TRUE)
+      ->addValue('email_settings.snooze_date', $snoozeDate)
+      ->execute();
+    $otherID = $this->createIndividual([
+      'email_primary.email' => $this->newEmail,
+      'email_primary.email_settings.snooze_date' => $snoozeDate,
+    ], 'other');
+
+    $this->processMessageWithoutQueuing([
+      'contact_id' => $this->getContactID(),
+      'email' => $this->newEmail,
+      'checksum' => $this->generateValidChecksum($this->getContactID()),
+    ]);
+
+    $snoozeDates = Email::get(FALSE)
+      ->addWhere('contact_id', 'IN', [$this->getContactID(), $otherID])
+      ->addWhere('is_primary', '=', TRUE)
+      ->addSelect('contact_id', 'email_settings.snooze_date')
+      ->execute()->indexBy('contact_id')->column('email_settings.snooze_date');
+    $this->assertEquals($snoozeDate, $snoozeDates[$this->getContactID()]);
+    $this->assertEquals($snoozeDate, $snoozeDates[$otherID]);
+  }
+
+  /**
+   * A snooze survives the demotion of a non-default primary to a new EPC row.
+   */
+  public function testSnoozeIsCarriedToDemotedPrimary(): void {
+    $snoozeDate = date('Y-m-d', strtotime('+10 days'));
+    $this->createEmail(
+      $this->primaryEmail,
+      FALSE,
+      $this->getContactID(),
+      \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Email', 'location_type_id', 'Work')
+    );
+    Email::update(FALSE)
+      ->addWhere('contact_id', '=', $this->getContactID())
+      ->addWhere('is_primary', '=', TRUE)
+      ->addValue('email_settings.snooze_date', $snoozeDate)
+      ->execute();
+
+    $this->processMessageWithoutQueuing([
+      'contact_id' => $this->getContactID(),
+      'email' => $this->newEmail,
+      'checksum' => $this->generateValidChecksum($this->getContactID()),
+    ]);
+
+    $newPrimary = Email::get(FALSE)
+      ->addWhere('contact_id', '=', $this->getContactID())
+      ->addWhere('is_primary', '=', TRUE)
+      ->addSelect('email', 'email_settings.snooze_date')
+      ->execute()->single();
+    $this->assertEquals($this->newEmail, $newPrimary['email']);
+    $this->assertEquals($snoozeDate, $newPrimary['email_settings.snooze_date']);
+  }
+
+  /**
+   * A contact that is not opted in leaves other contacts with the new email alone.
+   */
+  public function testNotOptedInContactLeavesOtherContactsWithNewEmail(): void {
+    $this->createEmail($this->primaryEmail);
+    Contact::update(FALSE)
+      ->addWhere('id', '=', $this->getContactID())
+      ->addValue('Communication.opt_in', FALSE)
+      ->execute();
+    $otherID = $this->createIndividual([
+      'email_primary.email' => $this->newEmail,
+      'Communication.opt_in' => FALSE,
+      'is_opt_out' => TRUE,
+    ], 'other');
+
+    $this->processMessageWithoutQueuing([
+      'contact_id' => $this->getContactID(),
+      'email' => $this->newEmail,
+      'checksum' => $this->generateValidChecksum($this->getContactID()),
+    ]);
+
+    $other = Contact::get(FALSE)
+      ->addWhere('id', '=', $otherID)
+      ->addSelect('Communication.opt_in', 'is_opt_out')
+      ->execute()->first();
+    $this->assertFalse($other['Communication.opt_in']);
+    $this->assertTrue($other['is_opt_out']);
+  }
+
+  /**
+   * A contact with No Bulk Emails set leaves other contacts with the new email alone.
+   */
+  public function testOptedOutContactLeavesOtherContactsWithNewEmail(): void {
+    $this->createEmail($this->primaryEmail);
+    Contact::update(FALSE)
+      ->addWhere('id', '=', $this->getContactID())
+      ->addValue('is_opt_out', TRUE)
+      ->execute();
+    $otherID = $this->createIndividual([
+      'email_primary.email' => $this->newEmail,
+      'Communication.opt_in' => FALSE,
+      'is_opt_out' => TRUE,
+    ], 'other');
+
+    $this->processMessageWithoutQueuing([
+      'contact_id' => $this->getContactID(),
+      'email' => $this->newEmail,
+      'checksum' => $this->generateValidChecksum($this->getContactID()),
+    ]);
+
+    $other = Contact::get(FALSE)
+      ->addWhere('id', '=', $otherID)
+      ->addSelect('Communication.opt_in', 'is_opt_out')
+      ->execute()->first();
+    $this->assertFalse($other['Communication.opt_in']);
+    $this->assertTrue($other['is_opt_out']);
+  }
+
+  /**
    * Test validation rejects non-array message.
    */
   public function testValidationRejectsNonArrayMessage(): void {

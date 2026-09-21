@@ -10,6 +10,7 @@ use Civi\Api4\Email;
 use PHPUnit\Framework\TestCase;
 use Civi\Api4\Address;
 use Civi\Api4\Contact;
+use Civi\Test\EntityTrait;
 use Civi\WMFEnvironmentTrait;
 
 /**
@@ -18,6 +19,7 @@ use Civi\WMFEnvironmentTrait;
  **/
 class UpdateCommunicationsPreferencesTest extends TestCase {
   use WMFEnvironmentTrait;
+  use EntityTrait;
 
   protected $contactID;
 
@@ -144,6 +146,11 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
       ->last()['details'];
     $this->assertStringContainsString("Try to update EmailPreference email from bob.roberto@test.com to test2@example.org and send verification email.", $activityDetail2);
 
+    Contact::update(FALSE)
+      ->addWhere('id', '=', (int) $this->contactID)
+      ->addValue('is_opt_out', TRUE)
+      ->execute();
+
     // only update send_email
     WMFContact::updateCommunicationsPreferences()
       ->setEmail('test3@example.org')
@@ -156,7 +163,7 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
       ->setEmailChecksum($emailChecksum)
       ->execute();
     $contact3 = Contact::get(FALSE)->addWhere('id', '=', (int) $this->contactID)
-      ->setSelect(['preferred_language', 'Communication.opt_in'])
+      ->setSelect(['preferred_language', 'Communication.opt_in', 'is_opt_out'])
       ->execute()->first();
 
     $address3 = Address::get(FALSE)
@@ -174,6 +181,8 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
       ->first();
 
     $this->assertEquals(0, $contact3['Communication.opt_in']);
+    // Opting out must not clear No Bulk Emails.
+    $this->assertTrue($contact3['is_opt_out']);
     // others remain the same
     $this->assertEquals('pt_BR', $contact3['preferred_language']);
     $this->assertEquals('AF', $address3['country_id.iso_code']);
@@ -377,7 +386,7 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
     $this->contactID = Contact::create(FALSE)->setValues([
       'first_name' => 'Bob',
       'last_name' => 'McTest',
-      'Communication.opt_in' => 0,
+      'Communication.opt_in' => 1,
       'contact_type' => 'Individual',
       'preferred_language' => 'fr_CA',
     ])->addChain('address', Address::create(FALSE)
@@ -402,14 +411,219 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
       ->setCountry('US')
       ->setLanguage('es_US')
       ->setSnoozeDate('2035-10-21')
-      ->setSendEmail('true')
+      ->setSendEmail('snooze')
       ->execute();
 
     $contact = Contact::get(FALSE)->addWhere('id', '=', (int) $this->contactID)
-      ->setSelect(['email_primary.email_settings.snooze_date'])
+      ->setSelect(['email_primary.email_settings.snooze_date', 'Communication.opt_in'])
       ->execute()->first();
 
     $this->assertEquals('2035-10-21', $contact['email_primary.email_settings.snooze_date']);
+    $this->assertTrue($contact['Communication.opt_in']);
+  }
+
+  /**
+   * Opting in via the preference center opts in every contact sharing the primary email.
+   */
+  public function testOptInAppliesToAllContactsWithSamePrimaryEmail(): void {
+    $email = 'shared-optin@example.org';
+    $snoozeDate = date('Y-m-d', strtotime('+10 days'));
+    $contactID = $this->createIndividual([
+      'email_primary.email' => $email,
+      'email_primary.email_settings.snooze_date' => $snoozeDate,
+      'Communication.opt_in' => FALSE,
+      'is_opt_out' => TRUE,
+    ], 'opted_out');
+    $duplicateID = $this->createIndividual([
+      'email_primary.email' => $email,
+      'email_primary.email_settings.snooze_date' => $snoozeDate,
+      'Communication.opt_in' => FALSE,
+      'do_not_email' => TRUE,
+    ], 'duplicate');
+
+    WMFContact::updateCommunicationsPreferences()
+      ->setEmail($email)
+      ->setContactID($contactID)
+      ->setChecksum(\CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID))
+      ->setSendEmail('true')
+      ->execute();
+
+    $contacts = Contact::get(FALSE)
+      ->addWhere('id', 'IN', [$contactID, $duplicateID])
+      ->setSelect(['Communication.opt_in', 'is_opt_out', 'do_not_email', 'email_primary.email_settings.snooze_date'])
+      ->execute()->indexBy('id');
+    foreach ($contacts as $contact) {
+      $this->assertTrue($contact['Communication.opt_in'], "Contact {$contact['id']} opt_in");
+      $this->assertFalse($contact['is_opt_out'], "Contact {$contact['id']} is_opt_out");
+      $this->assertFalse($contact['do_not_email'], "Contact {$contact['id']} do_not_email");
+    }
+    // A snooze on any primary email stops the address being emailed, so both are shortened.
+    $this->assertEquals(date('Y-m-d', strtotime('+1 day')), $contacts[$contactID]['email_primary.email_settings.snooze_date']);
+    $this->assertEquals(date('Y-m-d', strtotime('+1 day')), $contacts[$duplicateID]['email_primary.email_settings.snooze_date']);
+  }
+
+  /**
+   * When the email is also being changed only the requesting contact is opted in.
+   */
+  public function testOptInWithEmailChangeDoesNotApplyToOtherContactsWithSameEmail(): void {
+    $email = 'shared-optin-change@example.org';
+    $contactID = $this->createIndividual([
+      'email_primary.email' => $email,
+      'Communication.opt_in' => FALSE,
+      'is_opt_out' => TRUE,
+    ], 'opted_out');
+    $duplicateID = $this->createIndividual([
+      'email_primary.email' => $email,
+      'Communication.opt_in' => FALSE,
+      'do_not_email' => TRUE,
+    ], 'duplicate');
+    WMFContact::updateCommunicationsPreferences()
+      ->setEmail('new-address@example.org')
+      ->setContactID($contactID)
+      ->setChecksum(\CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID))
+      ->setEmailChecksum(hash('sha256', $contactID))
+      ->setSendEmail('true')
+      ->execute();
+
+    $contacts = Contact::get(FALSE)
+      ->addWhere('id', 'IN', [$contactID, $duplicateID])
+      ->setSelect(['Communication.opt_in', 'is_opt_out', 'do_not_email'])
+      ->execute()->indexBy('id');
+    $this->assertTrue($contacts[$contactID]['Communication.opt_in']);
+    $this->assertFalse($contacts[$contactID]['is_opt_out']);
+    $this->assertFalse($contacts[$duplicateID]['Communication.opt_in']);
+    $this->assertTrue($contacts[$duplicateID]['do_not_email']);
+  }
+
+  /**
+   * An already opted in contact opting in again opts in others sharing the primary email and adds an activity.
+   */
+  public function testOptedInContactOptsInOtherContactsWithSamePrimaryEmail(): void {
+    $email = 'shared-optin-note@example.org';
+    $contactID = $this->createIndividual([
+      'email_primary.email' => $email,
+      'Communication.opt_in' => TRUE,
+    ], 'opted_in');
+    $otherID = $this->createIndividual([
+      'email_primary.email' => $email,
+      'Communication.opt_in' => FALSE,
+      'is_opt_out' => TRUE,
+      'email_primary.email_settings.snooze_date' => date('Y-m-d', strtotime('+10 days')),
+    ], 'other');
+
+    $this->optInViaPreferenceCenter($contactID, $email);
+
+    $other = Contact::get(FALSE)
+      ->addWhere('id', '=', $otherID)
+      ->setSelect(['Communication.opt_in', 'is_opt_out', 'email_primary.email_settings.snooze_date'])
+      ->execute()->first();
+    $this->assertTrue($other['Communication.opt_in']);
+    $this->assertFalse($other['is_opt_out']);
+    $this->assertEquals(date('Y-m-d', strtotime('+1 day')), $other['email_primary.email_settings.snooze_date']);
+    $details = $this->getActivity($contactID, 'OptIn')['details'];
+    $this->assertStringContainsString('opted in this primary email', $details);
+    $this->assertStringNotContainsString('opt_in from', $details);
+  }
+
+  /**
+   * An opted in contact whose primary email is not shared with an opted out contact gets no activity.
+   *
+   * An expired snooze date is not an opt in change, so it does not trigger one.
+   */
+  public function testOptedInContactWithNoOptedOutSharersGetsNoActivity(): void {
+    $email = 'unshared-optin@example.org';
+    $contactID = $this->createIndividual([
+      'email_primary.email' => $email,
+      'Communication.opt_in' => TRUE,
+      'email_primary.email_settings.snooze_date' => date('Y-m-d', strtotime('-10 days')),
+    ], 'opted_in');
+
+    $this->optInViaPreferenceCenter($contactID, $email);
+
+    $this->assertCount(0, Activity::get(FALSE)
+      ->addWhere('source_contact_id', '=', $contactID)
+      ->addWhere('activity_type_id:name', '=', 'OptIn')
+      ->execute());
+  }
+
+  /**
+   * A contact with no opt in value is opted in and gets an activity changing from unset.
+   */
+  public function testUnsetContactIsOptedIn(): void {
+    $email = 'unset-optin@example.org';
+    $contactID = $this->createIndividual(['email_primary.email' => $email], 'unset');
+
+    $this->optInViaPreferenceCenter($contactID, $email);
+
+    $contact = Contact::get(FALSE)
+      ->addWhere('id', '=', $contactID)
+      ->setSelect(['Communication.opt_in'])
+      ->execute()->first();
+    $this->assertTrue($contact['Communication.opt_in']);
+    $this->assertStringContainsString('opted in this primary email', $this->getActivity($contactID, 'OptIn')['details']);
+  }
+
+  /**
+   * A contact with no opt in value is opted out and gets an activity changing from unset.
+   */
+  public function testUnsetContactIsOptedOut(): void {
+    $email = 'unset-optout@example.org';
+    $contactID = $this->createIndividual(['email_primary.email' => $email], 'unset');
+
+    WMFContact::updateCommunicationsPreferences()
+      ->setEmail($email)
+      ->setContactID($contactID)
+      ->setChecksum(\CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID))
+      ->setSendEmail('false')
+      ->execute();
+
+    $contact = Contact::get(FALSE)
+      ->addWhere('id', '=', $contactID)
+      ->setSelect(['Communication.opt_in'])
+      ->execute()->first();
+    $this->assertFalse($contact['Communication.opt_in']);
+    $this->assertStringContainsString('opt_in from unset to 0', $this->getActivity($contactID, 'unsubscribe')['details']);
+  }
+
+  /**
+   * Opting in from a double opt-in country sends the double opt-in email.
+   */
+  public function testOptInSendsDoubleOptInEmail(): void {
+    $doubleOptInCountries = \Civi::settings()->get('thank_you_double_opt_in_countries');
+    if (empty($doubleOptInCountries)) {
+      $this->markTestSkipped('No countries configured for double opt-in');
+    }
+    $email = 'double-optin@example.org';
+    $contactID = $this->createIndividual([
+      'email_primary.email' => $email,
+      'Communication.opt_in' => FALSE,
+      'address_primary.country_id' => $doubleOptInCountries[0],
+    ], 'double_opt_in');
+
+    $this->optInViaPreferenceCenter($contactID, $email);
+
+    $sentEmail = Activity::get(FALSE)
+      ->addWhere('source_contact_id', '=', $contactID)
+      ->addWhere('activity_type_id:name', '=', 'Email')
+      ->addSelect('Email.Workflow')
+      ->execute()->single();
+    $this->assertEquals('double_opt_in', $sentEmail['Email.Workflow']);
+  }
+
+  private function optInViaPreferenceCenter(int $contactID, string $email): void {
+    WMFContact::updateCommunicationsPreferences()
+      ->setEmail($email)
+      ->setContactID($contactID)
+      ->setChecksum(\CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID))
+      ->setSendEmail('true')
+      ->execute();
+  }
+
+  private function getActivity(int $contactID, string $type): array {
+    return Activity::get(FALSE)
+      ->addWhere('source_contact_id', '=', $contactID)
+      ->addWhere('activity_type_id:name', '=', $type)
+      ->execute()->single();
   }
 
 }

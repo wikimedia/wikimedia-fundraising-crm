@@ -6,6 +6,7 @@ use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Activity;
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
+use Civi\Api4\WMFContact;
 use Civi\WMFHelper\Activity as ActivityHelper;
 
 /**
@@ -87,6 +88,11 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
       ->addSelect('email_primary.id')
       ->addSelect('address_primary.country_id')
       ->addSelect('email_primary.location_type_id')
+      ->addSelect('Communication.opt_in')
+      ->addSelect('Communication.do_not_solicit')
+      ->addSelect('is_opt_out')
+      ->addSelect('do_not_email')
+      ->addSelect('email_primary.email_settings.snooze_date')
       ->execute()
       ->first();
   }
@@ -120,12 +126,15 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
       \CRM_Core_BAO_LocationType::getDefault()->id,
       \CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_Email', 'location_type_id', 'EmailPreference')
     ])) {
+      // Carry the snooze over so a new primary row does not silently un-snooze them
       $updatePrimaryEmail = Email::save(FALSE)
+        ->setMatch(['contact_id', 'email', 'location_type_id'])
         ->addRecord([
           'contact_id' => $contact['id'],
           'email' => $newEmail,
           'is_primary' => TRUE,
-          'location_type_id:name' => 'EmailPreference'
+          'location_type_id:name' => 'EmailPreference',
+          'email_settings.snooze_date' => $contact['email_primary.email_settings.snooze_date'],
         ])
         ->execute();
     }
@@ -171,6 +180,22 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
           ->addValue('activity_type_id:name', 'Double Opt-In')
           ->execute();
       }
+    }
+
+    // If we are verifying an email for a contact who is emailable, then make sure
+    // any other contact sharing that primary email gets opted in too (and un-snoozed).
+    // If the contact is snoozed, then we don't touch any snoozes.
+    if ($contact['Communication.opt_in'] !== FALSE
+      && !$contact['is_opt_out']
+      && !$contact['do_not_email']
+      && !$contact['Communication.do_not_solicit']
+    ) {
+      $snoozeDate = $contact['email_primary.email_settings.snooze_date'];
+      $isSnoozed = $snoozeDate && strtotime($snoozeDate) > strtotime('+1 day');
+      WMFContact::optIn(FALSE)
+        ->setEmail($newEmail)
+        ->setCheckSnooze(!$isSnoozed)
+        ->execute();
     }
   }
 }
