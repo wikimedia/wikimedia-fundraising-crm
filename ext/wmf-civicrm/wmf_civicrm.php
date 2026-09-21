@@ -590,6 +590,18 @@ function wmf_civicrm_civicrm_pageRun(CRM_Core_Page $page) {
   if (in_array($pageClass, $ctPages)) {
     Civi::service('angularjs.loader')->addModules('afsearchContributionTracking');
   }
+  if ($pageClass === 'CRM_Contact_Page_View_Summary') {
+    $countUrl = CRM_Utils_System::url('civicrm/contact/zendesk/count', ['cid' => $page->getContactID()], FALSE, NULL, FALSE);
+    CRM_Core_Resources::singleton()->addScript("
+      CRM.$(function($) {
+        $.getJSON(" . json_encode($countUrl) . ").done(function(data) {
+          if (data.count !== null) {
+            CRM.tabHeader.updateCount('#tab_zendesk', data.count);
+          }
+        });
+      });
+    ");
+  }
   ProfileDynamic::pageRun($page);
   // Only add the markup to the contribution page
   if ($pageClass === 'CRM_Contribute_Page_Tab') {

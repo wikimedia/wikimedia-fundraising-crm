@@ -1,4 +1,9 @@
 <div id="changeLog" class="view-content">
+  {if isset($zendeskError)}
+    <div class="messages status no-popup">
+      {$zendeskError}
+    </div>
+  {else}
   <h3 style="margin: 0px 0px 10px 0px;">Open Tickets</h3>
   {if isset($openTickets) && count($openTickets) > 0}
     <div class="form-item">
@@ -57,5 +62,6 @@
     <div class="messages status no-popup">
       {ts}No resolved tickets{/ts}
     </div>
+  {/if}
   {/if}
 </div>

@@ -2,56 +2,83 @@
 
 use CRM_Wmf_ExtensionUtil as E;
 use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Exception\GuzzleException;
 
 class CRM_Wmf_Page_Zendesk extends CRM_Core_Page {
 
   public function run() {
-    $zendesk_api_user = Civi::settings()->get('zendesk_api_user');
-    $zendesk_api_password = Civi::settings()->get('zendesk_api_password');
     $zendeskURL = Civi::settings()->get('zendesk_url');
     $ticketURLPrefix = "{$zendeskURL}/agent/tickets/";
     $this->assign('ticketURLPrefix', $ticketURLPrefix);
 
-    // retrieve contact email
-    $contact_id = CRM_Utils_Request::retrieve('cid', 'Integer');
-    list($displayName, $contactEmail) = CRM_Contact_BAO_Contact_Location::getEmailDetails($contact_id);
-
-    // set up API client
-    $zendeskApiClient = new Client();
-    $requestAuthHeaders = $this->getApiAuthHeaders($zendesk_api_user, $zendesk_api_password);
-
-    // fetch Zendesk open ticket data via API
-    $openTicketSearchParams = "requester:{$contactEmail} status<solved";
-    $openTicketsRequest = new Request('GET', "{$zendeskURL}/api/v2/search.json?query=$openTicketSearchParams", $requestAuthHeaders);
-    $openTicketsResponse = $zendeskApiClient->sendAsync($openTicketsRequest)->wait();
-    $openTickets = json_decode($openTicketsResponse->getBody(), TRUE);
-    if ($openTickets['count'] > 0) {
-      $this->assign('openTickets', $openTickets['results']);
+    $contact_id = CRM_Utils_Request::retrieve('cid', 'Positive', NULL, TRUE);
+    if (!$this->isConfigured()) {
+      return parent::run();
+    }
+    $requesterQuery = $this->getRequesterQuery($contact_id);
+    if (!$requesterQuery) {
+      return parent::run();
     }
 
-    // fetch Zendesk closed ticket data via API
-    $closedTicketSearchParams = "requester:{$contactEmail} status>=solved";
-    $closedTicketsRequest = new Request('GET', "{$zendeskURL}/api/v2/search.json?query=$closedTicketSearchParams", $requestAuthHeaders);
-    $closedTicketsResponse = $zendeskApiClient->sendAsync($closedTicketsRequest)->wait();
-    $closedTickets = json_decode($closedTicketsResponse->getBody(), TRUE);
-    if ($closedTickets['count'] > 0) {
-      $this->assign('closedTickets', $closedTickets['results']);
+    $zendeskApiClient = $this->getApiClient();
+
+    try {
+      // fetch Zendesk open ticket data via API, unless recently counted as zero
+      if (Civi::cache('long')->get("zendesk_open_count_$contact_id") !== 0) {
+        $openTicketsResponse = $zendeskApiClient->get('/api/v2/search.json', ['query' => ['query' => "$requesterQuery status<solved"]]);
+        $openTickets = json_decode($openTicketsResponse->getBody(), TRUE);
+        if ($openTickets['count'] > 0) {
+          $this->assign('openTickets', $openTickets['results']);
+        }
+      }
+
+      // fetch Zendesk closed ticket data via API
+      $closedTicketsResponse = $zendeskApiClient->get('/api/v2/search.json', ['query' => ['query' => "$requesterQuery status>=solved"]]);
+      $closedTickets = json_decode($closedTicketsResponse->getBody(), TRUE);
+      if ($closedTickets['count'] > 0) {
+        $this->assign('closedTickets', $closedTickets['results']);
+      }
+    }
+    catch (GuzzleException $e) {
+      $this->assign('zendeskError', E::ts('Cannot connect to Zendesk API: %1', [1 => $e->getMessage()]));
     }
 
     parent::run();
   }
 
   /**
-   * @param string $zendesk_api_user
-   * @param string $zendesk_api_password
-   *
-   * @return array
+   * Don't query the Zendesk api if the settings are at their default value.
    */
-  protected function getApiAuthHeaders(string $zendesk_api_user, string $zendesk_api_password): array {
-    return [
-      'Authorization' => 'Basic ' . base64_encode("$zendesk_api_user:$zendesk_api_password"),
-    ];
+  protected function isConfigured(): bool {
+    $settings = Civi::settings();
+    return $settings->get('zendesk_api_user') !== $settings->getDefault('zendesk_api_user')
+      && $settings->get('zendesk_api_password') !== $settings->getDefault('zendesk_api_password');
+  }
+
+  protected function getApiClient(): Client {
+    $settings = Civi::settings();
+    return new Client([
+      'base_uri' => $settings->get('zendesk_url'),
+      'auth' => [$settings->get('zendesk_api_user'), $settings->get('zendesk_api_password')],
+      'timeout' => 10,
+    ]);
+  }
+
+  /**
+   * Zendesk search ORs repeated keywords, so this matches any of the contact's emails.
+   */
+  protected function getRequesterQuery(int $contactId): string {
+    $emails = \Civi\Api4\Email::get(FALSE)
+      ->addSelect('email')
+      ->addWhere('contact_id', '=', $contactId)
+      ->addWhere('email', 'IS NOT EMPTY')
+      ->execute()
+      ->column('email');
+    $emails = array_unique($emails);
+    if (!$emails) {
+      return '';
+    }
+    return 'requester:' . implode(' requester:', $emails);
   }
 
 }

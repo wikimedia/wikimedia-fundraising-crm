@@ -19,6 +19,12 @@
     <access_arguments>access CiviCRM</access_arguments>
   </item>
   <item>
+    <path>civicrm/contact/zendesk/count</path>
+    <page_callback>CRM_Wmf_Page_ZendeskCount</page_callback>
+    <title>Zendesk Open Ticket Count</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
     <path>civicrm/wmf/edit-cancel-reason</path>
     <page_callback>CRM_Wmf_Form_EditCancelReason</page_callback>
     <title>Edit Recurring Cancel Reason</title>
