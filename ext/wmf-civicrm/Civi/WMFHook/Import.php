@@ -90,12 +90,12 @@ class Import {
 
     // Temp handling to set all contributions from SK batch import to major gift, if not set, April 2026
     // To be removed once we have resolved https://phabricator.wikimedia.org/T422221
-    if ($this->context === 'import' && $this->importType === 'contribution_import_searchkit') {
+    if (!$this->isValidateMode() && $this->importType === 'contribution_import_searchkit') {
       $this->mappedRow['Contribution']['Gift_Data.is_major_gift'] = $this->mappedRow['Contribution']['Gift_Data.is_major_gift'] ?? TRUE;
     }
 
     // Tweaks to apply during import only.
-    if ($this->context === 'import' && $this->importType === 'contribution_import') {
+    if (!$this->isValidateMode() && $this->importType === 'contribution_import') {
         // If we have imported a contribution ID, we are updating an existing contribution
       // and we need to not overwrite existing data.
       $createMode = empty($this->mappedRow['Contribution']['id']);
@@ -457,7 +457,7 @@ class Import {
    * @return void
    */
   private function inValidateModeDoNotRequireTotalAmount(): void {
-    if ($this->context === 'validate' && empty($this->mappedRow['Contribution']['total_amount']) &&
+    if ($this->isValidateMode() && empty($this->mappedRow['Contribution']['total_amount']) &&
       // Currency should be mapped - even if just as a default but this check is arguably not needed.
       !empty($this->mappedRow['Contribution']['contribution_extra.original_currency'])
       // Note for Benevity this could be set to 0 - because Benevity is special...
@@ -777,6 +777,13 @@ class Import {
     }
     // ie Other offline, workplace giving, planned giving etc.
     return TRUE;
+  }
+
+  /**
+   * @return bool
+   */
+  protected function isValidateMode(): bool {
+    return $this->context === 'validate';
   }
 
 }

@@ -41,6 +41,7 @@ class VerifySnooze extends AbstractAction {
     $snoozedEmails = Email::get(FALSE)
       ->addSelect('email', 'id', 'contact_id', 'email_settings.snooze_date')
       ->addWhere('email_settings.snooze_date', '>', gmdate('Y-m-d H:i:s', strtotime('+1 day')))
+      ->addWhere('is_primary', '=', TRUE)
       ->addChain('emailable', WMFContact::bulkEmailable()->setEmail('$email')->setCheckSnooze(FALSE))
       ->execute();
     foreach ($snoozedEmails as $snoozedEmail) {

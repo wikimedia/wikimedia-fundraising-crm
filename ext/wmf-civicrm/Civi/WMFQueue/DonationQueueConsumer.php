@@ -287,14 +287,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
     \Civi::log('wmf')->info('wmf_civicrm_import: Attempting to insert new recurring subscription: {recurring_transaction_id}', ['recurring_transaction_id' => $message->getSubscriptionID() ?: $msg['gateway_txn_id']]);
     $msg['cancel'] = isset($msg['cancel']) ? (integer) $msg['cancel'] : 0;
 
-    // For Gravy PayPal transactions, use the recurring_payment_token as the subscription ID
-    // instead of the gateway_txn_id. This is a workaround as Gravy only sends us the
-    // recurring_payment_token in related webhooks so to allow us to match them up we use the
-    // same ID as the civicrm_contribution_recur.trxn_id. See T399868
-    if ($message->isGravyPaypal() && !empty($msg['recurring_payment_token'])) {
-      $gateway_subscr_id = $msg['recurring_payment_token'];
-    }
-    elseif ($message->getSubscriptionID()) {
+    if ($message->getSubscriptionID()) {
       $gateway_subscr_id = $message->getSubscriptionID();
     }
     elseif (!empty($msg['gateway_txn_id'])) {
