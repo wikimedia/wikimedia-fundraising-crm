@@ -196,6 +196,20 @@ function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermission
         'continueOnError' => TRUE,
       ],
     ];
+    $tasks['Batch']['confirm'] = [
+      'title' => E::ts('Confirm'),
+      'icon' => 'fa-check',
+      'apiBatch' => [
+        'action' => 'update',
+        'params' => [
+          'values' => ['status_id:name' => 'total_verified'],
+        ],
+        'confirmMsg' => E::ts('Confirm %1 %2 as verified?'),
+        'runMsg' => E::ts('Confirming %1 %2...'),
+        'successMsg' => E::ts('Successfully confirmed %1 %2.'),
+        'errorMsg' => E::ts('An error occurred while attempting to confirm %1 %2.'),
+      ],
+    ];
     $tasks['PaymentAttempt']['label'] = [
       'title' => ts('Label as fraud'),
       'entity' => 'PaymentAttempt',
