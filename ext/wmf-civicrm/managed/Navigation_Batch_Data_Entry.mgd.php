@@ -26,6 +26,7 @@ return [
         'label' => 'Stock Batch Data Entry',
         'name' => 'Stock Batch Data Entry',
         'url' => '/civicrm/search#/display/Batch_entry_Stock_/Data_entry_screen_WMF_DAF_copy_',
+        'icon' => 'crm-i fa-line-chart',
         'permission' => [
           'access CiviCRM',
         ],
@@ -49,6 +50,7 @@ return [
         'label' => 'General Batch Data Entry',
         'name' => 'General Batch Data Entry',
         'url' => '/civicrm/search#/display/Batch_entry_General_/Batch_entry_General_',
+        'icon' => 'crm-i fa-keyboard-o',
         'permission' => [
           'access CiviCRM',
         ],
