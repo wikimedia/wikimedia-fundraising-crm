@@ -3,6 +3,7 @@
 namespace Civi\WMF;
 
 use Civi\Api4\Address;
+use Civi\Api4\Batch;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionSoft;
@@ -190,6 +191,16 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
+   * @param int|string $column
+   *
+   * @return string
+   */
+  public function getFieldName(int|string $column): string {
+    $fieldName = substr(str_replace('.', '__', strtolower($column)), 0, 64);
+    return $fieldName;
+  }
+
+  /**
    * Clean up after test.
    *
    * @throws DBQueryException
@@ -202,6 +213,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     if ($this->userJobID) {
       UserJob::delete(FALSE)->addWhere('id', '=', $this->userJobID)->execute();
     }
+    Batch::delete(FALSE)->addWhere('name', 'LIKE', '%wire_batch_%')->execute();
     $this->cleanupContact(['organization_name' => 'Nice Family Fund']);
     $this->cleanupContact(['organization_name' => 'Kind Family Charitable Fund']);
     $this->cleanupContact(['organization_name' => 'Generous Family Fund']);
@@ -611,6 +623,167 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
+   * A contribution import row carrying a settlement batch reference and a
+   * recognised gateway_account should have the reference fixed up to
+   * combine the account name, the raw reference and the currency - but no
+   * Batch record is created or touched by this at all.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testSettlementBatchReferenceFixedUpWithGatewayAccount(): void {
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'email_primary.email' => 'jane.settlement@example.com',
+    ], 'individual_1');
+
+    $data = $this->setupImport([
+      'Contribution.invoice_id' => 'settle1',
+      'Contribution.contribution_extra.gateway_account' => 'wire',
+      'Contribution.contribution_settlement.settlement_batch_reference' => '123',
+      'Contribution.total_amount' => '45',
+      'Contribution.contact_id' => $this->ids['Contact']['individual_1'],
+    ]);
+    $this->runImport($data, 'Individual');
+
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('invoice_id', '=', 'settle1')
+      ->addSelect('contribution_settlement.settlement_batch_reference', 'contribution_settlement.settlement_currency')
+      ->execute()->single();
+    $this->assertEquals('wire_123_USD', $contribution['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals('USD', $contribution['contribution_settlement.settlement_currency']);
+  }
+
+  /**
+   * Picking a specific gateway account (rather than a plain gateway) is
+   * enough on its own to derive the base gateway (backfilled onto the
+   * contribution) as well as the identifier used to fix up the reference.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testSettlementBatchDerivesGatewayFromGatewayAccount(): void {
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'email_primary.email' => 'jane.endowment@example.com',
+    ], 'individual_1');
+    $inputReference = 'wire_batch_123';
+
+    $data = $this->setupImport([
+      'Contribution.contribution_extra.gateway_txn_id' => 'settle_endow',
+      'Contribution.contribution_extra.gateway_account' => 'wireendowment',
+      'Contribution.contribution_settlement.settlement_batch_reference' => $inputReference,
+      'Contribution.contribution_settlement.settled_donation_amount' => '45',
+      'Contribution.total_amount' => '45',
+      'Contribution.contact_id' => $this->ids['Contact']['individual_1'],
+    ]);
+    $this->runImport($data, 'Individual');
+
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('trxn_id', 'LIKE', '%settle_endow%')
+      ->addSelect('contribution_extra.gateway', 'contribution_settlement.settlement_batch_reference')
+      ->execute()->single();
+    $this->assertEquals('wire', $contribution['contribution_extra.gateway']);
+    $this->assertEquals('wireendowment_' . $inputReference . '_USD', $contribution['contribution_settlement.settlement_batch_reference']);
+  }
+
+  /**
+   * Imports not yet migrated to populate gateway_account don't have enough
+   * to build a reference from - the fix-up only ever keys off
+   * gateway_account, so a plain contribution_extra.gateway alone leaves
+   * the reference exactly as entered.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testSettlementReferenceUnchangedWithoutGatewayAccount(): void {
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'email_primary.email' => 'jane.unmigrated@example.com',
+    ], 'individual_1');
+
+    $data = $this->setupImport([
+      'Contribution.invoice_id' => 'unmigrated1',
+      'Contribution.contribution_extra.gateway' => 'adyen',
+      'Contribution.contribution_settlement.settlement_batch_reference' => '789',
+      'Contribution.total_amount' => '45',
+      'Contribution.contact_id' => $this->ids['Contact']['individual_1'],
+    ]);
+    $this->runImport($data, 'Individual');
+
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('invoice_id', '=', 'unmigrated1')
+      ->addSelect('contribution_settlement.settlement_batch_reference')
+      ->execute()->single();
+    $this->assertEquals('789', $contribution['contribution_settlement.settlement_batch_reference']);
+  }
+
+  /**
+   * An unrecognised gateway_account (not a real GatewayAccount.name)
+   * leaves the reference untouched - we're not yet throwing for this,
+   * just declining to guess.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testSettlementReferenceUnchangedWithUnrecognisedGatewayAccount(): void {
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'email_primary.email' => 'jane.noviablegateway@example.com',
+    ], 'individual_1');
+
+    $data = $this->setupImport([
+      'Contribution.invoice_id' => 'noviable1',
+      'Contribution.contribution_extra.gateway_account' => 'not_a_real_account',
+      'Contribution.contribution_settlement.settlement_batch_reference' => '789',
+      'Contribution.total_amount' => '45',
+      'Contribution.contact_id' => $this->ids['Contact']['individual_1'],
+    ]);
+    $this->runImport($data, 'Individual');
+
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('invoice_id', '=', 'noviable1')
+      ->addSelect('contribution_settlement.settlement_batch_reference')
+      ->execute()->single();
+    $this->assertEquals('789', $contribution['contribution_settlement.settlement_batch_reference']);
+  }
+
+  /**
+   * Falls back to Gift_Information.import_batch_number for the raw
+   * reference value when contribution_settlement.settlement_batch_reference
+   * itself is empty.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testSettlementReferenceFallsBackToImportBatchNumber(): void {
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'email_primary.email' => 'jane.importbatchnumber@example.com',
+    ], 'individual_1');
+
+    $data = $this->setupImport([
+      'Contribution.invoice_id' => 'importbatchnum1',
+      'Contribution.contribution_extra.gateway_account' => 'wire',
+      'Contribution.Gift_Information.import_batch_number' => '999',
+      'Contribution.total_amount' => '45',
+      'Contribution.contact_id' => $this->ids['Contact']['individual_1'],
+    ]);
+    $this->runImport($data, 'Individual');
+
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('invoice_id', '=', 'importbatchnum1')
+      ->addSelect('contribution_settlement.settlement_batch_reference')
+      ->execute()->single();
+    $this->assertEquals('wire_999_USD', $contribution['contribution_settlement.settlement_batch_reference']);
+  }
+
+  /**
    * Test when there are multiple individual matches.
    *
    * If there are 2 employed individuals with the same name then
@@ -716,7 +889,8 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   protected function createImportTable($columns = []): void {
     $fieldSql = [];
     foreach (array_keys($columns) as $column) {
-      $fieldSql[] = '`' . str_replace('.', '__', strtolower($column)) . '` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL';
+      $fieldName = $this->getFieldName($column);
+      $fieldSql[] = '`' . $fieldName . '` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL';
     }
     \CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS civicrm_tmp_d_abc');
     \CRM_Core_DAO::executeQuery('CREATE TABLE civicrm_tmp_d_abc (
@@ -1058,7 +1232,11 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws DBQueryException
    */
   protected function fillImportRow($columns): void {
-    \CRM_Core_DAO::executeQuery('INSERT INTO civicrm_tmp_d_abc (' . str_replace('.', '__', implode(',', array_keys($columns))) . ') ' . $this->getSelectQuery($columns));
+    $fieldNames = [];
+    foreach (array_keys($columns) as $column) {
+      $fieldNames[] = $this->getFieldName($column);
+    }
+    \CRM_Core_DAO::executeQuery('INSERT INTO civicrm_tmp_d_abc (' . str_replace('.', '__', implode(',', $fieldNames)) . ') ' . $this->getSelectQuery($columns));
   }
 
   /**

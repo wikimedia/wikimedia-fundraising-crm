@@ -91,7 +91,7 @@ class FinanceBatchReferenceSpecProvider implements Generic\SpecProviderInterface
     $return = [];
     $batches = Batch::get(FALSE)
       ->addSelect('*', 'mode_id:name')
-      ->addWhere('mode_id:name', '=', 'Automatic Batch')
+      ->addWhere('mode_id:name', 'IN', ['Automatic Batch', 'Manual Batch'])
       ->execute();
     foreach ($batches as $batch) {
       if ($returnFormat === TRUE) {
