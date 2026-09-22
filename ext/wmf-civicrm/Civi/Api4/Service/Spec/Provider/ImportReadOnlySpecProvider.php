@@ -33,6 +33,14 @@ class ImportReadOnlySpecProvider implements Generic\SpecProviderInterface {
       $usage = $field->getUsage();
       $usage[] = 'import';
       $field->setUsage($usage);
+      // These fields are marked is_view (readonly) since they're normally
+      // code-managed - but it's appropriate to manually enter them when
+      // importing / batch data editing (see AbstractRunAction::getEditableInfo()),
+      // readonly not enforced on write anyway, so this only affects
+      // whether a UI shows an editable input, not what can be saved.
+      if ($spec->getAction() === 'create') {
+        $field->setReadonly(FALSE);
+      }
     }
   }
 
