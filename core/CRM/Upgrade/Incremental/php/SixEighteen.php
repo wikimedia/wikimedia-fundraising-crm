@@ -128,6 +128,28 @@ class CRM_Upgrade_Incremental_php_SixEighteen extends CRM_Upgrade_Incremental_Ba
   public static function addCurrencyFk($ctx, $entityName, $fieldName): bool {
     $tableName = Civi::entity($entityName)->getMeta('table');
 
+    // dev/core#6701 Ensure that there are no zero date issues when altering table to add FK on currency
+    $sqlModes = CRM_Utils_SQL::getSqlModes();
+    if (in_array('NO_ZERO_DATE', $sqlModes)) {
+      CRM_Utils_Sql::setSqlModes(array_diff($sqlModes, ['NO_ZERO_DATE']));
+      $fields = Civi::entity($entityName)->getFields();
+      foreach ($fields as $sqlFieldName => $field) {
+        if ($field['sql_type'] === 'datetime') {
+          $check = CRM_Core_DAO::singleValueQuery("SELECT count(id) FROM `$tableName` WHERE `$sqlFieldName` = '0000-00-00 00:00:00'");
+          if (!empty($check)) {
+            // If the field is required it will be set to NOT NULL so set it to be today otherwise set the value to be NULL
+            if ($field['required']) {
+              CRM_Core_DAO::executeQuery("UPDATE `$tableName` SET `$sqlFieldName` =  NOW() WHERE `$sqlFieldName` = '0000-00-00 00:00:00'");
+            }
+            else {
+              CRM_Core_DAO::executeQuery("UPDATE `$tableName` SET `$sqlFieldName` =  NULL WHERE `$sqlFieldName` = '0000-00-00 00:00:00'");
+            }
+          }
+        }
+      }
+      CRM_Utils_Sql::setSqlModes($sqlModes);
+    }
+
     // Safety check, remove any invalid currency
     CRM_Core_DAO::executeQuery("UPDATE `$tableName` SET `$fieldName` = NULL WHERE `$fieldName` IS NOT NULL AND `$fieldName` NOT IN (SELECT `name` FROM `civicrm_currency`)", i18nRewrite: FALSE);
 
@@ -138,7 +160,6 @@ class CRM_Upgrade_Incremental_php_SixEighteen extends CRM_Upgrade_Incremental_Ba
         'on_delete' => 'SET NULL',
       ],
     ]);
-
     return TRUE;
   }
 
@@ -148,6 +169,38 @@ class CRM_Upgrade_Incremental_php_SixEighteen extends CRM_Upgrade_Incremental_Ba
     // ensure `contact_names` index is added (no op if FTS is disable)
     self::createMissingFtsIndices();
 
+    return TRUE;
+  }
+
+  /**
+   * Upgrade step; adds tasks including 'runSql'.
+   *
+   * @param string $rev
+   *   The version number matching this function name
+   */
+  public function upgrade_6_18_beta2($rev): void {
+    $this->addTask('Decode Mailing.template_options HTML entities', 'decodeMailingTemplateOptions');
+  }
+
+  public static function decodeMailingTemplateOptions(CRM_Queue_TaskContext $ctx): bool {
+    $coder = CRM_Utils_API_HTMLInputCoder::singleton();
+    $dao = CRM_Core_DAO::executeQuery("
+      SELECT id, template_options
+      FROM civicrm_mailing
+      WHERE template_options LIKE '%&lt;%' OR template_options LIKE '%&gt;%'
+    ");
+
+    while ($dao->fetch()) {
+      $options = CRM_Core_DAO::unSerializeField($dao->template_options, CRM_Core_DAO::SERIALIZE_JSON);
+      if (is_array($options)) {
+        $coder->decodeOutput($options);
+        $cleaned = CRM_Core_DAO::serializeField($options, CRM_Core_DAO::SERIALIZE_JSON);
+        CRM_Core_DAO::executeQuery('UPDATE civicrm_mailing SET template_options = %1 WHERE id = %2', [
+          1 => [$cleaned, 'String'],
+          2 => [$dao->id, 'Integer'],
+        ]);
+      }
+    }
     return TRUE;
   }
 
