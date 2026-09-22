@@ -1310,6 +1310,11 @@ class Message {
             if (!$found) {
               // @todo - maybe move to validate? Might be easier once separation from import has been done.
               $value = \CRM_Utils_Type::escape($value, 'String');
+              if ($field['name'] === 'gateway_account') {
+                $customFields[$field['api_field']] = $value;
+                \Civi::log('wmf')->warning('invalid gateway account ' . $value);
+                continue;
+              }
               throw new WMFException(
                 WMFException::INVALID_MESSAGE,
                 "Invalid value ($value) submitted for custom field {$field['id']}:"

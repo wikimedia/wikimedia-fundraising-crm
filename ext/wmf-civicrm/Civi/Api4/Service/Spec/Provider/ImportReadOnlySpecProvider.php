@@ -2,6 +2,7 @@
 
 namespace Civi\Api4\Service\Spec\Provider;
 
+use Civi\Api4\GatewayAccount;
 use Civi\Api4\Service\Spec\RequestSpec;
 
 /**
@@ -13,6 +14,7 @@ class ImportReadOnlySpecProvider implements Generic\SpecProviderInterface {
     $fieldNames = [
       'contribution_extra.gateway_txn_id',
       'contribution_extra.gateway',
+      'contribution_extra.gateway_account',
       'contribution_extra.original_amount',
       'contribution_extra.original_currency',
       'contribution_extra.scheme_fee',
@@ -41,6 +43,28 @@ class ImportReadOnlySpecProvider implements Generic\SpecProviderInterface {
       if ($spec->getAction() === 'create') {
         $field->setReadonly(FALSE);
       }
+    }
+    // Offer known gateways/gateway accounts as dropdowns rather than free
+    // text, to help catch typos at entry rather than at validate/import
+    // time - SearchKit's inline-edit renders a select as soon as a field
+    // has options (see crmSearchInputVal.component.js), no html_type
+    // change needed.
+    if ($spec->getAction() === 'create') {
+      // contribution_extra.gateway itself is left without options - it's
+      // also populated by queue message processing outside imports
+      // (donations/recurring), where values aren't limited to this list.
+      // Picking a specific account (rather than a plain gateway) is what
+      // lets handleSettlementBatch() derive the gateway and everything
+      // else in one go.
+      $gatewayAccountField = $spec->getFieldByName('contribution_extra.gateway_account');
+      $accounts = (array) GatewayAccount::get(FALSE)
+        ->addSelect('name', 'label')
+        ->execute();
+      $accountOptions = [];
+      foreach ($accounts as $account) {
+        $accountOptions[] = ['id' => $account['name'], 'label' => $account['label']];
+      }
+      $gatewayAccountField->setOptions($accountOptions);
     }
   }
 
