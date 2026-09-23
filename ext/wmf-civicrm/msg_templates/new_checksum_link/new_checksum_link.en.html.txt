@@ -3,11 +3,18 @@
 {else}
 <p>Dear donor,</p>
 {/if}
-<p>Here is the link you requested: </p>
+{if $accountFound}
+{if $isSecondaryEmail}
+<p>We found your account, but with a different email address.{if $preferencesUrl} To update your email, <a href="{$preferencesUrl}">log in to your communication preferences center</a>.{/if}</p>
+{/if}
+<p>To log in to your {if $targetPage == 'EmailPreferences'}communication preferences center (where you can update your email){else}donor account{/if}, please click here: </p>
 
 <a href="{$url}">{$url}</a>
 
 <p>Thank you again for your support of this mission.</p>
+{else}
+<p>We're unable to locate an account for this email address. You may <a href="{$retryUrl}">try again with a different email address</a>. If you're not sure which email you've used to donate, try searching your emails for recent messages from donate@wikimedia.org. You may also reach out to our Donor Relations team for assistance via email at donate@wikimedia.org.</p>
+{/if}
 
 <p>Sincerely,<br>
 Michael Beattie<br>
