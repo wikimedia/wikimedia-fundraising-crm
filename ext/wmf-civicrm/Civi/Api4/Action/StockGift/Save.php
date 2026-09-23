@@ -26,13 +26,27 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
       }
 
       $individualID = $this->getOrCreateIndividual($record, NULL, NULL);
-      $result[] = $this->saveContribution($record, [
+      $contribution = $this->saveContribution($record, [
         'financial_type_id:name' => $this->isEndowmentAccount($record) ? 'Endowment Gift' : 'Stock',
         'Stock_Information.Stock Ticker' => $record['stock_ticker'] ?? NULL,
         'Stock_Information.Stock Quantity' => $record['stock_quantity'] ?? NULL,
         // Stock Value is the net (post-fee) value, same as settled_net_amount.
         'Stock_Information.Stock Value' => $record['settled_net_amount'] ?? NULL,
+        'contribution_extra.no_thank_you' => 'pending manual confirmation',
       ], $individualID, 1);
+      $result[] = $contribution;
+      \Civi::log('offline_gifts')->info('A Stock contribution has been created that needs manual_review', [
+        'subject' => 'Stock Gift requiring review',
+        'id' => $contribution['id'],
+        'ticker' => $record['stock_ticker'],
+        'quantity' => $record['stock_quantity'],
+        'value' => $record['settled_net_amount'],
+        'url' => \CRM_Utils_System::url('civicrm/contact/view/contribution', [
+          'id' => $contribution['id'],
+          'action' => 'view',
+          'reset' => 1,
+        ], TRUE, NULL, FALSE)
+      ]);
     }
   }
 
