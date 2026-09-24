@@ -12,7 +12,6 @@ use Civi\WMFHook\CalculatedData;
 use Civi\WMFHook\Contribution;
 use Civi\WMFHook\ContactModifiedTrigger;
 use Civi\WMFHook\DonorHistoryTrigger;
-use Civi\WMFHook\ContributionSoft;
 use Civi\WMFHook\Import;
 use Civi\WMFHook\ProfileDynamic;
 use Civi\WMFHook\QuickForm;
@@ -59,6 +58,7 @@ function wmf_civicrm_civicrm_config(&$config) {
   $dispatcher->addListener('hook_civicrm_pre::Organization', ['Civi\WMFHook\Contact', 'pre']);
   $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\Data', 'contributionPre']);
   $dispatcher->addListener('hook_civicrm_pre::Batch', ['Civi\WMFHook\Data', 'batchPre']);
+  $dispatcher->addListener('hook_civicrm_pre::ContributionSoft', ['Civi\WMFHook\ContributionSoft', 'pre']);
 }
 
 /**
@@ -311,10 +311,6 @@ function wmf_civicrm_civicrm_pre(string $op, $type, $id, &$entity) {
   switch ($type) {
     case 'Contribution':
       Contribution::pre($op, $entity);
-      break;
-
-    case 'ContributionSoft':
-      ContributionSoft::pre($op, $entity);
       break;
 
     case 'Address':

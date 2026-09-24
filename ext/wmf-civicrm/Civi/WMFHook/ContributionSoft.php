@@ -7,6 +7,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\Relationship;
 use Civi\Api4\Contribution;
 use Civi\Api4\RelationshipCache;
+use Civi\Core\Event\PreEvent;
 
 class ContributionSoft {
 
@@ -15,21 +16,18 @@ class ContributionSoft {
    *
    * @see https://wikitech.wikimedia.org/w/index.php?title=Fundraising/Internal-facing/CiviCRM/Imports
    *
-   * @param string $op
-   * @param array $softCreditParams
-   *
    * @throws \CRM_Core_Exception
    */
-  public static function pre(string $op, array $softCreditParams): void {
-    if ($op !== 'create') {
+  public static function pre(PreEvent $event): void {
+    if ($event->action !== 'create') {
       return;
     }
-    $softCreditTypeID = (int) ($softCreditParams['soft_credit_type_id'] ?? NULL);
+    $softCreditTypeID = (int) $event->getValue('soft_credit_type_id');
     $isDonorAdvisedSoftCredit = in_array($softCreditTypeID, \Civi\WMFHelper\ContributionSoft::getDonorAdvisedFundSoftCreditTypes(), TRUE);
     $isEmployerSoftCredit = in_array($softCreditTypeID, \Civi\WMFHelper\ContributionSoft::getEmploymentSoftCreditTypes(), TRUE);
     if ($isEmployerSoftCredit || $isDonorAdvisedSoftCredit) {
       $contributionContact = Contribution::get(FALSE)
-        ->addWhere('id', '=', $softCreditParams['contribution_id'])
+        ->addWhere('id', '=', $event->getValue('contribution_id'))
         ->addSelect('contact_id', 'contact_id.contact_type', 'contact_id.organization_name', 'contact_id.employer_id', 'receive_date')
         ->execute()
         ->first();
@@ -43,7 +41,7 @@ class ContributionSoft {
       $anonymousContactID = \Civi\WMFHelper\Contact::getAnonymousContactID();
 
       $creditContact = Contact::get(FALSE)
-        ->addWhere('id', '=', $softCreditParams['contact_id'])
+        ->addWhere('id', '=', $event->getValue('contact_id'))
         ->addSelect('contact_type', 'organization_name', 'employer_id', 'id')
         ->execute()
         ->first();
