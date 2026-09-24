@@ -141,7 +141,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'adyen_9999%')
       ->execute();
-    $this->tearDownWMFEnvironment();
+    parent::tearDown();
   }
 
   public function auditTestProvider(): array {
@@ -949,6 +949,33 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->runAuditor($fileName, '', FALSE, '', TRUE);
     $incomingPath = $this->getIncomingPath($directory) . $fileName;
     $this->assertFileExists($incomingPath, 'A file whose batch failed total verification should not be archived out of incoming');
+  }
+
+  /**
+   * A batch with no settlement/aggregate row to compare against (so its
+   * total can never be verified either way) must not block its recon file
+   * from being archived - that's expected for some payment files, and
+   * there's nothing a later run could find to resolve it.
+   */
+  public function testFileMovedWhenBatchTotalCannotBeValidated(): void {
+    // Pre-create the matching contribution so this transaction is not
+    // 'missing' - we only want to exercise the batch-validation check,
+    // not the separate (and separately tested) missing-transaction one.
+    $this->createTestEntity('Contribution', [
+      'total_amount' => 25.00,
+      'contribution_extra.gateway' => 'adyen',
+      'trxn_id' => 'adyen NOTOT0001ABCD12345',
+      'contribution_extra.gateway_txn_id' => 'NOTOT0001ABCD12345',
+      'contact_id' => $this->createIndividual(),
+      'financial_type_id:name' => 'Cash',
+    ], 'no_total_row_1');
+
+    $directory = 'batch_no_total_row';
+    $fileName = 'settlement_detail_report_batch_9998.csv';
+    $this->prepareForAuditProcessing($directory, $fileName);
+    $this->runAuditor($fileName, '', FALSE, '', TRUE);
+    $incomingPath = $this->getIncomingPath($directory) . $fileName;
+    $this->assertFileDoesNotExist($incomingPath, 'A file whose batch simply could not be validated should still be archived');
   }
 
   public function testEndowmentJournalsCsv(): void {

@@ -57,6 +57,19 @@ abstract class BaseAuditProcessor {
   private ?array $validBatches = NULL;
 
   /**
+   * Batches (keyed by batch name), populated alongside $validBatches, whose
+   * settled total actually mismatched their declared total - as opposed to
+   * a batch we simply have no total to compare against (no settlement/
+   * aggregate row parsed for that currency), which is expected for some
+   * payment files and is not itself a sign anything is wrong.
+   *
+   * @see getInvalidBatches()
+   *
+   * @var array
+   */
+  private array $invalidBatches = [];
+
+  /**
    * @see getFilesHeldForVerificationFailure()
    *
    * @var string[]
@@ -1413,17 +1426,22 @@ abstract class BaseAuditProcessor {
    * run retries it, rather than being archived while its batch is stuck
    * unverified with nothing left to re-check it against.
    *
+   * A batch we simply couldn't validate at all (no settlement/aggregate
+   * row parsed for that currency) does not hold the file back - that's
+   * expected for some payment files, and there's nothing a later run could
+   * find to resolve it.
+   *
    * @param string[] $files
    *
    * @return void
    */
   protected function completeEligibleFiles(array $files): void {
-    $validBatches = $this->getValidBatches();
+    $invalidBatches = $this->getInvalidBatches();
     foreach ($files as $file) {
       $fileBatchNames = array_keys($this->batches[$file] ?? []);
-      $unverified = array_diff($fileBatchNames, array_keys($validBatches));
-      if ($unverified) {
-        $this->echo("Not moving $file to completed - failed total verification for batch(es): " . implode(', ', $unverified));
+      $failedBatches = array_intersect($fileBatchNames, $invalidBatches);
+      if ($failedBatches) {
+        $this->echo("Not moving $file to completed - failed total verification for batch(es): " . implode(', ', $failedBatches));
         $this->filesHeldForVerificationFailure[] = $file;
         continue;
       }
@@ -2089,6 +2107,21 @@ abstract class BaseAuditProcessor {
     return $date->format('Ymd');
   }
 
+  /**
+   * Batches whose settled total mismatched their declared total.
+   *
+   * This deliberately excludes batches we simply couldn't validate at all
+   * (no settlement/aggregate row parsed for that currency) - that's
+   * expected for some payment files and is not a real verification
+   * failure, so it must not hold a file back from being archived.
+   *
+   * @return string[]
+   */
+  public function getInvalidBatches(): array {
+    $this->getValidBatches();
+    return array_keys($this->invalidBatches);
+  }
+
   public function getValidBatches(): array {
     if ($this->validBatches !== NULL) {
       return $this->validBatches;
@@ -2117,6 +2150,7 @@ abstract class BaseAuditProcessor {
           $validBatches[$batchName] = $batch;
         }
         else {
+          $this->invalidBatches[$batchName] = TRUE;
           $difference = $expectedAmount->minus($settledNetAmount, RoundingMode::HalfUp)->getAmount();
           \Civi::log('wmf')->alert('Batch total mismatch. {currency} is out by {difference}. Expected {expected} vs Actual {actual}', [
             'subject' => $batchName . ' batch total mismatch of ' . $difference,

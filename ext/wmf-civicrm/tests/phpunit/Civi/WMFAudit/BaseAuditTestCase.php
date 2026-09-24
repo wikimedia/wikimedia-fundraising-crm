@@ -43,8 +43,36 @@ class BaseAuditTestCase extends TestCase {
   }
 
   public function tearDown(): void {
+    $this->restoreMovedReconFiles();
     $this->tearDownWMFEnvironment();
     parent::tearDown();
+  }
+
+  /**
+   * A test that lets a recon file actually get archived (isMoveCompletedFile
+   * true) leaves it gzipped in the fixture's completed/ directory and
+   * deleted from incoming/ - since these are real filesystem moves against
+   * git fixtures, not something git itself will restore between runs.
+   *
+   * Undo that here so the fixture is back in incoming/ for the next run,
+   * regardless of whether the test passed or failed.
+   */
+  protected function restoreMovedReconFiles(): void {
+    if (!$this->auditFileBaseDirectory || !is_dir($this->auditFileBaseDirectory)) {
+      return;
+    }
+    $gzFiles = array_merge(
+      glob($this->auditFileBaseDirectory . '/*/completed/*.gz') ?: [],
+      glob($this->auditFileBaseDirectory . '/*/*/completed/*.gz') ?: []
+    );
+    foreach ($gzFiles as $gzFile) {
+      $incomingDir = preg_replace('#/completed$#', '/incoming', dirname($gzFile));
+      if (!is_dir($incomingDir)) {
+        mkdir($incomingDir, 0770, TRUE);
+      }
+      file_put_contents($incomingDir . '/' . basename($gzFile, '.gz'), gzdecode(file_get_contents($gzFile)));
+      unlink($gzFile);
+    }
   }
 
   protected function setAuditDirectory(string $subDir): void {
