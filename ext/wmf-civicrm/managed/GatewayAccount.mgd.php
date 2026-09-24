@@ -350,8 +350,8 @@ return [
     'params' => [
       'version' => 4,
       'values' => [
-        'name' => 'chisholm',
-        'gateway' => 'chisholm',
+        'name' => 'cck',
+        'gateway' => 'cck',
         'label' => 'Chisholm Chisholm & Kilpatrick',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V04824',
@@ -372,8 +372,8 @@ return [
     'params' => [
       'version' => 4,
       'values' => [
-        'name' => 'bankofamerica',
-        'gateway' => 'bankofamerica',
+        'name' => 'boa',
+        'gateway' => 'boa',
         'label' => 'Bank of America',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V06144',
@@ -394,8 +394,8 @@ return [
     'params' => [
       'version' => 4,
       'values' => [
-        'name' => 'bankofamericaendowment',
-        'gateway' => 'bankofamerica',
+        'name' => 'boaendowment',
+        'gateway' => 'boa',
         'label' => 'Bank of America (Endowment)',
         'is_endowment' => TRUE,
         'vendor_code_foundation' => 'V06144',
@@ -408,9 +408,6 @@ return [
       ],
     ],
   ],
-  // Placeholder entries for direct Wire/ACH transfers - not much detail known yet
-  // beyond the name/label/is_endowment split. Fill in vendor/balancing codes once
-  // they're confirmed.
   [
     'name' => 'GatewayAccount_bank',
     'entity' => 'GatewayAccount',
@@ -419,10 +416,13 @@ return [
     'params' => [
       'version' => 4,
       'values' => [
-        'name' => 'bank',
-        'gateway' => 'bank',
-        'label' => 'Wire/ACH',
+        'name' => 'wire',
+        'gateway' => 'wire',
+        'label' => 'Wire',
         'is_endowment' => FALSE,
+        // No vendor code for direct wire transfers.
+        'vendor_code_foundation' => NULL,
+        'vendor_code_endowment' => NULL,
         'balancing_account_foundation' => '11250',
       ],
       'match' => [
@@ -438,10 +438,57 @@ return [
     'params' => [
       'version' => 4,
       'values' => [
-        'name' => 'bankendowment',
-        'gateway' => 'bank',
-        'label' => 'Wire/ACH (Endowment)',
+        'name' => 'wireendowment',
+        'gateway' => 'wire',
+        'label' => 'Wire (Endowment)',
         'is_endowment' => TRUE,
+        // No vendor code for direct wire transfers.
+        'vendor_code_foundation' => NULL,
+        'vendor_code_endowment' => NULL,
+        'balancing_account_foundation' => '11250',
+      ],
+      'match' => [
+        'name',
+      ],
+    ],
+  ],
+  [
+    'name' => 'GatewayAccount_ach',
+    'entity' => 'GatewayAccount',
+    'cleanup' => 'never',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'name' => 'ach',
+        'gateway' => 'ach',
+        'label' => 'ACH',
+        'is_endowment' => FALSE,
+        // No vendor code for direct ACH transfers.
+        'vendor_code_foundation' => NULL,
+        'vendor_code_endowment' => NULL,
+        'balancing_account_foundation' => '11250',
+      ],
+      'match' => [
+        'name',
+      ],
+    ],
+  ],
+  [
+    'name' => 'GatewayAccount_ach_endowment',
+    'entity' => 'GatewayAccount',
+    'cleanup' => 'never',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'name' => 'achendowment',
+        'gateway' => 'ach',
+        'label' => 'ACH (Endowment)',
+        'is_endowment' => TRUE,
+        // No vendor code for direct ACH transfers.
+        'vendor_code_foundation' => NULL,
+        'vendor_code_endowment' => NULL,
         'balancing_account_foundation' => '11250',
       ],
       'match' => [
