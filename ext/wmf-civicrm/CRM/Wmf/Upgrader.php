@@ -15,6 +15,8 @@ use Civi\Api4\Activity;
 use Civi\Api4\WMFDonor;
 use Civi\Api4\Address;
 use Civi\Api4\Country;
+use Civi\Api4\Relationship;
+use Civi\Api4\RelationshipType;
 use Civi\QueueHelper;
 use Civi\WMFHook\CalculatedData;
 use CRM_Wmf_ExtensionUtil as E;
@@ -5494,6 +5496,37 @@ v.channel IS NULL AND c.id = 131486342;",
         ADD COLUMN error_category varchar(32) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci,
         ADD COLUMN raw_error_message varchar(64) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
       ');
+    }
+    return TRUE;
+  }
+
+  /**
+   * Convert 'Manages Donor Advised Fund' relationships from an Individual
+   * to 'Owns the Donor Advised Fund', swapping A and B because these are
+   * ordered in the opposite way.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5190(): bool {
+    $managesTypeID = RelationshipType::get(FALSE)
+      ->addWhere('label_a_b', '=', 'Manages Donor Advised Fund')
+      ->execute()->single()['id'];
+    $ownsTypeID = RelationshipType::get(FALSE)
+      ->addWhere('label_a_b', '=', 'Is the Donor Advised Fund of')
+      ->execute()->single()['id'];
+    $relationships = Relationship::get(FALSE)
+      ->addSelect('id', 'contact_id_a', 'contact_id_b')
+      ->addWhere('relationship_type_id', '=', $managesTypeID)
+      ->addWhere('contact_id_a.contact_type', '=', 'Individual')
+      ->execute();
+    foreach ($relationships as $relationship) {
+      Relationship::update(FALSE)
+        ->addWhere('id', '=', $relationship['id'])
+        ->addValue('relationship_type_id', $ownsTypeID)
+        ->addValue('contact_id_a', $relationship['contact_id_b'])
+        ->addValue('contact_id_b', $relationship['contact_id_a'])
+        ->execute();
     }
     return TRUE;
   }
