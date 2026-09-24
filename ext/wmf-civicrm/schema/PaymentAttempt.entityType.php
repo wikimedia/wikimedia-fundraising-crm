@@ -519,6 +519,26 @@ return [
       'input_type' => 'CheckBox',
       'title' => E::ts('Flagged as fraudulent by processor'),
     ],
+    'auth_success' => [
+      'sql_type' => 'boolean',
+      'input_type' => 'CheckBox',
+      'title' => E::ts('Authorized by processor'),
+    ],
+    'error_category' => [
+      'sql_type' => 'varchar(32)',
+      'input_type' => 'Text',
+      'title' => E::ts('Error category'),
+    ],
+    'raw_error_message' => [
+      'sql_type' => 'varchar(64)',
+      'input_type' => 'Text',
+      'title' => E::ts('Raw error message'),
+    ],
+    'backend_processor' => [
+      'sql_type' => 'varchar(32)',
+      'input_type' => 'Text',
+      'title' => E::ts('Backend processor'),
+    ],
   ],
 
   'getIndices' => fn() => [

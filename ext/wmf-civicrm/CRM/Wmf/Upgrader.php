@@ -5481,6 +5481,24 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Add fields to make PaymentAttempt entity more useful for calculating auth rates
+   *
+   * @return bool
+   */
+  public function upgrade_5185(): bool {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_payment_attempt', 'auth_success', FALSE)) {
+      CRM_Core_DAO::executeQuery('
+        ALTER TABLE civicrm_payment_attempt
+        ADD COLUMN auth_success tinyint default 0,
+        ADD COLUMN backend_processor varchar(32) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci,
+        ADD COLUMN error_category varchar(32) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci,
+        ADD COLUMN raw_error_message varchar(64) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+      ');
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
