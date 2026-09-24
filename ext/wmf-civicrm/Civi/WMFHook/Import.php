@@ -4,6 +4,7 @@
 namespace Civi\WMFHook;
 
 use Civi\Api4\ExchangeRate;
+use Civi\Api4\GatewayAccount;
 use Civi\Api4\GroupContact;
 use Civi\Api4\UserJob;
 use Civi\Core\Event\GenericHookEvent;
@@ -161,6 +162,7 @@ class Import {
         }
 
         $this->mappedRow['Contribution']['contribution_extra.gateway'] = $this->getGateway();
+        $this->deriveGatewayFromAccount();
         $existingContributionID = ContributionHelper::exists($this->mappedRow['Contribution']['contribution_extra.gateway'], $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id']);
         if ($existingContributionID) {
           throw new \CRM_Core_Exception('This contribution appears to be a duplicate of contribution id ' . $existingContributionID);
@@ -231,6 +233,9 @@ class Import {
         $this->ensureTrxnIdentifiersSet();
       }
       $this->setTimeOfDayIfStockDonation();
+    }
+    if (!$this->isValidateMode()) {
+      $this->fixUpSettlementBatchReference();
     }
     if ($this->mappedRow !== $this->event->mappedRow) {
       $this->event->mappedRow = $this->mappedRow;
@@ -574,6 +579,80 @@ class Import {
         'id' => $fidelitySoftCreditID,
       ];
     }
+  }
+
+  /**
+   * If a gateway account was picked (see fixUpSettlementBatchReference()),
+   * derive contribution_extra.gateway from it now - before ensureTrxnIdentifiersSet()
+   * and the duplicate-contribution check further down both use getGateway(),
+   * which would otherwise still see whatever generic fallback was set above.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function deriveGatewayFromAccount(): void {
+    $gatewayAccountName = $this->mappedRow['Contribution']['contribution_extra.gateway_account'] ?? NULL;
+    if (!$gatewayAccountName) {
+      return;
+    }
+    $gatewayAccount = GatewayAccount::get(FALSE)
+      ->addWhere('name', '=', $gatewayAccountName)
+      ->addSelect('gateway')
+      ->execute()->first();
+    if ($gatewayAccount) {
+      $this->mappedRow['Contribution']['contribution_extra.gateway'] = $gatewayAccount['gateway'];
+    }
+  }
+
+  /**
+   * Best-effort fix-up of this row's settlement batch reference - combines
+   * the raw value entered with contribution_extra.gateway_account and the
+   * settlement currency, matching the convention used by audit-driven
+   * batches (e.g. adyen_1128_USD).
+   *
+   * This does not create or update any Batch record - it only normalises
+   * the reference value on the contribution itself; batch creation is
+   * handled separately.
+   *
+   * Only kicks in when contribution_extra.gateway_account is populated and
+   * recognised (a real GatewayAccount.name) - this is transitional, since
+   * gateway_account will become required soon; an unrecognised value is
+   * left alone for now rather than throwing, though that may change once
+   * gateway_account is required. Falls back to
+   * Gift_Information.import_batch_number for the raw reference value when
+   * contribution_settlement.settlement_batch_reference itself is empty.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function fixUpSettlementBatchReference(): void {
+    if (!empty($this->mappedRow['Contribution']['id'])) {
+      // This is an update to an existing contribution - the reference (if
+      // any) has already been fixed up once, and re-deriving it from
+      // itself would double it up.
+      return;
+    }
+    $gatewayAccountName = $this->mappedRow['Contribution']['contribution_extra.gateway_account'] ?? NULL;
+    if (!$gatewayAccountName) {
+      return;
+    }
+    $inputReference = $this->mappedRow['Contribution']['contribution_settlement.settlement_batch_reference']
+      ?? $this->mappedRow['Contribution']['Gift_Information.import_batch_number']
+      ?? NULL;
+    if (!$inputReference) {
+      return;
+    }
+    $isRecognisedGatewayAccount = (bool) GatewayAccount::get(FALSE)
+      ->addWhere('name', '=', $gatewayAccountName)
+      ->selectRowCount()
+      ->execute()->count();
+    if (!$isRecognisedGatewayAccount) {
+      // Not yet throwing for an unrecognised gateway_account - just leave
+      // the reference untouched until we do.
+      return;
+    }
+    // If it didn't settle in USD they will need to fill it in as we can't rely on original currency.
+    $currency = $this->mappedRow['Contribution']['contribution_settlement.settlement_currency'] ?? 'USD';
+    $this->mappedRow['Contribution']['contribution_settlement.settlement_currency'] = $currency;
+    $this->mappedRow['Contribution']['contribution_settlement.settlement_batch_reference'] = implode('_', [$gatewayAccountName, $inputReference, $currency]);
   }
 
   /**
