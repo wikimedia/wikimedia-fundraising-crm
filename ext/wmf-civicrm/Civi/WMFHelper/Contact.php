@@ -179,6 +179,7 @@ class Contact {
       ->addWhere('is_deleted', '=', 0)
       ->addWhere('contact_type', '=', 'Individual')
       ->addOrderBy('organization_name', 'DESC')
+      ->addOrderBy('id')
       ->addSelect('employer_id', 'organization_name', 'email_primary.email', 'address_primary.postal_code', 'DAF.id')
       ->addJoin('Contact AS DAF', 'LEFT', 'RelationshipCache',
         ['id', '=', 'DAF.far_contact_id'],
