@@ -56,7 +56,8 @@ function wmf_civicrm_civicrm_config(&$config) {
 
   $dispatcher->addListener('hook_civicrm_pre::Individual', ['Civi\WMFHook\Contact', 'pre']);
   $dispatcher->addListener('hook_civicrm_pre::Organization', ['Civi\WMFHook\Contact', 'pre']);
-  $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\Data', 'contributionPre']);
+  $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\Data', 'contributionPre'], 20);
+  $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\Contribution', 'pre'], 10);
   $dispatcher->addListener('hook_civicrm_pre::Batch', ['Civi\WMFHook\Data', 'batchPre']);
   $dispatcher->addListener('hook_civicrm_pre::ContributionSoft', ['Civi\WMFHook\ContributionSoft', 'pre']);
 }
@@ -333,10 +334,6 @@ function wmf_civicrm_civicrm_preProcess(string $formName, $form) {
  */
 function wmf_civicrm_civicrm_pre(string $op, $type, $id, &$entity) {
   switch ($type) {
-    case 'Contribution':
-      Contribution::pre($op, $entity);
-      break;
-
     case 'Address':
       AddressHook::pre($op, $entity);
       break;
