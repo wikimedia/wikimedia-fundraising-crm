@@ -2,6 +2,17 @@
 use CRM_Standaloneusers_ExtensionUtil as E;
 
 return [
+  'standaloneusers_allow_public_registration' => [
+    'name' => 'standaloneusers_allow_public_registration',
+    'group' => 'standaloneusers',
+    'type' => 'Boolean',
+    'title' => E::ts('Users Can Register'),
+    'description' => E::ts('Allow public user registration.'),
+    'default' => FALSE,
+    'html_type' => 'toggle',
+    'is_domain' => 1,
+    'is_contact' => 0,
+  ],
   'standaloneusers_session_max_lifetime' => [
     'name' => 'standaloneusers_session_max_lifetime',
     'group' => 'standaloneusers',
@@ -13,6 +24,31 @@ return [
     'html_type' => 'number',
     'is_domain' => 1,
     'is_contact' => 0,
+  ],
+  'standalone_session_gc_probability' => [
+    'name' => 'standalone_session_gc_probability',
+    'group' => 'standaloneusers',
+    'type' => 'Integer',
+    'title' => E::ts('Session Cleanup'),
+    'description' => E::ts('On what percentage of ordinary requests should session cleanup run? Set to -1 to use server default'),
+    'help_text' => [
+      E::ts('Session cleanup should be run periodically. This can be done on a certain percentage of ordinary web requests, or you can set to 0 and use a dedicated scheduled job.'),
+    ],
+    'help_doc_url' => [
+      'url' => 'https://www.php.net/manual/en/session.configuration.php#ini.session.gc-probability',
+      'text' => E::ts('See PHP documentation'),
+    ],
+    'default' => 10,
+    'html_type' => 'number',
+    'html_attributes' => [
+      'step' => 1,
+      'min' => -1,
+      'max' => 100,
+    ],
+    'is_domain' => 1,
+    'is_contact' => 0,
+    // show lower down the page - most admins wont need to change this
+    'settings_pages' => ['standaloneusers' => ['weight' => 5000]],
   ],
   // Example value: 'TOTP', not 'Civi\Standalone\MFA\TOTP'
   'standalone_mfa_enabled' => [
@@ -62,5 +98,23 @@ return [
     'is_contact' => 0,
     'html_type' => 'file',
     'settings_pages' => ['display' => ['section' => 'theme', 'weight' => 120]],
+  ],
+  'standalone_timezone_default' => [
+    'name' => 'standalone_timezone_default',
+    'group' => 'standaloneusers',
+    'type' => 'String',
+    'default' => date_default_timezone_get(),
+    'html_type' => 'select',
+    'html_attributes' => [
+      'class' => 'huge crm-select2',
+    ],
+    'title' => E::ts('System Timezone'),
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts('Timezone for anonymous users and for user accounts using the default timezone.'),
+    'pseudoconstant' => [
+      'callback' => ['CRM_Standaloneusers_BAO_User', 'getTimeZones'],
+    ],
+    'settings_pages' => ['date' => ['section' => 'calendar', 'weight' => 0]],
   ],
 ];

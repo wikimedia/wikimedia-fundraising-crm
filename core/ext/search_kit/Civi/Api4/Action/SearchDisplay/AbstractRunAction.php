@@ -147,6 +147,23 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
     $this->processResult($result);
   }
 
+  /**
+   * Apply database query timeout if configured.
+   *
+   * @return \CRM_Utils_AutoClean|null
+   */
+  protected function applyTimeout(): ?\CRM_Utils_AutoClean {
+    // Resolve the effective query timeout:
+    // - Per-search `timeout` field takes precedence (NULL means "not set, use site default").
+    // - Fall back to the site-wide `search_kit_timeout` setting.
+    // - A value of 0 from either source means "no timeout".
+    $timeout = $this->savedSearch['timeout'] ?? NULL;
+    if ($timeout === NULL) {
+      $timeout = (int) \Civi::settings()->get('search_kit_timeout');
+    }
+    return ($timeout > 0) ? \CRM_Utils_AutoClean::swapMaxExecutionTime($timeout) : NULL;
+  }
+
   abstract protected function processResult(\Civi\Api4\Result\SearchDisplayRunResult $result);
 
   /**
@@ -780,7 +797,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
 
     $result = NULL;
     if ($routeName = parse_url($pathExpr, PHP_URL_PATH)) {
-      if ($routeItem = \CRM_Core_Menu::get($routeName)) {
+      if ($routeItem = \Civi::router()->get($routeName)) {
         if (!empty($routeItem['page_callback'])) {
           $result = \CRM_Core_Key::get($routeItem['page_callback']);
         }
@@ -961,7 +978,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
     }
     // Convert the conditional value of 'current_domain' into an actual value that filterCompare can work with
     if ((($field['fk_entity'] ?? NULL) === 'Domain') && ($condition[2] ?? '') === 'current_domain') {
-      if (str_ends_with($condition[0], ':label') !== FALSE) {
+      if (str_ends_with($condition[0], ':label') || str_ends_with($condition[0], ':name')) {
         $condition[2] = \CRM_Core_BAO_Domain::getDomain()->name;
       }
       else {
@@ -1027,6 +1044,10 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       'conditions' => [],
     ];
     $entity = $link['entity'];
+    // Fix user error - if path has args but omits the question mark, change the first `&` to a `?`
+    if ($link['path'] && str_contains($link['path'], '&') && !str_contains($link['path'], '?')) {
+      $link['path'] = preg_replace('/&/', '?', $link['path'], 1);
+    }
     if ($entity && CoreUtil::entityExists($entity)) {
       $idKey = $this->getIdKeyName($entity);
       // Hack to support links to relationships
@@ -1466,7 +1487,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       case 'Date':
       case 'Timestamp':
         if ($format) {
-          $dateFormat = \Civi::settings()->get($format);
+          $dateFormat = str_starts_with($format, 'dateformat') ? \Civi::settings()->get($format) : $format;
         }
         $formatted = \CRM_Utils_Date::customFormat($rawValue, $dateFormat ?? NULL);
     }
@@ -1576,6 +1597,13 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
       }
       $orderBy[$item[0]] = $item[1];
     }
+    // Displays form a new section wherever the section_group_by value changes, so it must
+    // always be the primary sort key - even if an interactive column-header sort
+    // was requested, since section_group_by is deliberately not a column and never
+    // survives the column-matching filter above.
+    if (!empty($this->display['settings']['section_group_by']) && !array_key_exists($this->display['settings']['section_group_by'], $orderBy)) {
+      $orderBy = [$this->display['settings']['section_group_by'] => 'ASC'] + $orderBy;
+    }
     return $orderBy;
   }
 
@@ -1602,6 +1630,10 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
     // Add parent_field column for tree displays
     if (!empty($this->display['settings']['parent_field'])) {
       $this->addSelectExpression($this->display['settings']['parent_field']);
+    }
+    // Add section_group_by column for grouped displays
+    if (!empty($this->display['settings']['section_group_by'])) {
+      $this->addSelectExpression($this->display['settings']['section_group_by']);
     }
     // Add style conditions for the display
     foreach ($this->getCssRulesSelect($this->display['settings']['cssRules'] ?? []) as $addition) {

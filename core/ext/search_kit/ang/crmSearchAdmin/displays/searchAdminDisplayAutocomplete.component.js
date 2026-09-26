@@ -1,4 +1,4 @@
-(function(angular, $, _) {
+(function(angular, $) {
   "use strict";
 
   angular.module('crmSearchAdmin').component('searchAdminDisplayAutocomplete', {
@@ -43,10 +43,10 @@
           }
         }
         // Ensure array is unique
-        ctrl.display.settings.searchFields = _.uniq(ctrl.display.settings.searchFields);
+        ctrl.display.settings.searchFields = [...new Set(ctrl.display.settings.searchFields)];
       };
 
     }
   });
 
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);

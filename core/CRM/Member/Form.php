@@ -37,12 +37,6 @@ class CRM_Member_Form extends CRM_Contribute_Form_AbstractEditPayment {
   protected $membership = [];
 
   /**
-   * Membership Type ID
-   * @var int
-   */
-  protected $_memType;
-
-  /**
    * IDs of relevant entities.
    *
    * @var array
@@ -196,6 +190,30 @@ class CRM_Member_Form extends CRM_Contribute_Form_AbstractEditPayment {
   }
 
   /**
+   * @return array
+   */
+  protected function getContributionValues(): array {
+    return [
+      'currency' => $this->getCurrency(),
+      'is_test' => $this->isTest(),
+      'receipt_date' => $this->getSubmittedValue('send_receipt') ? date('YmdHis') : NULL,
+      'invoice_id' => $this->getInvoiceID(),
+      'campaign_id' => $this->getSubmittedValue('campaign_id'),
+      'payment_instrument_id' => $this->getPaymentInstrumentID(),
+      'receive_date' => $this->getReceiveDate(),
+    ];
+  }
+
+  /**
+   * Get the receive date for the contribution.
+   *
+   * @return string $receive_date
+   */
+  protected function getReceiveDate(): string {
+    return $this->getSubmittedValue('receive_date') ?: date('YmdHis');
+  }
+
+  /**
    * Values submitted to the form, processed along the way.
    *
    * @var array
@@ -305,19 +323,10 @@ class CRM_Member_Form extends CRM_Contribute_Form_AbstractEditPayment {
     // The reason for showing it in update mode is not that clear.
     $this->assign('allowAutoRenew', $this->_mode && !empty($this->_recurPaymentProcessors));
     if ($this->_mode || ($this->_action & CRM_Core_Action::UPDATE)) {
-
-      $autoRenewElement = $this->addElement('checkbox', 'auto_renew', ts('Membership renewed automatically'),
-        NULL, ['onclick' => "showHideByValue('auto_renew','','send-receipt','table-row','radio',true); showHideNotice( );"]
-      );
+      $autoRenewElement = $this->addElement('checkbox', 'auto_renew', ts('Membership renewed automatically'));
       if ($this->_action & CRM_Core_Action::UPDATE) {
         $autoRenewElement->freeze();
       }
-
-      $this->addElement('checkbox',
-        'auto_renew',
-        ts('Membership renewed automatically')
-      );
-
     }
     $this->assign('autoRenewOptions', json_encode($this->membershipTypeRenewalStatus));
 
@@ -450,6 +459,59 @@ class CRM_Member_Form extends CRM_Contribute_Form_AbstractEditPayment {
   }
 
   /**
+   * Get the membership type id.
+   *
+   * This is the type submitted on the form if there is one, falling back to the
+   * type of the membership being edited/renewed (if any).
+   *
+   * @return int|null
+   *
+   * @api This function will not change in a minor release and is supported for
+   * use outside of core. This annotation / external support for properties
+   * is only given where there is specific test cover.
+   */
+  public function getMembershipTypeID(): ?int {
+    return $this->getSubmittedValue('membership_type_id')[1] ?? $this->getMembershipValue('membership_type_id');
+  }
+
+  /**
+   * @return int
+   */
+  protected function getNumRenewTerms(): int {
+    return $this->getSubmittedValue('num_terms') ? (int) $this->getSubmittedValue('num_terms') : 1;
+  }
+
+  /**
+   * Get the revenue recognition date for the membership's contribution.
+   *
+   * @param string|null $startDate
+   *   The membership start date, if it has not been saved yet.
+   *
+   * @return string
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function getDeferredRevenueRecognitionDate(?string $startDate = NULL): string {
+    if (Civi::settings()->get('deferred_revenue_enabled')) {
+      // Read fresh - the cached membership may pre-date the save that set the start date.
+      $startDate ??= CRM_Core_DAO::getFieldValue('CRM_Member_DAO_Membership', $this->getMembershipID(), 'start_date');
+      if ($startDate) {
+        return date('Ymd', strtotime($startDate));
+      }
+    }
+    return '';
+  }
+
+  /**
+   * Get the payment processor ID.
+   *
+   * @return int
+   */
+  public function getPaymentProcessorID(): int {
+    return (int) ($this->getSubmittedValue('payment_processor_id') ?: $this->_paymentProcessor['id']);
+  }
+
+  /**
    * Set variables in a way that can be accessed from different places.
    *
    * This is part of refactoring for unit testability on the submit function.
@@ -473,7 +535,6 @@ class CRM_Member_Form extends CRM_Contribute_Form_AbstractEditPayment {
     }
 
     if ($this->_id) {
-      $this->_memType = $this->getMembershipValue('membership_type_id');
       $this->_membershipIDs[] = $this->_id;
     }
     $this->_fromEmails = CRM_Core_BAO_Email::getFromEmail();
@@ -520,6 +581,9 @@ class CRM_Member_Form extends CRM_Contribute_Form_AbstractEditPayment {
    * @param array $formValues
    */
   protected function ensurePriceParamsAreSet(array &$formValues): void {
+    if (!$this->isQuickConfig() || empty($formValues['membership_type_id'])) {
+      return;
+    }
     foreach ($formValues as $key => $value) {
       if ((str_starts_with($key, 'price_')) && is_numeric(substr($key, 6))) {
         return;
@@ -589,32 +653,68 @@ class CRM_Member_Form extends CRM_Contribute_Form_AbstractEditPayment {
   }
 
   /**
-   * Store parameters relating to price sets.
+   * Get the order, building it from the submitted values if not yet built.
    *
-   * @param array $formValues
-   *
-   * @return array
+   * @return \CRM_Financial_BAO_Order
    * @throws \CRM_Core_Exception
    */
-  protected function setPriceSetParameters(array $formValues): array {
-    // process price set and get total amount and line items.
-    $this->getPriceSetID();
+  protected function getOrder(): CRM_Financial_BAO_Order {
+    if (!$this->order) {
+      $this->initializeOrder();
+    }
+    return $this->order;
+  }
+
+  /**
+   * Build the order from the submitted values.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected function initializeOrder(): void {
+    $this->order = new CRM_Financial_BAO_Order();
+    $this->order->setPriceSetID($this->getPriceSetID());
+    $this->order->setForm($this);
+
+    $formValues = $this->getSubmittedValues();
     $this->ensurePriceParamsAreSet($formValues);
     $priceSetDetails = $this->getPriceSetDetails($formValues);
     $this->_priceSet = $priceSetDetails[$this->_priceSetId];
-    $this->order = new CRM_Financial_BAO_Order();
-    $this->order->setForm($this);
-    $this->order->setPriceSelectionFromUnfilteredInput($formValues);
 
     if ($this->getSubmittedValue('total_amount')) {
       $this->order->setOverrideTotalAmount((float) $this->getSubmittedValue('total_amount'));
     }
-
     if ($this->isQuickConfig() && $this->getSubmittedValue('financial_type_id')) {
       $this->order->setOverrideFinancialTypeID((int) $this->getSubmittedValue('financial_type_id'));
     }
+    foreach ($this->order->getPriceFieldsMetadata() as $priceField) {
+      if ($priceField['html_type'] === 'Text') {
+        $this->submittableMoneyFields[] = 'price_' . $priceField['id'];
+      }
+    }
+    $this->order->setPriceSelectionFromUnfilteredInput($formValues);
 
-    return $formValues;
+    if ($this->getMembershipID()) {
+      foreach ($this->order->getLineItems() as $index => $lineItem) {
+        if (($lineItem['membership_type_id'] ?? NULL) == $this->getMembershipTypeID()) {
+          $this->order->setLineItemValue('entity_id', $this->getMembershipID(), $index);
+          $this->order->setLineItemValue('membership_num_terms', $this->getNumRenewTerms(), $index);
+        }
+      }
+    }
+  }
+
+  /**
+   * Get the financial type id relevant to the contribution.
+   *
+   * Financial type id is optional when price sets are in use.
+   *
+   * Otherwise they are required for the form to submit.
+   *
+   * @return int
+   * @throws \CRM_Core_Exception
+   */
+  protected function getFinancialTypeID(): int {
+    return (int) $this->getSubmittedValue('financial_type_id') ?: $this->getOrder()->getFinancialTypeID();
   }
 
   /**
@@ -641,63 +741,6 @@ class CRM_Member_Form extends CRM_Contribute_Form_AbstractEditPayment {
         'membership_type_id' => $this->getSubmittedValue('membership_type_id'),
       ]));
     }
-  }
-
-  /**
-   * Wrapper function for unit tests.
-   *
-   * @param array $formValues
-   *
-   * @throws \CRM_Core_Exception
-   */
-  public function testSubmit(array $formValues = []): void {
-    if (empty($formValues)) {
-      // If getForm is used these will be set - this is now
-      // preferred.
-      $formValues = $this->controller->exportValues($this->_name);
-    }
-    $this->exportedValues = $formValues;
-    $this->setContextVariables($formValues);
-    $this->_memType = !empty($formValues['membership_type_id']) ? $formValues['membership_type_id'][1] : NULL;
-    $this->_params = $formValues;
-    $this->submit();
-  }
-
-  /**
-   * Get order related params.
-   *
-   * In practice these are contribution params but later they cann be used with the Order api.
-   *
-   * @return array
-   *
-   * @throws \CRM_Core_Exception
-   */
-  protected function getOrderParams(): array {
-    return [
-      'lineItems' => [$this->_priceSetId => $this->order->getLineItems()],
-      // This is one of those weird & wonderful legacy params we aim to get rid of.
-      'processPriceSet' => TRUE,
-      'tax_amount' => $this->order->getTotalTaxAmount(),
-    ];
-  }
-
-  /**
-   * Get the relevant payment instrument id.
-   *
-   * @return int
-   */
-  protected function getPaymentInstrumentID(): int {
-    return (int) $this->getSubmittedValue('payment_instrument_id') ?: $this->_paymentProcessor['object']->getPaymentInstrumentID();
-  }
-
-  /**
-   * Get the last 4 numbers of the card.
-   *
-   * @return int|null
-   */
-  protected function getPanTruncation(): ?int {
-    $card = $this->getSubmittedValue('credit_card_number');
-    return $card ? (int) substr($card, -4) : NULL;
   }
 
   /**

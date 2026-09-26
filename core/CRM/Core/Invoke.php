@@ -96,8 +96,8 @@ class CRM_Core_Invoke {
       if (CRM_Core_Permission::check('administer CiviCRM')) {
         Civi::rebuild([
           '*' => TRUE,
-          'triggers' => CRM_Utils_Request::retrieve('triggerRebuild', 'Boolean', CRM_Core_DAO::$_nullObject, FALSE, 0, 'GET'),
-          'sessions' => CRM_Utils_Request::retrieve('sessionReset', 'Boolean', CRM_Core_DAO::$_nullObject, FALSE, 0, 'GET'),
+          'triggers' => CRM_Utils_Request::retrieve('triggerRebuild', 'Boolean', NULL, FALSE, 0, 'GET'),
+          'sessions' => CRM_Utils_Request::retrieve('sessionReset', 'Boolean', NULL, FALSE, 0, 'GET'),
         ])->execute();
         CRM_Core_Session::setStatus(ts('Cleared all CiviCRM caches (database, menu, templates)'), ts('Complete'), 'success');
         // exits
@@ -141,7 +141,7 @@ class CRM_Core_Invoke {
     else {
       $path = $args;
     }
-    $item = CRM_Core_Menu::get($path);
+    $item = \Civi::router()->get($path);
 
     return $item;
   }
@@ -178,7 +178,6 @@ class CRM_Core_Invoke {
       // joomla 1.5RC1 seems to push this in the POST variable, which messes
       // QF and checkboxes
       unset($_POST['option']);
-      CRM_Core_Joomla::sidebarLeft();
     }
 
     // set active Component
@@ -242,35 +241,11 @@ class CRM_Core_Invoke {
       return $result;
     }
 
-    CRM_Core_Menu::store();
+    // TODO: remove this handling, it is already happening in CRM_Core_Menu::get
+    \Civi::router()->clear()
+      ->rebuild();
     CRM_Core_Session::setStatus(ts('Menu has been rebuilt'), ts('Complete'), 'success');
     return CRM_Utils_System::redirect();
-  }
-
-  /**
-   * This function contains the default action.
-   *
-   * Unused function.
-   *
-   * @param $action
-   *
-   * @param $contact_type
-   * @param $contact_sub_type
-   *
-   * @Deprecated
-   */
-  public static function form($action, $contact_type, $contact_sub_type) {
-    CRM_Core_Error::deprecatedWarning('unused');
-    CRM_Utils_System::setUserContext(['civicrm/contact/search/basic', 'civicrm/contact/view']);
-    $wrapper = new CRM_Utils_Wrapper();
-
-    $properties = CRM_Core_Component::contactSubTypeProperties($contact_sub_type, 'Edit');
-    if ($properties) {
-      $wrapper->run($properties['class'], ts('New %1', [1 => $contact_sub_type]), $action, TRUE);
-    }
-    else {
-      $wrapper->run('CRM_Contact_Form_Contact', ts('New Contact'), $action, TRUE);
-    }
   }
 
   /**
@@ -315,7 +290,7 @@ class CRM_Core_Invoke {
       'ext' => TRUE,
       'files' => TRUE,
       'tables' => TRUE,
-      'sessions' => $sessionReset || CRM_Utils_Request::retrieve('sessionReset', 'Boolean', CRM_Core_DAO::$_nullObject, FALSE, 0, 'GET'),
+      'sessions' => $sessionReset || CRM_Utils_Request::retrieve('sessionReset', 'Boolean', NULL, FALSE, 0, 'GET'),
       'metadata' => TRUE,
       'navigation' => TRUE,
       'router' => TRUE,
@@ -325,7 +300,7 @@ class CRM_Core_Invoke {
       'strings' => TRUE,
       'settings' => TRUE,
       'cases' => TRUE,
-      'triggers' => $triggerRebuild || CRM_Utils_Request::retrieve('triggerRebuild', 'Boolean', CRM_Core_DAO::$_nullObject, FALSE, 0, 'GET'),
+      'triggers' => $triggerRebuild || CRM_Utils_Request::retrieve('triggerRebuild', 'Boolean', NULL, FALSE, 0, 'GET'),
       'entities' => TRUE,
     ])->execute();
 
@@ -358,7 +333,7 @@ class CRM_Core_Invoke {
       ];
     }
     else {
-      $newArgs = explode('/', $_GET[$config->userFrameworkURLVar]);
+      $newArgs = explode('/', $_GET[$config->userFrameworkURLVar] ?? '');
       $mode = 'null';
       if (isset($pageArgs['mode'])) {
         $mode = $pageArgs['mode'];
@@ -367,7 +342,7 @@ class CRM_Core_Invoke {
       $title = $item['title'] ?? NULL;
       if (str_contains($item['page_callback'], '_Page') || str_contains($item['page_callback'], '\\Page\\')) {
         $object = new $item['page_callback']($title, $mode);
-        $object->urlPath = explode('/', $_GET[$config->userFrameworkURLVar]);
+        $object->urlPath = $newArgs;
       }
       elseif (str_contains($item['page_callback'], '_Controller') || str_contains($item['page_callback'], '\\Controller\\')) {
         $addSequence = 'false';

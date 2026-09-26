@@ -745,10 +745,8 @@ class CRM_Report_Form extends CRM_Core_Form {
     $this->assign('criteriaForm', FALSE);
     // Will be overwritten in postProcess if TRUE.
     $this->assign('printOnly', FALSE);
-    // Display Report Criteria section if user has access Report Criteria OR administer Reports AND report instance is not reserved
-    if (CRM_Core_Permission::check('administer Reports') ||
-      CRM_Core_Permission::check('access Report Criteria')
-    ) {
+    // Display Report Criteria section if user has access Report Criteria AND report instance is not reserved
+    if (CRM_Core_Permission::check('access Report Criteria')) {
       if (empty($this->_instanceValues['is_reserved']) ||
         CRM_Core_Permission::check('administer reserved reports')
       ) {
@@ -2376,7 +2374,7 @@ class CRM_Report_Form extends CRM_Core_Form {
 
     $customFields = [];
     $customFieldIds = [];
-    foreach ($this->_params['fields'] as $fieldAlias => $value) {
+    foreach ($this->_params['fields'] ?? [] as $fieldAlias => $value) {
       if ($fieldId = CRM_Core_BAO_CustomField::getKeyID($fieldAlias)) {
         $customFieldIds[$fieldAlias] = $fieldId;
       }
@@ -2969,7 +2967,7 @@ class CRM_Report_Form extends CRM_Core_Form {
       = CRM_Utils_Request::retrieve(
         'sendmail',
         'Boolean',
-        CRM_Core_DAO::$_nullObject
+        NULL
       );
 
     if ($this->_sendmail && !$this->_outputMode) {
@@ -4823,6 +4821,26 @@ LEFT JOIN civicrm_contact {$field['alias']} ON {$field['alias']}.id = {$this->_a
   }
 
   /**
+   * Get a derived table linking memberships to the contributions that paid for them.
+   *
+   * Each (membership_id, contribution_id) pair appears once: a contribution can
+   * hold several line items for the same membership, so joining line items
+   * directly would count that contribution more than once.
+   *
+   * @return string
+   *   A parenthesised subquery with columns membership_id and contribution_id.
+   */
+  protected function getMembershipContributionTableSql(): string {
+    $lineItems = "FROM civicrm_line_item WHERE entity_table = 'civicrm_membership' AND contribution_id IS NOT NULL";
+    if (CRM_Price_BAO_LineItem::siteHasMembershipPaymentRecordsNotReflectedInLineItems()) {
+      // UNION also removes the duplicates within each half.
+      return "(SELECT entity_id AS membership_id, contribution_id $lineItems
+        UNION SELECT membership_id, contribution_id FROM civicrm_membership_payment)";
+    }
+    return "(SELECT DISTINCT entity_id AS membership_id, contribution_id $lineItems)";
+  }
+
+  /**
    * Add Financial Transaction into From Table if required.
    */
   public function addFinancialTrxnFromClause() {
@@ -5143,7 +5161,7 @@ LEFT JOIN civicrm_contact {$field['alias']} ON {$field['alias']}.id = {$this->_a
     $this->_outputMode = str_replace('report_instance.', '', (CRM_Utils_Request::retrieve(
       'output',
       'String',
-      CRM_Core_DAO::$_nullObject,
+      NULL,
       FALSE,
       $this->_params['task'] ?? NULL
     ) ?? ''));

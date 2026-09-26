@@ -428,6 +428,10 @@
   name        : Angela Jackson
   organization: Circle Interactive
 
+- github      : darkdi
+  organization: Rant
+  name        : Dmitry Rantovov
+
 - github      : davialexandre
   name        : Davi Alexandre
   organization: CompuCorp
@@ -502,6 +506,10 @@
 
 - github      : dptarrant
   name        : Dave T
+
+- github      : dstorozhuk
+  name        : Dima
+  organization: iTech4Web
 
 - github      : duncan-s-white
   name        : Duncan Stanley White
@@ -702,7 +710,7 @@
 
 - github      : GuillaumeSorel
   name        : Guillaume Sorel
-  organization: All In Appli.com
+  organization: GESTAD - gestad.fr
 
 - github      : guyiac
   name        : Guy Iaccarino
@@ -736,6 +744,10 @@
 - github      : h-c-c
   name        : Peter Hartmann
   organization: Hartmann Computer Consulting
+
+- github      : hansrossel
+  name        : Hans Rossel
+  organization: KOBA
 
 - name        : Heather Oliver
   organization: Red Hot Irons
@@ -923,6 +935,10 @@
 
 - github      : jonesinator
   name        : Aaron Jones
+
+- github      : joseltorres
+  name        : Jose Torres
+  organization: Professional Exchange Service Corporation
 
 - github      : joshgowans
   name        : Josh Gowans
@@ -1595,6 +1611,8 @@
 - github      : simonjohnparker
   name        : Simon John Parker
 
+- github      : Sinjinsmiley
+    
 - gitub       : sushantpaste
   organization: OSSeed Technologies LLP
   name        : Sushant Paste
@@ -1658,6 +1676,10 @@
 
 - name        : Shira Miller
 
+- github      : Sinjinsmiley
+  name        : Simon East
+  organization: North Essex Heritage
+  
 - github      : spalmstr
   name        : Stephen Palmstrom
 

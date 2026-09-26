@@ -120,9 +120,9 @@ if (!defined('CIVICRM_DSN')) {
  * Used to point to a different database to use for logging (if desired). If unset defaults to equal CIVICRM_DSN.
  * The CIVICRM_DSN user needs to have the rights to modify the below database schema and be able to write to it.
  */
-if (!defined('CIVICRM_LOGGING_DSN')) {
-  define('CIVICRM_LOGGING_DSN', CIVICRM_DSN);
-}
+// if (!defined('CIVICRM_LOGGING_DSN')) {
+//   define('CIVICRM_LOGGING_DSN', CIVICRM_DSN);
+// }
 
 /**
  * File System Paths:
@@ -220,13 +220,6 @@ if (!defined('CIVICRM_UF_BASEURL')) {
   define('CIVICRM_UF_BASEURL', '%%baseURL%%');
 }
 
-if (!defined('CIVICRM_DEDUPE_OPTIMIZER')) {
-  // This is a temporary define to allow us to phase in improved dedupe queries
-  // with some degree of caution. If you set this to TRUE
-  // then the queries used to dedupe contacts will be combined
-  // for better performance.
-  define('CIVICRM_DEDUPE_OPTIMIZER', FALSE);
-}
 /**
  * Define any CiviCRM Settings Overrides per https://docs.civicrm.org/sysadmin/en/latest/customize/settings/
  *
@@ -411,6 +404,7 @@ if (!defined('CIVICRM_DOMAIN_ID')) {
  * To use the php extension memcache    use a value of 'Memcache'
  * To use the php extension memcached   use a value of 'Memcached'
  * To use the php extension apc         use a value of 'APCcache'
+ * To use the php extension apcu        use a value of 'APCucache' (single web server only)
  * To use the php extension redis       use a value of 'Redis'
  * To use the filesystem                use a value of 'FileCache'
  * To not use any caching (not recommended), use a value of 'NoCache'
@@ -463,6 +457,14 @@ if (!defined('CIVICRM_DB_CACHE_PASSWORD')) {
 }
 
 /**
+ * Change this if you wish to use a specific database (currently only
+ * available with Redis).
+ */
+if (!defined('CIVICRM_DB_CACHE_BASE')) {
+   define('CIVICRM_DB_CACHE_BASE', '');
+}
+
+/**
  * Items in cache will expire after the number of seconds specified here.
  * Default value is 3600 (i.e., after an hour)
  */
@@ -507,6 +509,7 @@ if (!defined('CIVICRM_PSR16_STRICT')) {
 // define('CIVICRM_LANGUAGE_MAPPING_PT', 'pt_BR');
 // define('CIVICRM_LANGUAGE_MAPPING_ZH', 'zh_TW');
 // define('CIVICRM_LANGUAGE_MAPPING_NL', 'nl_BE');
+// define('CIVICRM_LANGUAGE_MAPPING_DE', 'de_CH');
 
 /**
  * Native gettext improves performance of localized CiviCRM installations

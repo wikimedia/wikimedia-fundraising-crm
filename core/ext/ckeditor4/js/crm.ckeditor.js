@@ -1,6 +1,6 @@
 // https://civicrm.org/licensing
 /* global CKEDITOR */
-(function($, _) {
+(function($) {
 
   function getInstance(item) {
     var name = $(item).attr("name"),
@@ -33,7 +33,7 @@
       editor.on('insertText', function() {
         $(item).trigger("keypress");
       });
-      _.each(['key', 'pasteState'], function(evName) {
+      ['key', 'pasteState'].forEach((evName) => {
         editor.on(evName, function(evt) {
           if (debounce) clearTimeout(debounce);
           debounce = setTimeout(function() {
@@ -145,4 +145,4 @@
     }
   };
 
-})(CRM.$, CRM._);
+})(CRM.$);

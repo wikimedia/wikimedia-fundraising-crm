@@ -1,4 +1,11 @@
 (function(angular, $, _) {
+
+  // A search-range value is an object like {'>=': 1}; a plain value may be a string, number, array or Date.
+  function isPlainObject(value) {
+    return value !== null && typeof value === 'object' &&
+      (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+  }
+
   let afFieldId = 0;
   // Example usage: <div af-fieldset="myModel"><af-field name="do_not_email" /></div>
   angular.module('af').component('afField', {
@@ -36,9 +43,9 @@
           const closestController = $($element).closest('[af-fieldset],[af-join],[af-repeat-item]');
           $scope.dataProvider = closestController.is('[af-repeat-item]') ? this.afRepeatItem : this.afJoin || this.afFieldset;
         }
-        $scope.fieldId = _.kebabCase(this.fieldName) + '-' + afFieldId++;
+        $scope.fieldId = CRM.utils.dashCase(this.fieldName) + '-' + afFieldId++;
 
-        $element.addClass('af-field-type-' + _.kebabCase(this.defn.input_type));
+        $element.addClass('af-field-type-' + CRM.utils.dashCase(this.defn.input_type));
 
         if (this.defn.input_attrs && this.defn.input_attrs.multiple) {
           $element.addClass('af-field-type-multiple');
@@ -59,6 +66,17 @@
         }
 
         fieldOptions = this.defn.options || null;
+
+        // Datepickers read these once when linking, so they must be set before the template renders
+        if (this.defn.search_range && this.defn.is_date) {
+          this.inputAttrs = [this.defn.input_attrs || {}];
+          for (let i = 1; i <= 2; ++i) {
+            const attrs = structuredClone(this.defn.input_attrs || {});
+            attrs.placeholder = attrs['placeholder' + i];
+            attrs.timePlaceholder = attrs['timePlaceholder' + i];
+            this.inputAttrs.push(attrs);
+          }
+        }
 
         // Ensure boolean options are truly boolean
         if (this.defn.data_type === 'Boolean') {
@@ -145,11 +163,20 @@
               };
               crmApi4('Afform', 'getOptions', params)
                 .then((data) => {
-                  $('input[crm-ui-select]', $element).removeClass('loading').prop('disabled', !data.length);
+                  $('input[crm-ui-select]', $element)
+                    .removeClass('loading')
+                    .attr('placeholder', data.length ? ts('Select') : ts('None Found'))
+                    .prop('disabled', !data.length);
                   fieldOptions = data;
                 });
             } else {
               fieldOptions = null;
+              // When control field is deselected, disable this field and set appropriate placeholder
+              const ctrlFieldCtrl = $element.closest('[af-repeat-item], [af-join], [af-fieldset], form')
+                .find(`af-field[name="${controlField}"]`).controller('afField');
+              $('input[crm-ui-select]', $element)
+                .attr('placeholder', ts('Choose %1 first', {1: ctrlFieldCtrl?.defn?.label}))
+                .prop('disabled', true);
             }
           }, true);
         }
@@ -212,8 +239,9 @@
           }
         }
 
+        // Value precedence, lowest first: afform_default, stored value (first load only),
+        // SearchParamSet, route params. On first load the routeParams watch applies the last two.
         function initializeValue(firstLoad) {
-          // Set default value if specified. Note that setValueFromUrl() will override this.
           if (firstLoad && ctrl.afFieldset?.getStoredValue(ctrl.fieldName) !== undefined) {
             setValue(ctrl.afFieldset.getStoredValue(ctrl.fieldName));
           }
@@ -235,16 +263,11 @@
             ) {
               $scope.dataProvider.getFieldData()[ctrl.fieldName] = {};
             }
-            // Initialize inputAttrs (only used for datePickers at the moment)
-            if (ctrl.defn.is_date) {
-              ctrl.inputAttrs.push(ctrl.defn.input_attrs || {});
-              for (let i = 1; i <= 2; ++i) {
-                const attrs = _.cloneDeep(ctrl.defn.input_attrs || {});
-                attrs.placeholder = attrs['placeholder' + i];
-                attrs.timePlaceholder = attrs['timePlaceholder' + i];
-                ctrl.inputAttrs.push(attrs);
-              }
-            }
+          }
+
+          // On reset, a loaded SearchParamSet replaces the defaults, as its columns do in crmSearchDisplayTable
+          if (!firstLoad && ctrl.afFieldset?.selectedSearchParamSet?.filters) {
+            setValueFromRouteParams($scope.$parent.routeParams);
           }
         }
 
@@ -288,6 +311,20 @@
         );
       };
 
+      // A range such as "5-10", "-5-10" or "5-": a leading minus is a sign, an empty or invalid bound is left out
+      function parseNumberRange(text) {
+        const separator = text.indexOf('-', 1);
+        const bounds = separator < 0 ? [text, ''] : [text.slice(0, separator), text.slice(separator + 1)];
+        const range = {};
+        ['>=', '<='].forEach((op, index) => {
+          const bound = Number(bounds[index]);
+          if (bounds[index] !== '' && !isNaN(bound)) {
+            range[op] = bound;
+          }
+        });
+        return range;
+      }
+
       // Set default value; ensure data type matches input type
       function setValue(value) {
         // For values passed from the url, split
@@ -307,27 +344,25 @@
         if (ctrl.defn.input_type === 'EntityRef' && ['Contact', 'Individual'].includes(ctrl.fkEntity) && value === 'user_contact_id') {
           value = CRM.config.cid;
         }
+        const isNumberRange = ctrl.defn.input_type === 'Number' && ctrl.defn.search_range;
         // correct the value type
-        if (ctrl.defn.input_type !== 'DisplayOnly') {
+        if (ctrl.defn.input_type !== 'DisplayOnly' && !isNumberRange) {
           value = correctValueType(value, ctrl.defn.data_type);
         }
 
         if (ctrl.defn.input_type === 'Date' && typeof value === 'string' && value.startsWith('now')) {
           value = getRelativeDate(value, ctrl.defn.input_attrs.time);
         }
-        if (ctrl.defn.input_type === 'Number' && ctrl.defn.search_range) {
-          if (!_.isPlainObject(value)) {
-            value = {
-              '>=': +(('' + value).split('-')[0] || 0),
-              '<=': +(('' + value).split('-')[1] || 0),
-            };
+        if (isNumberRange) {
+          if (!isPlainObject(value)) {
+            value = parseNumberRange('' + value);
           }
         } else if (ctrl.defn.input_type === 'Number') {
           value = Number(value);
         }
         // Initialze search range unless the field also has options (as in a date search) and
         // the default value is a valid option.
-        else if (ctrl.defn.search_range && !_.isPlainObject(value) &&
+        else if (ctrl.defn.search_range && !isPlainObject(value) &&
           !(ctrl.defn.options && ctrl.defn.options.some((option) => option.id === value))
         ) {
           value = {
@@ -469,25 +504,26 @@
         if (Array.isArray(current)) {
           // Remove any invalid options from value array
           const valid = current.filter((v) => options.includes(v));
-          // If any options were removed, update the model and input
+          // If any options were removed, update the model
           if (valid.length < current.length) {
             $scope.dataProvider.getFieldData()[this.fieldName] = valid;
-            $('input[crm-ui-select]', $element).val(valid).change();
           }
         } else {
           // Unset single value if invalid
           if (!options.includes(current)) {
-            $('input[crm-ui-select]', $element).val('').change();
             delete $scope.dataProvider.getFieldData()[this.fieldName];
           }
         }
+        // Re-render Select2 with the current valid selection
+        $element.find('input[crm-ui-select]').controller('ngModel')?.$render();
       };
 
       $scope.select2Options = function() {
         return {
-          results: _.transform($scope.getOptions(), function(result, opt) {
-            result.push({id: opt.id, text: opt.label});
-          }, [])
+          // color/icon/description are what crmSelect2's default formatCrmSelect2 renderer
+          // looks for on each result - carrying them through here is what lets e.g. a tags
+          // filter show the same colored swatches as everywhere else tags are picked.
+          results: $scope.getOptions().map((opt) => ({id: opt.id, text: opt.label, color: opt.color, icon: opt.icon, description: opt.description}))
         };
       };
 
@@ -523,7 +559,7 @@
           if (ctrl.defn.is_date) {
             // The '{}' string is a placeholder for "choose date range"
             if (val === '{}') {
-              val = !_.isPlainObject(currentVal) ? {} : currentVal;
+              val = !isPlainObject(currentVal) ? {} : currentVal;
             }
           }
           // If search_range, this select is the "low" value (the high value uses ng-model without a getterSetter fn)
@@ -550,7 +586,7 @@
         }
         // Getter - transform data into a simple string or array for Select2
         if (ctrl.defn.is_date) {
-          return _.isPlainObject(currentVal) ? '{}' : currentVal;
+          return isPlainObject(currentVal) ? '{}' : currentVal;
         }
         // If search_range, this select is the "low" value (the high value uses ng-model without a getterSetter fn)
         else if (ctrl.defn.search_range) {

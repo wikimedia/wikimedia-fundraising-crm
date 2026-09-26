@@ -97,8 +97,7 @@
   CRM.$(function($) {
     var $form = $("form.{/literal}{$form.formClass}{literal}"),
       action = {/literal}{$action|string_format:"%d"}{literal},
-      cid = {/literal}{$contactId|string_format:"%d"}{literal},
-      _ = CRM._;
+      cid = {/literal}{$contactId|string_format:"%d"}{literal};
 
     $('.crm-accordion-body').each( function() {
       //remove tab which doesn't have any element
@@ -252,7 +251,6 @@
       ruleFields = {},
       $ruleElements = $(),
       matchMessage,
-      dupeTpl = _.template($('#duplicates-msg-tpl').html()),
       runningCheck = 0;
     $.each(rules, function(i, field) {
       // Match regular fields
@@ -316,7 +314,7 @@
         params.match = match;
         params.exclude = cid ? [cid] : [];
       } else {
-        _.extend(params, match);
+        Object.assign(params, match);
       }
       CRM.api3('contact', action, params).done(function(data) {
         // If a new request has started running, cancel this one.
@@ -329,11 +327,30 @@
       return response;
     }
 
+    // Markup for the "possible duplicates" alert. CRM.alert() wants a string, so this builds one.
+    function dupeTpl(data) {
+      var esc = CRM.utils.escapeHtml,
+        // APIv3 returns `values` keyed by id rather than as an array.
+        items = Object.values(data.contacts || {}).map(function(contact) {
+          var merge = '';
+          if (data.cid) {
+            var params = {reset: 1, action: 'update', oid: contact.id > data.cid ? contact.id : data.cid, cid: contact.id > data.cid ? data.cid : contact.id};
+            merge = ' (<a href="' + esc(CRM.url('civicrm/contact/merge', params)) + '">' + {/literal}"{ts escape='js'}Merge{/ts}"{literal} + '</a>)';
+          }
+          return '<li>' +
+            '<a href="' + esc(CRM.url('civicrm/contact/view', {reset: 1, cid: contact.id})) + '">' + esc(contact.display_name) + '</a> ' +
+            esc(contact.email) + merge +
+            '</li>';
+        }).join('');
+      return '<em>' + esc(data.info) + '</em>' +
+        '<ul class="matching-contacts-actions">' + items + '</ul>';
+    }
+
     // Open an alert about possible duplicate contacts
     function openDupeAlert(data, iconType) {
       // Close msg if it exists
       matchMessage && matchMessage.close && matchMessage.close();
-      matchMessage = CRM.alert(dupeTpl(data), _.escape(data.title), iconType, {expires: false});
+      matchMessage = CRM.alert(dupeTpl(data), CRM.utils.escapeHtml(data.title), iconType, {expires: false});
       $('.matching-contacts-actions', '#crm-notification-container').on('click', 'a', function() {
         // No confirmation dialog on click
         $('[data-warn-changes=true]').attr('data-warn-changes', 'false');
@@ -376,24 +393,6 @@
     });
     {/literal}{/if}{literal}
   });
-</script>
-
-<script type="text/template" id="duplicates-msg-tpl">
-  <em><%- info %></em>
-  <ul class="matching-contacts-actions">
-    <% _.forEach(contacts, function(contact) { %>
-      <li>
-        <a href="<%= CRM.url('civicrm/contact/view', {reset: 1, cid: contact.id}) %>">
-          <%- contact.display_name %>
-        </a>
-        <%- contact.email %>
-        <% if (cid) { %>
-          <% var params = {reset: 1, action: 'update', oid: contact.id > cid ? contact.id : cid, cid: contact.id > cid ? cid : contact.id }; %>
-          (<a href="<%= CRM.url('civicrm/contact/merge', params) %>">{/literal}{ts}Merge{/ts}{literal}</a>)
-        <% } %>
-      </li>
-    <% }); %>
-  </ul>
 </script>
 {/literal}
 

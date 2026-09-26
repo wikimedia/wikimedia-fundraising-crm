@@ -4,6 +4,7 @@ return [
   'name' => 'Pledge',
   'table' => 'civicrm_pledge',
   'class' => 'CRM_Pledge_DAO_Pledge',
+  'token_class' => 'CRM_Pledge_Tokens',
   'getInfo' => fn() => [
     'title' => ts('Pledge'),
     'title_plural' => ts('Pledges'),
@@ -39,6 +40,7 @@ return [
         'import',
         'export',
         'duplicate_matching',
+        'token',
       ],
       'primary_key' => TRUE,
       'auto_increment' => TRUE,

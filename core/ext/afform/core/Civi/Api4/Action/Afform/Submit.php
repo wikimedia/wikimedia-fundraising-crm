@@ -10,6 +10,7 @@ use Civi\Afform\FormDataModel;
 use Civi\Api4\AfformSubmission;
 use Civi\Api4\RelationshipType;
 use Civi\Api4\Utils\CoreUtil;
+use Civi\Core\Exception\DBQueryException;
 
 /**
  * Class Submit
@@ -98,10 +99,7 @@ class Submit extends AbstractProcessor {
       $submissionData = $this->combineValuesAndIds($this->getValues(), $this->_entityIds);
       // Update submission record with entity IDs.
       if (!empty($this->_afform['create_submission'])) {
-        $submissionId = $submission['id'];
-        if (!empty($this->args['sid'])) {
-          $submissionId = $this->args['sid'];
-        }
+        $submissionId = !empty($this->args['sid']) ? $this->args['sid'] : $submission['id'];
 
         AfformSubmission::update(FALSE)
           ->addWhere('id', '=', $submissionId)
@@ -269,6 +267,7 @@ class Submit extends AbstractProcessor {
 
     return self::getRequiredFieldError($event, $fieldName, $fieldDefn, $attributes, $value) ??
       self::getMaxlengthError($fieldName, $fieldDefn, $value) ??
+      self::getMinlengthError($fieldName, $fieldDefn, $value) ??
       self::getMinMaxError($fieldName, $fieldDefn, $value);
   }
 
@@ -335,6 +334,24 @@ class Submit extends AbstractProcessor {
     if ($maxlength && mb_strlen($value) > $maxlength) {
       $label = $fieldDefn['label'] ?? $fieldDefn['title'] ?? $fieldName;
       return E::ts('%1 has a max length of %2.', [1 => $label, 2 => $maxlength]);
+    }
+  }
+
+  /**
+   * If a string value is shorter than the minlength, return an error message.
+   */
+  private static function getMinlengthError(string $fieldName, array $fieldDefn, $value) {
+    // If we have no value, no need to check minlength (`required` has already been checked)
+    if (!$value || !is_string($value) || ($fieldDefn['data_type'] ?? '') !== 'String') {
+      return NULL;
+    }
+
+    $minlength = $fieldDefn['input_attrs']['minlength'] ?? NULL;
+
+    // Use mb_strlen() which better matches the behavior of javascript's String.length
+    if ($minlength && mb_strlen($value) < $minlength) {
+      $label = $fieldDefn['label'] ?? $fieldDefn['title'] ?? $fieldName;
+      return E::ts('%1 has a min length of %2.', [1 => $label, 2 => $minlength]);
     }
   }
 
@@ -574,6 +591,13 @@ class Submit extends AbstractProcessor {
         $event->setEntityId($index, $saved[$idField]);
         $event->setSaved($index, $saved);
         self::saveJoins($event, $index, $saved[$idField], $record['joins'] ?? []);
+      }
+      catch (DBQueryException $e) {
+        // The database rejected the statement, so data the user entered was not stored. That
+        // is never the "optional entity left blank" case handled below, and reporting success
+        // for it leaves the submitter believing their data is safe.
+        \Civi::log('afform')->error('Afform: ' . $event->getAfform()['name'] . ': Database error on submit in processGenericEntity call for "' . $event->getEntityName() . '". Message: ' . $e->getMessage());
+        throw $e;
       }
       catch (\CRM_Core_Exception $e) {
         // What to do here? Sometimes we should silently ignore errors, e.g. an optional entity

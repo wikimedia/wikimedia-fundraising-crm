@@ -4,6 +4,10 @@
   // Ensures each display gets a unique form name
   let displayInstance = 0;
 
+  // Control names are split back apart on '-' to recover the row number and the field,
+  // so the field portion must not contain one.
+  const controlFieldKey = (key) => CRM.utils.dashCase(key).replaceAll('-', '_');
+
   angular.module('crmSearchDisplayBatch').component('crmSearchDisplayBatch', {
     bindings: {
       apiEntity: '@',
@@ -22,7 +26,7 @@
     controller: function($scope, $element, $location, $interval, $q, crmApi4, searchDisplayBaseTrait, searchDisplayEditableTrait) {
       const ts = $scope.ts = CRM.ts('org.civicrm.search_kit');
       // Mix in required traits
-      const ctrl = angular.extend(this, _.cloneDeep(searchDisplayBaseTrait), _.cloneDeep(searchDisplayEditableTrait));
+      const ctrl = angular.extend(this, CRM.utils.cloneDeep(searchDisplayBaseTrait), CRM.utils.cloneDeep(searchDisplayEditableTrait));
 
       let autoSaveTimer;
       let errorNotification;
@@ -41,7 +45,7 @@
         // When previewing on the search admin screen, the display will be view-only
         this.isPreviewMode = typeof this.search !== 'string';
         this.userJobId = this.isPreviewMode ? null : $location.search().batch;
-        this.columns = _.cloneDeep(this.settings.columns);
+        this.columns = structuredClone(this.settings.columns);
         // Run search if a userJobId is given. Otherwise the "Start New Batch" button will be shown.
         if (this.userJobId) {
           this.runSearch();
@@ -194,7 +198,7 @@
 
       this.getFieldName = function(index, key) {
         const rowIndex = ((this.page - 1) * this.limit) + index;
-        return 'batch-row-' + rowIndex + '-' + _.snakeCase(key);
+        return 'batch-row-' + rowIndex + '-' + controlFieldKey(key);
       };
 
       this.isValid = function() {
@@ -212,13 +216,13 @@
         const tallyMismatches = getTallyMismatches();
         if (tallyMismatches.length) {
           let markup = '';
-          // Run each item in array through _.escape
+          // Run each item in array through CRM.utils.escapeHtml
           tallyMismatches.forEach((item, index, array) => {
-            markup += '<p><i class="crm-i fa-warning" role="img" aria-hidden="true"></i> ' + _.escape(item) + '</p>';
+            markup += '<p><i class="crm-i fa-warning" role="img" aria-hidden="true"></i> ' + CRM.utils.escapeHtml(item) + '</p>';
           });
           CRM.confirm({
             title: ts('Totals Mismatch'),
-            message: markup + '<p>' + _.escape(ts('Run import anyway?')) + '</p>',
+            message: markup + '<p>' + CRM.utils.escapeHtml(ts('Run import anyway?')) + '</p>',
             options: {
               no: ts('Cancel'),
               yes: ts('Run Import'),
@@ -250,7 +254,7 @@
           if (key.startsWith('batch-row-') && formCtrl[key].$invalid) {
             const rowNum = 1 + parseInt(key.split('-')[2], 10);
             const fieldKey = key.split('-')[3];
-            const col = this.settings.columns.find(col => _.snakeCase(col.key) === fieldKey);
+            const col = this.settings.columns.find(col => controlFieldKey(col.key) === fieldKey);
             invalidRows[rowNum] = invalidRows[rowNum] || [];
             invalidRows[rowNum].push(col.label);
           }
@@ -267,15 +271,15 @@
         }
 
         invalidRowNumbers.forEach((rowNum) => {
-          messages.push(_.escape(ts('Row %1: %2', {1: rowNum, 2: invalidRows[rowNum].join(', ')})));
+          messages.push(CRM.utils.escapeHtml(ts('Row %1: %2', {1: rowNum, 2: invalidRows[rowNum].join(', ')})));
         });
         if (more) {
-          messages.push(_.escape(ts('And %1 more', {1: more})));
+          messages.push(CRM.utils.escapeHtml(ts('And %1 more', {1: more})));
         }
 
         errorNotification = CRM.alert(
           '<ul><li>' + messages.join('</li><li>') + '</li></ul>',
-          _.escape(ts('Please complete the following:')),
+          CRM.utils.escapeHtml(ts('Please complete the following:')),
           'error'
         );
       };

@@ -16,7 +16,6 @@ use Civi\Api4\PaymentToken;
 use Civi\Api4\Phone;
 use Civi\Api4\PhoneConsent;
 use Civi\Api4\Relationship;
-use Civi\Api4\StateProvince;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\WMFQueueMessage\Message;
 use Civi\WMFQueueMessage\RecurDonationMessage;
@@ -1441,7 +1440,7 @@ class DonationQueueTest extends BaseQueueTestCase {
             'source' => 'USD ' . 2.34,
             'total_amount' => 2.34,
             'trxn_id' => "TEST_GATEWAY 5555555",
-            'financial_type_id' => RecurHelper::getFinancialTypeForFirstContribution(),
+            'financial_type_id:name' => 'Recurring Gift',
           ],
         ],
       ],
@@ -1545,10 +1544,7 @@ class DonationQueueTest extends BaseQueueTestCase {
           'contribution' => $this->getBaseContribution(9111),
           'address' => [
             'country_id:name' => 'US',
-            'state_province_id' => StateProvince::get(FALSE)
-              ->addWhere('abbreviation', '=', 'MA')
-              ->addWhere('country_id.iso_code', '=', 'US')
-              ->execute()->first()['id'],
+            'state_province_id:name' => 'Massachusetts',
             'city' => 'Somerville',
             'postal_code' => '02144',
             'street_address' => '1 Davis Square',

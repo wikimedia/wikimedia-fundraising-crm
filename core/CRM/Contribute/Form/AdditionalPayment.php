@@ -252,7 +252,7 @@ class CRM_Contribute_Form_AdditionalPayment extends CRM_Contribute_Form_Abstract
         ts('Payment Method'),
         ['' => ts('- select -')] + CRM_Contribute_BAO_Contribution::buildOptions('payment_instrument_id', 'create', ['filter' => 0]),
         TRUE,
-        ['onChange' => "return showHideByValue('payment_instrument_id','4','checkNumber','table-row','select',false);", 'class' => 'crm-select2']
+        ['class' => 'crm-select2']
       );
 
       $this->add('text', 'check_number', ts('Check Number'), $attributes['financial_trxn_check_number']);
@@ -344,14 +344,14 @@ class CRM_Contribute_Form_AdditionalPayment extends CRM_Contribute_Form_Abstract
       'contribution_id' => $this->getContributionID(),
       'payment_processor_id' => $this->getPaymentProcessorID(),
       'card_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Core_BAO_FinancialTrxn', 'card_type_id', $this->getSubmittedValue('credit_card_type')),
-      'pan_truncation' => $this->getSubmittedValue('pan_truncation') ?: substr((string) $this->getSubmittedValue('credit_card_number'), -4),
+      'pan_truncation' => $this->getSubmittedValue('pan_truncation') ?: $this->getPanTruncation(),
       'trxn_result_code' => $paymentResult['trxn_result_code'] ?? NULL,
       'payment_instrument_id' => $this->getSubmittedValue('payment_instrument_id'),
       'trxn_id' => $paymentResult['trxn_id'] ?? ($this->getSubmittedValue('trxn_id') ?? NULL),
       'trxn_date' => $this->getSubmittedValue('trxn_date'),
       // This form sends payment notification only, for historical reasons.
       'is_send_contribution_notification' => FALSE,
-    ] + $this->getSubmittedCustomFields();
+    ] + $this->getSubmittedCustomFields(3);
     $paymentID = civicrm_api3('Payment', 'create', $trxnsData)['id'];
     $contributionAddressID = CRM_Contribute_BAO_Contribution::createAddress($this->getSubmittedValues());
     if ($contributionAddressID) {
@@ -477,7 +477,6 @@ class CRM_Contribute_Form_AdditionalPayment extends CRM_Contribute_Form_Abstract
       $this->_mode = $creditCardMode;
     }
 
-    $this->_fields = [];
     $this->set('cid', $this->_contactId);
     parent::preProcess();
     $this->submit($params);

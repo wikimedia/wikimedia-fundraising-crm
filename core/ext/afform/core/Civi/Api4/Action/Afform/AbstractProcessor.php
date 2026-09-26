@@ -7,6 +7,7 @@ use Civi\Afform\Event\AfformPrefillEvent;
 use Civi\Afform\Event\AfformSubmitEvent;
 use Civi\Afform\FormDataModel;
 use Civi\API\Exception\UnauthorizedException;
+use Civi\Api4\AfformSubmission;
 use Civi\Api4\File;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\Utils\CoreUtil;
@@ -48,6 +49,13 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
    * @var array
    */
   protected $_afform;
+
+  /**
+   * Contact id resolved by getSubmitterContactID(), or FALSE before it has been resolved.
+   *
+   * @var int|null|false
+   */
+  private $_submitterContactId = FALSE;
 
   /**
    * @var \Civi\Afform\FormDataModel
@@ -143,6 +151,53 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
   }
 
   /**
+   * Id of the stored submission being completed, if this is not a fresh submission.
+   *
+   * @return int|null
+   */
+  protected function getSubmissionId() {
+    return $this->args['sid'] ?? NULL;
+  }
+
+  /**
+   * Contact id that this form is being filled in on behalf of.
+   *
+   * Normally the logged-in user, but a stored submission is completed by someone else -
+   * an admin processing a form held back for manual processing, or the anonymous request
+   * behind an email-verification link. The values in it belong to the contact who
+   * submitted it, so resolving to whoever is processing it writes their answers onto the
+   * wrong contact.
+   *
+   * The lookup inherits this action's permission setting, so an untrusted request cannot
+   * act as another contact by passing their submission id.
+   *
+   * @return int|null
+   */
+  public function getSubmitterContactID(): ?int {
+    if ($this->_submitterContactId === FALSE) {
+      $submissionId = $this->getSubmissionId();
+      if (!$submissionId) {
+        $this->_submitterContactId = \CRM_Core_Session::getLoggedInContactID() ?: NULL;
+      }
+      else {
+        $submission = AfformSubmission::get($this->getCheckPermissions())
+          ->addSelect('contact_id')
+          ->addWhere('id', '=', $submissionId)
+          ->addWhere('afform_name', '=', $this->name)
+          ->execute()->first();
+        // Falling back to the current user here would write the submitted values onto
+        // whoever is processing the form, so refuse rather than act as the wrong contact
+        if (!$submission) {
+          throw new UnauthorizedException(E::ts('Submission %1 is not available to process.', [1 => $submissionId]));
+        }
+        // An anonymous submission has no contact, so nothing is autofilled
+        $this->_submitterContactId = $submission['contact_id'] ?: NULL;
+      }
+    }
+    return $this->_submitterContactId;
+  }
+
+  /**
    * Load all entities
    */
   protected function loadEntities() {
@@ -193,8 +248,15 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
           }
         }
       }
-      $event = new AfformPrefillEvent($this->_afform, $this->_formDataModel, $this, $entity['type'], $entityName, $this->_entityIds);
+      $this->_entityValues[$entityName] ??= [];
+      $event = new AfformPrefillEvent($this->_afform, $this->_formDataModel, $this, $entity['type'], $entityName, $this->_entityIds, $this->_entityValues[$entityName]);
       \Civi::dispatcher()->dispatch('civi.afform.prefill', $event);
+      if ($event->getRecords()) {
+        $this->_entityValues[$entityName] = $event->getRecords();
+      }
+      else {
+        unset($this->_entityValues[$entityName]);
+      }
     }
   }
 
@@ -611,6 +673,38 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
   }
 
   /**
+   * Replace relative date filter values (e.g. "this.day") submitted for Date/Timestamp
+   * fields with the absolute date they represent.
+   *
+   * Afform fields such as a Hidden field with an `afform_default` can carry a relative
+   * date filter value through to submission; the entity's create action expects an
+   * absolute date.
+   *
+   * @param string $entityType
+   * @param array $records
+   * @return array
+   */
+  protected function replaceRelativeDates(string $entityType, array $records): array {
+    foreach ($records as $key => $record) {
+      foreach ($record['fields'] as $field => $value) {
+        if (!is_string($value) || !array_key_exists($value, (array) \CRM_Core_OptionGroup::values('relative_date_filters'))) {
+          continue;
+        }
+        $dataType = $this->getEntityField($entityType, $field)['data_type'] ?? NULL;
+        if (in_array($dataType, ['Date', 'Timestamp'], TRUE)) {
+          // Open-ended filters (e.g. "earlier.day") have no 'from', only a 'to' - fall
+          // back to it rather than overwriting the field with an empty value.
+          [$from, $to] = \CRM_Utils_Date::getFromTo($value);
+          if ($from || $to) {
+            $records[$key]['fields'][$field] = $from ?: $to;
+          }
+        }
+      }
+    }
+    return $records;
+  }
+
+  /**
    * @param array $records
    * @param string $entityName
    */
@@ -813,6 +907,7 @@ abstract class AbstractProcessor extends \Civi\Api4\Generic\AbstractAction {
     foreach ($sortedEntityNames as $entityName) {
       $entityType = $this->_formDataModel->getEntity($entityName)['type'];
       $records = $this->replaceReferences($entityName, $entityValues[$entityName]);
+      $records = $this->replaceRelativeDates($entityType, $records);
       $this->fillIdFields($records, $entityName);
       $event = new AfformSubmitEvent($this->_afform, $this->_formDataModel, $this, $records, $entityType, $entityName, $this->_entityIds);
       try {

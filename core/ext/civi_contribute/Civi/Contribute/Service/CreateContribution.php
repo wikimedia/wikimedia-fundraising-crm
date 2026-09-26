@@ -199,8 +199,12 @@ class CreateContribution extends AutoService implements EventSubscriberInterface
 
     $event->setEntityId(0, $savedContribution['id']);
 
-    if ($contribution['recur_period'] ?? NULL) {
-      $this->createContributionRecur($savedContribution['id'], $contribution['recur_period']);
+    // Prior to 6.18 the form was configured to set recur_period,
+    // but after it sets the :name version. Therefore we need to check
+    // both for compatibility with forms create before 6.18.
+    $recurPeriodKey = array_first(array_intersect(array_keys($contribution), ['recur_period:name', 'recur_period']));
+    if ($recurPeriodKey && !empty($contribution[$recurPeriodKey])) {
+      $this->createContributionRecur($savedContribution['id'], $contribution[$recurPeriodKey], $contribution['checkout_option'] ?? NULL);
     }
 
   }
@@ -211,6 +215,14 @@ class CreateContribution extends AutoService implements EventSubscriberInterface
   private function getLineItemsForRecord(string $entityType, array $values, array $priceFields): array {
     $lineItems = [];
 
+    // Authoritative gate for admin-visibility (non-public) price options.
+    // These stay in the option list (see PriceFieldUtils::fetchPriceFieldSpecs)
+    // and are hidden client-side by an af-if, but the client is not trusted:
+    // reject a restricted option submitted by a user who may not select it.
+    // Mirrors CRM_Contribute_Form_Contribution_Main::buildPriceSet().
+    $restrictedOptionIds = PriceFieldUtils::getRestrictedPriceFieldValueIds();
+    $mayUseRestricted = !$restrictedOptionIds || \CRM_Core_Permission::check('edit contributions');
+
     foreach ($values as $key => $fieldValue) {
       $priceField = array_find($priceFields, fn ($priceField) => $priceField['name'] === $key);
       if (!$priceField) {
@@ -218,6 +230,13 @@ class CreateContribution extends AutoService implements EventSubscriberInterface
       }
       // $fieldValue can be scalar or array
       foreach ((array) $fieldValue as $singleFieldValue) {
+        // Only guard genuine option selections (a PFV id present in this
+        // field's option list) - never a quantity/amount entered on a
+        // qty or Default Contribution Amount field.
+        $isOption = isset($priceField['options']) && \array_key_exists($singleFieldValue, $priceField['options']);
+        if ($isOption && !$mayUseRestricted && \in_array((int) $singleFieldValue, $restrictedOptionIds, TRUE)) {
+          throw new \CRM_Core_Exception(E::ts('You are not permitted to select one of the chosen options.'));
+        }
         $lineItems[] = PriceFieldUtils::getLineItemForPriceFieldValue($entityType, $values['id'] ?? NULL, $priceField, $singleFieldValue);
       }
     }
@@ -228,7 +247,7 @@ class CreateContribution extends AutoService implements EventSubscriberInterface
   /**
    * For a recurring contribution, create a ContributionRecur record as well
    */
-  public function createContributionRecur(int $contributionId, string $recurPeriod) {
+  public function createContributionRecur(int $contributionId, string $recurPeriod, ?string $checkoutOption = NULL) {
     // get values we need to reuse from the contribution record
     $contribution = \Civi\Api4\Contribution::get(FALSE)
       ->addSelect('contact_id', 'total_amount', 'currency', 'is_test')
@@ -253,6 +272,14 @@ class CreateContribution extends AutoService implements EventSubscriberInterface
     // calculate the next scheduled date
     $nextSched = (new DateTime("+ {$recurParams['frequency_interval']} {$recurParams['frequency_unit']}"))->format('Y-m-d');
 
+    if ($checkoutOption) {
+      $checkoutOption = \Civi::service('civi.checkout')->getOption($checkoutOption);
+      $paymentProcessorId = $checkoutOption->getPaymentProcessorId(\Civi::service('civi.checkout')->isTestMode());
+    }
+    else {
+      $paymentProcessorId = NULL;
+    }
+
     $recurRecordId = \Civi\Api4\ContributionRecur::create(FALSE)
       ->addValue('contact_id', $contribution['contact_id'])
       ->addValue('amount', $contribution['total_amount'])
@@ -261,6 +288,7 @@ class CreateContribution extends AutoService implements EventSubscriberInterface
       ->addValue('frequency_unit', $recurParams['frequency_unit'])
       ->addValue('frequency_interval', $recurParams['frequency_interval'])
       ->addValue('next_sched_contribution_date', $nextSched)
+      ->addValue('payment_processor_id', $paymentProcessorId)
       ->execute()
       ->single()['id'];
 

@@ -1,0 +1,349 @@
+<?php
+/*
+ +--------------------------------------------------------------------+
+ | Copyright CiviCRM LLC. All rights reserved.                        |
+ |                                                                    |
+ | This work is published under the GNU AGPLv3 license with some      |
+ | permitted exceptions and without any warranty. For full license    |
+ | and copyright information, see https://civicrm.org/licensing       |
+ +--------------------------------------------------------------------+
+ */
+
+/**
+ * Upgrade logic for the 6.20.x series.
+ *
+ * Each minor version in the series is handled by either a `6.20.x.mysql.tpl` file,
+ * or a function in this class named `upgrade_6_20_x`.
+ * If only a .tpl file exists for a version, it will be run automatically.
+ * If the function exists, it must explicitly add the 'runSql' task if there is a corresponding .mysql.tpl.
+ *
+ * This class may also implement `setPreUpgradeMessage()` and `setPostUpgradeMessage()` functions.
+ */
+class CRM_Upgrade_Incremental_php_SixTwenty extends CRM_Upgrade_Incremental_Base {
+
+  /**
+   * Upgrade step; adds tasks including 'runSql'.
+   *
+   * @param string $rev
+   *   The version number matching this function name
+   */
+  public function upgrade_6_20_alpha1($rev): void {
+    $this->addTask('Add Navigation.target', 'alterSchemaField', 'Navigation', 'target', [
+      'title' => ts('Link Target'),
+      'sql_type' => 'varchar(16)',
+      'input_type' => 'Select',
+      'description' => ts('How to open the link.'),
+      'add' => '6.20',
+      'pseudoconstant' => [
+        'callback' => ['CRM_Core_SelectValues', 'navigationMenuTarget'],
+      ],
+    ]);
+
+    $this->addTask(ts('Upgrade DB to %1: SQL', [1 => $rev]), 'runSql', $rev);
+    $this->addTask('Install Order Completion Metadata entity', 'createEntityTable', '6.20.alpha1.OrderCompletionMetadata.entityType.php');
+    $this->addTask('Change case start date from date to datetime', 'alterSchemaField', 'Case', 'start_date', [
+      'title' => ts('Case Start Date'),
+      'sql_type' => 'datetime',
+      'input_type' => 'Select Date',
+      'description' => ts('Date on which given case starts.'),
+      'default' => 'CURRENT_TIMESTAMP',
+      'add' => '1.8',
+    ]);
+
+    $this->addTask('Add column "SavedSearch.timeout"', 'alterSchemaField', 'SavedSearch', 'timeout', [
+      'title' => ts('Query Timeout'),
+      'sql_type' => 'int unsigned',
+      'input_type' => 'Number',
+      'description' => ts('Maximum query execution time in seconds. Overrides the site-wide SearchKit timeout. 0 = no timeout. NULL = use site default.'),
+      'add' => '6.20',
+      'default' => NULL,
+      'input_attrs' => [
+        'label' => ts('Query Timeout'),
+        'min' => 0,
+      ],
+    ], 'AFTER `description`');
+
+    $this->addTask('Add WordReplacement.language', 'alterSchemaField', 'WordReplacement', 'language', [
+      'title' => ts('Language'),
+      'sql_type' => 'varchar(5)',
+      'input_type' => 'Select',
+      'description' => ts('Word Replacement Language'),
+      'add' => '6.20',
+      'default_callback' => ['CRM_Core_I18n', 'getLocale'],
+      'pseudoconstant' => [
+        'option_group_name' => 'languages',
+        'key_column' => 'name',
+      ],
+    ]);
+    $this->addTask('Update WordReplacement index and backfill language', 'updateWordReplacements');
+
+    $this->addTask('Add time to existing cases based on time of open case activity ', 'backFillCaseStartTime');
+
+    $this->addTask('Add ContributionPage.thankyou_mode', 'alterSchemaField', 'ContributionPage', 'thankyou_mode', [
+      'title' => ts('Thank-you Mode'),
+      'sql_type' => 'varchar(255)',
+      'input_type' => 'Radio',
+      'description' => ts('Choose between a thank you page or redirect'),
+      'default' => 'page',
+    ], 'AFTER `goal_amount`');
+
+    $this->addTask('Add ContributionPage.thankyou_redirect_url', 'alterSchemaField', 'ContributionPage', 'thankyou_redirect_url', [
+      'title' => ts('Thank-you Redirect URL'),
+      'sql_type' => 'text',
+      'input_type' => 'Url',
+      'description' => ts('Set a URL to redirect users to after completion, instead of generating a thank you page'),
+    ], 'AFTER `thankyou_mode`');
+
+    $this->addTask('Register Events as taggable', 'registerEventTagUsedFor');
+    $this->addTask('Register Message Templates as taggable', 'registerMessageTemplateTagUsedFor');
+
+    $this->addTask('Set payment_instrument field-display groupings', 'setPaymentInstrumentGroupings');
+    $this->addTask('Preserve WordPress auto sign-in default', 'preserveWordPressAutoSignIn');
+
+  }
+
+  /**
+   * Preserve the previous default for WordPress "Automatically Sign In User".
+   *
+   */
+  public static function preserveWordPressAutoSignIn(CRM_Queue_TaskContext $ctx): bool {
+    if (CIVICRM_UF === 'WordPress' && function_exists('add_option')) {
+      // If Sign in User hasn't be set we set it to TRUE (all new install will be set to FALSE)
+      if (!get_option('civicrm_automatically_sign_in_user')) {
+        add_option('civicrm_automatically_sign_in_user', 1);
+      }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Backfill the payment_instrument option values' 'grouping' column.
+   *
+   * Sites created before this column was code-managed have it empty on the reserved Check and
+   * Credit Card instruments. The 'payment_instrument_fields' computed field
+   * (Civi\Api4\Service\Spec\Provider\OptionValueGetSpecProvider) reads 'grouping' directly with
+   * no other fallback, so it needs to be set here for those instruments to keep showing their
+   * back-office fields (check_number, card_type_id, etc.). Debit Card is deliberately left out:
+   * the pre-existing CRM_Core_Payment_Manual::getPaymentFormFields() this replaces never showed
+   * these fields for Debit Card either.
+   *
+   * Sites using the 'checknumberpaymentmethod' extension
+   * (https://lab.civicrm.org/extensions/checknumberpaymentmethod) have configured additional,
+   * non-reserved payment instruments to show check_number via its 'check_payment_instrument_ids'
+   * setting instead. Carry that configuration over to 'grouping' too, so those instruments keep
+   * showing the field once core handles this natively - then uninstall the now-redundant
+   * extension here, rather than via extension-compatibility.json's generic 'force-uninstall'.
+   * That mechanism runs at weight 0, before every versioned upgrade task including this one, so
+   * by the time this ran the extension would already be disabled and 'check_payment_instrument_ids'
+   * unreadable - losing the very configuration this is meant to carry over.
+   */
+  public static function setPaymentInstrumentGroupings(): bool {
+    $groupings = [
+      'Check' => '["check_number"]',
+      'Credit Card' => '["card_type_id","pan_truncation"]',
+    ];
+    foreach ($groupings as $name => $grouping) {
+      CRM_Core_DAO::executeQuery("
+        UPDATE civicrm_option_value ov
+        INNER JOIN civicrm_option_group og ON og.id = ov.option_group_id AND og.name = 'payment_instrument'
+        SET ov.grouping = %1
+        WHERE ov.name = %2 AND (ov.grouping IS NULL OR ov.grouping = '')
+      ", [
+        1 => [$grouping, 'String'],
+        2 => [$name, 'String'],
+      ]);
+    }
+
+    $manager = CRM_Extension_System::singleton()->getManager();
+    if ($manager->isEnabled('checknumberpaymentmethod')) {
+      $checkInstrumentIDs = (array) Civi::settings()->get('check_payment_instrument_ids');
+      foreach ($checkInstrumentIDs as $checkInstrumentID) {
+        CRM_Core_DAO::executeQuery("
+          UPDATE civicrm_option_value ov
+          INNER JOIN civicrm_option_group og ON og.id = ov.option_group_id AND og.name = 'payment_instrument'
+          SET ov.grouping = '[\"check_number\"]'
+          WHERE ov.value = %1 AND (ov.grouping IS NULL OR ov.grouping = '')
+        ", [
+          1 => [$checkInstrumentID, 'Integer'],
+        ]);
+      }
+      try {
+        $manager->disable('checknumberpaymentmethod');
+        $manager->uninstall('checknumberpaymentmethod');
+      }
+      catch (CRM_Extension_Exception $e) {
+        // Don't block the rest of the upgrade over this, matching
+        // CRM_Upgrade_Form::disableOldExtensions()'s handling of failures.
+      }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Allow Events to be tagged.
+   */
+  public static function registerEventTagUsedFor(): bool {
+    \CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+      'option_group_id' => 'tag_used_for',
+      'name' => 'Event',
+      'label' => ts('Events'),
+      'value' => 'civicrm_event',
+    ]);
+    return TRUE;
+  }
+
+  /**
+   * Allow Message Templates to be tagged (dev/core#XXXX).
+   */
+  public static function registerMessageTemplateTagUsedFor(): bool {
+    \CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+      'option_group_id' => 'tag_used_for',
+      'name' => 'MessageTemplate',
+      'label' => ts('Message Templates'),
+      'value' => 'civicrm_msg_template',
+    ]);
+    return TRUE;
+  }
+
+  /**
+   * Backfill case start time.
+   *
+   * We are changing the case start_date from a date to a datetime field. This
+   * query uses the time from any open case activities to back fill the time
+   * for previously created cases, but only if the date matches.
+   *
+   */
+  public static function backFillCaseStartTime(CRM_Queue_TaskContext $ctx): bool {
+    $sql = "SELECT ov.value AS value
+      FROM
+        civicrm_option_value ov INNER JOIN civicrm_option_group og ON (ov.option_group_id = og.id AND og.name = 'activity_type')
+      WHERE ov.name = 'Open Case'";
+
+    $dao = \CRM_Core_DAO::executeQuery($sql);
+    $dao->fetch();
+    $activityTypeId = $dao->value;
+    if (!$activityTypeId) {
+      // Maybe cases are not enabled?
+      return TRUE;
+    }
+
+    $sql = "
+      UPDATE civicrm_case c
+        JOIN civicrm_case_activity ca ON c.id = ca.case_id
+        JOIN civicrm_activity a ON ca.activity_id = a.id
+      SET
+        c.start_date = a.activity_date_time
+      WHERE
+        DATE(a.activity_date_time) = DATE(c.start_date) AND
+        a.is_deleted = 0 AND
+        a.activity_type_id = %0
+    ";
+    $params = [0 => [$activityTypeId, "Integer"]];
+    \CRM_Core_DAO::executeQuery($sql, $params);
+
+    return TRUE;
+  }
+
+  /**
+   * Update WordReplacement index and backfill language.
+   *
+   * @param \CRM_Queue_TaskContext $ctx
+   * @return bool
+   */
+  public static function updateWordReplacements(CRM_Queue_TaskContext $ctx): bool {
+    if (!CRM_Core_BAO_SchemaHandler::checkIfIndexExists('civicrm_word_replacement', 'temp_domain_id')) {
+      CRM_Core_DAO::executeQuery('ALTER TABLE civicrm_word_replacement ADD INDEX temp_domain_id (domain_id)');
+    }
+    CRM_Core_BAO_SchemaHandler::dropIndexIfExists('civicrm_word_replacement', 'UI_domain_find');
+
+    // Backfill language on existing rows from domain's default language
+    $domains = CRM_Core_DAO::executeQuery('SELECT id, locale_custom_strings FROM civicrm_domain');
+    while ($domains->fetch()) {
+      $domainId = (int) $domains->id;
+      $lang = CRM_Core_DAO::singleValueQuery("SELECT v.value FROM civicrm_setting v WHERE v.name = 'lcMessages' AND v.domain_id = %1", [
+        1 => [$domainId, 'Integer'],
+      ]);
+      $lang = $lang ? CRM_Utils_String::unserialize($lang) : 'en_US';
+      if (!$lang) {
+        $lang = 'en_US';
+      }
+
+      CRM_Core_DAO::executeQuery("UPDATE civicrm_word_replacement SET language = %1 WHERE domain_id = %2 AND (language IS NULL OR language = '')", [
+        1 => [$lang, 'String'],
+        2 => [$domainId, 'Integer'],
+      ]);
+
+      // Migrate any serialized locale_custom_strings
+      if (!empty($domains->locale_custom_strings)) {
+        $lcs = CRM_Utils_String::unserialize($domains->locale_custom_strings);
+        if (is_array($lcs)) {
+          foreach ($lcs as $locale => $statuses) {
+            if (!is_array($statuses)) {
+              continue;
+            }
+            foreach ($statuses as $status => $matchTypes) {
+              if (!is_array($matchTypes)) {
+                continue;
+              }
+              $isActive = ($status === 'enabled') ? 1 : 0;
+              foreach ($matchTypes as $matchType => $words) {
+                if (!is_array($words)) {
+                  continue;
+                }
+                foreach ($words as $findWord => $replaceWord) {
+                  if ($findWord === '' || $replaceWord === '') {
+                    continue;
+                  }
+                  $exists = CRM_Core_DAO::singleValueQuery("
+                    SELECT id FROM civicrm_word_replacement
+                    WHERE domain_id = %1 AND find_word = %2 AND language = %3
+                  ", [
+                    1 => [$domainId, 'Integer'],
+                    2 => [$findWord, 'String'],
+                    3 => [$locale, 'String'],
+                  ]);
+                  if (!$exists) {
+                    CRM_Core_DAO::executeQuery("
+                      INSERT INTO civicrm_word_replacement (domain_id, find_word, replace_word, is_active, match_type, language)
+                      VALUES (%1, %2, %3, %4, %5, %6)
+                    ", [
+                      1 => [$domainId, 'Integer'],
+                      2 => [$findWord, 'String'],
+                      3 => [$replaceWord, 'String'],
+                      4 => [$isActive, 'Integer'],
+                      5 => [$matchType, 'String'],
+                      6 => [$locale, 'String'],
+                    ]);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (!CRM_Core_BAO_SchemaHandler::checkIfIndexExists('civicrm_word_replacement', 'UI_domain_find')) {
+      CRM_Core_DAO::executeQuery('ALTER TABLE civicrm_word_replacement ADD UNIQUE KEY UI_domain_find (domain_id, find_word, language)');
+    }
+    CRM_Core_BAO_SchemaHandler::dropIndexIfExists('civicrm_word_replacement', 'temp_domain_id');
+
+    return TRUE;
+  }
+
+  public function upgrade_6_20_beta1($rev): void {
+    $this->addTask(ts('Upgrade DB to %1: SQL', [1 => $rev]), 'runSql', $rev);
+    $this->addTask('Set contribution_status default', 'setContributionStatusDefault');
+  }
+
+  public static function setContributionStatusDefault(CRM_Queue_TaskContext $ctx): bool {
+    $curdefault = CRM_Core_DAO::singleValueQuery("SELECT ov.id FROM civicrm_option_value ov INNER JOIN civicrm_option_group og ON (og.id = ov.option_group_id AND og.name='contribution_status') WHERE ov.is_default = 1");
+    if (empty($curdefault)) {
+      $curdefault = CRM_Core_DAO::singleValueQuery("SELECT MIN(ov.id) AS minid FROM civicrm_option_value ov INNER JOIN civicrm_option_group og ON (og.id = ov.option_group_id AND og.name='contribution_status') ORDER BY ov.weight LIMIT 1");
+      CRM_Core_DAO::executeQuery("UPDATE civicrm_option_value SET is_default = 1 WHERE id = %1", [1 => [$curdefault, 'Integer']]);
+    }
+
+    return TRUE;
+  }
+
+}

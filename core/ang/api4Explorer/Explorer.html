@@ -109,7 +109,7 @@
           <legend>{{:: name }}<span class="crm-marker" ng-if="::availableParams[name].required"> *</span></legend>
           <div class="api4-input form-inline" ng-repeat="clause in params[name]" ng-mouseenter="help('value: ' + clause[0], fieldHelp(clause[0]))" ng-mouseleave="help(name, availableParams[name])">
             <input class="collapsible-optgroups form-control twenty" ng-model="clause[0]" crm-ui-select="{formatResult: formatSelect2Item, formatSelection: formatSelect2Item, data: fieldList(name), allowClear: true, placeholder: 'Field'}" />
-            <input class="form-control" ng-model="clause[1]" api4-exp-value="{field: clause[0], action: action === 'getFields' ? params.action || 'get' : action}" />
+            <input class="form-control" ng-model="clause[1]" api4-exp-value="{field: clause[0], action: action === 'getFields' ? params.action || 'get' : action, values: params[name]}" />
           </div>
           <div class="api4-input form-inline">
             <input class="collapsible-optgroups form-control twenty" ng-model="controls[name]" crm-ui-select="{formatResult: formatSelect2Item, formatSelection: formatSelect2Item, data: fieldList(name), placeholder: ts('Add %1', {1: name.slice(0, -1)})}"/>
@@ -202,8 +202,8 @@
     <div class="panel panel-info explorer-code-panel">
       <div class="panel-heading">
         <ul role="tablist" class="nav nav-tabs">
-          <li role="tab" ng-repeat="lang in ::langs" ng-class="{active: selectedTab.code === lang}">
-            <a href ng-click="selectLang(lang)">
+          <li role="presentation" ng-repeat="lang in ::langs" ng-class="{active: selectedTab.code === lang}">
+            <a href role="tab" aria-selected="{{ selectedTab.code === lang }}" ng-click="selectLang(lang)">
               {{:: lang }}
             </a>
           </li>
@@ -255,8 +255,8 @@
           </select>
         </div>
         <ul role="tablist" class="nav nav-tabs">
-          <li role="tab" ng-class="{active: selectedTab.result === 'result'}">
-            <a href ng-click="selectedTab.result = 'result'">
+          <li role="presentation" ng-class="{active: selectedTab.result === 'result'}">
+            <a href role="tab" aria-selected="{{ selectedTab.result === 'result' }}" ng-click="selectedTab.result = 'result'">
               <span ng-switch="status">
                 <i class="fa fa-fw fa-circle-o" ng-switch-when="default" role="img" aria-hidden="true"></i>
                 <i class="fa fa-fw fa-check-circle" ng-switch-when="success" role="img" aria-hidden="true"></i>
@@ -267,8 +267,8 @@
               <span>{{:: ts('Result') }}</span>
             </a>
           </li>
-          <li role="tab" ng-if="::perm.viewDebugOutput" ng-class="{active: selectedTab.result === 'debug'}">
-            <a href ng-click="selectedTab.result = 'debug'">
+          <li role="presentation" ng-if="::perm.viewDebugOutput" ng-class="{active: selectedTab.result === 'debug'}">
+            <a href role="tab" aria-selected="{{ selectedTab.result === 'debug' }}" ng-click="selectedTab.result = 'debug'">
               <i class="fa fa-fw fa-{{ debug ? (status === 'warning' || status === 'danger' ? 'warning' : 'bug') : 'circle-o' }}" role="img" aria-hidden="true"></i>
               <span>{{:: ts('Debug') }}</span>
             </a>

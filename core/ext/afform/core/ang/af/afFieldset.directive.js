@@ -1,4 +1,4 @@
-(function(angular, $, _) {
+(function(angular, $) {
   // Example usage: <af-form><af-entity name="Person" type="Contact" /> ... <fieldset af-fieldset="Person> ... </fieldset></af-form>
   angular.module('af').directive('afFieldset', function() {
     return {
@@ -6,6 +6,7 @@
       require: ['afFieldset', '?^^afForm', '?afRepeat'],
       bindToController: {
         modelName: '@afFieldset',
+        fieldData: '<',
         storeValues: '<'
       },
       link: function($scope, $el, $attr, ctrls) {
@@ -90,8 +91,14 @@
           return this.reloadedStoredValues[fieldName];
         };
 
-        this.$onInit = function() {
-          $scope.$watch(ctrl.getFieldData, (newVal, oldVal) => {
+        this.$onInit = () => {
+          if (typeof this.fieldData === 'object') {
+            localData.push({
+              fields: this.fieldData,
+            });
+          }
+
+          $scope.$watch(this.getFieldData, (newVal, oldVal) => {
             $element[0].dispatchEvent(new Event('crmFormChangeFilters'));
             if (this.storeValues) {
               if (typeof newVal === 'object' && typeof oldVal === 'object' && Object.keys(newVal).length) {
@@ -126,7 +133,7 @@
           };
 
           // get a copy of the object
-          const data = _.cloneDeep(this.getFieldData());
+          const data = structuredClone(this.getFieldData());
 
           Object.keys(data).forEach((key) => {
             // first filter sub objects
@@ -194,4 +201,4 @@
       }
     };
   });
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);
