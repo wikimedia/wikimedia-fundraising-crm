@@ -89,6 +89,10 @@ class Import {
     $this->filterBadBenevityData();
     $this->applyFieldTransformations();
 
+    if ($this->importType === 'Batch_import') {
+      $this->applyBatchImportDefaults();
+    }
+
     // Temp handling to set all contributions from SK batch import to major gift, if not set, April 2026
     // To be removed once we have resolved https://phabricator.wikimedia.org/T422221
     if (!$this->isValidateMode() && $this->importType === 'contribution_import_searchkit') {
@@ -531,6 +535,62 @@ class Import {
         }
       }
     }
+  }
+
+  /**
+   * Fill in the WMF defaults for the Engage batch summary import, following
+   * the same convention as audit-driven batches in
+   * Civi\Api4\Action\WMFAudit\Parse::_run().
+   *
+   * See Civi\Import\DataSource\EngageSummary for what's already supplied by
+   * the datasource itself (gateway account id, status_id).
+   */
+  private function applyBatchImportDefaults(): void {
+    if (empty($this->mappedRow['Batch'])) {
+      return;
+    }
+    $batch = &$this->mappedRow['Batch'];
+    $batch['batch_data.settlement_currency'] ??= 'USD';
+    $batch['type_id:name'] ??= 'Contribution';
+    $batch['mode_id:name'] ??= 'Manual Batch';
+    $batch['batch_data.settled_fee_amount'] ??= '0';
+    if (isset($batch['total'])) {
+      $batch['batch_data.settled_net_amount'] ??= $batch['total'];
+      $batch['batch_data.settled_donation_amount'] ??= $batch['total'];
+    }
+    if (empty($batch['name'])) {
+      $composite = implode('_', array_filter([
+        $this->getGatewayAccountName($batch['batch_data.settlement_gateway_account_id'] ?? NULL),
+        $batch['title'] ?? '',
+        $batch['batch_data.settlement_currency'],
+      ], fn($part) => $part !== '' && $part !== NULL));
+      $batch['name'] = $composite;
+      $batch['title'] = $composite;
+    }
+  }
+
+  /**
+   * Look up a GatewayAccount's name from its id, for building the batch name.
+   *
+   * batch_data.settlement_gateway (the name) isn't available yet at this
+   * point - it's only derived from batch_data.settlement_gateway_account_id
+   * by Civi\WMFHook\Data::batchPre(), which runs later, at actual save time.
+   *
+   * @param int|string|null $gatewayAccountID
+   *
+   * @return string|null
+   */
+  private function getGatewayAccountName($gatewayAccountID): ?string {
+    if (empty($gatewayAccountID)) {
+      return NULL;
+    }
+    if (!isset(\Civi::$statics[__CLASS__]['gateway_account_names'][$gatewayAccountID])) {
+      \Civi::$statics[__CLASS__]['gateway_account_names'][$gatewayAccountID] = GatewayAccount::get(FALSE)
+        ->addWhere('id', '=', $gatewayAccountID)
+        ->addSelect('name')
+        ->execute()->first()['name'] ?? NULL;
+    }
+    return \Civi::$statics[__CLASS__]['gateway_account_names'][$gatewayAccountID];
   }
 
   /**
