@@ -656,6 +656,56 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
+   * settled_donation_amount defaults from the contribution's own
+   * total_amount, and settled_fee_amount defaults to 0, when a recognised
+   * gateway_account fixes up the settlement reference - there's no other
+   * source for these on a plain contribution import.
+   *
+   * settled_net_amount isn't set directly - it's the calculated
+   * "settled_net_amount" field (see FinanceBatchReferenceSpecProvider),
+   * derived from settled_donation_amount and settled_fee_amount, so it's
+   * asserted here too as a check that the calculation reads back correctly
+   * from what this import actually stored.
+   *
+   * Uses a total_amount distinct from other fixtures in this file, and
+   * asserts against that same variable rather than a re-typed literal, so
+   * the test can't coincidentally pass regardless of what
+   * fillSettledAmounts() actually does with it.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testSettledAmountsDefaultedFromTotalAmount(): void {
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'email_primary.email' => 'jane.settledamounts@example.com',
+    ], 'individual_1');
+    $totalAmount = '187.34';
+
+    $data = $this->setupImport([
+      'Contribution.invoice_id' => 'settledamounts1',
+      'Contribution.contribution_extra.gateway_account' => 'wire',
+      'Contribution.contribution_settlement.settlement_batch_reference' => '456',
+      'Contribution.total_amount' => $totalAmount,
+      'Contribution.contact_id' => $this->ids['Contact']['individual_1'],
+    ]);
+    $this->runImport($data, 'Individual');
+
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('invoice_id', '=', 'settledamounts1')
+      ->addSelect(
+        'contribution_settlement.settled_donation_amount',
+        'contribution_settlement.settled_fee_amount',
+        'settled_net_amount'
+      )
+      ->execute()->single();
+    $this->assertEquals($totalAmount, $contribution['contribution_settlement.settled_donation_amount']);
+    $this->assertEquals('0', $contribution['contribution_settlement.settled_fee_amount']);
+    $this->assertEquals($totalAmount, $contribution['settled_net_amount']);
+  }
+
+  /**
    * Picking a specific gateway account (rather than a plain gateway) is
    * enough on its own to derive the base gateway (backfilled onto the
    * contribution) as well as the identifier used to fix up the reference.
@@ -724,7 +774,8 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   /**
    * An unrecognised gateway_account (not a real GatewayAccount.name)
    * leaves the reference untouched - we're not yet throwing for this,
-   * just declining to guess.
+   * just declining to guess. The settled_* amounts are left unset too,
+   * since they're only defaulted alongside a successful reference fix-up.
    *
    * @throws \CRM_Core_Exception
    */
@@ -747,9 +798,10 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
 
     $contribution = Contribution::get(FALSE)
       ->addWhere('invoice_id', '=', 'noviable1')
-      ->addSelect('contribution_settlement.settlement_batch_reference')
+      ->addSelect('contribution_settlement.settlement_batch_reference', 'contribution_settlement.settled_donation_amount')
       ->execute()->single();
     $this->assertEquals('789', $contribution['contribution_settlement.settlement_batch_reference']);
+    $this->assertEmpty($contribution['contribution_settlement.settled_donation_amount']);
   }
 
   /**
