@@ -92,15 +92,18 @@ class NewChecksumLinkQueueConsumer extends QueueConsumer {
       }
     }
 
+    $nonDonorContactID = NULL;
     if ($contact && $message['page'] === 'DonorPortal' && !$this->hasDonated($contacts)) {
-      // The donor portal has nothing to show someone who has never donated.
+      // The donor portal has nothing to show someone who has never donated. We know
+      // who they are though, so keep their ID to record the email against.
+      $nonDonorContactID = $contact['id'];
       $contact = NULL;
     }
 
     if (!$contact) {
       Civi::log()->warning("New link queue consumer: No account found with $identifier");
       if (!empty($message['email'])) {
-        $this->sendAccountNotFound($message['email'], $message['page']);
+        $this->sendAccountNotFound($message['email'], $message['page'], $nonDonorContactID);
       }
       return;
     }
@@ -160,16 +163,29 @@ class NewChecksumLinkQueueConsumer extends QueueConsumer {
       if ($isSecondaryEmail) {
         $details .= '. Sent secondary email version.';
       }
-      Activity::create(FALSE)->setValues([
-        'target_contact_id' => $contactID,
-        'source_contact_id' => $contactID,
-        'subject' => $email['subject'],
-        'details' => $details,
-        'activity_type_id:name' => 'Email',
-        'activity_date_time' => 'now',
-        'Email.Workflow' => NewChecksumLinkMessage::WORKFLOW,
-      ])->execute();
+      $this->recordEmailActivity($contactID, $email['subject'], $details);
     }
+  }
+
+  /**
+   * Record on the contact's record that we sent them one of these emails.
+   *
+   * @param int $contactID
+   * @param string $subject
+   * @param string $details
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function recordEmailActivity(int $contactID, string $subject, string $details): void {
+    Activity::create(FALSE)->setValues([
+      'target_contact_id' => $contactID,
+      'source_contact_id' => $contactID,
+      'subject' => $subject,
+      'details' => $details,
+      'activity_type_id:name' => 'Email',
+      'activity_date_time' => 'now',
+      'Email.Workflow' => NewChecksumLinkMessage::WORKFLOW,
+    ])->execute();
   }
 
   /**
@@ -180,8 +196,12 @@ class NewChecksumLinkQueueConsumer extends QueueConsumer {
    *
    * @param string $toAddress
    * @param string $page
+   * @param int|null $contactID
+   *   The contact we found but have nothing to show, if there was one.
+   *
+   * @throws \CRM_Core_Exception
    */
-  private function sendAccountNotFound(string $toAddress, string $page): void {
+  private function sendAccountNotFound(string $toAddress, string $page, ?int $contactID = NULL): void {
     $email = Civi\Api4\WorkflowMessage::render(FALSE)
       ->setWorkflow(NewChecksumLinkMessage::WORKFLOW)
       ->setValues([
@@ -194,7 +214,7 @@ class NewChecksumLinkQueueConsumer extends QueueConsumer {
       ])
       ->execute()->first();
 
-    MailFactory::singleton()->getMailer()->send([
+    $success = MailFactory::singleton()->getMailer()->send([
       'html' => $email['html'] ?? NULL,
       'subject' => $email['subject'],
       'to_address' => $toAddress,
@@ -202,6 +222,13 @@ class NewChecksumLinkQueueConsumer extends QueueConsumer {
       'from_address' => From::getFromAddress(NewChecksumLinkMessage::WORKFLOW),
       'from_name' => From::getFromName(NewChecksumLinkMessage::WORKFLOW),
     ]);
+    if ($success && $contactID) {
+      $this->recordEmailActivity(
+        $contactID,
+        $email['subject'],
+        'Requested page: ' . $page . '. Sent account not found version.'
+      );
+    }
   }
 
   /**

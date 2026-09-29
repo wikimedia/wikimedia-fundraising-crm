@@ -182,7 +182,38 @@ class NewChecksumLinkQueueConsumerTest extends BaseQueueTestCase {
       'page' => 'DonorPortal',
     ]);
 
-    $this->assertAccountNotFound($this->primaryEmail);
+    $this->assertAccountNotFound($this->primaryEmail, 1);
+  }
+
+  /**
+   * We know who the non donor is, so the email goes on their record.
+   */
+  public function testDonorPortalForNonDonorRecordsActivity(): void {
+    $this->processMessageWithoutQueuing([
+      'email' => $this->primaryEmail,
+      'page' => 'DonorPortal',
+    ]);
+
+    $activities = $this->getEmailActivities($this->getContactID());
+    $this->assertCount(1, $activities);
+    $activity = reset($activities);
+    $this->assertEquals(
+      'Requested page: DonorPortal. Sent account not found version.',
+      $activity['details']
+    );
+    $this->assertEquals('new_checksum_link', $activity['Email.Workflow']);
+  }
+
+  /**
+   * An address that matches nobody has no contact to record anything against.
+   */
+  public function testUnknownEmailRecordsNoActivity(): void {
+    $this->processMessageWithoutQueuing([
+      'email' => 'nobody@example.com',
+      'page' => 'DonorPortal',
+    ]);
+
+    $this->assertCount(0, $this->getEmailActivities($this->getContactID()));
   }
 
   /**
@@ -198,7 +229,7 @@ class NewChecksumLinkQueueConsumerTest extends BaseQueueTestCase {
       'page' => 'DonorPortal',
     ]);
 
-    $this->assertAccountNotFound($this->primaryEmail);
+    $this->assertAccountNotFound($this->primaryEmail, 1);
   }
 
   /**
@@ -303,8 +334,10 @@ class NewChecksumLinkQueueConsumerTest extends BaseQueueTestCase {
    * Assert we sent the not found email and pointed nobody at an account.
    *
    * @param string $toAddress
+   * @param int $expectedActivities
+   *   Emails recorded against the contact from setUp, if we knew who they were.
    */
-  private function assertAccountNotFound(string $toAddress): void {
+  private function assertAccountNotFound(string $toAddress, int $expectedActivities = 0): void {
     $values = $this->getTemplateParams();
     $this->assertFalse($values['accountFound']);
     // Nothing that would log anyone in.
@@ -314,7 +347,7 @@ class NewChecksumLinkQueueConsumerTest extends BaseQueueTestCase {
 
     $this->assertEquals(1, $this->getMailingCount());
     $this->assertEquals($toAddress, $this->getMailing(0)['to_address']);
-    $this->assertCount(0, $this->getEmailActivities($this->getContactID()));
+    $this->assertCount($expectedActivities, $this->getEmailActivities($this->getContactID()));
   }
 
   /**
