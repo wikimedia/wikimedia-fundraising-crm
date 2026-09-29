@@ -179,7 +179,7 @@ class NewChecksumLinkQueueConsumer extends QueueConsumer {
   private function recordEmailActivity(int $contactID, string $subject, string $details): void {
     Activity::create(FALSE)->setValues([
       'target_contact_id' => $contactID,
-      'source_contact_id' => $contactID,
+      'source_contact_id' => $message['sourceContactID'] ?? $contactID,
       'subject' => $subject,
       'details' => $details,
       'activity_type_id:name' => 'Email',
