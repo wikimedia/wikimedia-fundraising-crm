@@ -14,9 +14,13 @@ class PaymentAttemptQueueConsumer extends QueueConsumer {
    * Fields that can be updated once the outcome of a payment attempt is known.
    */
   private const OUTCOME_FIELDS = [
-    'fraud_flagged_by_processor',
     'auth_decline',
+    'auth_success',
+    'backend_processor',
     'blocked_by_filter',
+    'error_category',
+    'fraud_flagged_by_processor',
+    'raw_error_message',
   ];
 
   /**
