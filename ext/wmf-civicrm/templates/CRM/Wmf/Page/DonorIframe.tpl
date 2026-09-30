@@ -1,10 +1,44 @@
+<!DOCTYPE html>
 <style>
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+  }
+  button,
+  input {
+    font: inherit;
+  }
+  button {
+    padding: 2px 10px;
+    border: 1px solid rgb(31, 115, 183);
+    border-radius: 4px;
+    background: #fff;
+    color: rgb(31, 115, 183);
+    cursor: pointer;
+  }
+  button:hover {
+    background: rgba(31, 115, 183, 0.08);
+  }
+  button:disabled {
+    border-color: #d8dcde;
+    color: #87929d;
+    background: #fff;
+    cursor: default;
+  }
   table.donor-lookup {
     width: 100%;
     border-collapse: collapse;
   }
+  table.donor-lookup {
+    color: rgb(41, 50, 57);
+  }
+  a,
+  a:visited {
+    color: rgb(31, 115, 183);
+    text-decoration: none;
+  }
   table.donor-lookup td {
-    padding: 3px 4px;
+    padding: 4px 4px;
     vertical-align: top;
     word-break: break-word;
   }
@@ -12,13 +46,19 @@
     width: 1%;
     white-space: nowrap;
     padding-right: 6px;
+    color: #68737d;
   }
   table.donor-lookup tr.plain td {
     padding-top: 6px;
   }
+  table.donor-lookup tr.section-start td {
+    padding-top: 14px;
+  }
   .bad {
-    color: #900;
-    font-weight: bold;
+    padding: 1px 6px;
+    border: 1px solid #f5c2c2;
+    border-radius: 4px;
+    background: #fdf1f1;
   }
 </style>
 
@@ -31,38 +71,32 @@
   <table class="donor-lookup">
     {if $donor.is_secondary_email}
       <tr class="plain">
-        <td class="label"></td>
-        <td class="bad">Secondary email</td>
+        <td colspan="2"><span class="bad">Secondary email</span></td>
       </tr>
     {/if}
     <tr class="plain">
-      <td class="label"></td>
-      <td>
+      <td colspan="2">
         <a href="{crmURL p='civicrm/contact/view' q="reset=1&cid=`$donor.id`"}" target="_blank">{$donor.display_name|escape}</a>
       </td>
     </tr>
     {if $donor.country}
       <tr class="plain">
-        <td class="label"></td>
-        <td>{$donor.country|escape}</td>
+        <td colspan="2">{$donor.country|escape}</td>
       </tr>
     {/if}
     {if $donor.segment}
       <tr class="plain">
-        <td class="label"></td>
-        <td>{$donor.segment|escape}</td>
+        <td colspan="2">{$donor.segment|escape}</td>
       </tr>
     {/if}
     <tr class="plain">
-      <td class="label"></td>
-      <td>
+      <td colspan="2">
         {$donor.opt_in}
         <button type="button" id="snoozeToggle" onclick="document.getElementById('snoozeRow').style.display=''; this.style.display='none';">Snooze</button>
       </td>
     </tr>
     <tr id="snoozeRow" style="display: none">
-      <td class="label"></td>
-      <td>
+      <td colspan="2">
         <form method="post">
           {include file="CRM/AuthenticatedIframe/HandshakeParams.tpl"}
           <input type="date" name="snoozeDate" required>
@@ -71,9 +105,9 @@
         </form>
       </td>
     </tr>
-    <tr>
-      <td class="label"><a href="{crmURL p='civicrm/contact/view' q="reset=1&cid=`$donor.id`&selectedChild=contribute"}" target="_blank">OTG</a></td>
-      <td>{$donor.otg_status|escape}</td>
+    <tr class="section-start">
+      <td class="label">OTG</td>
+      <td><a href="{crmURL p='civicrm/contact/view' q="reset=1&cid=`$donor.id`&selectedChild=contribute"}" target="_blank">{$donor.otg_status|escape}</a></td>
     </tr>
     {if $donor.last_otg}
       <tr>
@@ -86,8 +120,8 @@
     {/if}
     <tr>
       <td class="label"><!-- TODO: Once the contributions tab is SK, link direct to the recur tab -->Recur</a></td>
-      <td{if $donor.recur_status.is_failing} class="bad"{/if}>
-        {$donor.recur_status.text|escape}
+      <td>
+        {if $donor.recur_status.is_failing}<span class="bad">{$donor.recur_status.text|escape}</span>{else}{$donor.recur_status.text|escape}{/if}
         {if $donor.active_recur_id}
           <a href="{crmURL p='civicrm/contribute/unsubscribe' q="reset=1&crid=`$donor.active_recur_id`&cid=`$donor.id`&context=contribution"}" target="_blank">Cancel</a>
         {elseif $donor.active_recur_count > 1}
