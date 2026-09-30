@@ -7,7 +7,7 @@
  *
  * Column 4 (BALANCE (USD), a running balance) isn't mapped to anything.
  * Columns 1 (Settlement Gateway Account, originally TRANSACTION TYPE), 5
- * (Batch Status) and 6 (Item Count) are computed/synthetic columns the
+ * (Item Count) and 6 (Batch Status) are computed/synthetic columns the
  * datasource builds itself - see FinanceSpreadsheet.
  */
 $importMappings = [
@@ -16,8 +16,11 @@ $importMappings = [
   ['name' => 'Batch.title', 'default_value' => NULL, 'column_number' => 2, 'entity_data' => []],
   ['name' => 'Batch.total', 'default_value' => NULL, 'column_number' => 3, 'entity_data' => []],
   ['name' => '', 'default_value' => NULL, 'column_number' => 4, 'entity_data' => []],
-  ['name' => 'Batch.status_id', 'default_value' => NULL, 'column_number' => 5, 'entity_data' => []],
-  ['name' => 'Batch.item_count', 'default_value' => NULL, 'column_number' => 6, 'entity_data' => []],
+  // Column 5 is blank unless Finance has manually added a "Count" column to
+  // the source file - default_value fills it in as 1 (each row is one
+  // ACH/Wire deposit, so always exactly one item) when it's blank.
+  ['name' => 'Batch.item_count', 'default_value' => '1', 'column_number' => 5, 'entity_data' => []],
+  ['name' => 'Batch.status_id', 'default_value' => NULL, 'column_number' => 6, 'entity_data' => []],
 ];
 
 return [
