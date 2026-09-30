@@ -210,6 +210,20 @@ function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermission
         'errorMsg' => E::ts('An error occurred while attempting to confirm %1 %2.'),
       ],
     ];
+    $tasks['Activity']['complete'] = [
+      'title' => E::ts('Mark completed'),
+      'icon' => 'fa-check',
+      'apiBatch' => [
+        'action' => 'update',
+        'params' => [
+          'values' => ['status_id:name' => 'Completed'],
+        ],
+        'confirmMsg' => E::ts('Mark %1 %2 as completed?'),
+        'runMsg' => E::ts('Completing %1 %2...'),
+        'successMsg' => E::ts('Successfully completed %1 %2.'),
+        'errorMsg' => E::ts('An error occurred while attempting to complete %1 %2.'),
+      ],
+    ];
     $tasks['PaymentAttempt']['label'] = [
       'title' => ts('Label as fraud'),
       'entity' => 'PaymentAttempt',

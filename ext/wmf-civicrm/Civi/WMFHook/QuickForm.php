@@ -26,6 +26,14 @@ class QuickForm {
         self::buildFormCustomData($form);
         break;
 
+      case 'CRM_Activity_Form_Activity':
+        if (($form->_action & \CRM_Core_Action::ADD) && self::isMajorGiftsEngagementForm($form)) {
+          $form->setDefaults([
+            'status_id' => \CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'status_id', 'Scheduled'),
+          ]);
+        }
+        break;
+
       case 'CRM_Contribute_Form_CancelSubscription':
         if ($form->elementExists('cancel_reason')) {
           $form->removeElement('cancel_reason');
@@ -210,5 +218,12 @@ class QuickForm {
       'CRM_Activity_BAO_Activity', 'activity_type_id', $form->_activityTypeId
     );
     return ('Recurring Upgrade Decline' === $activityTypeName);
+  }
+
+  protected static function isMajorGiftsEngagementForm(CRM_Activity_Form_Activity $form): bool {
+    $activityTypeName = \CRM_Core_PseudoConstant::getName(
+      'CRM_Activity_BAO_Activity', 'activity_type_id', $form->_activityTypeId
+    );
+    return ('Major Gifts Engagement' === $activityTypeName);
   }
 }
