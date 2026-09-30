@@ -5532,6 +5532,30 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Backfill the new 'foundation'-named batch_data journal fields from the
+   * old 'main'-named ones, now that GenerateBatch writes to the former.
+   *
+   * The old fields are left populated for now - removing them is a
+   * follow-up once nothing is relying on them.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5195(): bool {
+    civicrm_api4('WMFConfig', 'SyncCustomFields');
+    CRM_Core_DAO::executeQuery('
+      UPDATE civicrm_batch_data
+      SET remote_url_foundation = remote_url_main,
+        remote_identifier_foundation = remote_identifier_main,
+        remote_url_to_foundation = remote_url_to_main,
+        remote_identifier_to_foundation = remote_identifier_to_main,
+        amount_journaled_to_foundation = amount_journaled_to_main
+      WHERE remote_url_foundation IS NULL
+    ');
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

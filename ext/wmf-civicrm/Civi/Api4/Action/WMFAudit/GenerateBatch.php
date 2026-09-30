@@ -297,7 +297,7 @@ class GenerateBatch extends AbstractAction {
         $detailWriter->insertOne($formattedRow);
       }
       $csvFiles = [
-        'journal_file' => ['file' => $batchJournalWriter->getPathname(), 'is_journal' => TRUE, 'instance' => 'wmf', 'suffix' => '', 'remote_descriptor' => 'main'],
+        'journal_file' => ['file' => $batchJournalWriter->getPathname(), 'is_journal' => TRUE, 'instance' => 'wmf', 'suffix' => '', 'remote_descriptor' => 'foundation'],
         'detail_file' => ['file' => $detailWriter ? $detailWriter->getPathname() : NULL, 'is_journal' => FALSE, 'instance' => 'wmf', 'suffix' => ''],
       ];
       if (empty($this->incompleteRows[$batchName])) {
@@ -667,7 +667,7 @@ END";
             ->money(htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8'), $currency);
           $journalTotal = \Civi::format()
             ->money(htmlspecialchars($batch['totals']['debit'] + $batch['totals']['credit'] + $batch['totals']['fee'], ENT_QUOTES, 'UTF-8'), $currency);
-          $remoteBatch = $batch['remote']['main'] ?? [];
+          $remoteBatch = $batch['remote']['foundation'] ?? [];
           $usdJournalTotal = $currency === 'USD' ? $journalTotal : $remoteBatch['usd_journal_total'] ?? '';
           $totalInBatch = \Civi::format()
             ->money(htmlspecialchars($batch['batch']['batch_data.settled_net_amount'] ?? 0, ENT_QUOTES, 'UTF-8'), $currency);
@@ -933,7 +933,7 @@ END";
 
   /**
    * Get the configured vendor codes for each gateway, keyed by GatewayAccount
-   * name, in the ['main' => ..., 'endowment' => ...] shape.
+   * name, in the ['foundation' => ..., 'endowment' => ...] shape.
    *
    * @see https://docs.google.com/spreadsheets/d/1FFIhblreQKSiPBxfatc5XhDdjqoaR7R280r9TTOlQcw/edit?gid=1609952585#gid=1609952585
    * @return array[]
@@ -943,7 +943,7 @@ END";
     $codes = [];
     foreach ($this->getGatewayAccounts() as $name => $account) {
       $codes[$name] = array_filter([
-        'main' => $account['vendor_code_foundation'],
+        'foundation' => $account['vendor_code_foundation'],
         'endowment' => $account['vendor_code_endowment'],
       ]);
     }
