@@ -244,6 +244,8 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $this->assertEquals('https://example.org', $batch['batch_data.remote_url_endowment_instance']);
     $this->assertEquals('https://example.org', $batch['batch_data.remote_url_to_endowment']);
     $this->assertEquals('https://example.org', $batch['batch_data.remote_url_foundation']);
+    $this->assertEquals(10, $batch['batch_data.amount_journaled_to_endowment']);
+    $this->assertEquals(20, $batch['batch_data.amount_journaled_to_foundation']);
   }
 
   public function testSameGlCodeDoesNotGroupAcrossDifferentFunds(): void {

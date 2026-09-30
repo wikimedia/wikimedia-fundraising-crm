@@ -211,6 +211,9 @@ class GenerateBatch extends AbstractAction {
                     'usd_debit' => $apiBatch['usd_debit'] ?? '',
                   ];
                   $record['remote'][$journal['remote_descriptor']] = $remote;
+                  $endowmentTransfer = $this->batchSummary[$batch['name']]['endowment_transfer'];
+                  $foundationAmount = Money::of((string) ($batch['batch_data.settled_donation_amount'] ?? 0), $endowmentTransfer->getCurrency())
+                    ->minus($endowmentTransfer);
                   Batch::update(FALSE)
                     ->addWhere('name', '=', $batch['name'])
                     ->setValues([
@@ -218,7 +221,8 @@ class GenerateBatch extends AbstractAction {
                       'batch_data.exchange_rate_source' => 'Intacct',
                       'batch_data.remote_url_' . $journal['remote_descriptor'] => $remote['url'],
                       'batch_data.remote_identifier_' . $journal['remote_descriptor'] => $remote['txn_number'],
-                      'batch_data.amount_journaled_to_endowment' => (string) $this->batchSummary[$batch['name']]['endowment_transfer']->getAmount(),
+                      'batch_data.amount_journaled_to_endowment' => (string) $endowmentTransfer->getAmount(),
+                      'batch_data.amount_journaled_to_foundation' => (string) $foundationAmount->getAmount(),
                     ] + $statusUpdate)
                     ->execute();
                 }
