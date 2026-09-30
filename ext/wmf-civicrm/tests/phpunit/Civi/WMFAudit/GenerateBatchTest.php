@@ -3,6 +3,7 @@
 namespace Civi\WMFAudit;
 
 use Civi\Api4\Batch;
+use Civi\Api4\GatewayAccount;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\WMFAudit;
 use Civi\FinanceIntegration\Connection;
@@ -49,6 +50,12 @@ class GenerateBatchTest extends BaseAuditTestCase {
       ->execute();
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'engage_341%')
+      ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'endowtest_342%')
+      ->execute();
+    GatewayAccount::delete(FALSE)
+      ->addWhere('name', '=', 'endowtest')
       ->execute();
     parent::tearDown();
   }
@@ -666,14 +673,80 @@ class GenerateBatchTest extends BaseAuditTestCase {
   }
 
   /**
+   * An "endowment-first" gateway (GatewayAccount.is_endowment = 1) posts to
+   * the Endowment Intacct instance as its primary journal, so a row that is
+   * NOT itself an endowment-fund contribution is the one that needs
+   * carving out - the reverse of the usual wmf->endowment transfer - and
+   * journaling over to the wmf/foundation instance. See the
+   * `elseif ($isEndowmentGateway ...)` branch in writeJournalToCsv().
+   */
+  public function testEndowmentGatewayCarvesOutNonEndowmentRowsToFoundation(): void {
+    $prefix = 'endowtest_342';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-01-31';
+
+    $this->createTestEntity('GatewayAccount', [
+      'name' => 'endowtest',
+      'gateway' => 'endowtest',
+      'label' => 'Endowment Test Gateway',
+      'is_endowment' => 1,
+      'vendor_code_foundation' => 'VFOUNDTEST',
+      'vendor_code_endowment' => 'VENDOWTEST',
+      'balancing_account_foundation' => '11250',
+    ]);
+
+    $this->createQueueContribution([
+      'financial_type_id:name' => 'Cash',
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $this->createBatch($batchName, $currency, $settlementDate, 10, 1);
+
+    try {
+      $result = WMFAudit::generateBatch(FALSE)
+        ->setBatchPrefix($prefix)
+        ->setIsDryRun(TRUE)
+        ->setIsOutputRows(TRUE)
+        ->setIsOutputCsv(TRUE)
+        ->execute();
+    }
+    catch (\CRM_Core_Exception $e) {
+      $this->fail($e->getMessage());
+    }
+
+    $this->assertNotEmpty($result, 'Expected at least one batch result');
+    $csvFiles = $result[0]['csv'] ?? [];
+    $this->assertArrayHasKey('journal_endowment_to_foundation', $csvFiles, 'Expected a journal_endowment_to_foundation file for an endowment-first gateway');
+
+    $reader = Reader::from($csvFiles['journal_endowment_to_foundation']['file']);
+    $reader->setHeaderOffset(0);
+    $rows = iterator_to_array($reader);
+
+    $vendorRows = array_values(array_filter($rows, fn($r) => ($r['GLENTRY_VENDORID'] ?? '') === 'VFOUNDTEST'));
+    $this->assertNotEmpty($vendorRows, "Expected the foundation-bound journal to use the gateway's foundation vendor code");
+
+    // 27375 = GL_BALANCING_ACCOUNT_WMF_INSTANCE.
+    $balancingRows = array_values(array_filter($rows, fn($r) => (string) ($r['ACCT_NO'] ?? '') === '27375'));
+    $this->assertNotEmpty($balancingRows, 'Expected a balancing row using the WMF instance balancing account');
+  }
+
+  /**
    * @param string $batchName
    * @param string $currency
    * @param string $settlementDate
+   * @param float $amount
+   * @param int $itemCount
    * @param string $prefix
    *
    * @return \Civi\Api4\Generic\Result
    */
-  public function runGenerateWithGuzzle(string $batchName, string $currency, string $settlementDate, float $amount, $itemCount, string $prefix): Result {
+  public function runGenerateWithGuzzle(string $batchName, string $currency, string $settlementDate, float $amount, int $itemCount, string $prefix): Result {
     // Batch expected totals must match what GenerateBatch will compute, or it flags discrepancy.
     $this->createBatch($batchName, $currency, $settlementDate, $amount, $itemCount);
     try {
