@@ -496,4 +496,48 @@ return [
       ],
     ],
   ],
+  [
+    'name' => 'GatewayAccount_bankcheck',
+    'entity' => 'GatewayAccount',
+    'cleanup' => 'never',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'name' => 'bankcheck',
+        'gateway' => 'bankcheck',
+        'label' => 'Bank Check',
+        'is_endowment' => FALSE,
+        // No vendor code for direct bank check deposits.
+        'vendor_code_foundation' => NULL,
+        'vendor_code_endowment' => NULL,
+        'balancing_account_foundation' => '11250',
+      ],
+      'match' => [
+        'name',
+      ],
+    ],
+  ],
+  [
+    'name' => 'GatewayAccount_bankcheck_endowment',
+    'entity' => 'GatewayAccount',
+    'cleanup' => 'never',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'name' => 'bankcheckendowment',
+        'gateway' => 'bankcheck',
+        'label' => 'Bank Check (Endowment)',
+        'is_endowment' => TRUE,
+        // No vendor code for direct bank check deposits.
+        'vendor_code_foundation' => NULL,
+        'vendor_code_endowment' => NULL,
+        'balancing_account_foundation' => '11250',
+      ],
+      'match' => [
+        'name',
+      ],
+    ],
+  ],
 ];

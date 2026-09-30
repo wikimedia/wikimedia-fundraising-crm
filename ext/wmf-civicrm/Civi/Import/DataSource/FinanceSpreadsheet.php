@@ -4,7 +4,6 @@ namespace Civi\Import\DataSource;
 
 use Civi\Api4\GatewayAccount;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 /**
@@ -39,6 +38,10 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
 
   private const ITEM_COUNT_HEADER = 'Item Count';
 
+  // Manually added by Finance to the source file sometimes - not always
+  // present, and not necessarily cased the same way each time.
+  private const COUNT_HEADER = 'Count';
+
   public function getInfo(): array {
     return [
       'title' => ts('Finance Spreadsheet'),
@@ -57,9 +60,6 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
       $this->setUserJobID(\CRM_Utils_Request::retrieveValue('user_job_id', 'Integer'));
     }
     $form->add('hidden', 'hidden_dataSource', self::class);
-    // No raw-first-row variant - extractDataRows() always finds a real
-    // header row itself, so there's no "first row contains headers" choice.
-    $form->add('hidden', 'skipColumnHeader', 1);
     $maxFileSizeMegaBytes = \CRM_Utils_File::getMaxFileSize();
     $maxFileSizeBytes = $maxFileSizeMegaBytes * 1024 * 1024;
     $form->assign('uploadSize', $maxFileSizeMegaBytes);
@@ -87,7 +87,7 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
   }
 
   public function getSubmittableFields(): array {
-    return ['uploadFile', 'skipColumnHeader'];
+    return ['uploadFile'];
   }
 
   /**
@@ -102,7 +102,11 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
         'number_of_columns' => $result['number_of_columns'],
       ]);
     }
-    catch (ReaderException $e) {
+    catch (\Throwable $e) {
+      // Broad catch rather than just ReaderException - an unreadable file
+      // (e.g. a format-specific dependency issue) can throw something else
+      // entirely, and left uncaught that surfaces as a bare wizard-session
+      // error rather than a useful message.
       throw new \CRM_Core_Exception(ts('Spreadsheet not loaded.') . ' ' . $e->getMessage());
     }
   }
@@ -122,7 +126,11 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
     $columnHeaders = NULL;
     $dataRows = [];
     foreach ($spreadsheet->getAllSheets() as $sheet) {
-      $sheetRows = $sheet->toArray(NULL, TRUE, TRUE, FALSE);
+      // formatData=FALSE - a date cell would otherwise come back as a string
+      // already rendered in whatever locale/format that cell happens to
+      // carry (e.g. NZ-style dd/mm/yyyy), rather than the raw numeric serial
+      // convertDateColumn() explicitly converts to US-style m/d/Y.
+      $sheetRows = $sheet->toArray(NULL, TRUE, FALSE, FALSE);
       [$sheetHeaders, $sheetDataRows] = $this->extractDataRows($sheetRows);
       if ($sheetHeaders !== NULL) {
         $columnHeaders = $sheetHeaders;
@@ -135,10 +143,9 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
     $dataRows = $this->keepOnlyAchAndWireRows($columnHeaders, $dataRows);
     $dataRows = $this->convertDateColumn($columnHeaders, $dataRows);
     [$columnHeaders, $dataRows] = $this->convertTransactionTypeToSettlementGatewayAccountId($columnHeaders, $dataRows, $this->isEndowmentFile($fileName));
+    [$columnHeaders, $dataRows] = $this->appendItemCountColumn($columnHeaders, $dataRows);
     [$columnHeaders, $dataRows] = $this->appendConstantColumns($columnHeaders, $dataRows, [
       self::BATCH_STATUS_HEADER => self::BATCH_STATUS_VALUE,
-      // Each row is one ACH/Wire deposit, so it's always exactly one item.
-      self::ITEM_COUNT_HEADER => '1',
     ]);
     $columns = $this->getColumnNamesFromHeaders($columnHeaders);
 
@@ -219,13 +226,19 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
   }
 
   /**
-   * Convert any raw Excel date serial in the "DATE" column to a plain m/d/Y
-   * string.
+   * Convert the "DATE" column to a plain m/d/Y string.
    *
-   * A date-looking cell doesn't always carry an actual date number_format,
-   * in which case PhpSpreadsheet's toArray($formatData=TRUE) leaves it as a
-   * bare serial number (e.g. "45660") instead of formatting it - so this
-   * converts explicitly rather than relying on the source file's formatting.
+   * uploadToTable() reads with formatData=FALSE, so a date cell in a real
+   * spreadsheet (xls/xlsx/ods) is always a bare Excel serial number here,
+   * e.g. "45660" - not a string pre-formatted in whatever locale that cell
+   * happens to carry.
+   *
+   * A CSV has no cell types at all though, so its dates are always literal
+   * text, in whatever format the source file happens to use - if that's
+   * day-first (d/m/Y), it's only unambiguous when the first number is >12
+   * (can't be a month), but that's exactly the case that was otherwise
+   * failing import validation outright, so it's swapped to m/d/Y. A day
+   * <=12 is left alone as already-ambiguous, assumed to be m/d/Y as-is.
    *
    * @param string[] $headers
    * @param array[] $rows
@@ -239,8 +252,14 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
     }
     foreach ($rows as &$row) {
       $value = $row[$dateIndex] ?? '';
-      if ($value !== '' && is_numeric($value)) {
+      if ($value === '') {
+        continue;
+      }
+      if (is_numeric($value)) {
         $row[$dateIndex] = ExcelDate::excelToDateTimeObject((float) $value)->format(self::BATCH_DATE_FORMAT);
+      }
+      elseif (preg_match('#^(\d{1,2})/(\d{1,2})/(\d{4})$#', $value, $matches) && (int) $matches[1] > 12) {
+        $row[$dateIndex] = sprintf('%02d/%02d/%d', (int) $matches[2], (int) $matches[1], (int) $matches[3]);
       }
     }
     return $rows;
@@ -302,10 +321,10 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
   /**
    * Append columns with the same constant value for every row.
    *
-   * Used for Batch Status (status_id is required, and the importer's
-   * "missing required fields" check only looks at what's mapped - a default
-   * set later by Civi\WMFHook\Import::applyBatchImportDefaults() doesn't
-   * count) and Item Count (always 1 - see the call site).
+   * Used for Batch Status - status_id is required, and the importer's
+   * "missing required fields" check only looks at what's mapped, so a
+   * default set later by Civi\WMFHook\Import::applyBatchImportDefaults()
+   * doesn't count.
    *
    * @param string[] $headers
    * @param array[] $rows
@@ -324,6 +343,44 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
       }
     }
     return [$headers, $rows];
+  }
+
+  /**
+   * Append an "Item Count" column, ahead of Batch Status, sourced from a
+   * "Count" column Finance sometimes adds manually to the source file
+   * (case-insensitive match, since it's hand added). Left blank unless that
+   * column holds an actual number - the saved import mapping's own
+   * default_value fills it in as 1 from there, rather than this defaulting
+   * or passing through non-numeric junk.
+   *
+   * @param string[] $headers
+   * @param array[] $rows
+   *
+   * @return array{0: string[], 1: array[]}
+   */
+  private function appendItemCountColumn(array $headers, array $rows): array {
+    $countIndex = $this->findColumnIndexCaseInsensitive($headers, self::COUNT_HEADER);
+    $headers[] = self::ITEM_COUNT_HEADER;
+    foreach ($rows as &$row) {
+      $value = $countIndex === FALSE ? '' : trim((string) ($row[$countIndex] ?? ''));
+      $row[] = is_numeric($value) ? $value : '';
+    }
+    return [$headers, $rows];
+  }
+
+  /**
+   * @param string[] $headers
+   * @param string $headerName
+   *
+   * @return int|false
+   */
+  private function findColumnIndexCaseInsensitive(array $headers, string $headerName) {
+    foreach ($headers as $index => $header) {
+      if (strcasecmp(trim($header), $headerName) === 0) {
+        return $index;
+      }
+    }
+    return FALSE;
   }
 
 }
