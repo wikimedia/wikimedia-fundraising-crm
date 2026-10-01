@@ -1,0 +1,8 @@
+<div af-fieldset="">
+  <p class="af-text">To have appeals automatically applied to DAF donations, add an appeal containing 'DAF' to mailings. Note that donation appeals will only be set if the donor, a soft-credited contact or a related contact has a mailing send, click or open within 90 days of the donation.&nbsp;</p>
+  <div class="af-container af-layout-cols">
+    <af-field name="name" defn="{expose_operator: true, search_operator: 'CONTAINS', input_attrs: {multiple: true}}" />
+    <af-field name="scheduled_date" defn="{input_type: 'Select', search_range: true, input_attrs: {}, afform_default: 'ending_90.day'}" />
+  </div>
+  <crm-search-display-table search-name="Update_mailing_appeals" display-name="Update_mailing_appeals"></crm-search-display-table>
+</div>
