@@ -26,7 +26,7 @@ class MigrateToGravy extends AbstractAction {
   protected $id;
 
   /**
-   * @var int
+   * @var string
    */
   protected $payment_service_id;
 
