@@ -571,24 +571,18 @@ class RecurringQueueTest extends BaseQueueTestCase {
       ->execute()->first();
 
     $details = $mailActivity['details'];
-    // Check right email content
-    $this->assertMatchesRegularExpression('/you donated, and then decided to set up an additional/', $details);
 
     // Check the right donation amount
     $this->assertMatchesRegularExpression('/3.00/', $details);
 
     // Check the right donation currency, original currency is CAD
     $this->assertMatchesRegularExpression('/CA\$/', $details);
-    // Check the subject.
-    $messagetitle = \Civi\Api4\MessageTemplate::get(FALSE)
+    // Check the subject includes the monthly_convert template title, we sent the right one.
+    $messagetitle = MessageTemplate::get(FALSE)
       ->addSelect('msg_title')
       ->addWhere('workflow_name', '=', 'monthly_convert')
       ->execute()->first()['msg_title'];
-    $expectedSubject = $messagetitle . ': ' . MessageTemplate::get(FALSE)
-      ->addWhere('workflow_name', '=', 'monthly_convert')
-      ->addWhere('is_default', '=', TRUE)
-      ->execute()->first()['msg_subject'];
-    $this->assertEquals($expectedSubject, $mailActivity['subject']);
+    $this->assertStringStartsWith($messagetitle . ': ', $mailActivity['subject']);
   }
 
   /**

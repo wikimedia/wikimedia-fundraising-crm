@@ -361,24 +361,34 @@ class CRM_Core_Menu {
 
   /**
    * This function recomputes menu from xml and populates civicrm_menu.
+   *
+   * @param bool $onlyIfEmpty
+   *   Skip the rebuild if another process filled the table while we waited for REBUILD_LOCK.
    */
-  public static function store() {
+  public static function store(bool $onlyIfEmpty = FALSE) {
     // Take the rebuild lock: without it, concurrent rebuilds collide on the (path, domain_id)
     // unique key and can leave the table partially populated. On lock-wait timeout, rebuild anyway (best
     // effort) rather than skip: an unlocked rebuild is the historical behaviour, so the worst case
     // is no worse than before, and skipping would leave the empty-table caller in self::get() with
     // no route table. release() no-ops if the lock is not held.
     $lock = Civi::lockManager()->acquire(self::REBUILD_LOCK, self::REBUILD_LOCK_TIMEOUT);
-    if (!$lock->isAcquired()) {
-      Civi::log()->warning('CRM_Core_Menu::store() is rebuilding civicrm_menu without the ' . self::REBUILD_LOCK . ' lock after waiting ' . self::REBUILD_LOCK_TIMEOUT . 's; a concurrent rebuild may be in progress.');
-    }
     try {
+      if ($onlyIfEmpty && self::hasRoutes()) {
+        return;
+      }
+      if (!$lock->isAcquired()) {
+        Civi::log()->warning('CRM_Core_Menu::store() is rebuilding civicrm_menu without the ' . self::REBUILD_LOCK . ' lock after waiting ' . self::REBUILD_LOCK_TIMEOUT . 's; a concurrent rebuild may be in progress.');
+      }
       self::clearMenu();
       self::rebuild();
     }
     finally {
       $lock->release();
     }
+  }
+
+  private static function hasRoutes(): bool {
+    return (bool) CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_menu LIMIT 1');
   }
 
   /**
@@ -493,8 +503,8 @@ class CRM_Core_Menu {
   public static function getAdminLinks() {
     $links = \Civi::cache('long')->get('AdminSiteMapLinks');
     if (!$links) {
-      // cache may have expired
-      self::store();
+      $menuArray = self::items();
+      self::build($menuArray);
       $links = \Civi::cache('long')->get('AdminSiteMapLinks');
     }
     return $links;
@@ -649,14 +659,13 @@ class CRM_Core_Menu {
     if (!$item) {
       // if nothing is returned it might just be that the routing table has been
       // cleared and we need to rebuild it...
-      $anyRoutes = \CRM_Core_DAO::executeQuery('SELECT id FROM civicrm_menu LIMIT 1')->fetch();
-      if ($anyRoutes) {
+      if (self::hasRoutes()) {
         // actual not found
         return $item;
       }
       else {
         // rebuild and try again
-        self::store();
+        self::store(TRUE);
         $item = self::fetch($path);
       }
     }
