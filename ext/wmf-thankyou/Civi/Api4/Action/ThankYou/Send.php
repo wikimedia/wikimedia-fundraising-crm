@@ -156,7 +156,7 @@ class Send extends AbstractAction {
     // Loop ends with 'break' or 'throw'
     while (TRUE) {
       try {
-        \Civi::log('wmf')->info('thank_you: Calling ThankYou::render');
+        \Civi::log('wmf')->debug('thank_you: Calling ThankYou::render');
         $rendered = ThankYou::render(FALSE)
           // @todo switch to passing in 'raw' contact language.
           ->setLanguage($this->getLanguage())
@@ -164,7 +164,7 @@ class Send extends AbstractAction {
           ->setTemplateParameters($params)
           ->setContributionID($this->getContributionID())
           ->execute()->first();
-        \Civi::log('wmf')->info('thank_you: Done ThankYou::render');
+        \Civi::log('wmf')->debug('thank_you: Done ThankYou::render');
         $html = $rendered['html'];
         $subject = $rendered['subject'];
 
@@ -318,9 +318,9 @@ class Send extends AbstractAction {
           'thank_you: Thank you mailing missing - wtf'
         );
       }
-      \Civi::log('wmf')->info('thank_you: Creating CiviMail record');
+      \Civi::log('wmf')->debug('thank_you: Creating CiviMail record');
       $civi_queue_record = $civimail_store->addQueueRecord($civi_mailing, $email, $contact_id);
-      \Civi::log('wmf')->info('thank_you: Done creating CiviMail record');
+      \Civi::log('wmf')->debug('thank_you: Done creating CiviMail record');
     }
     catch (CiviQueueInsertException $e) {
       \Civi::log('wmf')->info(

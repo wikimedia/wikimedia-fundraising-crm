@@ -283,7 +283,7 @@ EOT;
       $params['venmo_user_name'] = $mailingData['venmo_user_name'];
     }
 
-    \Civi::log('wmf')->info('thank_you: Calling thank_you_send_mail');
+    \Civi::log('wmf')->debug('thank_you: Calling thank_you_send_mail');
 
     $success = ThankYou::send(FALSE)
       ->setDisplayName($mailingData['display_name'])
@@ -335,7 +335,7 @@ EOT;
       ]);
     }
     $stockTable = Civi::$statics['thank_you']['StockTableName'];
-    \Civi::log('wmf')->info(
+    \Civi::log('wmf')->debug(
       'thank_you: Selecting data for TY mail'
     );
 
@@ -390,7 +390,7 @@ EOT;
       ],
     ]);
     $found = $mailingData->fetch();
-    \Civi::log('wmf')->info('thank_you: Got data');
+    \Civi::log('wmf')->debug('thank_you: Got data');
     // check that the API result is a valid contribution result
     if (!$found || !$mailingData->contact_id) {
       // the API result is bad
@@ -408,7 +408,7 @@ EOT;
       // If available, use the time the script started as the start time
       // This way we're less likely to run past the start of the next run.
       if (isset($_SERVER['REQUEST_TIME'])) {
-        \Civi::log('wmf')->info('thank_you: Using REQUEST_TIME as start time');
+        \Civi::log('wmf')->debug('thank_you: Using REQUEST_TIME as start time');
         $this->startTime = $_SERVER['REQUEST_TIME'];
       }
       else {
