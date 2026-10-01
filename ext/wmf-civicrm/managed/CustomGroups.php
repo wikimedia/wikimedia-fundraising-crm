@@ -271,7 +271,7 @@ return [
       'name' => 'Prospect',
       'title' => 'Prospect',
       'extends' => 'Contact',
-      'style' => 'tab',
+      'style' => 'Tab',
       'is_active' => 1,
       'table_name' => 'civicrm_value_1_prospect_5',
     ],
