@@ -681,6 +681,10 @@ class Import {
    * Gift_Information.import_batch_number for the raw reference value when
    * contribution_settlement.settlement_batch_reference itself is empty.
    *
+   * Also defaults the settled_* amounts (see fillSettledAmounts()) once a
+   * gateway account is confirmed recognised, since a contribution imported
+   * this way has no other source for them.
+   *
    * @throws \CRM_Core_Exception
    */
   private function fixUpSettlementBatchReference(): void {
@@ -713,6 +717,22 @@ class Import {
     $currency = $this->mappedRow['Contribution']['contribution_settlement.settlement_currency'] ?? 'USD';
     $this->mappedRow['Contribution']['contribution_settlement.settlement_currency'] = $currency;
     $this->mappedRow['Contribution']['contribution_settlement.settlement_batch_reference'] = implode('_', [$gatewayAccountName, $inputReference, $currency]);
+    $this->fillSettledAmounts();
+  }
+
+  /**
+   * Sets appropriate values for settled amounts when not provided.
+   *
+   * settled_net_amount isn't set here - it's not its own stored value, it's
+   * calculated from settled_donation_amount and settled_fee_amount (see
+   * FinanceBatchReferenceSpecProvider::renderBatchAmountSql()).
+   */
+  private function fillSettledAmounts(): void {
+    $this->mappedRow['Contribution']['contribution_settlement.settled_fee_amount'] ??= '0';
+    $totalAmount = $this->mappedRow['Contribution']['total_amount'] ?? NULL;
+    if ($totalAmount !== NULL) {
+      $this->mappedRow['Contribution']['contribution_settlement.settled_donation_amount'] ??= $totalAmount;
+    }
   }
 
   /**
