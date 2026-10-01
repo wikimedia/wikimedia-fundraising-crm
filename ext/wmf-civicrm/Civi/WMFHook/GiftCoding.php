@@ -302,16 +302,8 @@ class GiftCoding {
   private static function sendMGEngagementCompletionNotification(array $activity, array $donation): void {
     $to = Email::getStaffNotificationEmail($activity['source_contact_id']);
 
-    // Show the currency code unless it's USD.
-    $formattedAmount = \CRM_Utils_Money::format(
-      $donation['total_amount'],
-      $donation['currency'],
-      $donation['currency'] === 'USD' ? '%c%a' : '%c%a %C'
-    );
-    $giftType = \CRM_Core_BAO_CustomField::displayValue(
-      $donation['Gift_Data.Campaign'],
-      \CRM_Core_BAO_CustomField::getFieldByName('Gift_Data.Campaign')['id']
-    );
+    $formattedAmount = \Civi::format()->money($donation['total_amount'], $donation['currency']);
+    $giftType = \CRM_Core_PseudoConstant::getLabel('CRM_Contribute_BAO_Contribution', 'Gift_Data.Campaign', $donation['Gift_Data.Campaign']);
     // Just get the first contact if there is more than one target.
     $targetContactID = $activity['target_contact_id'][0];
     $targetContactName = Contact::get(FALSE)
@@ -324,16 +316,16 @@ class GiftCoding {
       'id' => $activity['id'],
       'cid' => $targetContactID,
       'reset' => 1,
-    ], TRUE);
+    ], TRUE, NULL, FALSE);
     $targetContactLink = \CRM_Utils_System::url('civicrm/contact/view', [
       'cid' => $targetContactID,
       'reset' => 1,
-    ], TRUE);
+    ], TRUE, NULL, FALSE);
     $contributionsLink = \CRM_Utils_System::url('civicrm/contact/view', [
       'cid' => $donation['contact_id'],
       'selectedChild' => 'contribute',
       'reset' => 1,
-    ], TRUE);
+    ], TRUE, NULL, FALSE);
 
     // If the donation is from a different contact than the activity, add the name of the donor
     $donorName = $targetContactName;
@@ -342,7 +334,7 @@ class GiftCoding {
       $donorLink = \CRM_Utils_System::url('civicrm/contact/view', [
         'cid' => $donation['contact_id'],
         'reset' => 1,
-      ], TRUE);
+      ], TRUE, NULL, FALSE);
       $donorName = Contact::get(FALSE)
         ->addWhere('id', '=', $donation['contact_id'])
         ->addSelect('display_name')
