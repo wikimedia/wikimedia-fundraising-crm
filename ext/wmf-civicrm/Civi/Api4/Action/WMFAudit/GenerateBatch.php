@@ -160,7 +160,19 @@ class GenerateBatch extends AbstractAction {
 
       $record += $this->validateBatch($batch, $batchedData);
       if ($this->getBatchValue($batch['name'], 'is_valid')) {
-        [$record['csv'], $isComplete] = $this->writeJournalToCsv($this->getRowsWithReversals($batchedData), $batch['name']);
+        try {
+          [$record['csv'], $isComplete] = $this->writeJournalToCsv($this->getRowsWithReversals($batchedData), $batch['name']);
+        }
+        catch (\Exception $e) {
+          $this->log('Batch ' . $batch['name'] . ' failed to generate journal: ' . $e->getMessage());
+          \Civi::log('wmf')->alert('{subject} {message}', [
+            'subject' => $batch['name'] . ' failed to generate journal',
+            'message' => $e->getMessage(),
+            'batch' => $batch['name'],
+          ]);
+          $record['validation']['journal_generation'] = $e->getMessage();
+          $isComplete = FALSE;
+        }
         if (!$isComplete) {
           $this->log('Batch has missing GL data & hence not closed ' . $batch['name']);
         }

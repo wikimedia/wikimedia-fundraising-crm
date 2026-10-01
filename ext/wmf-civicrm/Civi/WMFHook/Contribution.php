@@ -4,6 +4,7 @@ namespace Civi\WMFHook;
 
 use Civi\API\Event\PrepareEvent;
 use Civi\Api4\ExchangeRate;
+use Civi\Core\Event\PreEvent;
 use Civi\Omnimail\MailFactory;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\Contribution as ContributionHelper;
@@ -70,99 +71,51 @@ class Contribution {
     }
   }
 
-  public static function pre($op, &$contribution): void {
-    // @todo consolidate with apiPrepare - I'm kinda holding off in the hope of
-    // https://lab.civicrm.org/dev/core/-/issues/5413 helping us here.
-    switch ($op) {
+  /**
+   * Implements hook_civicrm_pre::Contribution.
+   */
+  public static function pre(PreEvent $event): void {
+    // @todo consolidate with apiPrepare
+    switch ($event->action) {
       case 'create':
       case 'edit':
-        // Add derived wmf_contribution_extra fields to contribution parameters
+        // Add derived wmf_contribution_extra fields to contribution
         if (Database::isNativeTxnRolledBack()) {
           throw new WMFException(
             WMFException::IMPORT_CONTRIB,
             'Native txn rolled back before running pre contribution hook'
           );
         }
-        if (str_contains($contribution['trxn_id'] ?? '', 'Transaction Fees')) {
+        $trxnID = $event->getValue('trxn_id');
+        if (str_contains($trxnID ?? '', 'Transaction Fees')) {
           break;
         }
-        $extra = self::getContributionExtra($contribution);
-
-        if ($extra) {
-          $map = self::wmf_civicrm_get_custom_field_map(
-            array_keys($extra), 'contribution_extra'
-          );
-          $mapped = [];
-          foreach ($extra as $key => $value) {
-            $mapped[$map[$key]] = $value;
+        if (!empty($trxnID)) {
+          try {
+            $transaction = WMFTransaction::from_unique_id($trxnID);
+            if (!$event->hasValue('contribution_extra.gateway')) {
+              $event->setValue('contribution_extra.gateway', strtolower($transaction->gateway));
+            }
+            if (!$event->hasValue('contribution_extra.gateway_txn_id')) {
+              $event->setValue('contribution_extra.gateway_txn_id', $transaction->gateway_txn_id);
+            }
           }
-          $contribution += $mapped;
-          // FIXME: Seems really ugly that we have to do this, but when
-          // a contribution is created via api3, the _pre hook fires
-          // after the custom field have been transformed and copied
-          // into the 'custom' key
-          $formatted = [];
-          _civicrm_api3_custom_format_params($mapped, $formatted, 'Contribution');
-          if (isset($contribution['custom'])) {
-            $contribution['custom'] += $formatted['custom'];
-          }
-          else {
-            $contribution['custom'] = $formatted['custom'];
+          catch (WMFException $ex) {
+            \Civi::log('wmf')->info('wmf_civicrm: Failed to parse trxn_id: {trxn_id}, {message}',
+              ['trxn_id' => $trxnID, 'message' => $ex->getMessage()]
+            );
           }
         }
-
-        break;
-    }
-  }
-
-  /**
-   * @param $field_names
-   * @param $group_name
-   *
-   * @deprecated - should not be needed with correct api v4 useage.
-   *
-   * @return array
-   * @throws \CRM_Core_Exception
-   */
-  private static function wmf_civicrm_get_custom_field_map($field_names, $group_name = NULL) {
-    static $custom_fields = [];
-    foreach ($field_names as $name) {
-      if (empty($custom_fields[$name])) {
-        $id = \CRM_Core_BAO_CustomField::getCustomFieldID($name, $group_name);
-        if (!$id) {
-          throw new \CRM_Core_Exception('id is missing: ' . $name . ' ' . $group_name);
+        $source = $event->getValue('source');
+        if (!empty($source)) {
+          $original = ContributionHelper::getOriginalCurrencyAndAmountFromSource((string) $source, $event->getValue('total_amount'));
+          foreach ($original as $name => $value) {
+            if (!$event->hasValue("contribution_extra.$name")) {
+              $event->setValue("contribution_extra.$name", $value);
+            }
+          }
         }
-        $custom_fields[$name] = "custom_{$id}";
-      }
     }
-
-    return $custom_fields;
-  }
-  /**
-   * @param array $contribution
-   *
-   * @return array
-   */
-  private static function getContributionExtra(array $contribution) {
-    $extra = [];
-
-    if (!empty($contribution['trxn_id'])) {
-      try {
-        $transaction = WMFTransaction::from_unique_id($contribution['trxn_id']);
-        $extra['gateway'] = strtolower($transaction->gateway);
-        $extra['gateway_txn_id'] = $transaction->gateway_txn_id;
-      }
-      catch (WMFException $ex) {
-        \Civi::log('wmf')->info('wmf_civicrm: Failed to parse trxn_id: {trxn_id}, {message}',
-          ['trxn_id' => $contribution['trxn_id'], 'message' => $ex->getMessage()]
-        );
-      }
-    }
-
-    if (!empty($contribution['source'])) {
-      $extra = array_merge($extra, ContributionHelper::getOriginalCurrencyAndAmountFromSource((string) $contribution['source'], $contribution['total_amount']));
-    }
-    return $extra;
   }
 
   /**
