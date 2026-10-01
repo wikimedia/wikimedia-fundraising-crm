@@ -24,18 +24,32 @@ class GiftCoding {
   private const REPLACEABLE_APPEALS = [NULL, '', 'White Mail', 'DAFWTG'];
 
   /**
+   * Gift types that don't get an appeal from having a relationship manager.
+   */
+  private const RELATIONSHIP_MANAGER_EXCLUDED_GIFT_TYPES = ['Matching Gift', 'Payroll Deduction'];
+
+  /**
    * Implements hook_civicrm_pre::Contribution.
    *
    * If the donation has White Mail or empty appeal, set the appeal from the most
    * recent MG Engagement or Direct Mail Activity or DAF mailing for the donor
-   * or a related contact. Also complete any scheduled MG Engagement activities.
+   * or a related contact or, failing that, the donor's relationship manager.
+   * Also complete any scheduled MG Engagement activities.
    *
    * @throws \CRM_Core_Exception
    */
   public static function contributionPre(PreEvent $event): void {
-    if ($event->action !== 'create') {
+    if ($event->action !== 'create' || self::isRepeatRecurringFinancialType((int) $event->getValue('financial_type_id'))) {
       return;
     }
+    self::setAppealFromActivitiesAndMailings($event);
+    self::setAppealFromRelationshipManager($event);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private static function setAppealFromActivitiesAndMailings(PreEvent $event): void {
     $channel = $event->getValue('Gift_Data.Channel');
     $giftType = $event->getValue('Gift_Data.Campaign');
     if (!self::isGiftCodingApplicable($channel, $giftType)) {
@@ -61,7 +75,35 @@ class GiftCoding {
     if ($giftType === 'Donor Advised Fund') {
       $mailings = self::getRecentDAFMailings($contactIDs, $receiveDate);
     }
-    $event->mergeValues(self::getAppealValues($contactID, $receiveDate, $activities ?? [], $mailings ?? []));
+    $event->mergeValues(self::getAppealValues($activities ?? [], $mailings ?? []));
+  }
+
+  /**
+   * Set MGGO plus the year of the donation if the donor has a relationship
+   * manager and the appeal wasn't set from an activity or mailing.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private static function setAppealFromRelationshipManager(PreEvent $event): void {
+    if (
+      !in_array($event->getValue('Gift_Data.Appeal'), self::REPLACEABLE_APPEALS, TRUE)
+      || in_array($event->getValue('Gift_Data.Campaign'), self::RELATIONSHIP_MANAGER_EXCLUDED_GIFT_TYPES, TRUE)
+    ) {
+      return;
+    }
+    $contactID = (int) $event->getValue('contact_id');
+    $relationshipManager = Contact::get(FALSE)
+      ->addSelect('Prospect.Relationship_Manager')
+      ->addWhere('id', '=', $contactID)
+      ->execute()->first()['Prospect.Relationship_Manager'] ?? NULL;
+    if ($relationshipManager) {
+      $event->mergeValues([
+        'Gift_Data.Appeal' => 'MGGO' . date('y', strtotime($event->getValue('receive_date'))),
+        'Appeal_Change_Reason.Change_Reason' => 'Relationship Manager',
+        'Appeal_Change_Reason.Entity_Table' => 'civicrm_contact',
+        'Appeal_Change_Reason.Entity_ID' => $contactID,
+      ]);
+    }
   }
 
   /**
@@ -110,7 +152,7 @@ class GiftCoding {
     if ($contribution['Gift_Data.Campaign'] === 'Donor Advised Fund') {
       $mailings = self::getRecentDAFMailings($contactIDs, $contribution['receive_date']);
     }
-    $values = self::getAppealValues($contribution['contact_id'], $contribution['receive_date'], $activities ?? [], $mailings ?? []);
+    $values = self::getAppealValues($activities ?? [], $mailings ?? []);
     if (array_diff_assoc($values, $contribution)) {
       Contribution::update(FALSE)
         ->addWhere('id', '=', $contributionID)
@@ -128,6 +170,11 @@ class GiftCoding {
    */
   private static function isGiftCodingApplicable(?string $channel, ?string $giftType): bool {
     return in_array($channel, self::OFFLINE_CHANNELS, TRUE) || $giftType === 'Donor Advised Fund';
+  }
+
+  private static function isRepeatRecurringFinancialType(int $financialTypeID): bool {
+    $financialType = \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'financial_type_id', $financialTypeID);
+    return $financialType === 'Recurring Gift - Cash';
   }
 
   /**
@@ -170,13 +217,11 @@ class GiftCoding {
   /**
    * Get appeal values from the most recent MG Engagement activity or Direct
    * Mail activity with an appeal or, failing that, the most recent DAF
-   * mailing or, failing that, the donor having a relationship manager.
+   * mailing.
    *
    * MG Engagement activities without an appeal get MGGO plus the year of the
-   * activity, relationship managers MGGO plus the year of the donation.
+   * activity.
    *
-   * @param int $contactID
-   * @param string $receiveDate
    * @param array $activities
    *   Most recent first.
    * @param array $mailings
@@ -184,7 +229,7 @@ class GiftCoding {
    *
    * @throws \CRM_Core_Exception
    */
-  protected static function getAppealValues(int $contactID, string $receiveDate, array $activities, array $mailings): array {
+  protected static function getAppealValues(array $activities, array $mailings): array {
     foreach ($activities as $activity) {
       if ($activity['activity_type_id:name'] === 'Major Gifts Engagement') {
         $appeal = $activity['Major_Gifts_Engagement.Appeal'];
@@ -214,18 +259,6 @@ class GiftCoding {
         'Appeal_Change_Reason.Change_Reason' => 'DAF Email',
         'Appeal_Change_Reason.Entity_Table' => 'civicrm_mailing',
         'Appeal_Change_Reason.Entity_ID' => $mailings[0]['mailing_identifier.id'],
-      ];
-    }
-    $relationshipManager = Contact::get(FALSE)
-      ->addSelect('Prospect.Relationship_Manager')
-      ->addWhere('id', '=', $contactID)
-      ->execute()->first()['Prospect.Relationship_Manager'] ?? NULL;
-    if ($relationshipManager) {
-      return [
-        'Gift_Data.Appeal' => 'MGGO' . date('y', strtotime($receiveDate)),
-        'Appeal_Change_Reason.Change_Reason' => 'Relationship Manager',
-        'Appeal_Change_Reason.Entity_Table' => 'civicrm_contact',
-        'Appeal_Change_Reason.Entity_ID' => $contactID,
       ];
     }
     return [];

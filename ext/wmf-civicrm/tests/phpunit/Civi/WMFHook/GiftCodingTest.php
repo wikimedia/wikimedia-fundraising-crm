@@ -3,6 +3,7 @@
 namespace Civi\WMFHook;
 
 use Civi\Api4\Activity;
+use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionSoft;
 use Civi\Api4\CustomField;
@@ -110,6 +111,13 @@ class GiftCodingTest extends TestCase {
       ->execute()->single()['status_id:name'];
   }
 
+  protected function setRelationshipManager(): void {
+    Contact::update(FALSE)
+      ->addValue('Prospect.Relationship_Manager', '1')
+      ->addWhere('id', '=', $this->donorID)
+      ->execute();
+  }
+
   /**
    * A channel outside Direct Mail / Direct Mail Upload / Other Offline
    * is ignored, even when a matching activity exists.
@@ -120,6 +128,19 @@ class GiftCodingTest extends TestCase {
     $this->createDirectMailContribution(['Gift_Data.Channel' => 'Other Online']);
 
     $this->assertEquals('Scheduled', $this->getActivityStatus($activityID));
+  }
+
+  /**
+   * A Recurring Gift - Cash contribution is not changed, even when a matching
+   * activity exists.
+   */
+  public function testRecurringGiftCashIsIgnored(): void {
+    $activityID = $this->createActivity('Major Gifts Engagement');
+
+    $contribution = $this->createDirectMailContribution(['financial_type_id:name' => 'Recurring Gift - Cash']);
+
+    $this->assertEquals('Scheduled', $this->getActivityStatus($activityID));
+    $this->assertEmpty($this->getContribution($contribution['id'])['Gift_Data.Appeal']);
   }
 
   /**
@@ -204,10 +225,7 @@ class GiftCodingTest extends TestCase {
    * plus the two-digit year of the donation.
    */
   public function testRelationshipManagerSetsMGGOAppeal(): void {
-    \Civi\Api4\Contact::update(FALSE)
-      ->addValue('Prospect.Relationship_Manager', '1')
-      ->addWhere('id', '=', $this->donorID)
-      ->execute();
+    $this->setRelationshipManager();
 
     $contribution = $this->createDirectMailContribution(['receive_date' => '2025-03-01']);
 
@@ -216,6 +234,53 @@ class GiftCodingTest extends TestCase {
     $this->assertEquals('Relationship_Manager', $updated['Appeal_Change_Reason.Change_Reason:name']);
     $this->assertEquals('civicrm_contact', $updated['Appeal_Change_Reason.Entity_Table']);
     $this->assertEquals($this->donorID, $updated['Appeal_Change_Reason.Entity_ID']);
+  }
+
+  /**
+   * The relationship manager MGGO appeal applies to any channel.
+   */
+  public function testRelationshipManagerSetsMGGOAppealForOnlineChannel(): void {
+    $this->setRelationshipManager();
+
+    $contribution = $this->createDirectMailContribution(['Gift_Data.Channel' => 'Other Online', 'receive_date' => '2025-03-01']);
+
+    $this->assertEquals('MGGO25', $this->getContribution($contribution['id'])['Gift_Data.Appeal']);
+  }
+
+  /**
+   * Matching Gift doesn't get the relationship manager MGGO appeal.
+   */
+  public function testRelationshipManagerExcludedGiftTypeIsIgnored(): void {
+    $this->setRelationshipManager();
+
+    $contribution = $this->createDirectMailContribution(['Gift_Data.Campaign' => 'Matching Gift']);
+
+    $this->assertEmpty($this->getContribution($contribution['id'])['Gift_Data.Appeal']);
+  }
+
+  /**
+   * A Direct Mail activity appeal is applied over the relationship manager
+   * MGGO appeal.
+   */
+  public function testDirectMailActivityWinsOverRelationshipManager(): void {
+    $this->setRelationshipManager();
+    $this->createActivity('Direct Mail', ['direct_mail_data.direct_mail_appeal' => 'facebook']);
+
+    $contribution = $this->createDirectMailContribution();
+
+    $this->assertEquals('facebook', $this->getContribution($contribution['id'])['Gift_Data.Appeal']);
+  }
+
+  /**
+   * An existing appeal on an online donation isn't overwritten by the
+   * relationship manager.
+   */
+  public function testRelationshipManagerDoesNotOverwriteExistingAppeal(): void {
+    $this->setRelationshipManager();
+
+    $contribution = $this->createDirectMailContribution(['Gift_Data.Channel' => 'Other Online', 'Gift_Data.Appeal' => 'facebook']);
+
+    $this->assertEquals('facebook', $this->getContribution($contribution['id'])['Gift_Data.Appeal']);
   }
 
   /**
