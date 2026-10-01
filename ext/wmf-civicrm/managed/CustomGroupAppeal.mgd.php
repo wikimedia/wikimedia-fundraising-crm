@@ -1,6 +1,6 @@
 <?php
 
-return [
+$entities = [
   [
     'name' => 'OptionGroup_appeal_20080709183729',
     'entity' => 'OptionGroup',
@@ -247,3 +247,30 @@ return [
     ],
   ],
 ];
+
+// MGGO appeals for the current and next year, as set by gift coding.
+// Never cleaned up, so past years are kept.
+foreach ([date('y'), date('y', strtotime('+1 year'))] as $year) {
+  $entities[] = [
+    'name' => 'OptionGroup_appeal_20080709183729_OptionValue_MGGO' . $year,
+    'entity' => 'OptionValue',
+    'cleanup' => 'never',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'appeal_20080709183729',
+        'label' => 'MGGO' . $year,
+        'value' => 'MGGO' . $year,
+        'name' => 'MGGO' . $year,
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+        'value',
+      ],
+    ],
+  ];
+}
+
+return $entities;
