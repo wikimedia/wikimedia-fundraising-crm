@@ -154,6 +154,18 @@
         </td>
       </tr>
     {/foreach}
+    {if $donor.relationship_manager}
+      <tr>
+        <td class="label">RM</td>
+        <td>{$donor.relationship_manager|escape}</td>
+      </tr>
+    {/if}
+    {if $donor.is_legacy_society}
+      <tr>
+        <td class="label">WLS</td>
+        <td>Member</td>
+      </tr>
+    {/if}
     {if $donor.donor_portal_login}
       <tr>
         <td class="label">Donor portal login</td>

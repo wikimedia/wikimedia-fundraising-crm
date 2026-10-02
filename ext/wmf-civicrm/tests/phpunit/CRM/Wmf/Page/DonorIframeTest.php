@@ -349,6 +349,29 @@ class CRM_Wmf_Page_DonorIframeTest extends TestCase implements HeadlessInterface
     );
   }
 
+  public function testRelationshipManager(): void {
+    $this->createIndividual([
+      'email_primary.email' => 'hasrm@example.org',
+      'Prospect.Relationship_Manager:label' => 'Jimmy Wales',
+    ]);
+    $donor = $this->runPage('hasrm@example.org')['donor'];
+    $this->assertSame('Jimmy Wales', $donor['relationship_manager']);
+  }
+
+  public function testLegacySocietyMember(): void {
+    $contactID = $this->createIndividual(['email_primary.email' => 'wls@example.org']);
+    $this->createTestEntity('Activity', [
+      'activity_type_id:name' => 'PG - Pledge Confirmed',
+      'source_contact_id' => $contactID,
+      'target_contact_id' => $contactID,
+      'PG_Commitment_Activity.Commitment_Confirmation_Date' => '2026-01-15',
+      'PG_Commitment_Activity.Commitment_Confirmed_' => TRUE,
+    ]);
+
+    $donor = $this->runPage('wls@example.org')['donor'];
+    $this->assertTrue($donor['is_legacy_society']);
+  }
+
   public function testUpdateSnoozeDateSetsPrimaryEmailSnoozeDate(): void {
     $contactID = $this->createIndividual(['email_primary.email' => 'snoozebutton@example.org']);
     (new CRM_Wmf_Page_DonorIframe())->updateSnoozeDate($contactID, '2030-06-15');

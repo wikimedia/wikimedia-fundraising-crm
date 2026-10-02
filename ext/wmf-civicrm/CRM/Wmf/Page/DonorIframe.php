@@ -1,5 +1,6 @@
 <?php
 
+use Civi\Api4\Activity;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
@@ -119,7 +120,8 @@ class CRM_Wmf_Page_DonorIframe extends IframePage {
         'wmf_donor.donor_status_recur_year:label',
         'wmf_donor.donor_status_recur_overall',
         'wmf_donor.donor_status_recur_overall:label',
-        'Communication.last_donor_portal_login'
+        'Communication.last_donor_portal_login',
+        'Prospect.Relationship_Manager:label'
       )
       ->execute()->first();
 
@@ -137,6 +139,8 @@ class CRM_Wmf_Page_DonorIframe extends IframePage {
       'daf' => $this->getDAFs($contactID),
       'is_secondary_email' => FALSE,
       'donor_portal_login' => $this->getRecentDonorPortalLogin($contact['Communication.last_donor_portal_login']),
+      'relationship_manager' => $contact['Prospect.Relationship_Manager:label'],
+      'is_legacy_society' => $this->isLegacySocietyMember($contactID),
     ] + $this->getActiveRecurringLinkInfo($contactID);
   }
 
@@ -310,6 +314,16 @@ class CRM_Wmf_Page_DonorIframe extends IframePage {
     }
 
     return $dafs;
+  }
+
+  private function isLegacySocietyMember(int $contactID): bool {
+    return (bool) Activity::get(FALSE)
+      ->addWhere('target_contact_id', 'CONTAINS', $contactID)
+      ->addWhere('activity_type_id:name', '=', 'PG - Pledge Confirmed')
+      ->addWhere('PG_Commitment_Activity.Commitment_Confirmation_Date', 'IS NOT NULL')
+      ->addWhere('PG_Commitment_Activity.Commitment_Confirmed_', '=', TRUE)
+      ->addSelect('id')
+      ->execute()->count();
   }
 
 }

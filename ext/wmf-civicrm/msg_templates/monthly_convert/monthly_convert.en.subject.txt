@@ -1,1 +1,1 @@
-Your monthly gift to Wikipedia deserves an extra helping of thanks
+[Your Donation] You went above and beyond{if {contact.first_name|boolean}}, {contact.first_name}{/if}.

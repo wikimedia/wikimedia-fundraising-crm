@@ -6,6 +6,7 @@ use Civi\Test as DemoData;
 use Civi\WorkflowMessage\WorkflowMessageExample;
 use Civi\Api4\WorkflowMessage;
 use Civi\WorkflowMessage\GenericWorkflowMessage;
+use Civi\WorkflowMessage\MonthlyConvert;
 
 class ThankYouExample extends WorkflowMessageExample {
 
@@ -96,6 +97,13 @@ class ThankYouExample extends WorkflowMessageExample {
       'workflow' => 'endowment_thank_you',
       'example' => 'retirement',
     ];
+    yield [
+      'name' => 'workflow/monthly_convert/annual',
+      'title' => 'Monthly Convert (annual)',
+      'tags' => ['preview'],
+      'workflow' => 'monthly_convert',
+      'example' => 'annual',
+    ];
   }
 
   /**
@@ -148,7 +156,16 @@ class ThankYouExample extends WorkflowMessageExample {
     $messageTemplate->setPaymentInstrumentID(107);
     $messageTemplate->setVenmoUserName('venmojoe');
     $messageTemplate->setReceiveDate(date('Y-m-d'), strtotime('One month ago'));
-    $messageTemplate->setFrequencyUnit('month');
+    if ($messageTemplate instanceof MonthlyConvert) {
+      $messageTemplate->setContributionRecur([
+        'id' => 0,
+        'frequency_unit' => $example === 'annual' ? 'year' : 'month',
+        'start_date' => date('Y-m-d'),
+      ]);
+    }
+    else {
+      $messageTemplate->setFrequencyUnit('month');
+    }
     if ($example === 'stock') {
       $messageTemplate->setStockValue(5200);
       $messageTemplate->setStockQuantity(10);
