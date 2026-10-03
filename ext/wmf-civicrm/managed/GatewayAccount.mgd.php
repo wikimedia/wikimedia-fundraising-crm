@@ -249,8 +249,8 @@ return [
         'label' => 'Checkout.com',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V06128',
-        // No endowment vendor code exists yet.
-        'vendor_code_endowment' => NULL,
+        // When we go to production value is V05004
+        'vendor_code_endowment' => 'V05003',
         'balancing_account_foundation' => '11250',
       ],
       'match' => [
