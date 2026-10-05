@@ -28,6 +28,7 @@ use Civi\WMFThankYou\From;
  * @method $this setDisplayName(string $displayName)
  * @method $this setTemplateName(string $templateName)
  * @method $this setEmail(string $email)
+ * @method $this setRecordEmailInSubject(bool $recordEmailInSubject)
  * @method $this setActivityType(string $activityType)
  * @method string getActivityType()
  * @method $this setContactID(int $contactID)
@@ -73,6 +74,13 @@ class Send extends AbstractAction {
    protected int $maxRenderAttempts = 3;
 
    private $preferredLanguage;
+
+  /**
+   * Append the to address to the activity subject (because we are sending to an alternative address)
+   *
+   * @var bool
+   */
+   public $recordEmailInSubject = FALSE;
 
    protected string $activityType = 'Thank you email';
 
@@ -231,6 +239,9 @@ class Send extends AbstractAction {
           ->addWhere('id', '=', $this->getContributionID())
           ->addValue('thankyou_date', 'now')
           ->execute();
+      }
+      if ($this->recordEmailInSubject) {
+        $subject .= ' (sent to ' . $this->getEmail() . ')';
       }
       $this->createActivity($subject, $html);
     }
@@ -391,6 +402,8 @@ class Send extends AbstractAction {
     Contribution::update(FALSE)
       ->addValue('contribution_extra.no_thank_you', $reason)
       ->addWhere('id', '=', $this->getContributionID())
+      // Don't set no thank you if this is a resend
+      ->addWhere('thankyou_date', 'IS NULL')
       ->execute();
   }
 

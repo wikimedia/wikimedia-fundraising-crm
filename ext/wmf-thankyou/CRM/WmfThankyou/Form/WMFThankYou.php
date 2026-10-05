@@ -51,6 +51,11 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
     $this->assign('contact', $contact);
     $this->assign('contribution', $contribution);
     $this->setMessage($preferredLanguage, $contributionID, $contribution['contact_id'], $contributionRecurID);
+    if (!$contributionRecurID) {
+      $this->add('text', 'email', E::ts('Email'), ['class' => 'huge'], TRUE);
+      $this->addRule('email', E::ts('Enter a valid email address'), 'email');
+      $this->setDefaults(['email' => $contact['email']]);
+    }
     $this->addButtons([
       [
         'type' => 'submit',
@@ -131,9 +136,12 @@ class CRM_WmfThankyou_Form_WMFThankYou extends CRM_Core_Form {
         $contributionID = $this->getContributionIDForMonthlyConvert($this->getContributionRecurID());
         Civi\WMFHelper\ContributionRecur::sendSuccessThankYouMail($contributionRecur, $contributionID);
       } else {
+        $email = $this->getSubmittedValue('email');
         ThankYou::send(FALSE)
           ->setContributionID(CRM_Utils_Request::retrieve('contribution_id', 'Integer', $this))
           ->setTemplateName($this->getTemplateName())
+          ->setEmail($email)
+          ->setRecordEmailInSubject(strcasecmp($email, $this->_defaultValues['email']) !== 0)
           ->execute();
       }
       CRM_Core_Session::setStatus('Message sent', E::ts('Thank you Sent'), 'success');

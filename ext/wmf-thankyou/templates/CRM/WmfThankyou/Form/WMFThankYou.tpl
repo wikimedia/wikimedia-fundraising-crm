@@ -3,7 +3,8 @@
   {include file="CRM/common/formButtons.tpl" location="top"}
   </div>
   <p>Click send to send a thank you mail to {$contact.display_name|escape} in their preferred language of
-    <em>{$language|escape}</em> to email address {$contact.email|escape}</p>
+    <em>{$language|escape}</em> at
+    {if !empty($form.email)}{$form.email.html}{else}{$contact.email|escape}{/if}</p>
   {if array_key_exists('template', $form)}
     {$form.template.label} {$form.template.html}
   {/if}

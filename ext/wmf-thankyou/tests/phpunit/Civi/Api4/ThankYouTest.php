@@ -9,7 +9,6 @@ use Civi\Test\EntityTrait;
 use Civi\WMFEnvironmentTrait;
 use CRM_Core_PseudoConstant;
 use PHPUnit\Framework\TestCase;
-use Civi\Omnimail\MailFactory;
 
 class ThankYouTest extends TestCase {
 
@@ -482,6 +481,26 @@ class ThankYouTest extends TestCase {
     ThankYou::send(FALSE)
       ->setContributionID($this->ids['Contribution']['thanks'])
       ->execute();
+  }
+
+  /**
+   * Test the recipient address is recorded in the activity subject when requested.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testThankYouSendToOtherEmail(): void {
+    $this->setupThankyouAbleContribution();
+    ThankYou::send(FALSE)
+      ->setContributionID($this->ids['Contribution']['thanks'])
+      ->setEmail('other@example.com')
+      ->setRecordEmailInSubject(TRUE)
+      ->execute();
+    $this->assertEquals('other@example.com', $this->getMailing(0)['to_address']);
+    $activity = Activity::get(FALSE)
+      ->addWhere('activity_type_id:name', '=', 'Thank you email')
+      ->addWhere('source_contact_id', '=', $this->ids['Contact']['first'])
+      ->execute()->single();
+    $this->assertStringEndsWith(' (sent to other@example.com)', $activity['subject']);
   }
 
   /**
