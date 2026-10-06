@@ -57,6 +57,15 @@ return [
           'columnMode' => 'custom',
           'actions_display_mode' => 'menu',
           'headerCount' => TRUE,
+          'toolbar' => [
+            [
+              'path' => 'civicrm/appeal/add',
+              'text' => E::ts('Add Appeal'),
+              'target' => 'crm-popup',
+              'icon' => 'fa-plus',
+              'style' => 'primary',
+            ],
+          ],
           'columns' => [
             [
               'type' => 'field',
