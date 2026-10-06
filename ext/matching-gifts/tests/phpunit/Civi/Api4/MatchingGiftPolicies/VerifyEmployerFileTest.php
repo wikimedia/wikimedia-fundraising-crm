@@ -5,11 +5,17 @@ namespace Civi\Api4\MatchingGiftPolicies;
 use Civi\Api4\Contact;
 use Civi\Api4\MatchingGiftPolicies;
 use Civi\BaseTestClass;
+use Civi\Omnimail\MailFactory;
 
 /**
  * @group MatchingGifts
  */
 class VerifyEmployerFileTest extends BaseTestClass {
+
+  protected function setUp(): void {
+    parent::setUp();
+    MailFactory::singleton()->setActiveMailer('test');
+  }
 
   /**
    * Ensure we detect new employer data.
