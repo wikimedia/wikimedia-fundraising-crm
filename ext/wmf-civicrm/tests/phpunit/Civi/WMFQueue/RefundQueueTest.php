@@ -32,7 +32,7 @@ class RefundQueueTest extends BaseQueueTestCase {
     );
 
     $this->paypalProvider = $this->getMockBuilder(
-      'SmashPig\PaymentProviders\Paypal\PaymentProvider'
+      'SmashPig\PaymentProviders\PayPal\PaymentProvider'
     )->disableOriginalConstructor()->getMock();
 
     $providerConfig->overrideObjectInstance('payment-provider/paypal', $this->paypalProvider);
