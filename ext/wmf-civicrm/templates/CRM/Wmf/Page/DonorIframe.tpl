@@ -74,6 +74,11 @@
         <td colspan="2"><span class="bad">Secondary email</span></td>
       </tr>
     {/if}
+    {if $donor.shares_email_with_daf}
+      <tr class="plain">
+        <td colspan="2"><span class="bad">Shares email with DAF</span></td>
+      </tr>
+    {/if}
     <tr class="plain">
       <td colspan="2">
         <a href="{crmURL p='civicrm/contact/view' q="reset=1&cid=`$donor.id`"}" target="_blank">{$donor.display_name|escape}</a>
@@ -119,15 +124,16 @@
       </tr>
     {/if}
     <tr>
-      <td class="label"><!-- TODO: Once the contributions tab is SK, link direct to the recur tab -->Recur</a></td>
-      <td>
+      <td class="label"><!-- TODO: Once the contributions tab is SK, link direct to the recur tab -->Recur</td>
+      <td>{strip}
         {if $donor.recur_status.is_failing}<span class="bad">{$donor.recur_status.text|escape}</span>{else}{$donor.recur_status.text|escape}{/if}
-        {if $donor.active_recur_id}
-          <a href="{crmURL p='civicrm/contribute/unsubscribe' q="reset=1&crid=`$donor.active_recur_id`&cid=`$donor.id`&context=contribution"}" target="_blank">Cancel</a>
-        {elseif $donor.active_recur_count > 1}
-          ({$donor.active_recur_count} active)
+        {if $donor.active_recur_count > 1}
+          , {$donor.active_recur_count} active
         {/if}
-      </td>
+        {if $donor.active_recur_count}
+          , {if $donor.is_portal_eligible}portal eligible{else}not portal eligible{/if}
+        {/if}
+        {/strip}</td>
     </tr>
     {if $donor.last_recur}
       <tr>
@@ -172,20 +178,5 @@
         <td>{$donor.donor_portal_login}</td>
       </tr>
     {/if}
-    <tr>
-      <td class="label">{if $linkSent}Link sent{else}Send{/if}</td>
-      <td>
-        <form method="post" style="display: inline">
-          {include file="CRM/AuthenticatedIframe/HandshakeParams.tpl"}
-          <input type="hidden" name="sendLink" value="DonorPortal">
-          <button type="submit"{if $linkSent} disabled{/if}>Donor portal link</button>
-        </form>
-        <form method="post" style="display: inline">
-          {include file="CRM/AuthenticatedIframe/HandshakeParams.tpl"}
-          <input type="hidden" name="sendLink" value="EmailPreferences">
-          <button type="submit"{if $linkSent} disabled{/if}>EPC link</button>
-        </form>
-      </td>
-    </tr>
   </table>
 {/if}

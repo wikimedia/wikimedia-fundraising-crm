@@ -9,7 +9,7 @@ use Civi\Api4\Email;
 use Civi\Api4\Relationship;
 use Civi\Api4\WMFContact;
 use Civi\AuthenticatedIframe\IframePage;
-use SmashPig\Core\DataStores\QueueWrapper;
+use Civi\WMFHook\PreferencesLink;
 
 /**
  * Email-lookup donor snapshot to be embedded in an iframe in a Zendesk
@@ -19,6 +19,11 @@ use SmashPig\Core\DataStores\QueueWrapper;
  */
 class CRM_Wmf_Page_DonorIframe extends IframePage {
 
+  /**
+   * @var array<int, array<int, string>> [contact ID => getDAFs() result]
+   */
+  private array $dafs = [];
+
   protected function getHandshakeParams(): array {
     return ['email'];
   }
@@ -26,12 +31,6 @@ class CRM_Wmf_Page_DonorIframe extends IframePage {
   protected function handlePost(): string {
     $this->buildTemplateVars();
     $donor = $this->getTemplateVars('donor');
-
-    $targetPage = $this->getPostParam('sendLink', 'String');
-    if (in_array($targetPage, ['DonorPortal', 'EmailPreferences'], TRUE) && $donor) {
-      $this->sendChecksumLink((int) $donor['id'], $targetPage);
-      $this->assign('linkSent', $targetPage);
-    }
 
     $snoozeDate = $this->getPostParam('snoozeDate', 'String');
     if ($snoozeDate && $donor) {
@@ -50,15 +49,6 @@ class CRM_Wmf_Page_DonorIframe extends IframePage {
       ->execute();
   }
 
-  private function sendChecksumLink(int $contactID, string $targetPage): void {
-    CRM_SmashPig_ContextWrapper::createContext('donor_iframe');
-    QueueWrapper::push('new-checksum-link', [
-      'contactID' => $contactID,
-      'page' => $targetPage,
-      'sourceContactID' => CRM_Core_Session::getLoggedInContactID(),
-    ]);
-  }
-
   /**
    * Look up the donor and assign the template variables.
    *
@@ -67,17 +57,28 @@ class CRM_Wmf_Page_DonorIframe extends IframePage {
   public function buildTemplateVars(): void {
     $email = $this->getPostParam('email', 'String');
 
-    $primaryContactIDs = Email::get(FALSE)
+    $primaryContacts = Email::get(FALSE)
       ->addWhere('email', '=', $email)
       ->addWhere('contact_id.is_deleted', '=', FALSE)
       ->addWhere('is_primary', '=', TRUE)
-      ->addSelect('contact_id')
+      ->addSelect('contact_id', 'contact_id.contact_type')
       ->addGroupBy('contact_id')
-      ->execute()->column('contact_id');
+      ->execute()->column('contact_id.contact_type', 'contact_id');
+    $primaryContactIDs = array_keys($primaryContacts);
 
     if (count($primaryContactIDs) === 1) {
       $this->assign('donor', $this->getDonorSnapshot($primaryContactIDs[0]));
       return;
+    }
+
+    if (count($primaryContactIDs) === 2) {
+      $dafHolderID = $this->getDAFHolderID($primaryContacts);
+      if ($dafHolderID) {
+        $donor = $this->getDonorSnapshot($dafHolderID);
+        $donor['shares_email_with_daf'] = TRUE;
+        $this->assign('donor', $donor);
+        return;
+      }
     }
 
     if (count($primaryContactIDs) === 0) {
@@ -104,6 +105,23 @@ class CRM_Wmf_Page_DonorIframe extends IframePage {
     $this->assign('email', $email);
   }
 
+  /**
+   * @param array<int, string> $contacts [contact ID => contact type]
+   *
+   * @return int|null
+   *   The individual, if the contacts are an individual and an organization
+   *   that is one of their DAFs.
+   */
+  private function getDAFHolderID(array $contacts): ?int {
+    $individualID = array_search('Individual', $contacts);
+    $organizationID = array_search('Organization', $contacts);
+
+    if ($individualID && $organizationID && isset($this->getDAFs($individualID)[$organizationID])) {
+      return $individualID;
+    }
+    return NULL;
+  }
+
   private function getDonorSnapshot(int $contactID): array {
     $contact = Contact::get(FALSE)
       ->addWhere('id', '=', $contactID)
@@ -124,6 +142,7 @@ class CRM_Wmf_Page_DonorIframe extends IframePage {
         'Prospect.Relationship_Manager:label'
       )
       ->execute()->first();
+    $activeRecurCount = $this->getActiveRecurCount($contactID);
 
     return [
       'id' => $contactID,
@@ -138,10 +157,13 @@ class CRM_Wmf_Page_DonorIframe extends IframePage {
       'employer' => $this->getEmployers($contactID),
       'daf' => $this->getDAFs($contactID),
       'is_secondary_email' => FALSE,
+      'shares_email_with_daf' => FALSE,
       'donor_portal_login' => $this->getRecentDonorPortalLogin($contact['Communication.last_donor_portal_login']),
       'relationship_manager' => $contact['Prospect.Relationship_Manager:label'],
       'is_legacy_society' => $this->isLegacySocietyMember($contactID),
-    ] + $this->getActiveRecurringLinkInfo($contactID);
+      'is_portal_eligible' => $activeRecurCount && PreferencesLink::isDonorPortalEligible($contactID),
+      'active_recur_count' => $activeRecurCount,
+    ];
   }
 
   /**
@@ -155,23 +177,12 @@ class CRM_Wmf_Page_DonorIframe extends IframePage {
     return date('M j, Y', strtotime($lastLogin));
   }
 
-  /**
-   * @return array{active_recur_id: ?int, active_recur_count: int}
-   *   active_recur_id is only set when there's exactly one active recurring,
-   *   as we'll only add a link if there's just one.
-   *   active_recur_count shows instead if more than one.
-   */
-  private function getActiveRecurringLinkInfo(int $contactID): array {
-    $activeRecurIDs = ContributionRecur::get(FALSE)
+  private function getActiveRecurCount(int $contactID): int {
+    return ContributionRecur::get(FALSE)
       ->addWhere('contact_id', '=', $contactID)
       ->addWhere('contribution_status_id:name', 'IN', ['In Progress', 'Pending', 'Processing'])
-      ->addSelect('id')
-      ->execute()->column('id');
-
-    return [
-      'active_recur_id' => count($activeRecurIDs) === 1 ? $activeRecurIDs[0] : NULL,
-      'active_recur_count' => count($activeRecurIDs),
-    ];
+      ->selectRowCount()
+      ->execute()->count();
   }
 
   private function getOptInStatus(string $primaryEmail, ?string $snoozeDate): string {
@@ -220,7 +231,7 @@ class CRM_Wmf_Page_DonorIframe extends IframePage {
       $suffix = 'both';
     }
 
-    $text = $label === $recurStatusLabels[95] ? $label : "$label ($suffix)";
+    $text = $label === $recurStatusLabels[95] ? $label : "$label $suffix";
 
     return [
       'text' => $text,
@@ -292,6 +303,9 @@ class CRM_Wmf_Page_DonorIframe extends IframePage {
    * @return array<int, string> [DAF contact ID => display name]
    */
   private function getDAFs(int $contactID): array {
+    if (isset($this->dafs[$contactID])) {
+      return $this->dafs[$contactID];
+    }
     $dafs = [];
 
     $relationships = Relationship::get(FALSE)
@@ -313,7 +327,7 @@ class CRM_Wmf_Page_DonorIframe extends IframePage {
       $dafs[$softCredit['contribution_id.contact_id']] = $softCredit['contribution_id.contact_id.display_name'];
     }
 
-    return $dafs;
+    return $this->dafs[$contactID] = $dafs;
   }
 
   private function isLegacySocietyMember(int $contactID): bool {
