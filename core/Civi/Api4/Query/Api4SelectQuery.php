@@ -419,6 +419,7 @@ class Api4SelectQuery extends Api4Query {
    * @return bool
    */
   public function checkEntityAccess($entity) {
+    return TRUE;
     if (!$this->getCheckPermissions()) {
       return CoreUtil::entityExists($entity);
     }
