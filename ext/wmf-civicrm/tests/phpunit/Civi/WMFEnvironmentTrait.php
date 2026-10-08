@@ -205,7 +205,7 @@ trait WMFEnvironmentTrait {
   protected function initializeSequenceGenerator(): void {
     $highestContributionTrackingID = \CRM_Core_DAO::singleValueQuery('SELECT MAX(id) as maxId from civicrm_contribution_tracking');
     $generator = Factory::getSequenceGenerator('contribution-tracking');
-    $generator->initializeSequence($highestContributionTrackingID);
+    $generator->initializeSequence((int) $highestContributionTrackingID);
   }
 
   /**
