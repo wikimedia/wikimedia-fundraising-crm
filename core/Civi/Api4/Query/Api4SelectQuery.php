@@ -166,17 +166,11 @@ class Api4SelectQuery extends Api4Query {
         }
         array_splice($select, $customStar, 1, $customSelect);
       }
-      $wildFields = [];
 
-      try {
-        // Expand wildcards in joins (the api wrapper already expanded non-joined wildcards)
-        $wildFields = array_filter($select, function($item) {
-          return str_contains($item, '*') && str_contains($item, '.') && !str_contains($item, '(') && !str_contains($item, ' ');
-        });
-      }
-      catch (\Exception $e) {
-        $wildFields = [];
-      }
+      // Expand wildcards in joins (the api wrapper already expanded non-joined wildcards)
+      $wildFields = array_filter($select, function($item) {
+        return str_contains($item, '*') && str_contains($item, '.') && !str_contains($item, '(') && !str_contains($item, ' ');
+      });
 
       foreach ($wildFields as $wildField) {
         $pos = array_search($wildField, array_values($select));
