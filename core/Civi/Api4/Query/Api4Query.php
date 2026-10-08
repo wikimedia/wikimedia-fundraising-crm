@@ -413,12 +413,7 @@ abstract class Api4Query {
             FormattingUtil::formatInputValue($valueB, NULL, $fauxField, $this->entityValues, $operator);
           }
         }
-        try {
-          $fieldAlias = $exprA->render($this);
-        }
-        catch (\CRM_Core_Exception $e) {
-          \CRM_Core_Session::setStatus($e->getMessage());
-        }
+        $fieldAlias = $exprA->render($this);
       }
 
       // $isBAnExpression is usually TRUE for ON clauses unless explicitly disabled by 4th param
