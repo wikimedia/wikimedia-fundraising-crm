@@ -3,6 +3,7 @@
   <div class="af-container af-layout-cols">
     <af-field name="name" defn="{expose_operator: true, search_operator: 'CONTAINS', input_attrs: {multiple: true}}" />
     <af-field name="scheduled_date" defn="{input_type: 'Select', search_range: true, input_attrs: {}, afform_default: 'ending_90.day'}" />
+    <af-field name="has_appeal" defn="{input_type: 'Radio', data_type: 'Boolean', label: 'Has appeal'}" />
   </div>
   <crm-search-display-table search-name="Update_mailing_appeals" display-name="Update_mailing_appeals"></crm-search-display-table>
 </div>
