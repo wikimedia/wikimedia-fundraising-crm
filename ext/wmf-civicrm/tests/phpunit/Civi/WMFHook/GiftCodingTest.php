@@ -284,6 +284,18 @@ class GiftCodingTest extends TestCase {
   }
 
   /**
+   * A default replaceable appeal on an online donation gets the relationship
+   * manager MGGO appeal.
+   */
+  public function testRelationshipManagerOverwritesSpontaneousAppeal(): void {
+    $this->setRelationshipManager();
+
+    $contribution = $this->createDirectMailContribution(['Gift_Data.Channel' => 'Other Online', 'Gift_Data.Appeal' => 'spontaneous', 'receive_date' => '2025-03-01']);
+
+    $this->assertEquals('MGGO25', $this->getContribution($contribution['id'])['Gift_Data.Appeal']);
+  }
+
+  /**
    * An activity dated after the donation's receive date is ignored.
    */
   public function testActivityAfterReceiveDateIsIgnored(): void {
@@ -378,6 +390,20 @@ class GiftCodingTest extends TestCase {
     ]);
 
     $contribution = $this->createDirectMailContribution(['Gift_Data.Appeal:name' => 'White Mail']);
+
+    $this->assertEquals('facebook', $this->getContribution($contribution['id'])['Gift_Data.Appeal:name']);
+  }
+
+  /**
+   * An appeal in the wmf_replaceable_appeals setting gets overwritten.
+   */
+  public function testAppealInReplaceableAppealsSettingIsOverwritten(): void {
+    $this->setSetting('wmf_replaceable_appeals', ['event']);
+    $this->createActivity('Major Gifts Engagement', [
+      'Major_Gifts_Engagement.Appeal:name' => 'facebook',
+    ]);
+
+    $contribution = $this->createDirectMailContribution(['Gift_Data.Appeal:name' => 'event']);
 
     $this->assertEquals('facebook', $this->getContribution($contribution['id'])['Gift_Data.Appeal:name']);
   }

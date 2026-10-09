@@ -19,11 +19,6 @@ class GiftCoding {
   private const OFFLINE_CHANNELS = ['Direct Mail', 'Direct Mail Upload', 'Other Offline'];
 
   /**
-   * Appeals that gift coding may replace.
-   */
-  private const REPLACEABLE_APPEALS = [NULL, '', 'White Mail', 'DAFWTG'];
-
-  /**
    * Gift types that don't get an appeal from having a relationship manager.
    */
   private const RELATIONSHIP_MANAGER_EXCLUDED_GIFT_TYPES = ['Matching Gift', 'Payroll Deduction'];
@@ -31,7 +26,7 @@ class GiftCoding {
   /**
    * Implements hook_civicrm_pre::Contribution.
    *
-   * If the donation has White Mail or empty appeal, set the appeal from the most
+   * If the donation has a replaceable appeal, set the appeal from the most
    * recent MG Engagement or Direct Mail Activity or DAF mailing for the donor
    * or a related contact or, failing that, the donor's relationship manager.
    * Also complete any scheduled MG Engagement activities.
@@ -69,7 +64,7 @@ class GiftCoding {
       ]);
     }
     // If the appeal is not replaceable, we change nothing
-    if (!in_array($event->getValue('Gift_Data.Appeal'), self::REPLACEABLE_APPEALS, TRUE)) {
+    if (!self::isAppealReplaceable($event->getValue('Gift_Data.Appeal'))) {
       return;
     }
     if ($giftType === 'Donor Advised Fund') {
@@ -86,7 +81,7 @@ class GiftCoding {
    */
   private static function setAppealFromRelationshipManager(PreEvent $event): void {
     if (
-      !in_array($event->getValue('Gift_Data.Appeal'), self::REPLACEABLE_APPEALS, TRUE)
+      !self::isAppealReplaceable($event->getValue('Gift_Data.Appeal'))
       || in_array($event->getValue('Gift_Data.Campaign'), self::RELATIONSHIP_MANAGER_EXCLUDED_GIFT_TYPES, TRUE)
     ) {
       return;
@@ -144,7 +139,7 @@ class GiftCoding {
     }
     // We only update if appeal is replaceable or we set the appeal in ContributionPre
     if (
-      !in_array($contribution['Gift_Data.Appeal'], self::REPLACEABLE_APPEALS, TRUE)
+      !self::isAppealReplaceable($contribution['Gift_Data.Appeal'])
       && empty($contribution['Appeal_Change_Reason.Change_Reason'])
     ) {
       return;
@@ -170,6 +165,10 @@ class GiftCoding {
    */
   private static function isGiftCodingApplicable(?string $channel, ?string $giftType): bool {
     return in_array($channel, self::OFFLINE_CHANNELS, TRUE) || $giftType === 'Donor Advised Fund';
+  }
+
+  private static function isAppealReplaceable(?string $appeal): bool {
+    return in_array($appeal, [NULL, ''], TRUE) || in_array($appeal, \Civi::settings()->get('wmf_replaceable_appeals'), TRUE);
   }
 
   private static function isRepeatRecurringFinancialType(int $financialTypeID): bool {
