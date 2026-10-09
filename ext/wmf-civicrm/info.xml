@@ -17,6 +17,11 @@
   <releaseDate>2021-08-31</releaseDate>
   <version>1.1</version>
   <develStage>stable</develStage>
+  <tags>
+    <!-- Prevents this extension from being disabled.
+         See CRM_Extension_Manager::disable() in core/CRM/Extension/Manager.php (line 418). -->
+    <tag>mgmt:required</tag>
+  </tags>
   <compatibility>
     <ver>6.12</ver>
   </compatibility>
