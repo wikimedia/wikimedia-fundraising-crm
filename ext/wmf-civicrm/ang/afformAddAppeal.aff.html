@@ -1,0 +1,7 @@
+<af-form ctrl="afform">
+  <af-entity type="OptionValue" name="OptionValue1" label="Appeal" actions="{create: true, update: false}" security="FBAC" data="{'option_group_id.name': 'appeal_20080709183729'}" />
+  <fieldset af-fieldset="OptionValue1" class="af-container">
+    <af-field name="label" defn="{label: 'Appeal', required: true, input_attrs: {}}" />
+  </fieldset>
+  <button class="af-button btn btn-primary" crm-icon="fa-plus" ng-click="afform.submit()" ng-if="afform.showSubmitButton">Add</button>
+</af-form>

@@ -52,6 +52,8 @@ function wmf_civicrm_civicrm_config(&$config) {
     }
   });
 
+  $dispatcher->addListener('civi.afform.submit', ['Civi\WMFHook\AddAppealForm', 'preprocess'], 50);
+
   $dispatcher->addListener('civi.api.prepare', ['Civi\WMFHook\Contribution', 'apiPrepare']);
 
   $dispatcher->addListener('hook_civicrm_pre::Individual', ['Civi\WMFHook\Contact', 'pre']);
