@@ -1,11 +1,5 @@
 <?php
-$location = 'authenticatediframe/Civi/AuthenticatedIframe/CRM/Wmf/Page/DonorIframe.php';
-if (file_exists($location)) {
-  require $location;
-}
-elseif (file_exists('../../../../' . $location)) {
-  require_once '../../../../' . $location;
-}
+
 use Civi\Api4\Activity;
 use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
