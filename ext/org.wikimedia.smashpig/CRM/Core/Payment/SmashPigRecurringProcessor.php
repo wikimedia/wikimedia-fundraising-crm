@@ -465,6 +465,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       ->addSelect('*', 'Gift_Data.*', 'payment_instrument_id:name', 'contribution_extra.*' )
       ->addWhere('contribution_recur_id', '=', $recurringId)
       ->addWhere('is_test', '=', $isTest)
+      // Ignore cancelled as those will give a false positive for duplicate ACH charges
+      ->addWhere('contribution_status_id:name', '!=', 'Cancelled')
       ->addOrderBy('receive_date', 'DESC')
       ->setLimit(1)
       ->execute()
@@ -485,6 +487,8 @@ class CRM_Core_Payment_SmashPigRecurringProcessor {
       ->addSelect('*', 'Gift_Data.*', 'payment_instrument_id:name')
       ->addWhere('invoice_id', '=', $invoiceId)
       ->addWhere('is_test', '=', $isTest)
+      // Ignore cancelled as those will give a false positive for duplicate ACH charges
+      ->addWhere('contribution_status_id:name', '!=', 'Cancelled')
       ->addOrderBy('receive_date', 'DESC')
       ->setLimit(1)
       ->execute()
