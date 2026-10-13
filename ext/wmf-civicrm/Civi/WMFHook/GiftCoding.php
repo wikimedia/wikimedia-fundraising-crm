@@ -34,7 +34,11 @@ class GiftCoding {
    * @throws \CRM_Core_Exception
    */
   public static function contributionPre(PreEvent $event): void {
-    if ($event->action !== 'create' || self::isRepeatRecurringFinancialType((int) $event->getValue('financial_type_id'))) {
+    if (
+      $event->action !== 'create'
+      || self::isRepeatRecurringFinancialType((int) $event->getValue('financial_type_id'))
+      || in_array((int) $event->getValue('contact_id'), self::getExcludedContactIDs(), TRUE)
+    ) {
       return;
     }
     self::setAppealFromActivitiesAndMailings($event);
@@ -123,7 +127,10 @@ class GiftCoding {
       ->addSelect('contact_id', 'receive_date', 'total_amount', 'currency', 'Gift_Data.Channel', 'Gift_Data.Campaign', 'Gift_Data.Appeal', 'Gift_Data.Package', 'Appeal_Change_Reason.Change_Reason', 'Appeal_Change_Reason.Entity_Table', 'Appeal_Change_Reason.Entity_ID')
       ->addWhere('id', '=', $contributionID)
       ->execute()->first();
-    if (!self::isGiftCodingApplicable($contribution['Gift_Data.Channel'], $contribution['Gift_Data.Campaign'])) {
+    if (
+      !self::isGiftCodingApplicable($contribution['Gift_Data.Channel'], $contribution['Gift_Data.Campaign'])
+      || in_array($contribution['contact_id'], self::getExcludedContactIDs(), TRUE)
+    ) {
       return;
     }
     $contactIDs = self::getContactAndRelatedContactIDs($contribution['contact_id']);
@@ -168,7 +175,7 @@ class GiftCoding {
   }
 
   private static function isAppealReplaceable(?string $appeal): bool {
-    return in_array($appeal, [NULL, ''], TRUE) || in_array($appeal, \Civi::settings()->get('wmf_replaceable_appeals'), TRUE);
+    return in_array($appeal, [NULL, ''], TRUE) || in_array($appeal, (array) \Civi::settings()->get('wmf_replaceable_appeals'), TRUE);
   }
 
   private static function isRepeatRecurringFinancialType(int $financialTypeID): bool {
@@ -188,7 +195,18 @@ class GiftCoding {
       ->addWhere('near_contact_id', '=', $contactID)
       ->addWhere('near_relation:name', 'IN', \Civi::settings()->get('wmf_relationship_types_for_donation_attribution'))
       ->execute()->column('far_contact_id');
+    $relatedContactIDs = array_diff($relatedContactIDs, self::getExcludedContactIDs());
     return array_merge([$contactID], $relatedContactIDs);
+  }
+
+  /**
+   * In settings, we have a list of contacts to ignore for gift coding.
+   * For example: Paypal Giving Fund, Anonymous, Humble Bundle.
+   * We ignore donations on these contacts and do not consider them
+   * to be related contacts for activities, mailings, etc.
+   */
+  private static function getExcludedContactIDs(): array {
+    return array_map('intval', array_filter(explode(',', \Civi::settings()->get('wmf_gift_coding_excluded_contacts'))));
   }
 
   /**

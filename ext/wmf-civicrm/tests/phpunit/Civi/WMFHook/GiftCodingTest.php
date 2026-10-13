@@ -31,7 +31,7 @@ class GiftCodingTest extends TestCase {
     $this->setUpWMFEnvironment();
     $this->resetQueue(self::NOTIFICATION_QUEUE_NAME);
     $this->donorID = $this->createIndividual();
-    $this->setSetting('wmf_relationship_types_for_donation_attribution', ['Spouse of', 'Holds a Donor Advised Fund of']);
+    $this->setSetting('wmf_relationship_types_for_donation_attribution', ['Spouse of', 'Holds a Donor Advised Fund of', 'Donates via']);
   }
 
   public function tearDown(): void {
@@ -611,6 +611,45 @@ class GiftCodingTest extends TestCase {
   }
 
   /**
+   * A donation by an excluded contact is left unchanged.
+   */
+  public function testExcludedDonorIsIgnored(): void {
+    $this->setSetting('wmf_gift_coding_excluded_contacts', (string) $this->donorID);
+    $this->setRelationshipManager();
+    $activityID = $this->createActivity('Major Gifts Engagement', [
+      'Major_Gifts_Engagement.Appeal:name' => 'facebook',
+    ]);
+
+    $contribution = $this->createDirectMailContribution();
+
+    $this->assertEquals('Scheduled', $this->getActivityStatus($activityID));
+    $this->assertEmpty($this->getContribution($contribution['id'])['Gift_Data.Appeal']);
+  }
+
+  /**
+   * An excluded related contact's activity is ignored.
+   */
+  public function testExcludedRelatedContactActivityIsIgnored(): void {
+    $organizationID = $this->createOrganization();
+    $this->setSetting('wmf_gift_coding_excluded_contacts', (string) $organizationID);
+    $activityID = $this->createActivity('Major Gifts Engagement', [
+      'target_contact_id' => [$organizationID],
+      'source_contact_id' => $organizationID,
+      'Major_Gifts_Engagement.Appeal:name' => 'facebook',
+    ]);
+    $this->createTestEntity('Relationship', [
+      'contact_id_a' => $this->donorID,
+      'contact_id_b' => $organizationID,
+      'relationship_type_id:name' => 'Donates via',
+    ]);
+
+    $contribution = $this->createDirectMailContribution();
+
+    $this->assertEquals('Scheduled', $this->getActivityStatus($activityID));
+    $this->assertEmpty($this->getContribution($contribution['id'])['Gift_Data.Appeal']);
+  }
+
+  /**
    * A relationship of a type not in the setting is ignored.
    */
   public function testRelatedContactOfUnlistedTypeIsIgnored(): void {
@@ -904,6 +943,20 @@ class GiftCodingTest extends TestCase {
     $updated = $this->getContribution($contribution['id']);
     $this->assertEquals('DAF Match', $updated['Gift_Data.Appeal']);
     $this->assertEquals('DAF_Email', $updated['Appeal_Change_Reason.Change_Reason:name']);
+  }
+
+  /**
+   * A DAF mailing to an excluded DAF soft credit contact is ignored.
+   */
+  public function testExcludedDAFSoftCreditContactMailingIsIgnored(): void {
+    $softCreditContactID = $this->createIndividual();
+    $this->setSetting('wmf_gift_coding_excluded_contacts', (string) $softCreditContactID);
+    $this->recordMailingEvent($this->createDAFMailing('DAF Match'), $softCreditContactID);
+
+    $contribution = $this->createDAFContribution(['contact_id' => $this->createOrganization()]);
+    $this->createSoftCredit($contribution, $softCreditContactID);
+
+    $this->assertEmpty($this->getContribution($contribution['id'])['Gift_Data.Appeal']);
   }
 
   /**
