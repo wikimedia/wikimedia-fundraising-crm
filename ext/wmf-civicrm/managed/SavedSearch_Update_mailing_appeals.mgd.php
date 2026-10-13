@@ -19,6 +19,7 @@ return [
             'name',
             'Mailing_Appeal.Appeal:label',
             'scheduled_date',
+            'ISNOTNULL(Mailing_Appeal.Appeal) AS has_appeal',
           ],
           'orderBy' => [],
           'where' => [],

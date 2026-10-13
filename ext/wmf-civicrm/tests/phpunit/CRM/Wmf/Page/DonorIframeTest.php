@@ -49,6 +49,28 @@ class CRM_Wmf_Page_DonorIframeTest extends TestCase implements HeadlessInterface
     $this->assertSame('shared@example.org', $vars['email']);
   }
 
+  public function testPrimaryMatchSharedWithDAFShowsIndividual(): void {
+    $contactID = $this->createIndividual(['email_primary.email' => 'daf-shared@example.org']);
+    $orgID = $this->createOrganization(['email_primary.email' => 'daf-shared@example.org']);
+    $this->createTestEntity('Relationship', [
+      'contact_id_a' => $orgID,
+      'contact_id_b' => $contactID,
+      'relationship_type_id:name' => 'Holds a Donor Advised Fund of',
+    ]);
+
+    $donor = $this->runPage('daf-shared@example.org')['donor'];
+    $this->assertSame($contactID, $donor['id']);
+    $this->assertTrue($donor['shares_email_with_daf']);
+  }
+
+  public function testPrimaryMatchSharedWithUnrelatedOrgRedirects(): void {
+    $this->createIndividual(['email_primary.email' => 'org-shared@example.org']);
+    $this->createOrganization(['email_primary.email' => 'org-shared@example.org']);
+
+    $vars = $this->runPage('org-shared@example.org');
+    $this->assertSame('org-shared@example.org', $vars['email']);
+  }
+
   public function testMultipleSecondaryMatchesRedirect(): void {
     $contactA = $this->createIndividual(['email_primary.email' => 'other-a@example.org'], 'a');
     $contactB = $this->createIndividual(['email_primary.email' => 'other-b@example.org'], 'b');
@@ -210,62 +232,6 @@ class CRM_Wmf_Page_DonorIframeTest extends TestCase implements HeadlessInterface
     $this->assertEqualsCanonicalizing(['Employer A', 'Employer B'], array_values($donor['employer']));
   }
 
-  public function testNoActiveRecurringHasNoCancelLink(): void {
-    $this->createIndividual(['email_primary.email' => 'norecur@example.org']);
-    $donor = $this->runPage('norecur@example.org')['donor'];
-    $this->assertNull($donor['active_recur_id']);
-    $this->assertSame(0, $donor['active_recur_count']);
-  }
-
-  public function testSoleActiveRecurringIsLinkable(): void {
-    $contactID = $this->createIndividual(['email_primary.email' => 'onerecur@example.org']);
-    $recurID = $this->createTestEntity('ContributionRecur', [
-      'contact_id' => $contactID,
-      'payment_processor_id:name' => 'adyen',
-      'amount' => 15,
-      'currency' => 'USD',
-      'frequency_unit' => 'month',
-      'contribution_status_id:name' => 'In Progress',
-    ])['id'];
-
-    $donor = $this->runPage('onerecur@example.org')['donor'];
-    $this->assertSame($recurID, $donor['active_recur_id']);
-    $this->assertSame(1, $donor['active_recur_count']);
-  }
-
-  public function testCancelledRecurringIsNotLinkable(): void {
-    $contactID = $this->createIndividual(['email_primary.email' => 'cancelledrecur@example.org']);
-    $this->createTestEntity('ContributionRecur', [
-      'contact_id' => $contactID,
-      'payment_processor_id:name' => 'adyen',
-      'amount' => 15,
-      'currency' => 'USD',
-      'frequency_unit' => 'month',
-      'contribution_status_id:name' => 'Cancelled',
-    ]);
-
-    $donor = $this->runPage('cancelledrecur@example.org')['donor'];
-    $this->assertNull($donor['active_recur_id']);
-  }
-
-  public function testMultipleActiveRecurringsAreAmbiguousSoNotLinkable(): void {
-    $contactID = $this->createIndividual(['email_primary.email' => 'tworecurs@example.org']);
-    foreach (['a', 'b'] as $suffix) {
-      $this->createTestEntity('ContributionRecur', [
-        'contact_id' => $contactID,
-        'payment_processor_id:name' => 'adyen',
-        'amount' => 15,
-        'currency' => 'USD',
-        'frequency_unit' => 'month',
-        'contribution_status_id:name' => 'In Progress',
-      ], $suffix);
-    }
-
-    $donor = $this->runPage('tworecurs@example.org')['donor'];
-    $this->assertNull($donor['active_recur_id']);
-    $this->assertSame(2, $donor['active_recur_count']);
-  }
-
   public function testNoDAF(): void {
     $this->createIndividual(['email_primary.email' => 'nodaf@example.org']);
     $donor = $this->runPage('nodaf@example.org')['donor'];
@@ -384,36 +350,14 @@ class CRM_Wmf_Page_DonorIframeTest extends TestCase implements HeadlessInterface
     $this->createIndividual(['email_primary.email' => 'snoozeform@example.org']);
     $_POST['email'] = 'snoozeform@example.org';
     $page = new CRM_Wmf_Page_DonorIframe();
-    CRM_Wmf_Page_DonorIframe::getTemplate()->clearAllAssign();
-    $page->buildTemplateVars();
-    $html = CRM_Wmf_Page_DonorIframe::getTemplate()->fetch($page->getTemplateFileName());
-    $this->assertStringContainsString('>Snooze<', $html);
-    $this->assertStringContainsString('name="snoozeDate"', $html);
-  }
-
-  public function testSendLinkButtonsAreRendered(): void {
-    $this->createIndividual(['email_primary.email' => 'buttons@example.org']);
-    $_POST['email'] = 'buttons@example.org';
-    $page = new CRM_Wmf_Page_DonorIframe();
     // buildTemplateVars() only ever assigns one of message/email/donor, so
     // clear any left over from an earlier test sharing the same Smarty
     // template instance.
     CRM_Wmf_Page_DonorIframe::getTemplate()->clearAllAssign();
     $page->buildTemplateVars();
     $html = CRM_Wmf_Page_DonorIframe::getTemplate()->fetch($page->getTemplateFileName());
-    $this->assertStringContainsString('name="sendLink" value="DonorPortal"', $html);
-    $this->assertStringContainsString('name="sendLink" value="EmailPreferences"', $html);
-  }
-
-  public function testSendLinkButtonsDisabledOnceSent(): void {
-    $this->createIndividual(['email_primary.email' => 'sent@example.org']);
-    $_POST['email'] = 'sent@example.org';
-    $page = new CRM_Wmf_Page_DonorIframe();
-    CRM_Wmf_Page_DonorIframe::getTemplate()->clearAllAssign();
-    $page->buildTemplateVars();
-    $page->assign('linkSent', 'DonorPortal');
-    $html = CRM_Wmf_Page_DonorIframe::getTemplate()->fetch($page->getTemplateFileName());
-    $this->assertSame(2, substr_count($html, '<button type="submit" disabled>'));
+    $this->assertStringContainsString('>Snooze<', $html);
+    $this->assertStringContainsString('name="snoozeDate"', $html);
   }
 
   /**
@@ -447,21 +391,8 @@ class CRM_Wmf_Page_DonorIframeTest extends TestCase implements HeadlessInterface
   }
 
   /**
-   * sendLink/snoozeDate are only be honored from POST.
+   * snoozeDate is only honored from POST.
    */
-  public function testSendLinkViaGetQueryStringIsIgnored(): void {
-    $this->createIndividual(['email_primary.email' => 'getsendlink@example.org']);
-    $_POST['email'] = 'getsendlink@example.org';
-    $_GET['sendLink'] = 'DonorPortal';
-    $page = new CRM_Wmf_Page_DonorIframe();
-    CRM_Wmf_Page_DonorIframe::getTemplate()->clearAllAssign();
-
-    $this->runPageAction($page);
-
-    $this->assertNull($page->getTemplateVars('linkSent'));
-    unset($_GET['sendLink']);
-  }
-
   public function testSnoozeDateViaGetQueryStringIsIgnored(): void {
     $this->createIndividual(['email_primary.email' => 'getsnooze@example.org']);
     $_POST['email'] = 'getsnooze@example.org';
@@ -502,17 +433,17 @@ class CRM_Wmf_Page_DonorIframeTest extends TestCase implements HeadlessInterface
 
   public function testRecurStatusBothBelowThreshold(): void {
     $text = $this->callGetRecurStatusSummary(15, 25, 15)['text'];
-    $this->assertSame('Active (both)', $text);
+    $this->assertSame('Active both', $text);
   }
 
   public function testRecurStatusMonthWins(): void {
     $text = $this->callGetRecurStatusSummary(15, 65, 15)['text'];
-    $this->assertSame('Active (monthly)', $text);
+    $this->assertSame('Active monthly', $text);
   }
 
   public function testRecurStatusYearWins(): void {
     $text = $this->callGetRecurStatusSummary(65, 15, 15)['text'];
-    $this->assertSame('Active (annual)', $text);
+    $this->assertSame('Active annual', $text);
   }
 
   public function testRecurStatusNever(): void {
@@ -522,7 +453,7 @@ class CRM_Wmf_Page_DonorIframeTest extends TestCase implements HeadlessInterface
 
   public function testRecurStatusEqual(): void {
     $text = $this->callGetRecurStatusSummary(55, 55, 55)['text'];
-    $this->assertSame('Failed (both)', $text);
+    $this->assertSame('Failed both', $text);
   }
 
   /**

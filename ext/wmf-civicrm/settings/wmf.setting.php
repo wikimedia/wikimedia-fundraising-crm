@@ -223,6 +223,32 @@ return [
     'help_text' => '',
     'settings_pages' => ['wmf-civicrm' => ['weight' => 80]],
   ],
+  'wmf_replaceable_appeals' => [
+    'group_name' => 'wmf Settings',
+    'group' => 'wmf',
+    'name' => 'wmf_replaceable_appeals',
+    'type' => 'Array',
+    'html_type' => 'select',
+    'html_attributes' => [
+      'class' => 'crm-select2',
+      'multiple' => TRUE,
+    ],
+    'pseudoconstant' => [
+      'optionGroupName' => 'appeal_20080709183729',
+    ],
+    'default' => [
+      'White Mail',
+      'DAFWTG',
+      'spontaneous',
+      'spontaneousdonation',
+    ],
+    'title' => E::ts('Replaceable appeals'),
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts('These appeals will be replaced by gift coding based on DAF emails, Direct Mail & MG Engagement activities, having a relationship manager, etc'),
+    'help_text' => '',
+    'settings_pages' => ['wmf-civicrm' => ['weight' => 85]],
+  ],
   'wmf_mg_fallback_notification_email' => [
     'group_name' => 'wmf Settings',
     'group' => 'wmf',

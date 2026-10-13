@@ -113,16 +113,28 @@ class PreferencesLink {
   /**
    * Get the url to link to the donor portal, if eligible or '' otherwise.
    *
-   * A donor is eligible if they have a segment > 300 and not 990 (they aren't a major, mid value plus or mid value donor or a non-donor)
-   * and they do not have an active paypal (via paypal but not via gravy) recurring that can't be edited in the portal
-   * and their language is English.
-   *
    * @param int $contactID
    * @return string
    * @throws \CRM_Core_Exception
    */
   public static function getDonorPortalUrl(int $contactID): string {
-    $contact = Contact::get(FALSE)
+    if (self::isDonorPortalEligible($contactID)) {
+      $donorPortalBaseUrl = (string) \Civi::settings()->get('wmf_donor_portal_url');
+      return self::addContactAndChecksumToUrl($donorPortalBaseUrl, $contactID, \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID));
+    }
+    return '';
+  }
+
+  /**
+   * A donor is eligible if they have a segment > 300 and not 990 (they aren't a major, mid value plus or mid value donor or a non-donor)
+   * and they do not have an active paypal (via paypal but not via gravy) recurring that can't be edited in the portal
+   * and their language is English.
+   *
+   * @param int $contactID
+   * @throws \CRM_Core_Exception
+   */
+  public static function isDonorPortalEligible(int $contactID): bool {
+    return (bool) Contact::get(FALSE)
       ->addSelect('id')
       ->addWhere('id', '=', $contactID)
       ->addWhere('wmf_donor.donor_segment_overall', '>', 300)
@@ -134,11 +146,6 @@ class PreferencesLink {
         ['recur.payment_processor_id:name', 'IN', ['paypal', 'paypal_ec']],
         ['recur.contribution_status_id:name', 'NOT IN', ['Completed', 'Cancelled', 'Failed']])
       ->execute()->first();
-    if ($contact) {
-      $donorPortalBaseUrl = (string) \Civi::settings()->get('wmf_donor_portal_url');
-      return self::addContactAndChecksumToUrl($donorPortalBaseUrl, $contactID, \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID));
-    }
-    return '';
   }
 
 }
