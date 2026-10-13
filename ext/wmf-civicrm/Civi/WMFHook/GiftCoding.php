@@ -168,7 +168,7 @@ class GiftCoding {
   }
 
   private static function isAppealReplaceable(?string $appeal): bool {
-    return in_array($appeal, [NULL, ''], TRUE) || in_array($appeal, \Civi::settings()->get('wmf_replaceable_appeals'), TRUE);
+    return in_array($appeal, [NULL, ''], TRUE) || in_array($appeal, (array) \Civi::settings()->get('wmf_replaceable_appeals'), TRUE);
   }
 
   private static function isRepeatRecurringFinancialType(int $financialTypeID): bool {
