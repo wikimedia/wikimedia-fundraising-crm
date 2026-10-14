@@ -533,14 +533,13 @@ function _wmf_civicrm_get_gift_data_fields(): array {
       'column_name' => 'donor_specified_340',
       'label' => ts('Donor Specified'),
       'data_type' => 'String',
-      'html_type' => 'CheckBox',
+      'html_type' => 'Radio',
       'default_value' => NULL,
       'is_required' => FALSE,
       'is_searchable' => TRUE,
       'is_search_range' => FALSE,
       'option_values' => [
         ['name' => 'Endowment_Fund', 'label' => 'Endowment Fund', 'value' => 1],
-        ['name' => 'Unrestricted_-_Fund', 'label' => 'Unrestricted - Fund', 'value' => 2],
       ],
 
     ],

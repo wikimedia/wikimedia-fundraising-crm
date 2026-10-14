@@ -5556,6 +5556,29 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Change Gift_Data.Donor_Specified from CheckBox to Radio and remove the
+   * unused Unrestricted Fund option.
+   *
+   * No contributions have both options selected on prod.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5200(): bool {
+    CustomField::update(FALSE)
+      ->addValue('html_type', 'Radio')
+      ->addValue('serialize', 0)
+      ->addWhere('custom_group_id:name', '=', 'Gift_Data')
+      ->addWhere('name', '=', 'Donor_Specified')
+      ->execute();
+    OptionValue::delete(FALSE)
+      ->addWhere('option_group_id:name', '=', 'Gift_Data_Donor_Specified')
+      ->addWhere('value', '=', '2')
+      ->execute();
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
