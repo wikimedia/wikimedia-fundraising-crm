@@ -413,6 +413,14 @@ class AuditMessage extends DonationMessage {
     if (!isset($this->existingContribution)) {
       $this->existingContribution = [];
 
+      if ($this->isFeeRow() || $this->isAggregateRow()) {
+        // Fee rows (eg Adyen PaymentCost) carry the original donation's order id,
+        // which would otherwise match the donation via lookupByOrderId() below.
+        // Always treating these as missing is fine: BaseAuditProcessor upserts
+        // fee/adjustment rows by trxn_id, and discards aggregate rows outright.
+        return $this->existingContribution;
+      }
+
       // See first if it is gravy trustly as the trustly ID is reliable here but the
       // gravy ID might refer to a different contribution. We can probably do some more here but
       // failing to link up is less evil than linking to the wrong one & we will be warning if that

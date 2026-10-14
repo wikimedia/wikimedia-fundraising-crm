@@ -815,6 +815,33 @@ class AdyenAuditTest extends BaseAuditTestCase {
   }
 
   /**
+   * A PaymentCost row's Merchant Reference is the *original* donation's order
+   * id (and its Modification Reference the donation's Psp Reference), since
+   * Adyen books the cost against that earlier payment. getExistingContribution()
+   * must not use those to match the donation - otherwise the fee is treated as
+   * already-settled and silently dropped instead of being booked as its own
+   * fee contribution.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testPaymentCostDoesNotMatchDonation(): void {
+    $this->createExistingDonationsFixture();
+    $this->specifyFlatDirectoryStructure('payment_cost_matches_donation');
+    $this->runAuditBatch('payment_cost_matches_donation', 'settlement_detail_report_batch_4.csv');
+
+    $donation = Contribution::get(FALSE)
+      ->addWhere('contribution_extra.gateway_txn_id', '=', '4522268860022701')
+      ->addSelect('total_amount')
+      ->execute()->single();
+    $this->assertEquals(1.00, $donation['total_amount'], 'The donation should be untouched by the fee row.');
+
+    $fee = Contribution::get(FALSE)
+      ->addWhere('contribution_extra.gateway_txn_id', 'LIKE', 'fee-4522268860022701%')
+      ->execute();
+    $this->assertCount(1, $fee, 'The PaymentCost row should create its own fee contribution.');
+  }
+
+  /**
    * @throws \CRM_Core_Exception
    * @throws \Civi\API\Exception\UnauthorizedException
    */
