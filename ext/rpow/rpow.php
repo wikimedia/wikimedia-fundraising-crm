@@ -39,7 +39,12 @@ function rpow_init($config = []) {
     $civirpow['forceWrite'] = 1;
   }
 
-  define('CIVICRM_DSN', 'civirpow://');
+  // Keep host and database name in the DSN because CRM_Core_Lock derives
+  // the GET_LOCK() prefix from the parsed database name. With a bare
+  // 'civirpow://' every test worker on the server shares one lock
+  // namespace. The civirpow DB driver ignores the DSN string itself.
+  $rpowMaster = parse_url($config['masters'][0]) ?: [];
+  define('CIVICRM_DSN', 'civirpow://' . ($rpowMaster['host'] ?? 'localhost') . ($rpowMaster['path'] ?? ''));
   switch (getenv('RPOW') ?: '') {
     case 'ro':
     case 'slave':
