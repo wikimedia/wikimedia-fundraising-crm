@@ -856,4 +856,12 @@ function wmf_civicrm_civicrm_summaryActions(&$actions, $contactID)
     'href' => '/civicrm/referralspercontact#/?source_contact_id,target_contact_id=' . $contactID,
     'class' => 'crm-popup',
   ];
+  $actions['mg_engagement'] = [
+    'title' => E::ts('Add MG Engagement'),
+    'weight' => 6,
+    'ref' => 'add-mg-engagement',
+    'key' => 'mg_engagement',
+    'href' => CRM_Utils_System::url('civicrm/mg-engagement/add', '', FALSE, '?target_contact_id=' . $contactID),
+    'class' => 'crm-popup',
+  ];
 }

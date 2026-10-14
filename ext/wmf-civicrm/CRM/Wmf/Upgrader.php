@@ -5579,6 +5579,44 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Rename the generated Gift_Data.Campaign (Gift Type) option group on dev
+   * to match prod.
+   *
+   * Won't do anything on prod as there is no OptionGroup with that name.
+   * If managed entities were reconciled first, the campaign_20080709183311
+   * group now exists, so point the field at it and delete the generated one
+   * instead.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5205(): bool {
+    $groupNames = OptionGroup::get(FALSE)
+      ->addWhere('name', 'IN', ['Gift_Data_Gift_Type', 'campaign_20080709183311'])
+      ->execute()->column('name');
+    if (!in_array('Gift_Data_Gift_Type', $groupNames, TRUE)) {
+      return TRUE;
+    }
+    if (in_array('campaign_20080709183311', $groupNames, TRUE)) {
+      CustomField::update(FALSE)
+        ->addValue('option_group_id.name', 'campaign_20080709183311')
+        ->addWhere('custom_group_id:name', '=', 'Gift_Data')
+        ->addWhere('name', '=', 'Campaign')
+        ->execute();
+      OptionGroup::delete(FALSE)
+        ->addWhere('name', '=', 'Gift_Data_Gift_Type')
+        ->execute();
+    }
+    else {
+      OptionGroup::update(FALSE)
+        ->addValue('name', 'campaign_20080709183311')
+        ->addWhere('name', '=', 'Gift_Data_Gift_Type')
+        ->execute();
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

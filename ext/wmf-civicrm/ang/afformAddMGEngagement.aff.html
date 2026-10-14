@@ -1,0 +1,29 @@
+<af-form ctrl="afform">
+  <div ng-controller="WmfMGEngagementCtrl">
+    <af-entity type="Activity" name="Activity1" label="MG Engagement" actions="{create: true, update: false}" security="FBAC" data="{'activity_type_id:name': 'Major Gifts Engagement', 'status_id:name': 'Scheduled'}" />
+    <fieldset af-fieldset="Activity1" class="af-container">
+      <af-field name="target_contact_id" defn="{input_type: 'Hidden', required: true}" />
+      <div class="af-container af-layout-cols">
+        <af-field name="Major_Gifts_Engagement.Expected_Donation" defn="{label: 'Expected Donation'}" />
+        <af-field name="Major_Gifts_Engagement.Payment_Method" defn="{label: 'Payment Method'}" />
+        <div class="af-container"></div>
+      </div>
+      <div class="af-container af-layout-cols">
+        <af-field name="Major_Gifts_Engagement.Gift_Type" defn="{label: 'Gift Type'}" />
+        <af-field name="Major_Gifts_Engagement.Appeal" defn="{label: 'Appeal'}" />
+        <af-field name="Major_Gifts_Engagement.Donor_Specified" defn="{label: 'Donor Specified'}" />
+      </div>
+      <div class="af-container af-layout-cols">
+        <af-field name="details" defn="{input_type: 'TextArea', input_attrs: {rows: 3}}" />
+      </div>
+      <div class="af-container af-layout-cols">
+        <af-field name="subject" defn="{afform_default: 'Unknown amount'}" />
+        <af-field name="source_contact_id" defn="{required: true, afform_default: 'user_contact_id', label: 'Source Contact'}" />
+        <af-field name="activity_date_time" defn="{afform_default: 'now', input_attrs: {time: true}}" />
+      </div>
+    </fieldset>
+    <div class="af-container text-right">
+      <button class="af-button btn btn-primary" crm-icon="fa-check" ng-click="afform.submit()" ng-if="afform.showSubmitButton">Save</button>
+    </div>
+  </div>
+</af-form>
