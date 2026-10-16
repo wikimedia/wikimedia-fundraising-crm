@@ -1,6 +1,6 @@
 <af-form ctrl="afform">
   <div ng-controller="WmfMGEngagementCtrl">
-    <af-entity type="Activity" name="Activity1" label="MG Engagement" actions="{create: true, update: false}" security="FBAC" data="{'activity_type_id:name': 'Major Gifts Engagement', 'status_id:name': 'Scheduled'}" />
+    <af-entity type="Activity" name="Activity1" label="MG Engagement" actions="{create: true, update: false}" security="FBAC" data="{'activity_type_id:name': 'Major Gifts Engagement', 'status_id:name': 'Scheduled', source_contact_id: 'user_contact_id'}" />
     <fieldset af-fieldset="Activity1" class="af-container">
       <af-field name="target_contact_id" defn="{input_type: 'Hidden', required: true}" />
       <div class="af-container af-layout-cols">
@@ -18,7 +18,7 @@
       </div>
       <div class="af-container af-layout-cols">
         <af-field name="subject" defn="{afform_default: 'Unknown amount'}" />
-        <af-field name="source_contact_id" defn="{required: true, afform_default: 'user_contact_id', label: 'Source Contact'}" />
+        <af-field name="assignee_contact_id" defn="{required: true, afform_default: 'user_contact_id', label: 'Assignee'}" />
         <af-field name="activity_date_time" defn="{afform_default: 'now', input_attrs: {time: true}}" />
       </div>
     </fieldset>
