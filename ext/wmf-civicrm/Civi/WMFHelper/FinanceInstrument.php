@@ -104,7 +104,7 @@ class FinanceInstrument {
     'rupay' => 'RuPay', // India
     'shopping' => 'Tarjeta Shopping',
     'solo' => 'Solo',
-    'star' => 'Star', // US debit network
+    'star' => 'STAR', // US debit network
     'visa' => 'Visa',
     'visa-beneficial' => 'Visa Beneficial',
     'visa-debit' => 'Visa Debit',
