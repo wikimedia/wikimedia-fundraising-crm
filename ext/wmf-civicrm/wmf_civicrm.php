@@ -198,12 +198,12 @@ function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermission
       ],
     ];
     $tasks['Batch']['validate'] = [
-      'title' => ts('Validate (WMF Audit)'),
+      'title' => E::ts('Validate (WMF Audit)'),
       'entity' => 'Batch',
-      'description' => ts('Run WMF audit validation for selected batches.'),
+      'description' => E::ts('Run WMF audit validation for selected batches.'),
       'ui' => [
-        'confirm' => ts('Validate %1 selected batch(es)?', [1 => '{count}']),
-        'successMsg' => ts('Validation complete for %1 batch(es).', [1 => '{count}']),
+        'confirm' => E::ts('Validate %1 selected batch(es)?', [1 => '{count}']),
+        'successMsg' => E::ts('Validation complete for %1 batch(es).', [1 => '{count}']),
       ],
       'apiBatch' => [
        'action' => 'validate',

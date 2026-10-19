@@ -3,13 +3,13 @@
 namespace Civi\WMFHook;
 
 use Civi\API\Event\PrepareEvent;
-use Civi\Api4\ExchangeRate;
 use Civi\Core\Event\PreEvent;
 use Civi\Omnimail\MailFactory;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\Contribution as ContributionHelper;
 use Civi\WMFHelper\Database;
 use Civi\WMFTransaction;
+use CRM_Wmf_ExtensionUtil as E;
 use SmashPig\Core\Helpers\CurrencyRoundingHelper;
 
 class Contribution {
@@ -143,7 +143,7 @@ class Contribution {
       }
     }
     else {
-      $errors['source'] = t('Source must be in the format USD 15.25');
+      $errors['source'] = E::ts('Source must be in the format USD 15.25');
     }
 
     return $errors;
