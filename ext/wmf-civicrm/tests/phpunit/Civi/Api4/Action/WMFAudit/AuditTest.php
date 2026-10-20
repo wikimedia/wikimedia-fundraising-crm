@@ -114,4 +114,112 @@ class AuditTest extends TestCase {
     );
   }
 
+  /**
+   * An already-booked Adyen fee contribution (eg "Transaction Fees" account-
+   * level rows) should be found by gateway + gateway_txn_id and reported as
+   * not missing, rather than always being reported missing and re-upserted
+   * on every run.
+   */
+  public function testAuditAdyenFeeRowFindsExistingContribution(): void {
+    $contributionID = $this->createTestEntity('Contribution', [
+      'contact_id' => $this->createIndividual(),
+      'financial_type_id:name' => 'Cash',
+      'total_amount' => 0,
+      'contribution_extra.gateway' => 'adyen',
+      'contribution_extra.gateway_txn_id' => 'fee-Transaction-Fees-Test-adyen_9999_USD',
+      'trxn_id' => 'ADYEN fee-Transaction-Fees-Test-adyen_9999_USD',
+    ])['id'];
+
+    $message = [
+      'gateway' => 'adyen',
+      'audit_file_gateway' => 'adyen',
+      'type' => 'fee',
+      'gateway_txn_id' => 'fee-Transaction-Fees-Test',
+      'settlement_batch_reference' => '9999',
+      'settled_total_amount' => 0,
+      'settled_fee_amount' => '-123.45',
+      'settled_net_amount' => '-123.45',
+      'settled_currency' => 'USD',
+      'date' => time(),
+    ];
+
+    $audit = WMFAudit::audit(FALSE)->setValues($message)->execute()->first();
+    $this->assertFalse($audit['is_missing']);
+    $this->assertEquals($contributionID, $audit['message']['contribution_id']);
+  }
+
+  /**
+   * An Adyen "adjustment" row (eg depositcorrection/manualcorrected) should
+   * also be found by gateway + gateway_txn_id once booked, the same as a fee
+   * row - rather than remaining permanently reported as missing.
+   */
+  public function testAuditAdyenAdjustmentRowFindsExistingContribution(): void {
+    $contributionID = $this->createTestEntity('Contribution', [
+      'contact_id' => $this->createIndividual(),
+      'financial_type_id:name' => 'Adjustment',
+      'total_amount' => 0,
+      'contribution_extra.gateway' => 'adyen',
+      'contribution_extra.gateway_txn_id' => 'adjustment-9999-manualcorrected-ref123',
+      'trxn_id' => 'ADYEN adjustment-9999-manualcorrected-ref123',
+    ])['id'];
+
+    $message = [
+      'gateway' => 'adyen',
+      'audit_file_gateway' => 'adyen',
+      'type' => 'adjustment',
+      'gateway_txn_id' => 'adjustment-9999-manualcorrected-ref123',
+      'settlement_batch_reference' => '9999',
+      'settled_total_amount' => 0,
+      'settled_fee_amount' => '55.00',
+      'settled_net_amount' => '55.00',
+      'settled_currency' => 'USD',
+      'date' => time(),
+    ];
+
+    $audit = WMFAudit::audit(FALSE)->setValues($message)->execute()->first();
+    $this->assertFalse($audit['is_missing']);
+    $this->assertEquals($contributionID, $audit['message']['contribution_id']);
+  }
+
+  /**
+   * Regression test for 56f42dba92: an Adyen PaymentCost-style fee row
+   * carries the original donation's invoice/order id (its Merchant
+   * Reference), which getOrderID() falls back to. The fee row must not be
+   * matched to that donation via lookupByOrderId() - it should only ever be
+   * matched by its own gateway_txn_id, so an unbooked fee row with no
+   * matching fee contribution yet still reports as missing even though a
+   * donation sharing its invoice id exists.
+   */
+  public function testAuditAdyenFeeRowDoesNotMatchOriginalDonationByOrderId(): void {
+    $donationID = $this->createTestEntity('Contribution', [
+      'contact_id' => $this->createIndividual(),
+      'financial_type_id:name' => 'Cash',
+      'total_amount' => 3,
+      'invoice_id' => '55555.1',
+      'contribution_extra.gateway' => 'adyen',
+      'contribution_extra.gateway_txn_id' => '883344556677',
+      'trxn_id' => 'ADYEN 883344556677',
+    ])['id'];
+
+    $message = [
+      'gateway' => 'adyen',
+      'audit_file_gateway' => 'adyen',
+      'type' => 'fee',
+      // Same invoice id as the donation above (simulating a PaymentCost
+      // row's Merchant Reference), but its own distinct gateway_txn_id.
+      'invoice_id' => '55555.1',
+      'gateway_txn_id' => 'fee-883344556677',
+      'settlement_batch_reference' => '9999',
+      'settled_total_amount' => 0,
+      'settled_fee_amount' => '-0.50',
+      'settled_net_amount' => '-0.50',
+      'settled_currency' => 'USD',
+      'date' => time(),
+    ];
+
+    $audit = WMFAudit::audit(FALSE)->setValues($message)->execute()->first();
+    $this->assertTrue($audit['is_missing']);
+    $this->assertNotEquals($donationID, $audit['message']['contribution_id'] ?? NULL);
+  }
+
 }
