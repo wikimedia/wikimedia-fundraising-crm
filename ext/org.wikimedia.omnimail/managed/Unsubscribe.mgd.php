@@ -21,7 +21,6 @@ return [
         'is_reserved' => TRUE,
         'is_active' => TRUE,
         'component_id' => NULL,
-        'domain_id' => NULL,
         'visibility_id' => NULL,
         'icon' => '',
         'color' => NULL,
