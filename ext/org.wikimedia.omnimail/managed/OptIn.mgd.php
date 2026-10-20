@@ -22,7 +22,6 @@ return [
         'is_reserved' => TRUE,
         'is_active' => TRUE,
         'component_id' => NULL,
-        'domain_id' => NULL,
         'visibility_id' => NULL,
         'icon' => 'fa-envelope-circle-check',
         'color' => NULL,

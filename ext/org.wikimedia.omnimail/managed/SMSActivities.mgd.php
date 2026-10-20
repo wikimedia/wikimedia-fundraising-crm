@@ -20,7 +20,6 @@ return [
         'is_active' => TRUE,
         'value' => 182,
         'component_id' => NULL,
-        'domain_id' => NULL,
         'visibility_id' => NULL,
         'icon' => 'fa-mobile-retro',
         'color' => NULL,
