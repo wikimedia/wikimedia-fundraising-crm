@@ -38,6 +38,15 @@ class CRM_Activity_BAO_Activity extends CRM_Activity_DAO_Activity {
   public static $_exportableFields = NULL;
 
   /**
+   * mailStatus
+   *
+   * The status message from any email notifications sent to assigned
+   * contacts.
+   * @var string
+   */
+  public $mailStatus = '';
+
+  /**
    * Check if there is absolute minimum of data to add the object.
    *
    * @param array $params
@@ -297,6 +306,18 @@ class CRM_Activity_BAO_Activity extends CRM_Activity_DAO_Activity {
     }
 
     $action = empty($params['id']) ? 'create' : 'edit';
+
+    $activityAssigned = [];
+    if (!empty($params['notify_assigned_contacts']) && !CRM_Utils_Array::crmIsEmptyArray($params['assignee_contact_id'] ?? [])) {
+      $assigneeContactIds = (array) $params['assignee_contact_id'];
+      $activityAssigned = array_flip($assigneeContactIds);
+      if (!empty($params['id'])) {
+        $assigneeID = CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_ActivityContact', 'record_type_id', 'Activity Assignees');
+        $assigneeContacts = CRM_Activity_BAO_ActivityContact::getNames($params['id'], $assigneeID);
+        $activityAssigned = array_diff_key($activityAssigned, $assigneeContacts);
+      }
+    }
+
     CRM_Utils_Hook::pre($action, 'Activity', $params['id'] ?? NULL, $params);
 
     $activity->copyValues($params);
@@ -339,7 +360,7 @@ class CRM_Activity_BAO_Activity extends CRM_Activity_DAO_Activity {
       $wheres = [];
       foreach ($activityContacts as $recordTypeID => $contactIDs) {
         if (!empty($contactIDs)) {
-          $wheres[$key] = "(record_type_id = $recordTypeID AND contact_id IN (" . implode(',', $contactIDs) . '))';
+          $wheres[$recordTypeID] = "(record_type_id = $recordTypeID AND contact_id IN (" . implode(',', $contactIDs) . '))';
         }
       }
       $existingArray = empty($wheres) ? [] : CRM_Core_DAO::executeQuery("
@@ -354,11 +375,7 @@ class CRM_Activity_BAO_Activity extends CRM_Activity_DAO_Activity {
 
       foreach ($existingArray as $existingRecords) {
         $recordsToKeep[$existingRecords['id']] = ['contact_id' => $existingRecords['contact_id'], 'record_type_id' => $existingRecords['record_type_id']];
-        unset($activityContacts[$recordTypeID][$existingRecords['contact_id']]);
-        if (empty($activityContacts[$recordTypeID])) {
-          // If we just removed the last one to update then also unset the key.
-          unset($activityContacts[$recordTypeID]);
-        }
+        unset($activityContacts[$existingRecords['record_type_id']][$existingRecords['contact_id']]);
       }
 
       if (!empty($recordsToKeep)) {
@@ -367,7 +384,7 @@ class CRM_Activity_BAO_Activity extends CRM_Activity_DAO_Activity {
 
       // Delete all existing records for the types to be updated. Do a quick check to make sure there
       // is at least one to avoid a delete query if not necessary (delete queries are more likely to cause contention).
-      if (ActivityContact::get($params['check_permissions'] ?? FALSE)->setLimit(1)->setWhere($wheres)->selectRowCount()->execute()) {
+      if (ActivityContact::get($params['check_permissions'] ?? FALSE)->setLimit(1)->setWhere($wheres)->selectRowCount()->execute()->count()) {
         ActivityContact::delete($params['check_permissions'] ?? FALSE)->setWhere($wheres)->execute();
       }
     }
@@ -508,6 +525,11 @@ class CRM_Activity_BAO_Activity extends CRM_Activity_DAO_Activity {
     CRM_Contact_BAO_GroupContactCache::opportunisticCacheFlush();
 
     CRM_Utils_Hook::post($action, 'Activity', $activity->id, $activity, $params);
+
+    if ($params['notify_assigned_contacts'] ?? FALSE) {
+      $result->mailStatus = self::notifyAssignedContacts($result, $activityAssigned);
+
+    }
     return $result;
   }
 
@@ -533,7 +555,7 @@ class CRM_Activity_BAO_Activity extends CRM_Activity_DAO_Activity {
       'modified_date' => date('YmdHis'),
       'data' => $logMessage,
     ];
-    CRM_Core_BAO_Log::add($logParams);
+    CRM_Core_BAO_Log::writeRecord($logParams);
     return TRUE;
   }
 
@@ -1346,6 +1368,7 @@ WHERE entity_id =%1 AND entity_table = %2";
     }
 
     $followupParams['activity_date_time'] = $params['followup_date'];
+    $followupParams['notify_assigned_contacts'] = $params['notify_assigned_contacts'] ?? FALSE;
     $followupActivity = self::create($followupParams);
 
     return $followupActivity;
@@ -2297,6 +2320,41 @@ INNER JOIN  civicrm_option_group grp ON (grp.id = option_group_id AND grp.name =
     $activityTypes = array_column($field['options'], NULL, 'id');
     $activityType = CRM_Core_DAO::getFieldValue(parent::class, $entityId, 'activity_type_id');
     return $activityTypes[$activityType]['icon'] ?? $default;
+  }
+
+  /**
+   * Notify assigned contacts.
+   *
+   * @param CRM_Activity_DAO_Activity $activity
+   * @param array $activityAssigned Contact Ids to send notification
+   * @return string The status of any email sent.
+   */
+  public static function notifyAssignedContacts(CRM_Activity_DAO_Activity $activity, array $activityAssigned): string {
+    $mailStatus = '';
+    if (Civi::settings()->get('activity_assignee_notification')
+      && !in_array($activity->activity_type_id, Civi::settings()
+        ->get('do_not_notify_assignees_for'))) {
+      $activityIDs = [$activity->id];
+
+      $assigneeContacts = CRM_Activity_BAO_ActivityAssignment::getAssigneeNames($activityIDs, TRUE, FALSE);
+
+      $mailToContacts = [];
+
+      // Build an associative array with unique email addresses.
+      foreach ($activityAssigned as $id => $dnc) {
+        if (isset($id) && array_key_exists($id, $assigneeContacts)) {
+          $mailToContacts[$assigneeContacts[$id]['email']] = $assigneeContacts[$id];
+        }
+      }
+
+      if ($mailToContacts) {
+        $sent = CRM_Activity_BAO_Activity::sendToAssignee($activity, $mailToContacts);
+        if ($sent) {
+          $mailStatus .= ts("A copy of the activity has also been sent to assignee contact(s).");
+        }
+      }
+    }
+    return $mailStatus;
   }
 
 }

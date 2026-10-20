@@ -1,4 +1,4 @@
-(function(angular, $, _) {
+(function(angular, $) {
   "use strict";
 
   angular.module('crmSearchAdmin').component('crmSearchFunction', {
@@ -74,8 +74,8 @@
         const param = ctrl.getParam(ctrl.args.length);
         ctrl.args.push({
           type: ctrl.exprTypesByType[sqlExprType].name,
-          flag_before: _.filter(_.keys(param.flag_before))[0],
-          flag_after: _.filter(_.keys(param.flag_after))[0],
+          flag_before: Object.keys(param.flag_before || {}).filter(Boolean)[0],
+          flag_after: Object.keys(param.flag_after || {}).filter(Boolean)[0],
           name: param.name,
           value: '',
           optional: optional,
@@ -88,7 +88,7 @@
           return;
         }
         // Push args to reach the minimum
-        _.each(ctrl.fn.params, function(param, index) {
+        (ctrl.fn.params || []).forEach((param, index) => {
           while (
             (ctrl.args.length - index < param.min_expr) &&
             // Exclude 'api_default' params (should not be changed by the user)
@@ -102,7 +102,7 @@
 
       this.getParam = function(index) {
         if (ctrl.fn) {
-          return ctrl.fn.params[index] || _.last(ctrl.fn.params);
+          return ctrl.fn.params[index] || ctrl.fn.params.at(-1);
         }
       };
 
@@ -142,7 +142,7 @@
             (ctrl.savedSearch.api_params.groupBy || []).forEach(function(fieldStr) {
               if (fieldStr.includes(ctrl.fieldArg.field.name) && fieldStr.includes('(')) {
                 let fieldExpr = searchMeta.parseExpr(fieldStr, ctrl.savedSearch);
-                let field = _.findWhere(fieldExpr.args, {type: 'field'});
+                let field = fieldExpr.args.find((arg) => arg.type === 'field');
                 if (fieldExpr.fn && fieldExpr.fn.name !== 'e' && field && field.field.name === ctrl.fieldArg.field.name) {
                   functions.push({
                     text: allTypes[fieldExpr.fn.category],
@@ -186,12 +186,13 @@
           let exprType,
             pos = 0;
           // Add non-field args to the beginning if needed
-          while (!_.includes(ctrl.fn.params[pos].must_be, 'SqlField')) {
-            exprType = _.first(ctrl.fn.params[pos].must_be);
+          // Flag-only params (e.g. the unit of EXTRACT) have no must_be; the server strips the empty list
+          while (!(ctrl.fn.params[pos].must_be || []).includes('SqlField')) {
+            exprType = ctrl.fn.params[pos].must_be?.[0];
             ctrl.args.splice(pos, 0, {
               type: exprType ? ctrl.exprTypesByType[exprType].name : null,
-              flag_before: _.filter(_.keys(ctrl.fn.params[pos].flag_before))[0],
-              flag_after: _.filter(_.keys(ctrl.fn.params[pos].flag_after))[0],
+              flag_before: Object.keys(ctrl.fn.params[pos].flag_before || {}).filter(Boolean)[0],
+              flag_after: Object.keys(ctrl.fn.params[pos].flag_after || {}).filter(Boolean)[0],
               name: ctrl.fn.params[pos].name,
               value: exprType === 'SqlNumber' ? 0 : ''
             });
@@ -199,8 +200,9 @@
           }
           // Update fieldArg
           const fieldParam = ctrl.fn.params[pos];
-          ctrl.fieldArg.flag_before = _.keys(fieldParam.flag_before)[0];
-          ctrl.fieldArg.flag_after = _.keys(fieldParam.flag_after)[0];
+          // Empty flag lists are stripped from the metadata server-side, so these may be absent
+          ctrl.fieldArg.flag_before = Object.keys(fieldParam.flag_before || {})[0];
+          ctrl.fieldArg.flag_after = Object.keys(fieldParam.flag_after || {})[0];
           ctrl.fieldArg.name = fieldParam.name;
           initFunction();
         }
@@ -275,4 +277,4 @@
     }
   });
 
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);

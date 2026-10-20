@@ -163,7 +163,7 @@ class CRM_Utils_Token {
    * @return string
    *   The processed string
    *
-   * @deprecated
+   * @deprecated will be removed around 6.30
    */
   public static function &replaceMailingTokens(
     $str,
@@ -172,6 +172,7 @@ class CRM_Utils_Token {
     $knownTokens = NULL,
     $escapeSmarty = FALSE
   ) {
+    CRM_Core_Error::deprecatedFunctionWarning('token processor');
     $mailingContext = $mailing->id ? ['mailingId' => (int) $mailing->id] : [];
     $tokenProcessor = new TokenProcessor(\Civi::dispatcher(), $mailingContext + [
       'controller' => __CLASS__,
@@ -742,8 +743,11 @@ class CRM_Utils_Token {
    *
    * @return array
    *   Array of tokens that weren't replaced
+   *
+   * @deprecated since 6.18 will be removed around 6.30
    */
   public static function &unmatchedTokens(&$str) {
+    CRM_Core_Error::deprecatedFunctionWarning();
     //preg_match_all('/[^\{\\\\]\{(\w+\.\w+)\}[^\}]/', $str, $match);
     preg_match_all('/\{(\w+\.\w+)\}/', $str, $match);
     return $match[1];
@@ -907,7 +911,7 @@ class CRM_Utils_Token {
    * @deprecated since 6.3 will be removed around 6.15
    */
   public static function replaceUserTokens($str, $knownTokens = NULL, $escapeSmarty = FALSE) {
-    CRM_Core_Error::deprecatedFunctionWarning('no alternative');
+    CRM_Core_Error::deprecatedFunctionWarning();
     $key = 'user';
     if (!$knownTokens ||
       !isset($knownTokens[$key])
@@ -933,7 +937,7 @@ class CRM_Utils_Token {
    */
   public static function getUserTokenReplacement($token, $escapeSmarty = FALSE) {
     $value = '';
-    CRM_Core_Error::deprecatedFunctionWarning('no alternative');
+    CRM_Core_Error::deprecatedFunctionWarning();
 
     [$objectName, $objectValue] = explode('-', $token, 2);
 
@@ -1132,24 +1136,6 @@ class CRM_Utils_Token {
   }
 
   /**
-   * Get all custom field tokens of $entity
-   *
-   * @deprecated
-   *
-   * @param string $entity
-   * @return array
-   *   return custom field tokens in array('custom_N' => 'label') format
-   */
-  public static function getCustomFieldTokens($entity) {
-    CRM_Core_Error::deprecatedFunctionWarning('use the token processor');
-    $customTokens = [];
-    foreach (CRM_Core_BAO_CustomField::getFields($entity) as $id => $info) {
-      $customTokens['custom_' . $id] = $info['label'] . ' :: ' . $info['groupTitle'];
-    }
-    return $customTokens;
-  }
-
-  /**
    * Formats a token list for the select2 widget
    *
    * @param $tokens
@@ -1279,6 +1265,12 @@ class CRM_Utils_Token {
           '$email' => 'contact.email_primary.email',
           '$address' => 'contribution.address_id.display',
           '$amount' => ts('see default template for how to show this'),
+          '$is_share' => 'event.is_share|bool',
+          '$thankyou_title' => 'event.thankyou_title',
+          '$contributionStatus' => 'contribution.contribution_status_id:label',
+          '$receipt_date' => 'contribution.receipt_date',
+          '$receiptFromEmail' => 'no longer used',
+          '$is_pay_later' => 'contribution.is_pay_later|bool',
         ],
         'membership_offline_receipt' => [
           // receipt_text_renewal appears to be long gone.
@@ -1346,8 +1338,11 @@ class CRM_Utils_Token {
           '$address' => 'contribution.address_id.display',
           '$selectPremium' => 'contribution_product.id|boolean',
           '$product_name' => 'contribution_product.product_id.name',
+          '$fulfilled_date' => 'contribution_product.fulfilled_date',
           '$option' => 'contribution_product.product_option:label',
           '$sku' => 'contribution_product.product_id.sku',
+          '$formValues' => 'use relevant token/s',
+          '$receiptType' => 'not relevant',
         ],
         'event_offline_receipt' => [
           '$contributeMode' => ts('no longer available / relevant'),
@@ -1365,6 +1360,7 @@ class CRM_Utils_Token {
           '$totalAmount' => 'contribution.total_amount',
           '$location' => 'event.location',
           '$isShowLocation' => 'event.is_show_location|boolean',
+          '$event.event_confirm_text' => 'UserEnteredText',
           '$event.participant_role' => 'participant.role_id:label',
           '$amount_level' => ts('see default template for how to show this'),
           'balanceAmount' => 'contribution.balance_amount',

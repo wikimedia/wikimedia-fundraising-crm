@@ -101,6 +101,13 @@ class CRM_Financial_Form_PaymentEdit extends CRM_Core_Form {
 
     $paymentFields = $this->getPaymentFields();
     $this->assign('paymentFields', $paymentFields);
+
+    $paymentInstrumentFields = [];
+    foreach (array_keys(CRM_Core_PseudoConstant::get('CRM_Financial_DAO_FinancialTrxn', 'payment_instrument_id', ['onlyActive' => FALSE])) as $id) {
+      $paymentInstrumentFields[$id] = CRM_Contribute_BAO_Contribution::getPaymentInstrumentFields($id);
+    }
+    $this->assign('paymentInstrumentFields', $paymentInstrumentFields);
+
     foreach ($paymentFields as $name => $paymentField) {
       if (!empty($paymentField['add_field'])) {
         $attributes = [
@@ -159,8 +166,9 @@ class CRM_Financial_Form_PaymentEdit extends CRM_Core_Form {
   public static function formRule($fields, $files, $self) {
     $errors = [];
 
-    // if Credit Card is chosen and pan_truncation is not NULL ensure that it's value is numeric else throw validation error
-    if (CRM_Core_PseudoConstant::getName('CRM_Financial_DAO_FinancialTrxn', 'payment_instrument_id', $fields['payment_instrument_id']) === 'Credit Card' &&
+    // if the payment instrument has a card_type_id field (e.g. Credit Card) and
+    // pan_truncation is not NULL ensure that it's value is numeric else throw validation error
+    if (in_array('card_type_id', CRM_Contribute_BAO_Contribution::getPaymentInstrumentFields($fields['payment_instrument_id']), TRUE) &&
       !empty($fields['pan_truncation']) &&
       !is_numeric($fields['pan_truncation'])
     ) {
@@ -183,12 +191,12 @@ class CRM_Financial_Form_PaymentEdit extends CRM_Core_Form {
       'trxn_date' => $this->getSubmittedValue('trxn_date') ?: date('YmdHis'),
     ];
 
-    $paymentInstrumentName = CRM_Core_PseudoConstant::getName('CRM_Financial_DAO_FinancialTrxn', 'payment_instrument_id', $params['payment_instrument_id']);
-    if ($paymentInstrumentName === 'Credit Card') {
+    $paymentInstrumentFields = CRM_Contribute_BAO_Contribution::getPaymentInstrumentFields($params['payment_instrument_id']);
+    if (in_array('card_type_id', $paymentInstrumentFields, TRUE)) {
       $params['card_type_id'] = $this->getSubmittedValue('card_type_id');
       $params['pan_truncation'] = $this->getSubmittedValue('pan_truncation');
     }
-    elseif ($paymentInstrumentName === 'Check') {
+    if (in_array('check_number', $paymentInstrumentFields, TRUE)) {
       $params['check_number'] = $this->getSubmittedValue('check_number');
     }
 
@@ -240,7 +248,7 @@ class CRM_Financial_Form_PaymentEdit extends CRM_Core_Form {
     }
     else {
       // simply update the financial trxn
-      civicrm_api3('FinancialTrxn', 'create', $submittedValues + $this->getSubmittedCustomFields());
+      civicrm_api3('FinancialTrxn', 'create', $submittedValues + $this->getSubmittedCustomFields(3));
       // Don't use api since it does too much.
       // But also what does payment method field on the contribution mean?
       CRM_Core_DAO::executeQuery("UPDATE civicrm_contribution SET payment_instrument_id = %1 WHERE id = %2", [

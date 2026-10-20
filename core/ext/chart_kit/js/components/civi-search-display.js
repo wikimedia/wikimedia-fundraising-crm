@@ -1,4 +1,4 @@
-(function (api4, $, _) {
+(function (api4, $) {
 
   CRM.components = CRM.components || {};
 
@@ -114,7 +114,7 @@
     // TODO: move to connectedCallback and use super
     initializeDisplay() {
       this.limit = this.settings.limit;
-      this.sort = this.settings.sort ? _.cloneDeep(this.settings.sort) : [];
+      this.sort = this.settings.sort ? structuredClone(this.settings.sort) : [];
       this.uniqueId = Math.floor(Math.random() * 10e10);
       this.placeholders = [];
       const placeholderCount = 'placeholder' in this.settings ? this.settings.placeholder : 5;
@@ -344,4 +344,4 @@
     }
   };
 
-})(CRM.api4, CRM.$, CRM._);
+})(CRM.api4, CRM.$);

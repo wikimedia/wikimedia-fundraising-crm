@@ -69,8 +69,6 @@
   --crm-btn-padding-inline: var(--crm-l-medium-2);
   --crm-btn-height: 1.825rem;
   --crm-btn-icon-spacing: var(--crm-l-xsmall-2);
-  --crm-btn-cancel-bg-color: var(--crm-c-red-light);
-  --crm-btn-cancel-text-color: var(--crm-c-red-dark);
   --crm-btn-info-bg-color: var(--crm-secondary-color);
   --crm-btn-info-text-color: var(--crm-secondary-text-color);
   --crm-btn-success-bg-color: var(--crm-info-color);
@@ -682,12 +680,6 @@ nav.breadcrumb a {
   border-color: var(--crm-c-blue-dark) !important;
 }
 
-/* Overrides for crmSearchAdmin.css */
-.crm-search-nav-tabs > div.btn-group {
-  top: 0 !important; /* the buttons already have padding, we don't need this. (crmSearchAdmin.css, L10 at time of writing) */
-}
-
-
 /* Make the tags list nicer. */
 .crm-tag-item {
   padding: 0 1ch;
@@ -722,15 +714,6 @@ html.crm-standalone  nav.breadcrumb>ol {
 /* PHP errors, warnings */
 .standalone-errors {
   background: #ead2ce;
-}
-
-/* e.g. search buttons followed by count of matches on SK screen */
-.crm-search-display .form-inline:not(th,td) {
-  padding: var(--crm-padding-reg) 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--crm-l-medium);
 }
 
 /* Spinner. Replace the fa icon with something nicer. */
@@ -790,16 +773,6 @@ html.crm-standalone  nav.breadcrumb>ol {
   margin-left: 1rem;
   /* crmSearchAdmin applies this var as the bg here and it does not suit us. */
   --crm-page-bg-color: transparent;
-}
-
-/* Override contactSummary.css */
-#crm-contact-actions-list a.delete {
-  --crm-danger-text-color: var(--crm-c-red-dark);
-}
-#crm-contact-actions-list a.delete:hover,
-#crm-contact-actions-list a.delete:focus {
-  /* the hover state gives crm-c-red-dark to the background */
-  --crm-danger-text-color: var(--crm-c-red-light);
 }
 
 /* Fix Mosaico wizard */

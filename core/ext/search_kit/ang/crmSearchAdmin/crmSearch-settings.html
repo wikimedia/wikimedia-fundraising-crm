@@ -4,6 +4,14 @@
   <textarea class="form-control" rows=3 placeholder="{{:: ts('None') }}" ng-model="$ctrl.savedSearch.description"></textarea>
 </label>
 <label>
+  {{:: ts('Query Timeout (seconds)') }}
+  <a crm-ui-help="hs({id: 'timeout', title: ts('Query Timeout (seconds)')})"></a>
+  <div class="form-group">
+    <input type="number" min="0" class="form-control six" ng-model="$ctrl.savedSearch.timeout"
+           placeholder="{{:: ts('Site default') }}">
+  </div>
+</label>
+<label>
   {{:: ts('Search Expiry Date') }}
   <a crm-ui-help="hs({id: 'expires_date', title: ts('Search Expiry Date')})"></a>
   <div class="input-group">
@@ -12,7 +20,7 @@
   </div>
 </label>
 <div class="form-group">
-  <crm-search-admin-tags tag-ids="$ctrl.savedSearch.tag_id" class="btn-group btn-group-sm"></crm-search-admin-tags>
+  <crm-entity-tags tag-ids="$ctrl.savedSearch.tag_id" entity-table="'civicrm_saved_search'" class="btn-group btn-group-sm"></crm-entity-tags>
 </div>
 <label ng-if=":: $ctrl.canBeEntitySet()">
   {{:: ts('Combine Searches (advanced)') }}

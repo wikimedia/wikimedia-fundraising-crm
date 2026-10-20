@@ -1,4 +1,4 @@
-(function(angular, $, _) {
+(function(angular, $) {
   "use strict";
 
   // Trait provides base methods and properties common to all search display types
@@ -22,7 +22,7 @@
         const ctrl = this;
         this.$element = $element;
         this.limit = this.settings.limit;
-        this.sort = Array.isArray(this.settings.sort) ? _.cloneDeep(this.settings.sort) : [];
+        this.sort = Array.isArray(this.settings.sort) ? structuredClone(this.settings.sort) : [];
         // Used to make dom ids unique, and as a seed for ORDER BY RAND() to stabilize random results
         this.uniqueId = Math.floor(Math.random() * 10e10);
         this.placeholders = [];
@@ -57,16 +57,16 @@
         }
         else {
           // Break reference so original settings are preserved
-          this.columns = _.cloneDeep(this.settings.columns);
+          this.columns = structuredClone(this.settings.columns);
           this.columns.forEach(setColumnDefaults);
         }
 
         ctrl.onInitialize.forEach(callback => callback.call(ctrl, $scope, $element));
 
-        // _.debounce used here to trigger the initial search immediately but prevent subsequent launches within 300ms
-        this.getResultsPronto = _.debounce(ctrl.runSearch, 300, {leading: true, trailing: false});
-        // _.debounce used here to schedule a search if nothing else happens for 600ms: useful for auto-searching on typing
-        this.getResultsSoon = _.debounce(function() {
+        // Leading edge only: run the initial search immediately but prevent subsequent launches within 300ms
+        this.getResultsPronto = CRM.utils.debounce(ctrl.runSearch, 300, {leading: true, trailing: false});
+        // Trailing edge: schedule a search if nothing else happens for 600ms, useful for auto-searching on typing
+        this.getResultsSoon = CRM.utils.debounce(function() {
           $scope.$apply(function() {
             ctrl.runSearch();
           });
@@ -227,11 +227,30 @@
       },
 
       getFilters: function() {
-        return _.assign({}, this.getAfformFilters(), this.filters);
+        return Object.assign({}, this.getAfformFilters(), this.filters);
       },
 
       getAfformFilters: function() {
         return this.afFieldset ? this.afFieldset.getFilterValues() : {};
+      },
+
+      // Splits an already-sorted flat result set into section groups wherever `groupField`'s
+      // value changes between consecutive rows, returning an array of {value, rows} groups.
+      // This is a client-side grouping, not a real SQL GROUP BY - it depends entirely on
+      // the display's sort setting already ordering rows by groupField first. Used by any
+      // display type that supports `settings.section_group_by`.
+      groupRows: function(results, groupField) {
+        const groups = [];
+        let current = null;
+        results.forEach(function(row) {
+          const value = row.data[groupField];
+          if (!current || current.value !== value) {
+            current = {value: value, rows: []};
+            groups.push(current);
+          }
+          current.rows.push(row);
+        });
+        return groups;
       },
 
       // WARNING: Only to be used with trusted/sanitized markup.
@@ -290,6 +309,7 @@
           }
           ctrl.results = apiResults.run;
           ctrl.loading = false;
+          ctrl.serverError = null;
           // Update rowCount if running for the first time or during an update op
           if (!ctrl.rowCount || editedRow) {
             // No need to fetch count if on page 1 and result count is under the limit
@@ -298,8 +318,8 @@
             } else if (ctrl.settings.pager || ctrl.settings.headerCount) {
               const params = ctrl.getApiParams('row_count');
               crmApi4('SearchDisplay', apiCalls.run[1], params).then(function(result) {
-                if (requestId < ctrl._runCount) {
-                  return; // Another request started after this one
+                if (requestId < ctrl._runCount || !angular.equals(params.filters, ctrl.getFilters())) {
+                  return; // Another request started, or the filters changed, after this one
                 }
 
                 ctrl.rowCount = result.count;
@@ -313,7 +333,10 @@
             return; // Another request started after this one
           }
           ctrl.results = [];
+          ctrl.rowCount = null;
           ctrl.loading = false;
+          // Show error message if e.g. query timed out
+          ctrl.serverError = error?.run?.error_message ?? ts('Connection error');
           // Run all postRun callbacks on error
           ctrl.onPostRun.forEach(callback => callback.call(ctrl, error, 'error', editedRow));
         });
@@ -360,4 +383,4 @@
     };
   });
 
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);

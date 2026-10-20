@@ -180,20 +180,22 @@ class TokenRow {
   /**
    * Update the value of a custom field token.
    *
+   * @deprecated since 6.20 will be removed around 6.27. Core no longer calls
+   * this: CRM_Core_EntityTokens::evaluateToken() formats the prefetched value.
+   *
    * @param string $entity
    * @param int $customFieldID
    * @param int $entityID
    * @return TokenRow
    */
   public function customToken($entity, $customFieldID, $entityID) {
+    \CRM_Core_Error::deprecatedFunctionWarning('CRM_Core_EntityTokens::evaluateToken');
     $customFieldName = 'custom_' . $customFieldID;
     if (empty($entityID)) {
       return $this->format('text/html')->tokens($entity, $customFieldName, '');
     }
-    // Not through APIv3 getSingle: for several entities that already returns custom
-    // fields as display values (8.5 becomes "8,5"), and displayValue() below would then
-    // format a second time. Where the decimal separator is a comma that is fatal, because
-    // NumberFormatter requires int|float. getValues() returns the raw column value.
+    // getValues() returns the stored value; APIv3 getSingle returns a display
+    // value for some entities, which displayValue() below would format again.
     $record = \CRM_Core_BAO_CustomValueTable::getValues([
       'entityID' => $entityID,
       'entityType' => ucfirst($entity),
@@ -227,7 +229,7 @@ class TokenRow {
    * @throws \CRM_Core_Exception
    */
   public function dbToken($tokenEntity, $tokenField, $baoName, $baoField, $fieldValue) {
-    \CRM_Core_Error::deprecatedFunctionWarning('no alternative');
+    \CRM_Core_Error::deprecatedFunctionWarning();
     if ($fieldValue === NULL || $fieldValue === '') {
       return $this->tokens($tokenEntity, $tokenField, '');
     }

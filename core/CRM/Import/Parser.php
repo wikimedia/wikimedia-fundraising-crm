@@ -883,14 +883,22 @@ abstract class CRM_Import_Parser implements UserJobInterface {
     // getOptions does not retrieve these fields with high potential results
     if ($fieldMetadata['name'] === 'event_id' && $fieldMetadata['fk_entity'] === 'Event') {
       if (!isset(Civi::$statics[__CLASS__][$fieldName][$importedValue])) {
-        $event = Event::get()->addClause('OR', ['title', '=', $importedValue], ['id', '=', $importedValue])->addSelect('id')->execute()->first();
+        $searchClause = [['title', '=', $importedValue]];
+        if (is_numeric($importedValue)) {
+          $searchClause[] = ['id', '=', $importedValue];
+        }
+        $event = Event::get()->addClause('OR', $searchClause)->addSelect('id')->execute()->first();
         Civi::$statics[__CLASS__][$fieldName][$importedValue] = $event['id'] ?? FALSE;
       }
       return Civi::$statics[__CLASS__][$fieldName][$importedValue] ?? 'invalid_import_value';
     }
     if ($fieldMetadata['name'] === 'campaign_id') {
       if (!isset(Civi::$statics[__CLASS__][$fieldName][$importedValue])) {
-        $campaign = Campaign::get()->addClause('OR', ['title', '=', $importedValue], ['name', '=', $importedValue], ['id', '=', $importedValue])->addSelect('id')->execute()->first();
+        $searchClause = [['title', '=', $importedValue], ['name', '=', $importedValue]];
+        if (is_numeric($importedValue)) {
+          $searchClause[] = ['id', '=', $importedValue];
+        }
+        $campaign = Campaign::get()->addClause('OR', $searchClause)->addSelect('id')->execute()->first();
         Civi::$statics[__CLASS__][$fieldName][$importedValue] = $campaign['id'] ?? FALSE;
       }
       return Civi::$statics[__CLASS__][$fieldName][$importedValue] ?: 'invalid_import_value';
@@ -1344,7 +1352,7 @@ abstract class CRM_Import_Parser implements UserJobInterface {
 
     while ($row = $dataSource->getRow()) {
       if ($parser->validateRow($row)) {
-        $parser->import($row);
+        $parser->importRow($row);
       }
     }
     $parser->doPostImportActions();
@@ -1477,6 +1485,46 @@ abstract class CRM_Import_Parser implements UserJobInterface {
       $this->setImportStatus($rowNumber, 'ERROR', $e->getMessage());
       return FALSE;
     }
+    catch (Throwable $e) {
+      $this->setRowError($rowNumber, $e);
+      return FALSE;
+    }
+  }
+
+  /**
+   * Import a validated row, recording an error the parser did not handle against that row.
+   *
+   * @param array $row
+   *
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  public function importRow(array $row): void {
+    try {
+      $this->import($row);
+    }
+    catch (\Civi\Core\Exception\DBQueryException $e) {
+      // Database failures (deadlock, lost connection) fail the batch so the queue can retry it.
+      throw $e;
+    }
+    catch (Throwable $e) {
+      $this->setRowError((int) $row['_id'], $e);
+    }
+  }
+
+  /**
+   * Log an unexpected error and mark the row as failed, so the remaining rows still run.
+   *
+   * @param int $rowNumber
+   * @param \Throwable $e
+   */
+  private function setRowError(int $rowNumber, Throwable $e): void {
+    Civi::log('import')->error('Import of row {row} in job {user_job_id} failed: {message}', [
+      'row' => $rowNumber,
+      'user_job_id' => $this->getUserJobID(),
+      'message' => $e->getMessage(),
+      'exception' => $e,
+    ]);
+    $this->setImportStatus($rowNumber, 'ERROR', $e->getMessage());
   }
 
   protected function removeEmptyValues($array) {

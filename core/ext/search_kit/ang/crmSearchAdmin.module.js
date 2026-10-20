@@ -1,4 +1,4 @@
-(function(angular, $, _) {
+(function(angular, $) {
   "use strict";
 
   // Cache search tasks metadata
@@ -36,7 +36,7 @@
           savedSearch: function($route, crmApi4) {
             const params = $route.current.params;
             return crmApi4('SavedSearch', 'get', {
-              select: ['id', 'name', 'label', 'description', 'api_entity', 'api_params', 'form_values', 'is_template', 'expires_date', 'GROUP_CONCAT(DISTINCT entity_tag.tag_id) AS tag_id'],
+              select: ['id', 'name', 'label', 'description', 'api_entity', 'api_params', 'form_values', 'is_template', 'expires_date', 'timeout', 'GROUP_CONCAT(DISTINCT entity_tag.tag_id) AS tag_id'],
               where: [['id', '=', params.id]],
               join: [
                 ['EntityTag AS entity_tag', 'LEFT', ['entity_tag.entity_table', '=', '"civicrm_saved_search"'], ['id', '=', 'entity_tag.entity_id']],
@@ -64,7 +64,7 @@
           savedSearch: function($route, crmApi4) {
             const params = $route.current.params;
             return crmApi4('SavedSearch', 'get', {
-              select: ['label', 'description', 'api_entity', 'api_params', 'form_values', 'is_template', 'expires_date', 'GROUP_CONCAT(DISTINCT entity_tag.tag_id) AS tag_id'],
+              select: ['label', 'description', 'api_entity', 'api_params', 'form_values', 'is_template', 'expires_date', 'timeout', 'GROUP_CONCAT(DISTINCT entity_tag.tag_id) AS tag_id'],
               where: [['id', '=', params.id]],
               join: [
                 ['EntityTag AS entity_tag', 'LEFT', ['entity_tag.entity_table', '=', '"civicrm_saved_search"'], ['id', '=', 'entity_tag.entity_id']],
@@ -222,7 +222,7 @@
           }
         }
         const defaultLabel = labels.join(' - ');
-        result = _.assign(_.cloneDeep(join), {
+        result = Object.assign(structuredClone(join), {
           label: (savedSearch && savedSearch.form_values && savedSearch.form_values.join && savedSearch.form_values.join[alias]) || defaultLabel,
           defaultLabel: defaultLabel,
           alias: alias,
@@ -236,9 +236,9 @@
           if (Array.isArray(condition)) {
             condition.forEach((ref, side) => {
               if (side !== 1 && typeof ref === 'string') {
-                if (ref.includes('.')) {
+                if (ref.includes(join.alias + '.')) {
                   condition[side] = ref.replace(join.alias + '.', alias + '.');
-                } else if (prefix.length && !ref.includes('"') && !ref.includes("'")) {
+                } else if (prefix.length && !ref.startsWith(prefix + '.') && !ref.includes('"') && !ref.includes("'")) {
                   condition[side] = prefix + '.' + ref;
                 }
               }
@@ -333,6 +333,17 @@
                 expr.param = param.name || index;
                 expr.flag_before = flagBefore;
                 expr.name = name;
+                if (expr.type === 'string' && !(param.must_be || []).includes('SqlString')) {
+                  if ((param.must_be || []).includes('SqlNumber')) {
+                    expr.type = 'number';
+                    expr.data_type = expr.value === '' || Number.isInteger(+expr.value) ? 'Integer' : 'Float';
+                    if (expr.value !== '' && !isNaN(expr.value)) {
+                      expr.value = +expr.value;
+                    }
+                  } else if ((param.must_be || []).includes('SqlField')) {
+                    expr.type = 'field';
+                  }
+                }
                 info.args.push(expr);
               }
               // Only continue if an expression was found and followed by a comma
@@ -675,4 +686,4 @@
     });
   });
 
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);

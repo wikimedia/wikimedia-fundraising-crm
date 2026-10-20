@@ -707,7 +707,7 @@ abstract class CRM_Utils_System_DrupalBase extends CRM_Utils_System_Base {
     $path = CRM_Utils_System::currentPath() ?? '';
 
     // Get the menu for above URL.
-    $item = CRM_Core_Menu::get($path);
+    $item = \Civi::router()->get($path);
     // In case the URL is not a civicrm page (a drupal page) we set the FE theme to TRUE - covering the corner case
     return (empty($item) || !empty($item['is_public']));
   }
@@ -778,29 +778,6 @@ abstract class CRM_Utils_System_DrupalBase extends CRM_Utils_System_Base {
       return TRUE;
     }
     return FALSE;
-  }
-
-  /**
-   * @inheritdoc
-   */
-  public function getEmailFieldName(CRM_Core_Form $form, array $fields):string {
-    $emailName = '';
-    $billingLocationTypeID = CRM_Core_BAO_LocationType::getBilling();
-    if (array_key_exists("email-{$billingLocationTypeID}", $fields)) {
-      // this is a transaction related page
-      $emailName = 'email-' . $billingLocationTypeID;
-    }
-    else {
-      // find the email field in a profile page
-      foreach ($fields as $name => $dontCare) {
-        if (str_starts_with($name, 'email')) {
-          $emailName = $name;
-          break;
-        }
-      }
-    }
-
-    return $emailName;
   }
 
   /**

@@ -1,4 +1,4 @@
-(function(angular, $, _) {
+(function(angular, $) {
   "use strict";
 
   angular.module('crmSearchAdmin').component('searchAdminDisplayTable', {
@@ -18,7 +18,8 @@
 
 
       // Check if array contains item
-      this.includes = _.includes;
+      // Guarded: the template calls this before settings.classes is necessarily set
+      this.includes = (collection, item) => !!collection && collection.includes(item);
 
       this.getColTypes = function() {
         return ctrl.parent.colTypes;
@@ -26,7 +27,7 @@
 
       this.$onInit = function () {
         if (!ctrl.display.settings) {
-          ctrl.display.settings = _.extend({}, _.cloneDeep(CRM.crmSearchAdmin.defaultDisplay.settings), {columns: null, pager: {}});
+          ctrl.display.settings = Object.assign({}, structuredClone(CRM.crmSearchAdmin.defaultDisplay.settings), {columns: null, pager: {}});
           ctrl.display.settings.sort = ctrl.parent.getDefaultSort();
         }
         // Displays created prior to 5.43 may not have this property
@@ -115,7 +116,7 @@
         const hasTally = !!this.display.settings.tally;
         if (!hasTally) {
           this.display.settings.tally = {label: ts('Totals'), header: false, footer: false};
-          this.setTallyDefaults();
+          this.setColumnMode('custom', true);
         }
         this.display.settings.tally[position] = !this.display.settings.tally[position];
         if (!this.display.settings.tally.header && !this.display.settings.tally.footer) {
@@ -150,4 +151,4 @@
     }
   });
 
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);

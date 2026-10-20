@@ -198,12 +198,12 @@ function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermission
       ],
     ];
     $tasks['Batch']['validate'] = [
-      'title' => ts('Validate (WMF Audit)'),
+      'title' => E::ts('Validate (WMF Audit)'),
       'entity' => 'Batch',
-      'description' => ts('Run WMF audit validation for selected batches.'),
+      'description' => E::ts('Run WMF audit validation for selected batches.'),
       'ui' => [
-        'confirm' => ts('Validate %1 selected batch(es)?', [1 => '{count}']),
-        'successMsg' => ts('Validation complete for %1 batch(es).', [1 => '{count}']),
+        'confirm' => E::ts('Validate %1 selected batch(es)?', [1 => '{count}']),
+        'successMsg' => E::ts('Validation complete for %1 batch(es).', [1 => '{count}']),
       ],
       'apiBatch' => [
        'action' => 'validate',
@@ -854,6 +854,14 @@ function wmf_civicrm_civicrm_summaryActions(&$actions, $contactID)
     'ref' => 'find-referrals',
     'key' => 'referrals',
     'href' => '/civicrm/referralspercontact#/?source_contact_id,target_contact_id=' . $contactID,
+    'class' => 'crm-popup',
+  ];
+  $actions['mg_engagement'] = [
+    'title' => E::ts('Add MG Engagement'),
+    'weight' => 6,
+    'ref' => 'add-mg-engagement',
+    'key' => 'mg_engagement',
+    'href' => CRM_Utils_System::url('civicrm/mg-engagement/add', '', FALSE, '?target_contact_id=' . $contactID),
     'class' => 'crm-popup',
   ];
 }

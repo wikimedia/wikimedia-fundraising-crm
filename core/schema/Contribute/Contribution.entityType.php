@@ -4,6 +4,7 @@ return [
   'name' => 'Contribution',
   'table' => 'civicrm_contribution',
   'class' => 'CRM_Contribute_DAO_Contribution',
+  'token_class' => 'CRM_Contribute_Tokens',
   'getInfo' => fn() => [
     'title' => ts('Contribution'),
     'title_plural' => ts('Contributions'),
@@ -90,6 +91,7 @@ return [
         'import',
         'export',
         'duplicate_matching',
+        'token',
       ],
       'primary_key' => TRUE,
       'auto_increment' => TRUE,

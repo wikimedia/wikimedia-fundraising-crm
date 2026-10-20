@@ -1,4 +1,4 @@
-(function(angular, $, _) {
+(function(angular, $) {
   "use strict";
 
   angular.module('crmSearchAdmin').component('crmSearchAdminJoin', {
@@ -22,21 +22,21 @@
         {k: 'EXCLUDE', v: ts('Without')},
       ];
 
-      const searchInfo = {};
+      this.searchInfo = {};
 
       this.$onInit = () => {
-        searchInfo.api_entity = this.apiEntity;
-        searchInfo.api_params = this.apiParams;
-        searchInfo.form_values = this.formValues;
+        this.searchInfo.api_entity = this.apiEntity;
+        this.searchInfo.api_params = this.apiParams;
+        this.searchInfo.form_values = this.formValues;
       };
 
       this.getJoin = (fullNameOrAlias) => {
-        return searchMeta.getJoin(searchInfo, fullNameOrAlias);
+        return searchMeta.getJoin(this.searchInfo, fullNameOrAlias);
       };
 
       const getExistingJoins = () => {
         return (this.apiParams.join || []).reduce((joins, join) => {
-          joins[join[0].split(' AS ')[1]] = searchMeta.getJoin(searchInfo, join[0]);
+          joins[join[0].split(' AS ')[1]] = searchMeta.getJoin(this.searchInfo, join[0]);
           return joins;
         }, {});
       };
@@ -86,13 +86,13 @@
       this.addJoin = (value) => {
         if (value) {
           this.apiParams.join = this.apiParams.join || [];
-          const join = searchMeta.getJoin(searchInfo, value);
+          const join = searchMeta.getJoin(this.searchInfo, value);
           const entity = searchMeta.getEntity(join.entity);
           const params = [value, $scope.controls.joinType || 'LEFT'];
           // Immutable conditions cannot be changed in the SK UI
-          params.push(... _.cloneDeep(join.conditions || []));
+          params.push(... structuredClone(join.conditions || []));
           // Default conditions are user-editable in the SK UI
-          params.push(... _.cloneDeep(join.defaults || []));
+          params.push(... structuredClone(join.defaults || []));
           this.apiParams.join.push(params);
           if (entity.search_fields && $scope.controls.joinType !== 'EXCLUDE') {
             // Add columns for newly-joined entity
@@ -111,15 +111,21 @@
         }
       };
 
-      // Factory returns a getter-setter function for ngModel
+      // Factory returns a memoized getter-setter function for ngModel.
+      // Must return the same function reference on every digest cycle or
+      // AngularJS will detect a change and trigger an infinite digest loop.
+      const joinLabelGetters = {};
       this.getSetJoinLabel = (joinName) => {
-        return _.wrap(joinName, getSetJoinLabel);
+        if (!joinLabelGetters[joinName]) {
+          joinLabelGetters[joinName] = (...args) => getSetJoinLabel(joinName, ...args);
+        }
+        return joinLabelGetters[joinName];
       };
 
       const getSetJoinLabel = (...args) => {
         const joinName = args[0];
         const value = args[1];
-        const joinInfo = searchMeta.getJoin(searchInfo, joinName);
+        const joinInfo = searchMeta.getJoin(this.searchInfo, joinName);
         const alias = joinInfo.alias;
         // Setter
         if (args.length > 1) {
@@ -135,7 +141,7 @@
       };
 
       this.removeJoin = (index) => {
-        const alias = searchMeta.getJoin(searchInfo, this.apiParams.join[index][0]).alias;
+        const alias = searchMeta.getJoin(this.searchInfo, this.apiParams.join[index][0]).alias;
         this.apiParams.join.splice(index, 1);
         removeJoinStuff(alias);
       };
@@ -158,7 +164,7 @@
         }
         if (this.apiParams.join) {
           Object.entries(this.apiParams.join).toReversed().forEach(([i, item]) => {
-            const joinAlias = searchMeta.getJoin(searchInfo, item[0]).alias;
+            const joinAlias = searchMeta.getJoin(this.searchInfo, item[0]).alias;
             if (joinAlias !== alias && joinAlias.indexOf(alias) === 0) {
               this.removeJoin(i);
             }
@@ -171,7 +177,7 @@
 
       this.changeJoinType = (join) => {
         if (join[1] === 'EXCLUDE') {
-          removeJoinStuff(searchMeta.getJoin(searchInfo, join[0]).alias);
+          removeJoinStuff(searchMeta.getJoin(this.searchInfo, join[0]).alias);
         }
       };
 
@@ -190,16 +196,16 @@
       const fieldsForJoinGetters = {};
 
       const getFieldsForJoin = (joinEntity) => {
-        return {results: this.crmSearchAdmin.getAllFields(searchInfo, ':name', ['Field', 'Custom', 'Extra'], null, joinEntity)};
+        return {results: this.crmSearchAdmin.getAllFields(this.searchInfo, ':name', ['Field', 'Custom', 'Extra'], null, joinEntity)};
       };
 
       this.fieldsForJoin = (joinEntity) => {
         if (!fieldsForJoinGetters[joinEntity]) {
-          fieldsForJoinGetters[joinEntity] = _.wrap(joinEntity, getFieldsForJoin);
+          fieldsForJoinGetters[joinEntity] = (...args) => getFieldsForJoin(joinEntity, ...args);
         }
         return fieldsForJoinGetters[joinEntity];
       };
     }
   });
 
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);

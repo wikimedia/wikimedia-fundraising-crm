@@ -191,9 +191,10 @@ class CRM_Core_Config extends CRM_Core_Config_MagicMerge {
    * Reset the serialized array and recompute.
    * use with care
    *
-   * @deprecated
+   * @deprecated in 4.6 will be removed around 6.31
    */
   public function reset() {
+    CRM_Core_Error::deprecatedWarning('CRM_Core_Config::reset function is deprecated and does nothing.');
     // This is what it used to do. However, it hasn't meant anything since 4.6.
     // $query = "UPDATE civicrm_domain SET config_backend = null";
     // CRM_Core_DAO::executeQuery($query);
@@ -452,42 +453,6 @@ class CRM_Core_Config extends CRM_Core_Config_MagicMerge {
    */
   public static function isEnabledBackOfficeCreditCardPayments() {
     return CRM_Financial_BAO_PaymentProcessor::hasPaymentProcessorSupporting(['BackOffice']);
-  }
-
-  /**
-   * @deprecated
-   */
-  public function addressSequence() {
-    CRM_Core_Error::deprecatedFunctionWarning('CRM_Utils_Address::sequence(Civi::settings()->get(\'address_format\')');
-    return CRM_Utils_Address::sequence(Civi::settings()->get('address_format'));
-  }
-
-  /**
-   * @deprecated
-   */
-  public function defaultContactCountry() {
-    CRM_Core_Error::deprecatedFunctionWarning('CRM_Core_BAO_Country::defaultContactCountry');
-    return CRM_Core_BAO_Country::defaultContactCountry();
-  }
-
-  /**
-   * @deprecated
-   */
-  public function defaultContactCountryName() {
-    CRM_Core_Error::deprecatedFunctionWarning('CRM_Core_BAO_Country::defaultContactCountryName');
-    return CRM_Core_BAO_Country::defaultContactCountryName();
-  }
-
-  /**
-   * @deprecated
-   *
-   * @param string $defaultCurrency
-   *
-   * @return string
-   */
-  public function defaultCurrencySymbol($defaultCurrency = NULL) {
-    CRM_Core_Error::deprecatedFunctionWarning('CRM_Core_BAO_Country::defaultCurrencySymbol');
-    return CRM_Core_BAO_Country::defaultCurrencySymbol($defaultCurrency);
   }
 
   /**

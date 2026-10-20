@@ -11,9 +11,9 @@ use CRM_Afform_ExtensionUtil as E;
  * @param array $params
  * @return array
  */
-function _afform_fields_filter($params) {
+function _afform_fields_filter($params, $checkPermissions = FALSE) {
   $result = [];
-  $fields = \Civi\Api4\Afform::getfields(FALSE)->setAction('create')->execute()->indexBy('name');
+  $fields = \Civi\Api4\Afform::getfields($checkPermissions)->setAction('create')->execute()->indexBy('name');
   foreach ($fields as $fieldName => $field) {
     if (array_key_exists($fieldName, $params)) {
       $result[$fieldName] = $params[$fieldName];
@@ -239,7 +239,7 @@ function afform_civicrm_buildAsset($asset, $params, &$mimeType, &$content) {
   $moduleName = _afform_angular_module_name($params['name'], 'camel');
   $formMetaData = (array) civicrm_api4('Afform', 'get', [
     'checkPermissions' => FALSE,
-    'select' => ['redirect', 'name', 'title', 'autosave_draft', 'confirmation_type', 'confirmation_message'],
+    'select' => ['name', 'title', 'autosave_draft'],
     'where' => [['name', '=', $params['name']]],
   ], 0);
 
@@ -288,6 +288,31 @@ function afform_civicrm_alterMenu(&$items) {
       $items[$meta['server_route']] = $newMenuItem + $existingAttributes;
     }
   }
+}
+
+/**
+ * Implements hook_civicrm_alterNonDbTaggableEntities().
+ *
+ * Afform's `tags` field stores tag names, not tag IDs, so this callback has to
+ * resolve the tag ID it's given back to a name before it can match against it.
+ */
+function afform_civicrm_alterNonDbTaggableEntities(&$entities) {
+  $entities['Afform'] = function($tagId) {
+    $tagName = \Civi\Api4\Tag::get(FALSE)
+      ->addWhere('id', '=', $tagId)
+      ->addSelect('name')
+      ->execute()->first()['name'] ?? NULL;
+    if (!$tagName) {
+      return [];
+    }
+    $afforms = (array) \Civi\Api4\Afform::get(FALSE)
+      ->addWhere('tags', 'CONTAINS', $tagName)
+      ->addSelect('name')
+      ->execute();
+    // Afform's primary key column is called `name`, not `id` - normalize to the
+    // generic `id` key the TaggedEntity::get contract expects from every callback.
+    return array_map(fn($afform) => ['id' => $afform['name']], $afforms);
+  };
 }
 
 /**
@@ -459,7 +484,7 @@ function afform_civicrm_post($op, $entityName, $id, $object, $params) {
       // Adding a new custom field to an empty field group may auto-generate afforms with menu routes.
       // @see Civi\Api4\Action\CustomGroup\GetAfforms::getCustomGroupAfforms
       if ($op === 'create' && $entityName === 'CustomField') {
-        \CRM_Core_Menu::clear();
+        \Civi::router()->clear();;
       }
     }
   }

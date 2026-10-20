@@ -30,23 +30,18 @@
 {literal}
 <script type="text/javascript">
 CRM.$(function ($) {
+  // The fields each option value needs, keyed by option value (see
+  // CRM_Contribute_BAO_Contribution::getPaymentInstrumentFields()). We must not
+  // compare the option label: it is translated and can be customised per-site.
+  var paymentInstrumentFields = {/literal}{$paymentInstrumentFields|@json_encode}{literal};
 
   showHideFieldsByPaymentInstrumentID();
   $('#payment_instrument_id').on('change', showHideFieldsByPaymentInstrumentID);
 
   function showHideFieldsByPaymentInstrumentID() {
-    var paymentInstrumentLabel = $('#payment_instrument_id option:selected').text();
-    if (paymentInstrumentLabel == ts('Credit Card')) {
-      $('.check_number-section').hide();
-      $('.card_type_id-section, .pan_truncation-section').show();
-    }
-    else if (paymentInstrumentLabel == ts('Check')) {
-      $('.card_type_id-section, .pan_truncation-section').hide();
-      $('.check_number-section').show();
-    }
-    else {
-      $('.card_type_id-section, .pan_truncation-section, .check_number-section').hide();
-    }
+    var fields = paymentInstrumentFields[$('#payment_instrument_id').val()] || [];
+    $('.check_number-section').toggle(fields.includes('check_number'));
+    $('.card_type_id-section, .pan_truncation-section').toggle(fields.includes('card_type_id'));
   }
 });
 </script>

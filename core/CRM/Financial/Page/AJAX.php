@@ -166,7 +166,7 @@ class CRM_Financial_Page_AJAX {
       }
     }
 
-    $entityID = CRM_Utils_Request::retrieve('entityID', 'Positive', CRM_Core_DAO::$_nullObject, FALSE, NULL, 'POST');
+    $entityID = CRM_Utils_Request::retrieve('entityID', 'Positive', NULL, FALSE, NULL, 'POST');
     $methods = [
       'assign' => 'create',
       'remove' => 'del',
@@ -368,7 +368,7 @@ class CRM_Financial_Page_AJAX {
         }
         elseif ($columnKey == 'payment_method' && $financialItem->$columnKey) {
           $row[$financialItem->id][$columnKey] = CRM_Core_PseudoConstant::getLabel('CRM_Batch_BAO_Batch', 'payment_instrument_id', $financialItem->$columnKey);
-          if ($row[$financialItem->id][$columnKey] == 'Check') {
+          if (in_array('check_number', CRM_Contribute_BAO_Contribution::getPaymentInstrumentFields($financialItem->payment_method), TRUE)) {
             $checkNumber = $financialItem->check_number ? ' (' . $financialItem->check_number . ')' : '';
             $row[$financialItem->id][$columnKey] = $row[$financialItem->id][$columnKey] . $checkNumber;
           }

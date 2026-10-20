@@ -1,4 +1,4 @@
-(function(angular, $, _) {
+(function(angular, $) {
   "use strict";
 
   angular.module('crmSearchAdmin').component('crmSearchAdminGroup', {
@@ -10,7 +10,7 @@
       const ts = $scope.ts = CRM.ts('org.civicrm.search_kit');
 
       this.getEntity = searchMeta.getEntity;
-      this.getField = searchMeta.getField;
+      this.getField = (fieldName, entity) => searchMeta.getField(fieldName, entity || this.savedSearch);
 
       this.smartGroupColumns = [];
 
@@ -29,4 +29,4 @@
     }
   });
 
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);

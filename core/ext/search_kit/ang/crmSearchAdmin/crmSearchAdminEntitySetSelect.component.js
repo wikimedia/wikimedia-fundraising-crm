@@ -1,4 +1,4 @@
-(function(angular, $, _) {
+(function(angular, $) {
   "use strict";
 
   angular.module('crmSearchAdmin').component('crmSearchAdminEntitySetSelect', {
@@ -101,7 +101,7 @@
               set[3].select.splice(nullIndex, 1);
             });
           });
-          this.apiParams.select = this.apiParams.sets[0][3].select.map((field) => _.last(field.split(' AS ')));
+          this.apiParams.select = this.apiParams.sets[0][3].select.map((field) => field.split(' AS ').at(-1));
         }
       };
 
@@ -131,4 +131,4 @@
     }
   });
 
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);

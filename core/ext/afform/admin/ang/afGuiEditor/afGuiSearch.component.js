@@ -1,5 +1,5 @@
 // https://civicrm.org/licensing
-(function(angular, $, _) {
+(function(angular, $) {
   "use strict";
 
   angular.module('afGuiEditor').component('afGuiSearch', {
@@ -39,11 +39,10 @@
         }
         let alias = fieldName.split('.')[0],
           entity;
-        _.each(ctrl.display.settings['saved_search_id.api_params'].join, function(join) {
+        (ctrl.display.settings['saved_search_id.api_params'].join || []).forEach((join) => {
           const joinInfo = join[0].split(' AS ');
           if (alias === joinInfo[1]) {
             entity = joinInfo[0];
-            return false;
           }
         });
         return entity || ctrl.display.settings['saved_search_id.api_entity'];
@@ -72,7 +71,7 @@
       function buildCalcFieldList(search) {
         $scope.calcFieldList.length = 0;
         $scope.calcFieldTitles.length = 0;
-        _.each(_.cloneDeep(ctrl.display.settings.calc_fields), function(field) {
+        (structuredClone(ctrl.display.settings.calc_fields) || []).forEach((field) => {
           if (!search || field.label.toLowerCase().includes(search)) {
             $scope.calcFieldList.push(fieldDefaults(field, ''));
             $scope.calcFieldTitles.push(field.label);
@@ -83,7 +82,7 @@
       function buildBlockList(search) {
         $scope.blockList.length = 0;
         $scope.blockTitles.length = 0;
-        _.each(afGui.meta.blocks, function(block, directive) {
+        Object.entries(afGui.meta.blocks || {}).forEach(([directive, block]) => {
           if (!search ||
             directive.includes(search) ||
             block.name.toLowerCase().includes(search) ||
@@ -108,14 +107,12 @@
         });
 
         function filterFields(fields, prefix) {
-          return _.transform(fields, function(fieldList, field) {
-            if (!search ||
+          return Object.values(fields || {})
+            .filter((field) => !search ||
               field.name.includes(search) ||
               field.label.toLowerCase().includes(search)
-            ) {
-              fieldList.push(fieldDefaults(field, prefix));
-            }
-          }, []);
+            )
+            .map((field) => fieldDefaults(field, prefix));
         }
       }
 
@@ -142,7 +139,7 @@
         if (block['af-join']) {
           return !!getElement(ctrl.display.fieldset['#children'], {'af-join': block['af-join']});
         }
-        const fieldsInBlock = _.pluck(afGui.findRecursive(afGui.meta.blocks[block['#tag']].layout, {'#tag': 'af-field'}), 'name');
+        const fieldsInBlock = afGui.findRecursive(afGui.meta.blocks[block['#tag']].layout, {'#tag': 'af-field'}).map((field) => field.name);
         return !!getElement(ctrl.display.fieldset['#children'], function(item) {
           return item['#tag'] === 'af-field' && fieldsInBlock.includes(item.name);
         });
@@ -154,16 +151,16 @@
         if (!found) {
           found = {};
         }
-        const match = _.find(group, criteria);
+        const match = (group || []).find(afGui.matches(criteria));
         if (match) {
           found.match = match;
           return match;
         }
-        _.each(group, function(item) {
+        (group || []).forEach((item) => {
           if (found.match) {
-            return false;
+            return;
           }
-          if (_.isPlainObject(item)) {
+          if (afGui.isPlainObject(item)) {
             // Recurse through everything
             if (item['#children']) {
               getElement(item['#children'], criteria, found);
@@ -229,4 +226,4 @@
     }
   });
 
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);

@@ -71,6 +71,9 @@ class CRM_Admin_Page_AJAX {
       if (!empty($props['label'])) {
         $item['label'] = _ts($props['label'], ['context' => 'menu']);
       }
+      if (!empty($props['target'])) {
+        $item['target'] = $props['target'];
+      }
       $item['name'] = !empty($props['name']) ? $props['name'] : CRM_Utils_String::munge($props['label'] ?? '');
       if (!empty($item['child'])) {
         self::formatMenuItems($item['child']);
@@ -359,7 +362,7 @@ class CRM_Admin_Page_AJAX {
             'usages' => civicrm_api3('EntityTag', 'getcount', [
               'entity_table' => ['IN' => $usedFor],
               'tag_id' => $dao->id,
-            ]),
+            ]) + array_sum(array_map('count', CRM_Core_BAO_EntityTag::getNonDbTaggedIds($dao->id, $usedFor))),
           ],
         ];
         if ($dao->description || $dao->is_reserved) {

@@ -1,4 +1,4 @@
-(function(angular, $, _) {
+(function(angular, $) {
   "use strict";
 
   angular.module('crmSearchAdmin').component('crmSearchAdminDisplay', {
@@ -115,7 +115,7 @@
       };
 
       this.addCol = function(type) {
-        const col = _.cloneDeep(this.colTypes[type].defaults);
+        const col = structuredClone(this.colTypes[type].defaults);
         col.type = type;
         if (this.display.type === 'table' && !('alignment' in col)) {
           col.alignment = 'text-right';
@@ -152,7 +152,7 @@
       this.getDataType = function(key) {
         const expr = ctrl.getExprFromSelect(key);
         const info = searchMeta.parseExpr(expr, ctrl.savedSearch);
-        const field = (_.findWhere(info.args, {type: 'field'}) || {}).field || {};
+        const field = (info.args.find((arg) => arg.type === 'field') || {}).field || {};
         return (info.fn && info.fn.data_type) || field.data_type;
       };
 
@@ -239,9 +239,27 @@
       }
 
       // Provides getter/setter for the pseudoconstant suffix selector
-      this.getSetSuffix = function(index) {
-        return _.wrap(index, getSetSuffix);
+      this.getSetSuffix = (index) => (...args) => getSetSuffix(index, ...args);
+
+      // Provides getter/setter for the date format selector
+      this.getSetDateFormat = (col) => (...args) => {
+        if (args.length) {
+          const val = args[0];
+          if (val === '') {
+            delete col.format;
+          } else if (val === 'other') {
+            col.format = col.format !== undefined && !(col.format in this.dateFormats) ? col.format : '%Y-%m-%d';
+          } else {
+            col.format = val;
+          }
+        }
+        if (col.format === undefined) {
+          return '';
+        }
+        return col.format in this.dateFormats ? col.format : 'other';
       };
+
+      this.isCustomDateFormat = (col) => col.format !== undefined && !(col.format in this.dateFormats);
 
       this.canBeImage = function(col) {
         const expr = ctrl.getExprFromSelect(col.key),
@@ -273,7 +291,7 @@
         }
         const expr = ctrl.getExprFromSelect(col.key),
           info = searchMeta.parseExpr(expr, ctrl.savedSearch),
-          arg = (info && info.args && _.findWhere(info.args, {type: 'field'})) || {};
+          arg = (info && info.args && info.args.find((arg) => arg.type === 'field')) || {};
         return arg.field && arg.field.type !== 'Pseudo';
       };
 
@@ -299,7 +317,7 @@
 
       this.onChangeLink = function(column, afterLink) {
         column.link = column.link || {};
-        const beforeLink = column.link.action && _.findWhere(ctrl.getLinks(column.key), {action: column.link.action});
+        const beforeLink = column.link.action && ctrl.getLinks(column.key).find((link) => link.action === column.link.action);
         if (!afterLink.action && !afterLink.path && !afterLink.task) {
           if (beforeLink && beforeLink.text === column.title) {
             delete column.title;
@@ -323,7 +341,7 @@
             '*': ctrl.crmSearchAdmin.buildLinks(true),
             '0': []
           };
-          ctrl.links[''] = _.filter(ctrl.links['*'], {join: ''});
+          ctrl.links[''] = ctrl.links['*'].filter((link) => link.join === '');
           searchMeta.getSearchTasks(ctrl.savedSearch.api_entity).then(function(tasks) {
             tasks.forEach(function (task) {
               if (task.number === '> 0' || task.number === '=== 1') {
@@ -352,7 +370,7 @@
           info = searchMeta.parseExpr(expr, ctrl.savedSearch),
           joinEntity = searchMeta.getJoinEntity(info);
         if (!ctrl.links[joinEntity]) {
-          ctrl.links[joinEntity] = _.filter(ctrl.links['*'], {join: joinEntity});
+          ctrl.links[joinEntity] = ctrl.links['*'].filter((link) => link.join === joinEntity);
         }
         return ctrl.links[joinEntity];
       };
@@ -367,9 +385,7 @@
       this.initColumns = (defaults) => {
         initDefaults = defaults;
         if (!this.display.settings.columns) {
-          this.display.settings.columns = _.transform(this.savedSearch.api_params.select, function(columns, fieldExpr) {
-            columns.push(searchMeta.fieldToColumn(fieldExpr, defaults, ctrl.savedSearch));
-          });
+          this.display.settings.columns = this.savedSearch.api_params.select.map((fieldExpr) => searchMeta.fieldToColumn(fieldExpr, defaults, ctrl.savedSearch));
         } else {
           let activeColumns = this.display.settings.columns.map(col => col.key);
           // Delete any column that is no longer in the search
@@ -378,11 +394,23 @@
               this.removeCol(activeColumns.length - 1 - index);
             }
           });
-          // Fill in any missing default values from columns
-          this.display.settings.columns.forEach((col, index) => {
-            if (col.type && this.colTypes[col.type]?.defaults) {
-              this.display.settings.columns[index] = _.merge({}, this.colTypes[col.type].defaults, col);
-            }
+          // Fill in any missing default values from columns.
+          // Defaults are cloned per column so that columns don't end up sharing an array.
+          this.display.settings.columns.forEach((col) => {
+            const defaults = col.type && this.colTypes[col.type]?.defaults;
+            Object.entries(defaults || {}).forEach(([key, value]) => {
+              if (col[key] === undefined) {
+                col[key] = structuredClone(value);
+              }
+              else if (value && typeof value === 'object' && !Array.isArray(value)) {
+                // `subsearch` is the one default with keys of its own
+                Object.entries(value).forEach(([subKey, subValue]) => {
+                  if (col[key][subKey] === undefined) {
+                    col[key][subKey] = structuredClone(subValue);
+                  }
+                });
+              }
+            });
           });
         }
       };
@@ -426,6 +454,20 @@
               children: ctrl.crmSearchAdmin.getSelectFields(ctrl.savedSearch, disabledIf)
             }
           ].concat(ctrl.crmSearchAdmin.getAllFields(ctrl.savedSearch, '', ['Field', 'Custom', 'Extra'], disabledIf))
+        };
+      };
+
+      // Unlike fieldsForSort, a field already used for sorting is not disabled here -
+      // section_group_by is expected to already be (or become) the primary sort field, and
+      // "Random" makes no sense to group sections by.
+      this.fieldsForSectionGroupBy = function() {
+        return {
+          results: [
+            {
+              text: ts('Columns'),
+              children: ctrl.crmSearchAdmin.getSelectFields(ctrl.savedSearch)
+            }
+          ].concat(ctrl.crmSearchAdmin.getAllFields(ctrl.savedSearch, '', ['Field', 'Custom', 'Extra']))
         };
       };
 
@@ -478,4 +520,4 @@
     }
   });
 
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);

@@ -143,7 +143,7 @@
           </td>
         </tr>
         {if !$membershipMode}
-          <tr>
+          <tr class="crm-membership-form-block-is_override">
             <td class="label">{$form.is_override.label} {help id="is_override"}</td>
             <td>
               <span id="is-override">{$form.is_override.html}</span>
@@ -668,7 +668,7 @@
               }
               else {
                 relatable = '{/literal}{ts escape='js' 1='%1'}%1 contacts are currently eligible to inherit this relationship.{/ts}{literal}';
-                relatable = ts(relatable, {1: result});
+                relatable = ts(relatable, {1: result.result});
               }
               cj('#eligibleRelated').text(relatable);
             }

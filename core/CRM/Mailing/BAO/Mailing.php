@@ -1110,7 +1110,13 @@ ORDER BY   civicrm_email.is_bulkmail DESC
     $mailing = self::add($params);
 
     // update mailings with hash values
+    $newHash = empty($mailing->hash);
     CRM_Contact_BAO_Contact_Utils::generateChecksum($mailing->id, NULL, NULL, NULL, 'mailing', 16);
+    if ($newHash) {
+      // Writing the hash can move modified_date, which callers send back to detect a stale save.
+      $mailing->modified_date = CRM_Core_DAO::singleValueQuery('SELECT modified_date FROM civicrm_mailing WHERE id = %1',
+        [1 => [$mailing->id, 'Integer']]);
+    }
 
     $groupTableName = CRM_Contact_BAO_Group::getTableName();
 
@@ -1865,21 +1871,6 @@ LEFT JOIN civicrm_mailing_group g ON g.mailing_id   = m.id
    */
   public static function showEmailDetails($id) {
     return CRM_Utils_System::url('civicrm/mailing/report', "mid=$id");
-  }
-
-  /**
-   * Delete Mails and all its associated records.
-   *
-   * @param int $id
-   *   Id of the mail to delete.
-   *
-   * @return void
-   *
-   * @deprecated
-   */
-  public static function del($id) {
-    CRM_Core_Error::deprecatedFunctionWarning('deleteRecord');
-    static::deleteRecord(['id' => $id]);
   }
 
   /**

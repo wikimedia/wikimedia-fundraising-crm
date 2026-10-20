@@ -1,4 +1,4 @@
-(function (angular, $, _) {
+(function (angular, $) {
 
   // The representation of from/reply-to addresses is inconsistent in the mailing data-model,
   // so the UI must do some adaptation. The crmFromAddresses provides a richer way to slice/dice
@@ -6,7 +6,7 @@
   // and "author".
   angular.module('crmMailing').factory('crmFromAddresses', function ($q, crmApi) {
     var emailRegex = /^"(.*)" *<([^@>]*@[^@>]*)>$/;
-    var addrs = _.map(CRM.crmMailing.fromAddress, function (addr) {
+    var addrs = CRM.crmMailing.fromAddress.map((addr) => {
       var match = emailRegex.exec(addr.label);
       return angular.extend({}, addr, {
         email: match ? match[2] : '(INVALID)',
@@ -24,7 +24,7 @@
       },
       getByAuthorEmail: function getByAuthorEmail(author, email, autocreate) {
         var result = null;
-        _.each(addrs, function (addr) {
+        addrs.forEach((addr) => {
           if (addr.author == author && addr.email == email) {
             result = addr;
           }
@@ -40,23 +40,21 @@
         return result;
       },
       getByEmail: function getByEmail(email) {
-        return first(_.where(addrs, {email: email}));
+        return first(addrs.filter((a) => a.email === email));
       },
       getByLabel: function (label) {
-        return first(_.where(addrs, {label: label}));
+        return first(addrs.filter((a) => a.label === label));
       },
       getDefault: function getDefault() {
-        return first(_.where(addrs, {is_default: "1"}));
+        return first(addrs.filter((a) => a.is_default === "1"));
       }
     };
   });
 
   angular.module('crmMailing').factory('crmMsgTemplates', function ($q, crmApi) {
-    var tpls = _.map(CRM.crmMailing.mesTemplate, function (tpl) {
-      return angular.extend({}, tpl, {
-        //id: tpl parseInt(tpl.id)
-      });
-    });
+    var tpls = CRM.crmMailing.mesTemplate.map((tpl) => angular.extend({}, tpl, {
+      //id: tpl parseInt(tpl.id)
+    }));
     window.tpls = tpls;
     var lastModifiedTpl = null;
     return {
@@ -96,10 +94,7 @@
   angular.module('crmMailing').factory('crmMailingMgr', function ($q, crmApi, crmApi4, crmFromAddresses, crmQueue) {
     const qApi = crmQueue(crmApi4);
     var pickDefaultMailComponent = function pickDefaultMailComponent(type) {
-      var mcs = _.where(CRM.crmMailing.headerfooterList, {
-        component_type: type,
-        is_default: "1"
-      });
+      var mcs = CRM.crmMailing.headerfooterList.filter((mc) => mc.component_type === type && mc.is_default === "1");
       return (mcs.length >= 1) ? mcs[0].id : null;
     };
 
@@ -113,7 +108,10 @@
       get: function get(id) {
         var crmMailingMgr = this;
         var mailing;
-        return qApi('Mailing', 'get', {where: [['id', '=', id]]})
+        return qApi('Mailing', 'get', {
+          select: ['*', 'custom.*'],
+          where: [['id', '=', id]],
+        })
           .then((getResult) => {
             mailing = getResult[0];
             return $q.all([
@@ -190,21 +188,21 @@
       // ex: var msgs = findMissingTokens(mailing, 'body_html');
       findMissingTokens: function(mailing, field) {
         var missing = {};
-        if (!_.isEmpty(mailing[field]) && !CRM.crmMailing.disableMandatoryTokensCheck) {
+        if (mailing[field] && !CRM.crmMailing.disableMandatoryTokensCheck) {
           var body = '';
           if (mailing.footer_id) {
-            var footer = _.where(CRM.crmMailing.headerfooterList, {id: "" + mailing.footer_id});
+            var footer = CRM.crmMailing.headerfooterList.filter((c) => c.id === "" + mailing.footer_id);
             body = body + footer[0][field];
 
           }
           body = body + mailing[field];
           if (mailing.header_id) {
-            var header = _.where(CRM.crmMailing.headerfooterList, {id: "" + mailing.header_id});
+            var header = CRM.crmMailing.headerfooterList.filter((c) => c.id === "" + mailing.header_id);
             body = body + header[0][field];
           }
 
           angular.forEach(CRM.crmMailing.requiredTokens, function(value, token) {
-            if (!_.isObject(value)) {
+            if (value === null || typeof value !== 'object') {
               if (body.indexOf('{' + token + '}') < 0) {
                 missing[token] = value;
               }
@@ -257,8 +255,8 @@
         if (!excludes) {
           excludes = [];
         }
-        _.each(MAILING_FIELDS, function (field) {
-          if (!_.contains(excludes, field)) {
+        MAILING_FIELDS.forEach((field) => {
+          if (!excludes.includes(field)) {
             mailingTgt[field] = mailingFrom[field];
           }
         });
@@ -316,7 +314,7 @@
       previewRecipientCount: function previewRecipientCount(mailing, crmMailingCache, rebuild) {
         var cachekey = 'mailing-' + mailing.id + '-recipient-count';
         var recipientCount = crmMailingCache.get(cachekey);
-        if (rebuild || _.isEmpty(recipientCount)) {
+        if (rebuild || !recipientCount) {
           // To get list of recipients, we tentatively save the mailing and
           // get the resulting recipients -- then rollback any changes.
           var params = angular.extend({}, mailing, mailing.recipients, {
@@ -335,7 +333,6 @@
                 'api.email.getvalue': {'return': 'email'}
               }
             });
-            crmMailingCache.put('mailing-' + mailing.id + '-recipient-params', params.recipients);
           }
           delete params.scheduled_date;
           delete params.recipients; // the content was merged in
@@ -458,25 +455,25 @@
       getGroupNames: function(mailing) {
         if (-1 == mailings.indexOf(mailing.id)) {
           mailings.push(mailing.id);
-          _.each(mailing.recipients.groups.include, function(id) {
+          mailing.recipients.groups.include.forEach((id) => {
             if (-1 == gids.indexOf(id)) {
               gids.push(id);
             }
           });
-          _.each(mailing.recipients.groups.exclude, function(id) {
+          mailing.recipients.groups.exclude.forEach((id) => {
             if (-1 == gids.indexOf(id)) {
               gids.push(id);
             }
           });
-          _.each(mailing.recipients.groups.base, function(id) {
+          mailing.recipients.groups.base.forEach((id) => {
             if (-1 == gids.indexOf(id)) {
               gids.push(id);
             }
           });
-          if (!_.isEmpty(gids)) {
+          if (gids.length) {
             CRM.api3('Group', 'get', {'id': {"IN": gids}}).then(function(result) {
-              _.each(result.values, function(grp) {
-                if (_.isEmpty(_.where(groupNames, {id: parseInt(grp.id)}))) {
+              Object.values(result.values).forEach((grp) => {
+                if (!groupNames.some((g) => g.id === parseInt(grp.id))) {
                   groupNames.push({id: parseInt(grp.id), title: grp.title, is_hidden: grp.is_hidden});
                 }
               });
@@ -489,20 +486,20 @@
       getCiviMails: function(mailing) {
         if (-1 == civimailings.indexOf(mailing.id)) {
           civimailings.push(mailing.id);
-          _.each(mailing.recipients.mailings.include, function(id) {
+          mailing.recipients.mailings.include.forEach((id) => {
             if (-1 == mids.indexOf(id)) {
               mids.push(id);
             }
           });
-          _.each(mailing.recipients.mailings.exclude, function(id) {
+          mailing.recipients.mailings.exclude.forEach((id) => {
             if (-1 == mids.indexOf(id)) {
               mids.push(id);
             }
           });
-          if (!_.isEmpty(mids)) {
+          if (mids.length) {
             CRM.api3('Mailing', 'get', {'id': {"IN": mids}}).then(function(result) {
-              _.each(result.values, function(mail) {
-                if (_.isEmpty(_.where(civimails, {id: parseInt(mail.id)}))) {
+              Object.values(result.values).forEach((mail) => {
+                if (!civimails.some((m) => m.id === parseInt(mail.id))) {
                   civimails.push({id: parseInt(mail.id), name: mail.name});
                 }
               });
@@ -660,4 +657,4 @@
     return $cacheFactory('crmMailingCache');
   }]);
 
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);

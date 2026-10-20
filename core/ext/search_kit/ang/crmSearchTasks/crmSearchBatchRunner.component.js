@@ -1,4 +1,4 @@
-(function(angular, $, _) {
+(function(angular, $) {
   "use strict";
 
   angular.module('crmSearchTasks').component('crmSearchBatchRunner', {
@@ -52,7 +52,7 @@
         if (ctrl.last > ctrl.ids.length) {
           ctrl.last = ctrl.ids.length;
         }
-        const params = _.cloneDeep(ctrl.params);
+        const params = structuredClone(ctrl.params);
         if (ctrl.action === 'save' || (ctrl.action === 'create' && ctrl.idField)) {
           actionName = 'save';
           let originalRecords = params.records || [{}];
@@ -62,12 +62,12 @@
             delete params.values;
           }
           // For the save action, take each record from params and copy it with each supplied id
-          params.records = _.transform(ctrl.ids.slice(ctrl.first, ctrl.last), function(records, id) {
-            _.each(_.cloneDeep(originalRecords), function(record) {
+          params.records = ctrl.ids.slice(ctrl.first, ctrl.last).flatMap((id) =>
+            structuredClone(originalRecords).map((record) => {
               record[ctrl.idField || 'id'] = id;
-              records.push(record);
-            });
-          });
+              return record;
+            })
+          );
         } else if (ctrl.isLink && ctrl.action === 'update' && ctrl.ids.length === 1 && ctrl.displayCtrl) {
           // When updating a single record from a link, use the inlineEdit action
           entityName = 'SearchDisplay';
@@ -84,6 +84,12 @@
         crmApi4(entityName, actionName, params).then(
           function(result) {
             stopIncrementer();
+            // Batch actions record a failed item in result.errors instead of failing the call
+            if (result.is_blocking_error) {
+              const messages = new Set(result.errors.map((error) => error.message));
+              ctrl.error({error: {error_message: [...messages].join(' ')}});
+              return;
+            }
             ctrl.progress = Math.floor(100 * ++currentBatch / totalBatches);
             processedCount += result.countFetched;
             countMatched += ('countMatched' in result ? result.countMatched : result.count);
@@ -123,4 +129,4 @@
     }
   });
 
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);
