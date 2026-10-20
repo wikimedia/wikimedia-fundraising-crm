@@ -150,6 +150,10 @@ $instruments = [
 
 $paymentInstruments = [];
 foreach ($instruments as $name => $instrument) {
+  $grouping = '';
+  if (in_array($instrument, ['DAFpay', 'Check'], TRUE)) {
+    $grouping = '["check_number"]';
+  }
   $paymentInstruments[] =   [
     'name' => 'OptionValue_'  . $instrument,
     'entity' => 'OptionValue',
@@ -164,6 +168,7 @@ foreach ($instruments as $name => $instrument) {
         'financial_account_id' => $depositFinancialAccountID,
         'name' => $name,
         'is_active' => TRUE,
+        'grouping' => $grouping,
       ],
     ],
   ];

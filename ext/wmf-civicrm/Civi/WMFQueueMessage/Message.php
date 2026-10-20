@@ -1496,6 +1496,9 @@ class Message {
     }
     $field = $this->getCustomFieldMetadata($fieldID);
     $field['api_field'] = $field ? $field['custom_group']['name'] . '.' . $field['name'] : NULL;
+    if (!in_array($field['custom_group']['extends'], ['Contribution', 'ContributionRecur', 'Contact', 'Individual', 'Organization', 'Household'], TRUE)) {
+      return NULL;
+    }
     // Only pass through Contribution fields on the allow-list.
     // This filtering may or may not be a good idea but historically the
     // code has been permission on contact field pass-through &
