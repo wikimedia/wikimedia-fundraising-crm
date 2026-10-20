@@ -6,6 +6,7 @@ use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
 use Civi\Api4\TransactionLog;
+use Civi\WMFHelper\ContributionRecur as RecurHelper;
 use Civi\WMFTransaction;
 
 class AuditMessage extends DonationMessage {
@@ -925,9 +926,19 @@ class AuditMessage extends DonationMessage {
       $this->getTrustlyRecurringContribution();
       return $this->contributionRecurID ?: NULL;
     }
-    else {
-      return parent::getContributionRecurID();
+    $id = parent::getContributionRecurID();
+    if (!$id && $this->getGateway() === 'gravy' && $this->getGatewayTxnID()) {
+      // Gravy audit rows carry no subscr_id/recurring_payment_token (see
+      // GravyAudit::$fieldMappings), so a first capture arriving before its
+      // Contribution leaves the ContributionRecur only findable by trxn_id.
+      $recurRecord = RecurHelper::getByGatewaySubscriptionId($this->getGateway(), $this->getGatewayTxnID());
+      if ($recurRecord) {
+        $this->define('ContributionRecur', 'ContributionRecur', $recurRecord);
+        $id = $recurRecord['id'];
+      }
     }
+    $this->contributionRecurID = $id ?: FALSE;
+    return $this->contributionRecurID ?: NULL;
   }
 
   /**
