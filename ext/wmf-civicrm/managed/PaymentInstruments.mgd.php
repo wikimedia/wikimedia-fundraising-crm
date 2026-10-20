@@ -41,6 +41,8 @@ $instruments = [
   // Cashu exists on live but has no contributions.
   'Cashu' => 'Cashu',
   'Check' => 'Check',
+  'Non-USD Check' => 'Non-USD Check',
+  'Money Order' => 'Money Order',
   'Citibank France' => 'Citibank France',
   'Citibank International' => 'Citibank International',
   'Credit Card' => 'Credit Card',
@@ -151,7 +153,7 @@ $instruments = [
 $paymentInstruments = [];
 foreach ($instruments as $name => $instrument) {
   $grouping = '';
-  if (in_array($instrument, ['DAFpay', 'Check'], TRUE)) {
+  if (in_array($instrument, ['DAFpay', 'Check', 'Non-USD Check', 'Money Order'], TRUE)) {
     $grouping = '["check_number"]';
   }
   $paymentInstruments[] =   [
