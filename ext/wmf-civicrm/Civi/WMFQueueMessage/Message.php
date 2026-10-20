@@ -1058,10 +1058,12 @@ class Message {
     $this->contributionRecurID = !empty($this->message['contribution_recur_id']) ? (int) $this->message['contribution_recur_id'] : FALSE;
 
     $recurRecord = NULL;
-    if (!$this->contributionRecurID && !empty($this->message['subscr_id'])) {
-      $recurRecord = RecurHelper::getByGatewaySubscriptionId($this->getGateway(), $this->message['subscr_id']);
+    if (!$this->contributionRecurID && (!empty($this->message['subscr_id']) || (!empty($this->message['recurring_payment_token']) && !empty($this->message['trxn_id'])))) {
+      $recurRecord = RecurHelper::getByGatewaySubscriptionId($this->getGateway(), $this->message['subscr_id'] ?? $this->message['trxn_id']);
     }
-    // If the message is a subscr_cancel, look up the ID by the token
+    // If the message is a subscr_cancel, look up the ID by the token. We have a test that locks in us NOT re-using the
+    // recurring here - but that is problematic if we actually have a trxn_id that matches an existing recurring - which means we
+    // SHOULD match - above not permits a recurring contribution look up by trxn_id to guard agains that.
     if (
       !$this->contributionRecurID &&
       !$recurRecord &&
