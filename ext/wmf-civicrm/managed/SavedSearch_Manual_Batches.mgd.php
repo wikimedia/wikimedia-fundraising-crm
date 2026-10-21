@@ -81,6 +81,14 @@ return [
               'key' => 'title',
               'label' => E::ts('Batch Title'),
               'sortable' => TRUE,
+              'link' => [
+                'path' => 'civicrm/contribution/settled#?finance_batch=[name]',
+                'entity' => '',
+                'action' => '',
+                'join' => '',
+                'target' => '',
+                'task' => '',
+              ],
             ],
             [
               'type' => 'field',
@@ -146,7 +154,12 @@ return [
                     [
                       'status_id:name',
                       'IN',
-                      ['Open'],
+                      [
+                        'Open',
+                        'total_verified',
+                        'validated',
+                        'needs_attention',
+                      ],
                     ],
                     [
                       'batch_data.net_amount_mismatch',
