@@ -222,4 +222,37 @@ class AuditTest extends TestCase {
     $this->assertNotEquals($donationID, $audit['message']['contribution_id'] ?? NULL);
   }
 
+  /**
+   * A direct (non-gravy) gateway can still separately identify the backend
+   * processor it routed through - eg Braintree processing a payment via
+   * PayPal's own rails. The backend_processor + backend_processor_txn_id
+   * lookup used to be gated on the parent gateway being 'gravy', which meant
+   * a legitimate match like this was never attempted.
+   */
+  public function testAuditBraintreePaypalBackendProcessorFindsExistingContribution(): void {
+    $contributionID = $this->createTestEntity('Contribution', [
+      'contact_id' => $this->createIndividual(),
+      'financial_type_id:name' => 'Cash',
+      'total_amount' => 5,
+      'contribution_extra.backend_processor' => 'paypal',
+      'contribution_extra.backend_processor_txn_id' => 'PAY-1AB23456CD789012E',
+    ])['id'];
+
+    $message = [
+      'gateway' => 'braintree',
+      'audit_file_gateway' => 'braintree',
+      'type' => 'donation',
+      'gateway_txn_id' => 'dHJhbnNhY3Rpb25fYWJjZGVm',
+      'backend_processor' => 'paypal',
+      'backend_processor_txn_id' => 'PAY-1AB23456CD789012E',
+      'currency' => 'USD',
+      'gross' => '5.00',
+      'date' => time(),
+    ];
+
+    $audit = WMFAudit::audit(FALSE)->setValues($message)->execute()->first();
+    $this->assertFalse($audit['is_missing']);
+    $this->assertEquals($contributionID, $audit['message']['contribution_id']);
+  }
+
 }

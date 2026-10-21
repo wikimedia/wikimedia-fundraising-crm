@@ -450,8 +450,10 @@ class AuditMessage extends DonationMessage {
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
           $this->existingContribution = $this->lookupByPaymentOrchestratorReconciliationId() ?? [];
         }
-        if (empty($this->existingContribution) && $this->getBackendProcessorTxnID() && $this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
-          // Looking at a gravy transaction in the Adyen file or a recurring in the trustly file.
+        if (empty($this->existingContribution) && $this->getBackendProcessorTxnID() && $this->getBackEndProcessor()) {
+          // We are moving towards this being our preferred way of identifying transactions as it
+          // reliably matches (famous last words) the settlement file, where populated.
+          // Ideally move above the lookupByPaymentOrchestratorReconciliationId in a follow-up.
           $this->existingContribution = $this->lookupByBackendProcessorTrxnId() ?? [];
         }
         $orderID = $this->getOrderID();
