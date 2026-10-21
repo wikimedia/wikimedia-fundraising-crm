@@ -347,11 +347,17 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
 
   /**
    * Append an "Item Count" column, ahead of Batch Status, sourced from a
-   * "Count" column Finance sometimes adds manually to the source file
-   * (case-insensitive match, since it's hand added). Left blank unless that
-   * column holds an actual number - the saved import mapping's own
-   * default_value fills it in as 1 from there, rather than this defaulting
-   * or passing through non-numeric junk.
+   * "Count" column Finance adds to the source file - not always present,
+   * and not necessarily cased the same way each time, hence the
+   * case-insensitive match. Left blank unless that column holds an actual
+   * number - the saved import mapping's own default_value fills it in as 1
+   * from there, rather than this defaulting or passing through non-numeric
+   * junk.
+   *
+   * The original "Count" column, if found, is removed rather than left in
+   * place - otherwise its presence would shift every later column (Item
+   * Count, Batch Status) along by one, breaking the saved mapping's fixed
+   * column numbers.
    *
    * @param string[] $headers
    * @param array[] $rows
@@ -360,9 +366,17 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
    */
   private function appendItemCountColumn(array $headers, array $rows): array {
     $countIndex = $this->findColumnIndexCaseInsensitive($headers, self::COUNT_HEADER);
+    if ($countIndex !== FALSE) {
+      unset($headers[$countIndex]);
+      $headers = array_values($headers);
+    }
     $headers[] = self::ITEM_COUNT_HEADER;
     foreach ($rows as &$row) {
       $value = $countIndex === FALSE ? '' : trim((string) ($row[$countIndex] ?? ''));
+      if ($countIndex !== FALSE) {
+        unset($row[$countIndex]);
+        $row = array_values($row);
+      }
       $row[] = is_numeric($value) ? $value : '';
     }
     return [$headers, $rows];
