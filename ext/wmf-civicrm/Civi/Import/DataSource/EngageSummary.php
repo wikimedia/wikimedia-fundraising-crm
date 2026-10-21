@@ -36,6 +36,8 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
 
   private const BATCH_ID_HEADER = 'Batch';
 
+  private const CHECKS_HEADER = 'Checks';
+
   private const BATCH_DATE_HEADER = 'Batch Date';
 
   private const BATCH_DATE_FORMAT = 'm/d/Y';
@@ -146,6 +148,7 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
       throw new \CRM_Core_Exception(ts('Could not find the "%1" header row in the uploaded report.', [1 => self::HEADER_MARKER_VALUE]));
     }
     $dataRows = $this->skipRowsWithoutBatchId($columnHeaders, $dataRows);
+    $dataRows = $this->skipRowsWithoutChecks($columnHeaders, $dataRows);
     $dataRows = $this->convertBatchDateColumn($columnHeaders, $dataRows);
     [$columnHeaders, $dataRows] = $this->convertGroupValueToSettlementGatewayAccountId($columnHeaders, $dataRows, $isEndowment);
     [$columnHeaders, $dataRows] = $this->appendBatchStatusColumn($columnHeaders, $dataRows);
@@ -310,6 +313,30 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
       return $rows;
     }
     return array_values(array_filter($rows, fn(array $row): bool => ($row[$batchIdIndex] ?? '') !== ''));
+  }
+
+  /**
+   * Skip rows with no Checks (e.g. Credit Card lines, which carry a Docs
+   * count but no actual checks) - there's nothing to deposit/batch.
+   *
+   * @param string[] $headers
+   * @param array[] $rows
+   *
+   * @return array[]
+   */
+  private function skipRowsWithoutChecks(array $headers, array $rows): array {
+    $checksIndex = array_search(self::CHECKS_HEADER, $headers, TRUE);
+    if ($checksIndex === FALSE) {
+      return $rows;
+    }
+    $rowsWithChecks = [];
+    foreach ($rows as $row) {
+      $checks = (float) ($row[$checksIndex] ?? 0);
+      if ($checks !== 0.0) {
+        $rowsWithChecks[] = $row;
+      }
+    }
+    return $rowsWithChecks;
   }
 
   /**
