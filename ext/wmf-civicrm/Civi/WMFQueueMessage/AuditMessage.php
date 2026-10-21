@@ -414,11 +414,18 @@ class AuditMessage extends DonationMessage {
     if (!isset($this->existingContribution)) {
       $this->existingContribution = [];
 
-      if ($this->isFeeRow() || $this->isAggregateRow()) {
-        // Fee rows (eg Adyen PaymentCost) carry the original donation's order id,
-        // which would otherwise match the donation via lookupByOrderId() below.
-        // Always treating these as missing is fine: BaseAuditProcessor upserts
-        // fee/adjustment rows by trxn_id, and discards aggregate rows outright.
+      if ($this->isFeeRow() || $this->isAdjustmentRow()) {
+        // Fee/adjustment rows (eg Adyen PaymentCost, depositcorrection) may carry the
+        // original donation's order id/invoice id  but these are settlement only
+        // transactions which we don't want to match to any payment.
+        // These won't use gravy so we can just match on gateway +
+        // gateway_txn_id.
+        $this->existingContribution = $this->lookupByGatewayTxnId() ?? [];
+        return $this->existingContribution;
+      }
+      if ($this->isAggregateRow()) {
+        // Aggregate/payout rows are discarded outright in BaseAuditProcessor, so
+        // they never need to resolve to a donation here.
         return $this->existingContribution;
       }
 
@@ -443,8 +450,10 @@ class AuditMessage extends DonationMessage {
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
           $this->existingContribution = $this->lookupByPaymentOrchestratorReconciliationId() ?? [];
         }
-        if (empty($this->existingContribution) && $this->getBackendProcessorTxnID() && $this->getParentTransactionGateway() === 'gravy' && $this->getBackEndProcessor()) {
-          // Looking at a gravy transaction in the Adyen file or a recurring in the trustly file.
+        if (empty($this->existingContribution) && $this->getBackendProcessorTxnID() && $this->getBackEndProcessor()) {
+          // We are moving towards this being our preferred way of identifying transactions as it
+          // reliably matches (famous last words) the settlement file, where populated.
+          // Ideally move above the lookupByPaymentOrchestratorReconciliationId in a follow-up.
           $this->existingContribution = $this->lookupByBackendProcessorTrxnId() ?? [];
         }
         $orderID = $this->getOrderID();
@@ -490,7 +499,7 @@ class AuditMessage extends DonationMessage {
         }
       }
     }
-    if (!$this->existingContribution && !$this->isAggregateRow()) {
+    if (!$this->existingContribution && !$this->isAggregateRow() && !$this->isFeeRow() && !$this->isAdjustmentRow()) {
       static $isFirst = TRUE;
       if ($isFirst) {
         \Civi::log('wmf')->info("contribution not found using contribution_extra.gateway {gateway} and gateway_txn_id {gateway_txn_id}\n", $debugInformation + [
@@ -845,6 +854,10 @@ class AuditMessage extends DonationMessage {
     return $this->getAuditMessageType() === 'fee';
   }
 
+  public function isAdjustmentRow(): bool {
+    return $this->getAuditMessageType() === 'adjustment';
+  }
+
   /**
    * @return bool|mixed
    */
@@ -1109,6 +1122,18 @@ class AuditMessage extends DonationMessage {
       // Try the parent ID, if provided (e.g. refund) or the backend processor txn ID.
       ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorParentTxnID() ?: $this->getBackendProcessorTxnID())
       ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
+      ->execute()->first();
+  }
+
+  /**
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   */
+  private function lookupByGatewayTxnId(): ?array {
+    return Contribution::get(FALSE)
+      ->setSelect($this->getContributionSelectFields())
+      ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
+      ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayTxnID())
       ->execute()->first();
   }
 

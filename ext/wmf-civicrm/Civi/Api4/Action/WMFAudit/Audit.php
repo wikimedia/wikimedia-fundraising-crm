@@ -121,6 +121,7 @@ class Audit extends AbstractAction {
       if (!$isMissing && !empty($record['settlement_batch_reference'])
         && !$message->isSettled()
         && !$message->isFeeRow()
+        && !$message->isAdjustmentRow()
         && !$message->isAggregateRow()
       ) {
         $contribution = $message->getExistingContribution();
