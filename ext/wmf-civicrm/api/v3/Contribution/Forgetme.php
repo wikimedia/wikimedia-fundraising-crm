@@ -1,6 +1,7 @@
 <?php
 
 use Civi\Api4\CustomField;
+use SmashPig\Core\ConfigurationKeyException;
 use SmashPig\Core\Context;
 use SmashPig\PaymentProviders\IDeleteDataProvider;
 use SmashPig\PaymentProviders\IPaymentProvider;
@@ -30,20 +31,41 @@ function civicrm_api3_contribution_forgetme(array $params): array {
   $customFieldMap = _civicrm_api3_contribution_forgetme_getcustomfields();
   $getParams = [
     'contact_id' => $params['contact_id'],
-    'return' => [$customFieldMap['gateway'], $customFieldMap['gateway_txn_id']],
+    'return' => ['contact_id', $customFieldMap['gateway'], $customFieldMap['gateway_txn_id']],
     'options' => ['limit' => 0],
   ];
 
   $contributions = civicrm_api3('Contribution', 'get', $getParams)['values'];
 
   $deleted = [];
+  $failures = [];
   foreach ($contributions as $contribution) {
-    // Get the SmashPig payment processor for the given contribution
-    $provider = _civicrm_api3_contribution_forgetme_getproviderobject($contribution);
-    if ($provider instanceof IDeleteDataProvider) {
-      $provider->deleteDataForPayment($contribution[$customFieldMap['gateway_txn_id']]);
-      $deleted[] = $contribution;
+    $gatewayTxnId = $contribution[$customFieldMap['gateway_txn_id']];
+    try {
+      $provider = _civicrm_api3_contribution_forgetme_getproviderobject($contribution);
+      if ($provider instanceof IDeleteDataProvider) {
+        $response = $provider->deleteDataForPayment($gatewayTxnId);
+        if ($response->isSuccessful()) {
+          $deleted[] = $contribution;
+        }
+        else {
+          $errors = [];
+          foreach ($response->getErrors() as $error) {
+            $errors[] = $error->getDebugMessage();
+          }
+          $failures[] = "contribution {$contribution['id']} (contact {$contribution['contact_id']}, $gatewayTxnId): " . implode(', ', $errors);
+        }
+      }
     }
+    catch (Exception $ex) {
+      $failures[] = "contribution {$contribution['id']} (contact {$contribution['contact_id']}, $gatewayTxnId): " . $ex->getMessage();
+    }
+  }
+
+  if ($failures) {
+    \Civi::log('wmf')->alert("Forgetme: payment processor data deletion failed for:\n" . implode("\n", $failures), [
+      'subject' => 'Forgetme payment processor data deletion failed',
+    ]);
   }
 
   return civicrm_api3_create_success($deleted, $params);
@@ -83,7 +105,8 @@ function _civicrm_api3_contribution_forgetme_getproviderobject(array $contrbutio
     }
     $firstMethod = array_keys($providerConfig)[0];
     return PaymentProviderFactory::getProviderForMethod($firstMethod);
-  } catch(Exception $ex) {
+  }
+  catch (ConfigurationKeyException $ex) {
     return null;
   }
 }
