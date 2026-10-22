@@ -2,7 +2,6 @@
 
 use Civi\Api4\CustomField;
 use SmashPig\Core\ConfigurationKeyException;
-use SmashPig\Core\Context;
 use SmashPig\PaymentProviders\IDeleteDataProvider;
 use SmashPig\PaymentProviders\IPaymentProvider;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
@@ -93,18 +92,11 @@ function _civicrm_api3_contribution_forgetme_getproviderobject(array $contrbutio
     return null;
   }
   try {
-    // Wrap this in the try/catch as well in case of gateways like 'engage' which don't
-    // correspond to anything known to SmashPig
+    // Gateways like 'engage' which don't correspond to anything known to SmashPig
+    // have no provider config.
     \CRM_SmashPig_ContextWrapper::createContext('forgetme', $contrbution[$customFieldMap['gateway']]);
-    // TODO: PaymentProviderFactory::getProviderForDefaultMethod() might be nice to have
-    // Use first provider defined in config - doesn't actually matter for now as the GDPR
-    // method is defined on the base class.
-    $providerConfig = Context::get()->getProviderConfiguration()->val('payment-provider');
-    if (empty($providerConfig)) {
-      return null;
-    }
-    $firstMethod = array_keys($providerConfig)[0];
-    return PaymentProviderFactory::getProviderForMethod($firstMethod);
+    // The GDPR method is defined on the base class, so any method's provider will do.
+    return PaymentProviderFactory::getDefaultProvider();
   }
   catch (ConfigurationKeyException $ex) {
     return null;
