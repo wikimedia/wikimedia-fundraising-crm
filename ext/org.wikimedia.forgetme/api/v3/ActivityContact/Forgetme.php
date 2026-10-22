@@ -32,6 +32,7 @@ function civicrm_api3_activity_contact_forgetme($params) {
   }
   // Do activities with parents first to avoid trying to delete already deleted activities.
   $params['options']['sort'] = 'activity_id.parent_id DESC';
+  $params['options']['limit'] = 0;
   $activityContactRecords = civicrm_api3('ActivityContact', 'get', $params)['values'];
   if (empty($activityContactRecords)) {
     return civicrm_api3_create_success([], $params);
@@ -81,6 +82,7 @@ function _civicrm_api3_activity_forget_getActivitiesToDelete($contactIDsToForget
     'activity_id' => ['IN' => $activities],
     'contact_id' => ['NOT IN' => array_merge($ufMatches, $contactIDsToForget)],
     'return' => 'activity_id',
+    'options' => ['limit' => 0],
   ]);
   foreach ($activitiesToKeep['values'] as $activityToKeep) {
     $activityID = $activityToKeep['activity_id'];

@@ -36,7 +36,8 @@ function civicrm_api3_contact_forgetme($params) {
   // current is_primary
   $emails = civicrm_api3('Email', 'get', [
     'contact_id' => $params['id'],
-    'return' => ['email', 'is_primary', 'contact_id']
+    'return' => ['email', 'is_primary', 'contact_id'],
+    'options' => ['limit' => 0],
   ])['values'];
 
   $fieldsToForget = array_merge(
@@ -115,7 +116,7 @@ function civicrm_api3_contact_forgetme($params) {
  * @throws \CRM_Core_Exception
  */
 function wipeEmailFromSortOrDisplayName(array $contactIDsToForget): void {
-  $existingContacts = civicrm_api3('Contact', 'get', ['id' => ['IN' => $contactIDsToForget], 'return' => ['sort_name', 'display_name']])['values'];
+  $existingContacts = civicrm_api3('Contact', 'get', ['id' => ['IN' => $contactIDsToForget], 'return' => ['sort_name', 'display_name'], 'options' => ['limit' => 0]])['values'];
   foreach ($existingContacts as $existingContact) {
     if (strpos($existingContact['sort_name'], '@') !== FALSE
       || strpos($existingContact['display_name'], '@') !== FALSE) {

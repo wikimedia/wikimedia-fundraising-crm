@@ -27,6 +27,7 @@ function civicrm_api3_payment_token_forgetme($params) {
   if (is_numeric($params['contact_id'])) {
     $params['contact_id'] = ['IN' => [$params['contact_id']]];
   }
+  $params['options']['limit'] = 0;
   //check exists
   $paymentTokenRecords = civicrm_api3('PaymentToken', 'get', $params)['values'];
   if (empty($paymentTokenRecords)) {

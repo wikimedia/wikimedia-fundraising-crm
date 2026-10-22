@@ -159,8 +159,15 @@ function wmf_civicrm_civicrm_searchTasks($objectType, &$tasks) {
 }
 
 function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermissions, ?int $userID): void {
-  // Make this task available on Contribution-based SearchKit searches.
-  if (CRM_Core_Permission::check('administer CiviCRM data')) {
+  if (!$checkPermissions || CRM_Core_Permission::check('update read-only fields in SearchKit', $userID)) {
+    $tasks['Contribution']['edit_gateway_fields'] = [
+      'title' => E::ts('Edit gateway identifiers'),
+      'icon' => 'fa-pencil',
+      'module' => 'wmfSearchTasks',
+      'uiDialog' => ['templateUrl' => '~/wmfSearchTasks/crmSearchTaskEditGatewayFields.html'],
+      // Single record only
+      'number' => '=== 1',
+    ];
     $tasks['Contribution']['clear_settlement_fields'] = [
       'title' => E::ts('Clear settlement fields'),
       'icon' => 'fa-toilet',
@@ -185,6 +192,8 @@ function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermission
         'errorMsg' => E::ts('An error occurred while attempting to clear settlement fields for %1 %2.'),
       ],
     ];
+  }
+  if (CRM_Core_Permission::check('administer CiviCRM data')) {
     $tasks['Contact']['set_modified_date'] = [
       'title' => E::ts('Set modified date'),
       'icon' => 'fa-clock-o',
