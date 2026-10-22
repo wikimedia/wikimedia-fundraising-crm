@@ -26,6 +26,7 @@ function civicrm_api3_contribution_showme($params) {
     // See https://phabricator.wikimedia.org/T322796#8398570
     'total_amount' => ['IS NOT NULL' => 1],
     'return' => [
+      $customFieldMap['backend_processor'],
       $customFieldMap['gateway'],
       $customFieldMap['gateway_txn_id'],
       $customFieldMap['original_amount'],
@@ -44,12 +45,18 @@ function civicrm_api3_contribution_showme($params) {
     // For our current purposes, we expect to have our WMF custom field on any
     // donations processed via the gateways which support forgetme requests.
     if (!empty($contribution[$customFieldMap['gateway']])) {
-      $provider = _civicrm_api3_contribution_forgetme_getproviderobject($contribution);
+      $provider = _civicrm_api3_contribution_forgetme_getproviderobject($contribution[$customFieldMap['gateway']]);
       $return['showme'][$id] = "{$contribution['receive_date']}: {$contribution[$customFieldMap['original_amount']]} " .
         "{$contribution[$customFieldMap['original_currency']]}, ({$contribution[$customFieldMap['gateway']]} " .
         "{$contribution[$customFieldMap['gateway_txn_id']]})";
       if ($provider instanceof IDeleteDataProvider) {
         $return['showme'][$id] .= ' - processor supports data deletion requests';
+      } elseif (!empty($contribution[$customFieldMap['backend_processor']])) {
+        $backend = $contribution[$customFieldMap['backend_processor']];
+        $backendProvider = _civicrm_api3_contribution_forgetme_getproviderobject($backend);
+        if ($backendProvider instanceof IDeleteDataProvider) {
+          $return['showme'][$id] .= " - backend processor ($backend) supports data deletion requests";
+        }
       }
     } else {
       // Display something comparable for a contribution without WMF custom fields
