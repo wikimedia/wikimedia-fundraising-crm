@@ -90,7 +90,6 @@ return [
                 'target' => '',
                 'task' => '',
               ],
-              'title' => E::ts('Delete Batches'),
             ],
             [
               'type' => 'field',

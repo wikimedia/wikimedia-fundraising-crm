@@ -5,10 +5,12 @@
  * Civi\Import\DataSource\EngageSummary and
  * Civi\WMFHook\Import::applyBatchImportDefaults().
  *
- * Docs/Checks (columns 4/5) aren't mapped - Total Item feeds item_count.
- * Batch Type (payment instrument, column 0) isn't mapped either:
- * Batch.payment_instrument_id has no 'import' usage in core's own
- * Batch.entityType.php, so it isn't importable without a core fix.
+ * Docs (column 4) isn't mapped. Checks (column 5) feeds item_count rather
+ * than Total Item (column 6, Docs+Checks combined) - item_count should
+ * reflect actual check items, not doc images. Batch Type (payment
+ * instrument, column 0) isn't mapped either: Batch.payment_instrument_id
+ * has no 'import' usage in core's own Batch.entityType.php, so it isn't
+ * importable without a core fix.
  * Columns 1 (Settlement Gateway Account) and 8 (Batch Status) are synthetic
  * columns the datasource appends itself - see EngageSummary.
  */
@@ -18,8 +20,8 @@ $importMappings = [
   ['name' => 'Batch.title', 'default_value' => NULL, 'column_number' => 2, 'entity_data' => []],
   ['name' => 'Batch.batch_data.settlement_date', 'default_value' => NULL, 'column_number' => 3, 'entity_data' => []],
   ['name' => '', 'default_value' => NULL, 'column_number' => 4, 'entity_data' => []],
-  ['name' => '', 'default_value' => NULL, 'column_number' => 5, 'entity_data' => []],
-  ['name' => 'Batch.item_count', 'default_value' => NULL, 'column_number' => 6, 'entity_data' => []],
+  ['name' => 'Batch.item_count', 'default_value' => NULL, 'column_number' => 5, 'entity_data' => []],
+  ['name' => '', 'default_value' => NULL, 'column_number' => 6, 'entity_data' => []],
   ['name' => 'Batch.total', 'default_value' => NULL, 'column_number' => 7, 'entity_data' => []],
   ['name' => 'Batch.status_id', 'default_value' => NULL, 'column_number' => 8, 'entity_data' => []],
 ];
