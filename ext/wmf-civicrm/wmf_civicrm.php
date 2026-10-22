@@ -76,6 +76,10 @@ function wmf_civicrm_civicrm_permission(array &$permissions) {
     'label' => E::ts('WMF: Access Zendesk iframe'),
     'description' => E::ts('See donor summaries in the Zendesk sidebar iframe.'),
   ];
+  $permissions['update read-only fields in SearchKit'] = [
+    'label' => E::ts('WMF: Update read-only fields in SearchKit'),
+    'description' => E::ts('Update view-only custom fields in the SearchKit Update dialog.'),
+  ];
 }
 
 /**
