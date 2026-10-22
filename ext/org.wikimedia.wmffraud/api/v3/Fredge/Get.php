@@ -38,7 +38,7 @@ function _civicrm_api3_fredge_get_spec(&$spec) {
  * @see civicrm_api3_create_success
  */
 function civicrm_api3_fredge_get($params) {
-  $contributions = array_keys(civicrm_api3('Contribution', 'get', ['contact_id' => $params['contact_id'], 'return' => 'id'])['values']);
+  $contributions = array_keys(civicrm_api3('Contribution', 'get', ['contact_id' => $params['contact_id'], 'return' => 'id', 'options' => ['limit' => 0]])['values']);
   if (empty($contributions)) {
     return civicrm_api3_create_success([], $params);
   }

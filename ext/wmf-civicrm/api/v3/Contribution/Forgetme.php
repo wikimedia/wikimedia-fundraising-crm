@@ -31,6 +31,7 @@ function civicrm_api3_contribution_forgetme(array $params): array {
   $getParams = [
     'contact_id' => $params['contact_id'],
     'return' => [$customFieldMap['gateway'], $customFieldMap['gateway_txn_id']],
+    'options' => ['limit' => 0],
   ];
 
   $contributions = civicrm_api3('Contribution', 'get', $getParams)['values'];
