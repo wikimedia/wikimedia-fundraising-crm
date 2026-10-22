@@ -1,0 +1,23 @@
+<div id="bootstrap-theme" crm-dialog="crmSearchTask">
+  <form name="crmSearchTaskEditGatewayFieldsForm" ng-controller="crmSearchTaskEditGatewayFields as $ctrl">
+    <p>
+      <strong>{{:: ts('Manually correct gateway identifiers on this %1.', {1: $ctrl.entityTitle}) }}</strong>
+      <br />
+      {{:: ts('Fields are pre-filled with the current values - clear a field to blank it out, or leave it as-is to keep it unchanged.') }}
+    </p>
+    <div ng-if="!$ctrl.loaded" class="crm-search-task-progress">
+      <i class="fa fa-spin fa-spinner"></i> {{:: ts('Loading current values...') }}
+    </div>
+    <div ng-if="$ctrl.loaded" class="form-group" ng-repeat="field in $ctrl.fields">
+      <label>{{:: field.label }}</label>
+      <input type="text" class="form-control" ng-model="$ctrl.values[field.name]" ng-disabled="$ctrl.run" />
+    </div>
+    <div ng-if="$ctrl.run" class="crm-search-task-progress">
+      <h5>{{:: ts('Updating %1...', {1: $ctrl.entityTitle}) }}</h5>
+      <crm-search-batch-runner entity="model.entity" action="update" params="$ctrl.run" ids="model.ids" success="$ctrl.onSuccess(result)" error="$ctrl.onError(error)" id-field="{{:: $ctrl.entityInfo.primary_key[0] }}"></crm-search-batch-runner>
+    </div>
+
+    <crm-dialog-button text="ts('Cancel')" icons="{primary: 'fa-times'}" on-click="$ctrl.cancel()" disabled="$ctrl.run"></crm-dialog-button>
+    <crm-dialog-button text="ts('Save')" icons="{primary: $ctrl.run ? 'fa-spin fa-spinner' : 'fa-check'}" on-click="$ctrl.save()" disabled="$ctrl.run || !$ctrl.loaded"></crm-dialog-button>
+  </form>
+</div>
