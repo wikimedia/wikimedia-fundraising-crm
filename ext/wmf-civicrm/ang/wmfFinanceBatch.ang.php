@@ -4,4 +4,5 @@ return [
     'ang/wmfFinanceBatch.js',
   ],
   'requires' => ['af'],
+  'basePages' => [],
 ];
