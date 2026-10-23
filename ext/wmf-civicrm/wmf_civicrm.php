@@ -401,6 +401,8 @@ function wmf_civicrm_civicrm_alterLogTables(array &$logTableSpec) {
       'index_log_date' => 'log_date',
     ], $contactIndexes);
   }
+  // Used by Logging.forgetme to find other contacts on an activity — and generally useful
+  $logTableSpec['civicrm_activity_contact']['indexes']['index_activity_id'] = 'activity_id';
 
   // Exclude from logging tables to save disk given low value.
   $tablesNotToLog = [
