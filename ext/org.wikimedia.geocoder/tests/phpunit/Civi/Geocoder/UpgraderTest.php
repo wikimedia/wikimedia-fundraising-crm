@@ -25,7 +25,7 @@ class UpgraderTest extends TestCase {
    * @throws \ReflectionException
    */
   public function testManagedEntityHasName($entity, $expected): void {
-    $method = new \ReflectionMethod("CRM_Geocoder_Upgrader::managedEntityHasName");
+    $method = new \ReflectionMethod('CRM_Geocoder_Upgrader', 'managedEntityHasName');
     $method->setAccessible(TRUE);
     $computed = $method->invoke(NULL, $entity);
     $this->assertEquals($expected, $computed);
@@ -52,7 +52,7 @@ class UpgraderTest extends TestCase {
    * @throws \ReflectionException
    */
   public function testManagedEntityIsEnabledOnInstall(?array $entity, bool $expected): void {
-    $method = new \ReflectionMethod("CRM_Geocoder_Upgrader::managedEntityIsEnabledOnInstall");
+    $method = new \ReflectionMethod('CRM_Geocoder_Upgrader', 'managedEntityIsEnabledOnInstall');
     $method->setAccessible(TRUE);
     $computed = $method->invoke(NULL, $entity);
     $this->assertEquals($expected, $computed);
@@ -79,7 +79,7 @@ class UpgraderTest extends TestCase {
    * @throws \ReflectionException
    */
   public function testManagedEntityIsNotActive(?array $entity, bool $expected): void {
-    $method = new \ReflectionMethod("CRM_Geocoder_Upgrader::managedEntityIsNotActive");
+    $method = new \ReflectionMethod('CRM_Geocoder_Upgrader', 'managedEntityIsNotActive');
     $method->setAccessible(TRUE);
     $computed = $method->invoke(NULL, $entity);
     $this->assertEquals($expected, $computed);
