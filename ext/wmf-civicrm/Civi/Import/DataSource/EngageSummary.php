@@ -36,6 +36,15 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
 
   private const BATCH_ID_HEADER = 'Batch';
 
+  /**
+   * Block-level type/group label values (the bare line that precedes a
+   * block's own timestamp + header lines - see extractDataRows()) that
+   * reuse the same Batch numbering sequence as an ordinary (unlabelled)
+   * block, and so need that label prefixed onto the Batch id to avoid
+   * colliding with an unrelated block's batch of the same raw number.
+   */
+  private const BATCH_TYPES_NEEDING_ID_PREFIX = ['WF', 'ED'];
+
   private const CHECKS_HEADER = 'Checks';
 
   private const BATCH_DATE_HEADER = 'Batch Date';
@@ -188,8 +197,15 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
    *
    * Skips everything before the header row; repeated header rows (one per
    * block, and at page breaks); "Total" subtotal rows; and rows with at
-   * most one non-blank value (separator rows, group-label/timestamp lines,
-   * bare labels like "DAF", repeated title/date-range lines).
+   * most one non-blank value (separator rows, timestamp lines, bare labels
+   * like "DAF", repeated title/date-range lines) - EXCEPT that a bare line
+   * matching BATCH_TYPES_NEEDING_ID_PREFIX (e.g. "WF", "ED") is a block's
+   * own type/group label, which precedes that block's own timestamp +
+   * header lines. Such a label is remembered and prefixed onto the "Batch"
+   * id of every data row in that block (cleared again at the block's
+   * "Total" row), since those blocks reuse the same Batch numbering
+   * sequence as an ordinary (unlabelled) block and would otherwise collide
+   * with one of its batches sharing the same raw number.
    *
    * Also checks the pre-header preamble for the word "Endowment" (e.g. a
    * "- All Endowment" title line) - the real Foundation/Endowment signal
@@ -205,14 +221,20 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
     $headerColumns = NULL;
     $rows = [];
     $isEndowment = FALSE;
+    $batchIdIndex = NULL;
+    $batchTypePrefix = '';
     foreach ($sheetRows as $sheetRow) {
       $row = array_map(fn($value): string => self::trimWhitespace((string) ($value ?? '')), $sheetRow);
       if ($headerColumns === NULL) {
         if (($row[self::HEADER_MARKER_COLUMN] ?? '') === self::HEADER_MARKER_VALUE) {
           $headerColumns = array_filter($row, fn(string $value): bool => $value !== '');
+          $batchIdIndex = array_search(self::BATCH_ID_HEADER, array_values($headerColumns), TRUE);
         }
         elseif (!$isEndowment && stripos(implode(' ', $row), 'Endowment') !== FALSE) {
           $isEndowment = TRUE;
+        }
+        else {
+          $batchTypePrefix = $this->matchBatchTypeNeedingPrefix($row) ?? $batchTypePrefix;
         }
         continue;
       }
@@ -221,15 +243,36 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
         $dataRow[] = $row[$column] ?? '';
       }
       $nonBlankValues = array_values(array_filter($dataRow, fn(string $value): bool => $value !== ''));
-      if ($dataRow === array_values($headerColumns) || count($nonBlankValues) <= 1) {
+      if ($dataRow === array_values($headerColumns)) {
+        continue;
+      }
+      if (count($nonBlankValues) <= 1) {
+        $batchTypePrefix = $this->matchBatchTypeNeedingPrefix($dataRow) ?? $batchTypePrefix;
         continue;
       }
       if ($nonBlankValues[0] === 'Total') {
+        // The label only applies within its own block.
+        $batchTypePrefix = '';
         continue;
+      }
+      if ($batchTypePrefix !== '' && $batchIdIndex !== NULL && ($dataRow[$batchIdIndex] ?? '') !== '') {
+        $dataRow[$batchIdIndex] = $batchTypePrefix . $dataRow[$batchIdIndex];
       }
       $rows[] = $dataRow;
     }
     return [$headerColumns === NULL ? NULL : array_values($headerColumns), $rows, $isEndowment];
+  }
+
+  /**
+   * If $row is a bare single-value line matching one of
+   * BATCH_TYPES_NEEDING_ID_PREFIX, return that value - else NULL.
+   */
+  private function matchBatchTypeNeedingPrefix(array $row): ?string {
+    $nonBlankValues = array_values(array_filter($row, fn(string $value): bool => $value !== ''));
+    if (count($nonBlankValues) === 1 && in_array($nonBlankValues[0], self::BATCH_TYPES_NEEDING_ID_PREFIX, TRUE)) {
+      return $nonBlankValues[0];
+    }
+    return NULL;
   }
 
   /**
