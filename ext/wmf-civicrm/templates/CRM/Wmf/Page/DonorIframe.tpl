@@ -180,3 +180,4 @@
     {/if}
   </table>
 {/if}
+{include file="CRM/AuthenticatedIframe/ReportHeight.tpl"}
