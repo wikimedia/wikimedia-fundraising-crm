@@ -207,9 +207,9 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @throws \CRM_Core_Exception
    */
   protected function tearDown(): void {
-    UserJob::delete(FALSE)->addWhere('metadata', 'LIKE', '%civicrm_tmp_d_abc%')->execute();
-    \CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS civicrm_tmp_d_abc');
-    \Civi::cache('metadata')->delete('civiimport_table_fieldscivicrm_tmp_d_abc');
+    UserJob::delete(FALSE)->addWhere('metadata', 'LIKE', '%civicrm_tmp_d_wmf_import%')->execute();
+    \CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS civicrm_tmp_d_wmf_import');
+    \Civi::cache('metadata')->delete('civiimport_table_fieldscivicrm_tmp_d_wmf_import');
     if ($this->userJobID) {
       UserJob::delete(FALSE)->addWhere('id', '=', $this->userJobID)->execute();
     }
@@ -944,8 +944,8 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       $fieldName = $this->getFieldName($column);
       $fieldSql[] = '`' . $fieldName . '` VARCHAR(255) CHARACTER SET utf8mb4 NOT NULL';
     }
-    \CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS civicrm_tmp_d_abc');
-    \CRM_Core_DAO::executeQuery('CREATE TABLE civicrm_tmp_d_abc (
+    \CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS civicrm_tmp_d_wmf_import');
+    \CRM_Core_DAO::executeQuery('CREATE TABLE civicrm_tmp_d_wmf_import (
   ' . implode(',', $fieldSql) . ",
   `_entity_id` INT(11) DEFAULT NULL,
   `_status` VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'NEW',
@@ -1085,7 +1085,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
         ],
         'Template' => ['mapping_id' => NULL],
         'DataSource' => [
-          'table_name' => 'civicrm_tmp_d_abc',
+          'table_name' => 'civicrm_tmp_d_wmf_import',
           'column_headers' => array_keys($data),
           'number_of_columns' => count($data),
         ],
@@ -1195,7 +1195,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
           ],
           'Template' => ['mapping_id' => NULL],
           'DataSource' => [
-            'table_name' => 'civicrm_tmp_d_abc',
+            'table_name' => 'civicrm_tmp_d_wmf_import',
             'column_headers' => array_keys($data),
             'number_of_columns' => count($data),
           ],
@@ -1288,7 +1288,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     foreach (array_keys($columns) as $column) {
       $fieldNames[] = $this->getFieldName($column);
     }
-    \CRM_Core_DAO::executeQuery('INSERT INTO civicrm_tmp_d_abc (' . str_replace('.', '__', implode(',', $fieldNames)) . ') ' . $this->getSelectQuery($columns));
+    \CRM_Core_DAO::executeQuery('INSERT INTO civicrm_tmp_d_wmf_import (' . str_replace('.', '__', implode(',', $fieldNames)) . ') ' . $this->getSelectQuery($columns));
   }
 
   /**
