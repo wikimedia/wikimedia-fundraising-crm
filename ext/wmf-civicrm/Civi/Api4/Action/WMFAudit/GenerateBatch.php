@@ -1326,6 +1326,21 @@ GROUP BY s.settlement_batch_reference
       'fee' => $result['expected']['fee'] + $result['totals']['fee'],
       'settled' => $result['expected']['settled'] - $result['totals']['settled'],
     ];
+    if ($result['validation']['count'] !== 0 && $this->getAuditGateway($batch['name']) === 'engage') {
+      // Engage's item_count comes from their deposit summary's "Checks" column, not
+      // CiviCRM, so it can drift - trust our count if the dollar totals reconcile.
+      $otherDiscrepancies = $result['validation'];
+      unset($otherDiscrepancies['count']);
+      if (empty(array_filter($otherDiscrepancies))) {
+        Batch::update(FALSE)
+          ->addValue('item_count', $result['totals']['count'])
+          ->addWhere('id', '=', $batch['id'])
+          ->execute();
+        $this->log($batch['name'] . ' item_count corrected from ' . $result['expected']['count'] . ' to ' . $result['totals']['count']);
+        $result['expected']['count'] = $result['totals']['count'];
+        $result['validation']['count'] = 0;
+      }
+    }
     $isValid = empty(array_filter($result['validation']));
     $this->batches[$batch['name']]['is_valid'] = $isValid;
     $this->log($batch['name'] . ' ' . ($isValid ? 'has valid totals' : ' has a discrepancy '));

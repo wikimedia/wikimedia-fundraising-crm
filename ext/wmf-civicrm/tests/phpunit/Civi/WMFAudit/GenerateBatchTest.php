@@ -47,6 +47,9 @@ class GenerateBatchTest extends BaseAuditTestCase {
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'stripemg_340%')
       ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'engage_341%')
+      ->execute();
     parent::tearDown();
   }
 
@@ -318,6 +321,42 @@ class GenerateBatchTest extends BaseAuditTestCase {
 
     // When getAccountClause() falls through, ACCT_NO is ''.
     $this->assertSame('', (string) ($donationRows[0]['ACCT_NO'] ?? ''), 'Expected unmapped channel to yield blank ACCT_NO');
+  }
+
+  /**
+   * Engage's item_count comes from the "Checks" column of their deposit
+   * summary report, not from CiviCRM's own data (see EngageSummary
+   * skipRowsWithoutChecks()), so it can drift out of sync with the actual
+   * number of settled rows. When the dollar totals already reconcile,
+   * GenerateBatch should correct item_count and validate rather than
+   * failing the batch over the count mismatch alone.
+   */
+  public function testEngageItemCountMismatchCorrectedWhenTotalsMatch(): void {
+    $prefix = 'engage_341';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-01-28';
+
+    $this->createQueueContribution([
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 25.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    // item_count (2) deliberately wrong vs. the single settled row above,
+    // but the dollar total (25.00) matches - this is the Engage scenario.
+    $result = $this->runGenerate($batchName, $currency, $settlementDate, 25.00, 2, $prefix);
+
+    $this->assertEquals(0, array_sum($result[0]['validation']), 'Batch should validate once item_count is self-corrected: ' . print_r($result[0]['validation'], TRUE));
+
+    $batch = Batch::get(FALSE)
+      ->addSelect('item_count')
+      ->addWhere('name', '=', $batchName)
+      ->execute()->single();
+    $this->assertEquals(1, $batch['item_count'], 'Expected item_count to be corrected to the actual settled row count');
   }
 
   /**
