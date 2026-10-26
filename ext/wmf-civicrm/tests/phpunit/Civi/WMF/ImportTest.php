@@ -706,6 +706,44 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
+   * When an import (e.g. Engage's individual-gift import, which has its own
+   * "Fee Amount" column) maps a fee onto the core fee_amount field,
+   * settled_fee_amount should default from it rather than to a flat 0 -
+   * otherwise the batch export shows no fee despite one being recorded.
+   *
+   * fee_amount is positive, settled_fee_amount is the negative-sign
+   * convention for the same fee - see fillSettledAmounts().
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testSettledFeeAmountDefaultedFromFeeAmount(): void {
+    $this->createTestEntity('Contact', [
+      'contact_type' => 'Individual',
+      'first_name' => 'Jane',
+      'last_name' => 'Doe',
+      'email_primary.email' => 'jane.settledfee@example.com',
+    ], 'individual_1');
+    $totalAmount = '100';
+    $feeAmount = '2.50';
+
+    $data = $this->setupImport([
+      'Contribution.invoice_id' => 'settledfee1',
+      'Contribution.contribution_extra.gateway_account' => 'wire',
+      'Contribution.contribution_settlement.settlement_batch_reference' => '456',
+      'Contribution.total_amount' => $totalAmount,
+      'Contribution.fee_amount' => $feeAmount,
+      'Contribution.contact_id' => $this->ids['Contact']['individual_1'],
+    ]);
+    $this->runImport($data, 'Individual');
+
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('invoice_id', '=', 'settledfee1')
+      ->addSelect('contribution_settlement.settled_fee_amount')
+      ->execute()->single();
+    $this->assertEquals('-' . $feeAmount, $contribution['contribution_settlement.settled_fee_amount']);
+  }
+
+  /**
    * Picking a specific gateway account (rather than a plain gateway) is
    * enough on its own to derive the base gateway (backfilled onto the
    * contribution) as well as the identifier used to fix up the reference.
