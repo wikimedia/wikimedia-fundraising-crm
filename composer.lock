@@ -3270,30 +3270,31 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/omnimail/omnimail.git",
-                "reference": "9b5434d1330d54bdcfe5597f9c3cc227f56b1b4f"
+                "reference": "94746f914e92d134630116f2766ef2184e349c0e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/omnimail/omnimail/zipball/9b5434d1330d54bdcfe5597f9c3cc227f56b1b4f",
-                "reference": "9b5434d1330d54bdcfe5597f9c3cc227f56b1b4f",
+                "url": "https://api.github.com/repos/omnimail/omnimail/zipball/94746f914e92d134630116f2766ef2184e349c0e",
+                "reference": "94746f914e92d134630116f2766ef2184e349c0e",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
-                "php": ">=7.3",
+                "php": ">=8.1",
                 "php-http/httplug": "^1.1|2.*",
                 "psr/log": "^1.1 || ^2.0 || ^3.0"
             },
             "require-dev": {
                 "daniel-zahariev/php-aws-ses": "^0.9.2",
                 "friendsofphp/php-cs-fixer": "^2.16",
-                "mailgun/mailgun-php": "^2.4",
+                "http-interop/http-factory-guzzle": "^1.2",
+                "mailgun/mailgun-php": "^3.0",
                 "mailin-api/mailin-api-php": "^1.0",
-                "mailjet/mailjet-apiv3-php": "^1.2",
-                "php-http/guzzle6-adapter": "^1.1",
+                "mailjet/mailjet-apiv3-php": "^1.6.7",
+                "php-http/guzzle6-adapter": "*",
                 "phpcompatibility/php-compatibility": "^9.3",
                 "phpmailer/phpmailer": "^6.1",
-                "phpunit/phpunit": "^5.7",
+                "phpunit/phpunit": "^9",
                 "sendgrid/sendgrid": "^6.0",
                 "squizlabs/php_codesniffer": "^3.5",
                 "wildbit/postmark-php": "^2.5"
@@ -3335,7 +3336,7 @@
                 "issues": "https://github.com/omnimail/omnimail/issues",
                 "source": "https://github.com/omnimail/omnimail/tree/master"
             },
-            "time": "2025-09-24T07:14:39+00:00"
+            "time": "2026-10-23T22:18:03+00:00"
         },
         {
             "name": "padaliyajay/php-autoprefixer",

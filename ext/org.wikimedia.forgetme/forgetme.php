@@ -45,6 +45,7 @@ function forgetme_civicrm_angularModules(&$angularModules) {
     'js' => ['bower_components/ngPrint/ngPrint.js'],
     'css' => ['bower_components/ngPrint/ngPrint.css'],
     'ext' => 'org.wikimedia.forgetme',
+    'basePages' => [],
   ];
 
 }
