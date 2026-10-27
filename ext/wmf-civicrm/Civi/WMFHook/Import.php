@@ -723,12 +723,20 @@ class Import {
   /**
    * Sets appropriate values for settled amounts when not provided.
    *
+   * settled_fee_amount defaults to the negation of fee_amount if that has
+   * been mapped (e.g. Engage's individual-gift import maps a "Fee Amount"
+   * column to the core field) - settled_fee_amount is the negative-sign
+   * convention, fee_amount the positive one, for the same fee.
+   *
    * settled_net_amount isn't set here - it's not its own stored value, it's
    * calculated from settled_donation_amount and settled_fee_amount (see
    * FinanceBatchReferenceSpecProvider::renderBatchAmountSql()).
    */
   private function fillSettledAmounts(): void {
-    $this->mappedRow['Contribution']['contribution_settlement.settled_fee_amount'] ??= '0';
+    if (!isset($this->mappedRow['Contribution']['contribution_settlement.settled_fee_amount'])) {
+      $feeAmount = (float) ($this->mappedRow['Contribution']['fee_amount'] ?? 0);
+      $this->mappedRow['Contribution']['contribution_settlement.settled_fee_amount'] = $feeAmount ? (string) -$feeAmount : '0';
+    }
     $totalAmount = $this->mappedRow['Contribution']['total_amount'] ?? NULL;
     if ($totalAmount !== NULL) {
       $this->mappedRow['Contribution']['contribution_settlement.settled_donation_amount'] ??= $totalAmount;

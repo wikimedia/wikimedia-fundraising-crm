@@ -148,5 +148,5 @@ function storeEmailsDeleted( $emails ) {
  */
 function _contact_forgetme_get_processable_entities() {
   $entitiesToDelete = CRM_Forgetme_Metadata::getEntitiesToDelete();
-  return array_merge($entitiesToDelete, CRM_Forgetme_Metadata::getEntitiesToForget());
+  return array_unique(array_merge($entitiesToDelete, CRM_Forgetme_Metadata::getEntitiesToForget()));
 }

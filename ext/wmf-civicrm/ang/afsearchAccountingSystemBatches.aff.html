@@ -1,7 +1,8 @@
 <div af-fieldset="" af-title="Accounting system batches">
   <div class="af-container af-layout-cols">
-    <af-field name="name" defn="{search_operator: 'REGEXP', input_attrs: {}}" />
-    <af-field name="status_id" defn="{input_attrs: {multiple: true}, search_operator: 'IN'}" />
+    <af-field name="name" defn="{search_operator: 'LIKE', input_attrs: {multiple: true}, expose_operator: true}" />
+    <af-field name="status_id" defn="{afform_default: [1, 8, 6, 7], input_attrs: {multiple: true}}" />
+    <af-field name="batch_data.settlement_date" defn="{input_type: 'Select', search_range: true, input_attrs: {}}" />
   </div>
   <crm-search-display-table search-name="Accounting_System_Batches" display-name="Accounting_System_Batches"></crm-search-display-table>
 </div>

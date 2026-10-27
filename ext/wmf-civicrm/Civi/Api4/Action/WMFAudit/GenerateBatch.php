@@ -161,7 +161,7 @@ class GenerateBatch extends AbstractAction {
       $record += $this->validateBatch($batch, $batchedData);
       if ($this->getBatchValue($batch['name'], 'is_valid')) {
         try {
-          [$record['csv'], $isComplete] = $this->writeJournalToCsv($this->getRowsWithReversals($batchedData), $batch['name']);
+          [$record['csv'], $isComplete] = $this->writeJournalToCsv($this->getRowsWithReversals($batchedData, $batch['name']), $batch['name']);
         }
         catch (\Exception $e) {
           $this->log('Batch ' . $batch['name'] . ' failed to generate journal: ' . $e->getMessage());
@@ -211,6 +211,9 @@ class GenerateBatch extends AbstractAction {
                     'usd_debit' => $apiBatch['usd_debit'] ?? '',
                   ];
                   $record['remote'][$journal['remote_descriptor']] = $remote;
+                  $endowmentTransfer = $this->batchSummary[$batch['name']]['endowment_transfer'];
+                  $foundationAmount = Money::of((string) ($batch['batch_data.settled_donation_amount'] ?? 0), $endowmentTransfer->getCurrency())
+                    ->minus($endowmentTransfer);
                   Batch::update(FALSE)
                     ->addWhere('name', '=', $batch['name'])
                     ->setValues([
@@ -218,7 +221,8 @@ class GenerateBatch extends AbstractAction {
                       'batch_data.exchange_rate_source' => 'Intacct',
                       'batch_data.remote_url_' . $journal['remote_descriptor'] => $remote['url'],
                       'batch_data.remote_identifier_' . $journal['remote_descriptor'] => $remote['txn_number'],
-                      'batch_data.amount_journaled_to_endowment' => (string) $this->batchSummary[$batch['name']]['endowment_transfer']->getAmount(),
+                      'batch_data.amount_journaled_to_endowment' => (string) $endowmentTransfer->getAmount(),
+                      'batch_data.amount_journaled_to_foundation' => (string) $foundationAmount->getAmount(),
                     ] + $statusUpdate)
                     ->execute();
                 }
@@ -314,7 +318,7 @@ class GenerateBatch extends AbstractAction {
       ];
       if (empty($this->incompleteRows[$batchName])) {
         foreach ($csv_rows as $row) {
-          if ($row['is_endowment'] && !str_ends_with(trim($row['MEMO']), 'Fees') && ($row['ACCT_NO'] != $this->getReversalAccountCode($row['CURRENCY'], $row['GLENTRY_VENDORID']))) {
+          if ($row['is_endowment'] && !str_ends_with(trim($row['MEMO']), 'Fees') && ($row['ACCT_NO'] != $this->getReversalAccountCode($row['CURRENCY'], $batchName))) {
             if (!isset($endowmentWriterFrom) || !isset($endowmentWriterTo)) {
               $endowmentWriterFrom = $this->getEndowmentWriter(array_keys($row), $batchName, 'wmf');
               $csvFiles['journal_endowment_from_wmf'] = ['file' => $endowmentWriterFrom->getPathname(), 'is_journal' => TRUE, 'instance' => 'wmf', 'suffix' => 'e', 'remote_descriptor' => 'to_endowment'];
@@ -326,7 +330,7 @@ class GenerateBatch extends AbstractAction {
             $endowmentValues = [
               'LOCATION_ID' => '300-END',
               'DEPT_ID' => '',
-              'GLENTRY_VENDORID' => $this->mapVendorToEndowmentVendor($row['GLENTRY_VENDORID']),
+              'GLENTRY_VENDORID' => $this->mapVendorToEndowmentVendor($batchName),
             ];
             $toBalancingRow = $toRow = array_merge($row, $endowmentValues);
             if (str_starts_with($this->getAccountName($toRow['ACCT_NO']), 'Major Gifts')) {
@@ -352,13 +356,10 @@ class GenerateBatch extends AbstractAction {
     return [[], FALSE];
   }
 
-  private function mapVendorToEndowmentVendor($mainVendorCode): string {
-    foreach ($this->getGatewayAccounts() as $account) {
-      if ($account['vendor_code_foundation'] === $mainVendorCode && !empty($account['vendor_code_endowment'])) {
-        return $account['vendor_code_endowment'];
-      }
-    }
-    throw new \CRM_Core_Exception('Vendor not mapped :' . $mainVendorCode . ' see https://docs.google.com/spreadsheets/d/1FFIhblreQKSiPBxfatc5XhDdjqoaR7R280r9TTOlQcw/edit?gid=1609952585#gid=1609952585');
+  private function mapVendorToEndowmentVendor(string $batchName): string {
+    $accounts = $this->getGatewayAccounts();
+    // Vendor code is optional - e.g. wire & ach have no vendor in Intacct.
+    return (string) ($accounts[$this->getGateway($batchName)]['vendor_code_endowment'] ?? '');
   }
 
   /**
@@ -477,10 +478,11 @@ END";
   public function getVendorCode($batchName): string {
     $gateway = $this->getGateway($batchName);
     $accounts = $this->getGatewayAccounts();
-    if (!empty($accounts[$gateway]['vendor_code_foundation'])) {
-      return $accounts[$gateway]['vendor_code_foundation'];
+    if (!isset($accounts[$gateway])) {
+      throw new \CRM_Core_Exception('batch vendor ID missing for ' . $gateway);
     }
-    throw new \CRM_Core_Exception('batch vendor ID missing for ' . $gateway);
+    // Vendor code is optional - e.g. wire & ach have no vendor in Intacct.
+    return (string) ($accounts[$gateway]['vendor_code_foundation'] ?? '');
   }
 
   /**
@@ -532,9 +534,10 @@ END";
    * The reversals code to 11250 so debits & credits wind up being equal.
    *
    * @param array $csvRows
+   * @param string $batchName
    * @return array
    */
-  public function getRowsWithReversals(array $csvRows): array {
+  public function getRowsWithReversals(array $csvRows, string $batchName): array {
     $rowsWithReversals = [];
     foreach ($csvRows as $row) {
       $rowsWithReversals[] = $row;
@@ -542,7 +545,7 @@ END";
       $reversalRow['DEBIT'] = $row['CREDIT'];
       $reversalRow['CREDIT'] = $row['DEBIT'];
       $reversalRow['LINE_NO'] = $row['LINE_NO'] + 1;
-      $reversalRow['ACCT_NO'] = $this->getReversalAccountCode($row['CURRENCY'], $row['GLENTRY_VENDORID']);
+      $reversalRow['ACCT_NO'] = $this->getReversalAccountCode($row['CURRENCY'], $batchName);
       $memoParts = explode(' | ', $row['MEMO']);
       unset($memoParts[3], $memoParts[6]);
       $reversalRow['MEMO'] = implode(' | ', $memoParts);
@@ -551,17 +554,8 @@ END";
     return $rowsWithReversals;
   }
 
-  private function getReversalAccountCode($currency, $vendor): int {
-    $balancingAccount = NULL;
-    foreach ($this->getGatewayAccounts() as $account) {
-      if ($account['vendor_code_foundation'] === $vendor) {
-        $balancingAccount = $account['balancing_account_foundation'];
-        break;
-      }
-    }
-    if ($balancingAccount === NULL) {
-      throw new \CRM_Core_Exception('balancing account missing for vendor ' . $vendor);
-    }
+  private function getReversalAccountCode($currency, string $batchName): int {
+    $balancingAccount = $this->getGatewayAccounts()[$this->getGateway($batchName)]['balancing_account_foundation'];
     if ($balancingAccount === self::BALANCING_ACCOUNT_HARD_CODED) {
       // Varies by currency - not yet representable as a single value on the
       // GatewayAccount record (see GatewayAccount_paypal in GatewayAccount.mgd.php).
@@ -1332,6 +1326,21 @@ GROUP BY s.settlement_batch_reference
       'fee' => $result['expected']['fee'] + $result['totals']['fee'],
       'settled' => $result['expected']['settled'] - $result['totals']['settled'],
     ];
+    if ($result['validation']['count'] !== 0 && $this->getAuditGateway($batch['name']) === 'engage') {
+      // Engage's item_count comes from their deposit summary's "Checks" column, not
+      // CiviCRM, so it can drift - trust our count if the dollar totals reconcile.
+      $otherDiscrepancies = $result['validation'];
+      unset($otherDiscrepancies['count']);
+      if (empty(array_filter($otherDiscrepancies))) {
+        Batch::update(FALSE)
+          ->addValue('item_count', $result['totals']['count'])
+          ->addWhere('id', '=', $batch['id'])
+          ->execute();
+        $this->log($batch['name'] . ' item_count corrected from ' . $result['expected']['count'] . ' to ' . $result['totals']['count']);
+        $result['expected']['count'] = $result['totals']['count'];
+        $result['validation']['count'] = 0;
+      }
+    }
     $isValid = empty(array_filter($result['validation']));
     $this->batches[$batch['name']]['is_valid'] = $isValid;
     $this->log($batch['name'] . ' ' . ($isValid ? 'has valid totals' : ' has a discrepancy '));

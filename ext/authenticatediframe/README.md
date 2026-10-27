@@ -49,6 +49,20 @@ minimizing CSRF risk.
       });
     </script>
     ```
+- To adjust the height of the frame to its content, include
+  `{include file="CRM/AuthenticatedIframe/ReportHeight.tpl"}` in the page's
+  template. It sends `{type: 'civicrm-authenticatediframe-height', height}`
+  (in px) to the parent on load and whenever the content's height changes.
+  The parent sets the frame's height from it:
+
+    ```js
+    window.addEventListener('message', (event) => {
+      if (event.origin === civiOrigin && event.source === frame.contentWindow
+        && event.data?.type === 'civicrm-authenticatediframe-height') {
+        frame.style.height = event.data.height + 'px';
+      }
+    });
+    ```
 - Keep CORS on these routes restrictive (no `Access-Control-Allow-Origin`
   for arbitrary/reflected origins) — `frame_ancestors` only handles iframe
   embedding; a `fetch()`/XHR read is controlled by CORS instead, and the
