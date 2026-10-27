@@ -128,9 +128,7 @@ class NewChecksumLinkQueueConsumer extends QueueConsumer {
         }
         break;
       case 'DonorPortal':
-        $donorPortalBaseUrl = (string) \Civi::settings()->get('wmf_donor_portal_url');
-        $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
-        $url = PreferencesLink::addContactAndChecksumToUrl($donorPortalBaseUrl, $contactID, $checksum);
+        $url = PreferencesLink::buildDonorPortalUrl($contactID);
         break;
     }
 

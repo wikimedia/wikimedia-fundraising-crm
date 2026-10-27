@@ -51,9 +51,7 @@ class PreferencesLink {
         $recurringUpgradeUrl = FALSE;
       }
       $page->assign('recurringUpgradeLink', $recurringUpgradeUrl);
-      $donorPortalBaseUrl = (string) \Civi::settings()->get('wmf_donor_portal_url');
-      $donorPortalUrl = self::addContactAndChecksumToUrl($donorPortalBaseUrl, $contactID, $checksum);
-      $page->assign('donorPortalLink', $donorPortalUrl);
+      $page->assign('donorPortalLink', self::buildDonorPortalUrl($contactID));
       $email = \Civi\Api4\Email::get(FALSE)
         ->addSelect('email')
         ->addWhere('contact_id', '=', $contactID)
@@ -119,10 +117,25 @@ class PreferencesLink {
    */
   public static function getDonorPortalUrl(int $contactID): string {
     if (self::isDonorPortalEligible($contactID)) {
-      $donorPortalBaseUrl = (string) \Civi::settings()->get('wmf_donor_portal_url');
-      return self::addContactAndChecksumToUrl($donorPortalBaseUrl, $contactID, \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID));
+      return self::buildDonorPortalUrl($contactID);
     }
     return '';
+  }
+
+  /**
+   * Get the donor portal url.
+   *
+   * This includes the magic checksum ttl from the setting that donor portal
+   * will allow direct access with.
+   *
+   * @param int $contactID
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  public static function buildDonorPortalUrl(int $contactID): string {
+    $donorPortalBaseUrl = (string) \Civi::settings()->get('wmf_donor_portal_url');
+    $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID, NULL, \Civi::settings()->get('wmf_donor_portal_checksum_ttl'));
+    return self::addContactAndChecksumToUrl($donorPortalBaseUrl, $contactID, $checksum);
   }
 
   /**
