@@ -361,6 +361,47 @@ class RefundQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * Three retryable chargebacks in a row cancel the recurring.
+   */
+  public function testChargebackRetryableReasonThreeInARow(): void {
+    $signupMessage = $this->getRecurringSignupMessage();
+    $this->processMessage($signupMessage, 'Recurring', 'recurring');
+    $recurRecord = ContributionRecur::get(FALSE)
+      ->addWhere('trxn_id', '=', $signupMessage['subscr_id'])
+      ->execute()->single();
+    $this->ids['ContributionRecur'][] = $recurRecord['id'];
+
+    foreach ([3, 2, 1] as $monthsAgo) {
+      $donationMessage = $this->getDonationMessage([
+        'gateway' => 'test_gateway',
+        'contribution_recur_id' => $recurRecord['id'],
+        'date' => strtotime("-$monthsAgo months"),
+      ], TRUE, []);
+      $this->processMessage($donationMessage, 'Donation', 'test');
+      $this->processMessage($this->getRefundMessage([
+        'gateway' => 'test_gateway',
+        'gateway_parent_id' => $donationMessage['gateway_txn_id'],
+        'type' => 'chargeback',
+        'gross' => $donationMessage['original_gross'],
+        'gross_currency' => $donationMessage['original_currency'],
+        'reason' => 'AM04:InsufficientFunds',
+      ]), 'Refund', 'refund');
+      $this->processQueue('recurring', 'Recurring');
+      $recurStatus = ContributionRecur::get(FALSE)
+        ->addSelect('contribution_status_id:name')
+        ->addWhere('id', '=', $recurRecord['id'])
+        ->execute()->single()['contribution_status_id:name'];
+      // We don't cancel until we get to the third chargeback
+      if ($monthsAgo === 1) {
+        $this->assertEquals('Cancelled', $recurStatus);
+      }
+      else {
+        $this->assertNotEquals('Cancelled', $recurStatus);
+      }
+    }
+  }
+
+  /**
    * Generic testing of refund handling.
    *
    * @throws \CRM_Core_Exception
