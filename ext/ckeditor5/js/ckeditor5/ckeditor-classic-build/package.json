@@ -1,0 +1,24 @@
+{
+  "name": "ckeditor5-civicrm-classic-build",
+  "description": "Shared CKEditor 5 build for CiviCRM elFinder and Base64 modes.",
+  "version": "0.0.1",
+  "license": "GPL-2.0-or-later",
+  "private": true,
+  "main": "./build/ckeditor.js",
+  "types": "./build/ckeditor.d.ts",
+  "dependencies": {
+    "ckeditor5": "49.0.0"
+  },
+  "devDependencies": {
+    "css-loader": "^7.1.2",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.2",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1"
+  },
+  "scripts": {
+    "build": "webpack --mode production && node ../copy-translations.mjs",
+    "postbuild": "tsc --declaration --declarationDir build --stripInternal --emitDeclarationOnly"
+  }
+}

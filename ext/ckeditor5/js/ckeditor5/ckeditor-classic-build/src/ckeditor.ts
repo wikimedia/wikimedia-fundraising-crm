@@ -1,0 +1,140 @@
+/**
+ * @license Copyright (c) 2014-2026, CKSource Holding sp. z o.o. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-licensing-options
+ */
+
+import * as CKEditor from 'ckeditor5';
+import {
+	Alignment,
+	Autoformat,
+	Base64UploadAdapter,
+	BlockQuote,
+	Bold,
+	CKFinder,
+	CKFinderUploadAdapter,
+	ClassicEditor,
+	CloudServices,
+	Code,
+	CodeBlock,
+	Essentials,
+	FontBackgroundColor,
+	FontColor,
+	FontFamily,
+	FontSize,
+	FindAndReplace,
+	Fullscreen,
+	GeneralHtmlSupport,
+	Heading,
+	Highlight,
+	HorizontalLine,
+	HtmlEmbed,
+	Image,
+	ImageCaption,
+	ImageResize,
+	ImageStyle,
+	ImageToolbar,
+	ImageUpload,
+	Indent,
+	Italic,
+	Link,
+	LinkImage,
+	List,
+	ListProperties,
+	MediaEmbed,
+	PageBreak,
+	Paragraph,
+	PasteFromOffice,
+	PlainTableOutput,
+	RemoveFormat,
+	SourceEditing,
+	SpecialCharacters,
+	SpecialCharactersEssentials,
+	Strikethrough,
+	Style,
+	Subscript,
+	Superscript,
+	Table,
+	TableCellProperties,
+	TableColumnResize,
+	TableLayout,
+	TableProperties,
+	TableToolbar,
+	TextTransformation,
+	Underline,
+	Undo,
+	type EditorConfig
+} from 'ckeditor5';
+
+import 'ckeditor5/ckeditor5.css';
+
+// External plugins must use this exact runtime instead of bundling another
+// CKEditor copy, which would trigger ckeditor-duplicated-modules errors.
+( window as typeof window & { CKEDITOR: typeof CKEditor } ).CKEDITOR = CKEditor;
+
+class Editor extends ClassicEditor {
+	public static override builtinPlugins = [
+		Alignment,
+		Autoformat,
+		Base64UploadAdapter,
+		BlockQuote,
+		Bold,
+		CKFinder,
+		CKFinderUploadAdapter,
+		CloudServices,
+		Code,
+		CodeBlock,
+		Essentials,
+		FontBackgroundColor,
+		FontColor,
+		FontFamily,
+		FontSize,
+		FindAndReplace,
+		Fullscreen,
+		GeneralHtmlSupport,
+		Heading,
+		Highlight,
+		HorizontalLine,
+		HtmlEmbed,
+		Image,
+		ImageCaption,
+		ImageResize,
+		ImageStyle,
+		ImageToolbar,
+		ImageUpload,
+		Indent,
+		Italic,
+		Link,
+		LinkImage,
+		List,
+		ListProperties,
+		MediaEmbed,
+		PageBreak,
+		Paragraph,
+		PasteFromOffice,
+		PlainTableOutput,
+		RemoveFormat,
+		SourceEditing,
+		SpecialCharacters,
+		SpecialCharactersEssentials,
+		Strikethrough,
+		Style,
+		Subscript,
+		Superscript,
+		Table,
+		TableCellProperties,
+		TableColumnResize,
+		TableLayout,
+		TableProperties,
+		TableToolbar,
+		TextTransformation,
+		Underline,
+		Undo
+	];
+
+	public static override defaultConfig: EditorConfig = {
+		licenseKey: 'GPL',
+		language: 'en'
+	};
+}
+
+export default Editor;

@@ -122,6 +122,7 @@
 			'errServerError'       : 'Error occurred on the server side.', // from v2.1.25 added 16.6.2017
 			'errEmpty'             : 'Unable to empty folder "$1".', // from v2.1.25 added 22.6.2017
 			'moreErrors'           : 'There are $1 more errors.', // from v2.1.44 added 9.12.2018
+			'errMaxMkdirs'         : 'You can create up to $1 folders at one time.', // from v2.1.58 added 20.6.2021
 
 			/******************************* commands names ********************************/
 			'cmdarchive'   : 'Create archive',
@@ -180,6 +181,7 @@
 			'btnCancel' : 'Cancel',
 			'btnNo'     : 'No',
 			'btnYes'    : 'Yes',
+			'btnDiscard': 'Discard changes',
 			'btnMount'  : 'Mount',  // added 18.04.2012
 			'btnApprove': 'Goto $1 & approve', // from v2.1 added 26.04.2012
 			'btnUnmount': 'Unmount', // from v2.1 added 30.04.2012
@@ -528,6 +530,12 @@
 			'kindTTF'         : 'True Type font',
 			'kindOTF'         : 'Open Type font',
 			'kindRPM'         : 'RPM package',
+			// fonts
+			'kindFont'        : 'Font',
+			'kindSFNT'        : 'SFNT font',
+			'kindEOT'         : 'Embedded Open Type font',
+			'kindWOFF'        : 'Web Open Font Format',
+			'kindWOFF2'       : 'Web Open Font Format 2',
 			// texts
 			'kindText'        : 'Text document',
 			'kindTextPlain'   : 'Plain text',
@@ -562,6 +570,8 @@
 			'kindPSD'         : 'Adobe Photoshop image',
 			'kindXBITMAP'     : 'X bitmap image',
 			'kindPXM'         : 'Pixelmator image',
+			'kindWEBP'        : 'WEBP image',
+			'kindSVG'         : 'SVG image',
 			// media
 			'kindAudio'       : 'Audio media',
 			'kindAudioMPEG'   : 'MPEG audio',

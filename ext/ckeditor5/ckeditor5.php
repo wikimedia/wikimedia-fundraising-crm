@@ -31,6 +31,13 @@ function ckeditor5_civicrm_enable() {
 }
 
 /**
+ * Implements hook_civicrm_alterSettingsFolders().
+ */
+function ckeditor5_civicrm_alterSettingsFolders(&$folders) {
+  $folders[] = E::path('settings');
+}
+
+/**
  * Implements hook_civicrm_coreResourceList
  *
  * Add ckeditor5.
@@ -42,63 +49,68 @@ function ckeditor5_civicrm_enable() {
  */
 function ckeditor5_civicrm_coreResourceList(&$items, $region) {
   if ($region === 'html-header') {
+    if (in_array(Civi::settings()->get('editor_id'), ['CKEditor5-elfinder', 'CKEditor5-base64'], TRUE)) {
+      $items[] = ['config' => [
+        'CKEditor5AdminPresets' => (object) (Civi::settings()->get('ckeditor5_presets') ?: []),
+        'CKEditor5CorePluginAssets' => [[
+          'name' => 'civi-tokens',
+          'scripts' => [CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/plugins/civi-tokens.js', TRUE)],
+          'plugins' => ['CiviTokens'],
+        ]],
+      ]];
+    }
     if (Civi::settings()->get('editor_id') === 'CKEditor5-elfinder') {
+      $locale = CRM_Core_I18n::getLocale();
+      $lang = substr($locale, 0, 2);
+      $canUseElFinder = CRM_Core_Permission::check('access CiviCRM')
+        && CRM_Core_Permission::check('access uploaded files');
+
+      $items[] = [
+        'config' => [
+          'CKEditor5Language' => ($lang != 'en' ? CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/ckeditor5/ckeditor-classic-build/build/translations/' . $lang . '.js', TRUE) : ''),
+          'wysisygScriptLocation' => CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/wysiwyg/crm.ckeditor5.js', TRUE),
+          // Both upload modes use the same compiled editor.
+          'CKEditor5Location' => CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/ckeditor5/ckeditor-classic-build/build/ckeditor.js', TRUE),
+          'ELFinderLocation' => $canUseElFinder ? CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/elFinder/js/elfinder.min.js', TRUE) : NULL,
+          'CKEditor5UploadMode' => $canUseElFinder ? 'elfinder' : 'none',
+        ],
+      ];
+      if ($canUseElFinder) {
+        CRM_Core_Resources::singleton()->addStyleUrl(CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/elFinder/css/elfinder.min.css', TRUE));
+        CRM_Core_Resources::singleton()->addStyleUrl(CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/elFinder/css/theme.css', TRUE));
+      }
+      CRM_Core_Resources::singleton()->addStyleUrl(CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'css/ckeditor.css', TRUE));
+    }
+
+    if (Civi::settings()->get('editor_id') === 'CKEditor5-base64') {
       $locale = CRM_Core_I18n::getLocale();
       $lang = substr($locale, 0, 2);
 
       $items[] = [
         'config' => [
-          'CKEditor5Language' => ($lang != 'en' ? CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/ckeditor5/ckeditor-classic-build/translations/' . $lang . '.js') : ''),
-          'wysisygScriptLocation' => CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/wysiwyg/crm.ckeditor5.js'),
-          // Note that I am just using 'classic build' at the moment - not a configured
-          // build so no build in the path.
-          'CKEditor5Location' => CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/ckeditor5/ckeditor-classic-build/ckeditor.js'),
-          'ELFinderLocation' => CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/elFinder/js/elfinder.min.js'),
-        ],
-      ];
-      CRM_Core_Resources::singleton()->addStyleUrl(CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/elFinder/css/elfinder.min.css'));
-      CRM_Core_Resources::singleton()->addStyleUrl(CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'css/ckeditor.css'));
-    }
-
-    if (Civi::settings()->get('editor_id') === 'CKEditor5-base64') {
-      $items[] = [
-        'config' => [
-          'wysisygScriptLocation' => CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/wysiwyg/crm.ckeditor5.js'),
-          // Note that I am just using 'classic build' at the moment - not a configured
-          // build so no build in the path.
-          'CKEditor5Location' => CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/ckeditor5/ckeditor-base64-upload-adapter/build/ckeditor.js'),
+          'CKEditor5Language' => ($lang != 'en' ? CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/ckeditor5/ckeditor-classic-build/build/translations/' . $lang . '.js', TRUE) : ''),
+          'wysisygScriptLocation' => CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/wysiwyg/crm.ckeditor5.js', TRUE),
+          // Both upload modes use the same compiled editor.
+          'CKEditor5Location' => CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'js/ckeditor5/ckeditor-classic-build/build/ckeditor.js', TRUE),
           'ELFinderLocation' => NULL,
+          'CKEditor5UploadMode' => 'base64',
         ],
       ];
-      CRM_Core_Resources::singleton()->addStyleUrl(CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'css/ckeditor.css'));
+      CRM_Core_Resources::singleton()->addStyleUrl(CRM_Core_Resources::singleton()->getUrl('ckeditor5', 'css/ckeditor.css', TRUE));
     }
 
   }
 }
 
-// --- Functions below this ship commented out. Uncomment as required. ---
-
-/**
- * Implements hook_civicrm_preProcess().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_preProcess
- *
-
- // */
-
 /**
  * Implements hook_civicrm_navigationMenu().
- *
- * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_navigationMenu
- *
+ */
 function ckeditor5_civicrm_navigationMenu(&$menu) {
-  _ckeditor5_civix_insert_navigation_menu($menu, 'Mailings', array(
-    'label' => E::ts('New subliminal message'),
-    'name' => 'mailing_subliminal_message',
-    'url' => 'civicrm/mailing/subliminal',
-    'permission' => 'access CiviMail',
-    'operator' => 'OR',
-    'separator' => 0,
-  ));
-  _ckeditor5_civix_navigationMenu($menu);
-} // */
+  _ckeditor5_civix_insert_navigation_menu($menu, 'Administer/Customize Data and Screens', [
+    'label' => E::ts('CKEditor 5 presets'),
+    'name' => 'ckeditor5_presets',
+    'url' => 'civicrm/admin/ckeditor5?reset=1',
+    'permission' => 'administer CiviCRM',
+  ]);
+}
+

@@ -20,6 +20,8 @@ error_reporting(0); // Set E_ALL for debuging
 
 // define('ELFINDER_CONNECTOR_URL', 'URL to this connector script');  // see elFinder::getConnectorUrl()
 
+// define('ELFINDER_COOKIE_SAMESITE', 'None'); // It require when configuring with CORS.
+
 // define('ELFINDER_DEBUG_ERRORLEVEL', -1); // Error reporting level of debug mode
 
 // // To Enable(true) handling of PostScript files by ImageMagick
@@ -48,6 +50,7 @@ elFinder::$netDrivers['ftp'] = 'FTP';
 // elFinder::$netDrivers['dropbox2'] = 'Dropbox2';
 // // Dropbox2 Netmount driver need next two settings. You can get at https://www.dropbox.com/developers/apps
 // // AND require register redirect url to "YOUR_CONNECTOR_URL?cmd=netmount&protocol=dropbox2&host=1"
+// // If the elFinder HTML element ID is not "elfinder", you need to change "host=1" to "host=ElementID"
 // define('ELFINDER_DROPBOX_APPKEY',    '');
 // define('ELFINDER_DROPBOX_APPSECRET', '');
 // ===============================================
@@ -59,6 +62,7 @@ elFinder::$netDrivers['ftp'] = 'FTP';
 // elFinder::$netDrivers['googledrive'] = 'GoogleDrive';
 // // GoogleDrive Netmount driver need next two settings. You can get at https://console.developers.google.com
 // // AND require register redirect url to "YOUR_CONNECTOR_URL?cmd=netmount&protocol=googledrive&host=1"
+// // If the elFinder HTML element ID is not "elfinder", you need to change "host=1" to "host=ElementID"
 // define('ELFINDER_GOOGLEDRIVE_CLIENTID',     '');
 // define('ELFINDER_GOOGLEDRIVE_CLIENTSECRET', '');
 // // Required case when Google API is NOT added via composer
@@ -72,6 +76,7 @@ elFinder::$netDrivers['ftp'] = 'FTP';
 // elFinder::$netDrivers['googledrive'] = 'FlysystemGoogleDriveNetmount';
 // // GoogleDrive Netmount driver need next two settings. You can get at https://console.developers.google.com
 // // AND require register redirect url to "YOUR_CONNECTOR_URL?cmd=netmount&protocol=googledrive&host=1"
+// // If the elFinder HTML element ID is not "elfinder", you need to change "host=1" to "host=ElementID"
 // define('ELFINDER_GOOGLEDRIVE_CLIENTID',     '');
 // define('ELFINDER_GOOGLEDRIVE_CLIENTSECRET', '');
 // // And "php/.tmp" directory must exist and be writable by PHP.
@@ -82,8 +87,10 @@ elFinder::$netDrivers['ftp'] = 'FTP';
 // //  * HTTP server PATH_INFO supports required
 // // Enable network mount
 // elFinder::$netDrivers['onedrive'] = 'OneDrive';
-// // GoogleDrive Netmount driver need next two settings. You can get at https://dev.onedrive.com
+// // OneDrive Netmount driver need next two settings. You can get at
+// // https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps
 // // AND require register redirect url to "YOUR_CONNECTOR_URL/netmount/onedrive/1"
+// // If the elFinder HTML element ID is not "elfinder", you need to change "/1" to "/ElementID"
 // define('ELFINDER_ONEDRIVE_CLIENTID',     '');
 // define('ELFINDER_ONEDRIVE_CLIENTSECRET', '');
 // ===============================================
@@ -94,6 +101,7 @@ elFinder::$netDrivers['ftp'] = 'FTP';
 // elFinder::$netDrivers['box'] = 'Box';
 // // Box Netmount driver need next two settings. You can get at https://developer.box.com
 // // AND require register redirect url to "YOUR_CONNECTOR_URL?cmd=netmount&protocol=box&host=1"
+// // If the elFinder HTML element ID is not "elfinder", you need to change "host=1" to "host=ElementID"
 // define('ELFINDER_BOX_CLIENTID',     '');
 // define('ELFINDER_BOX_CLIENTSECRET', '');
 // ===============================================
@@ -102,6 +110,9 @@ elFinder::$netDrivers['ftp'] = 'FTP';
 // // Zoho Office Editor APIKey
 // // https://www.zoho.com/docs/help/office-apis.html
 // define('ELFINDER_ZOHO_OFFICE_APIKEY', '');
+// Zoho Office save callback state TTL in seconds
+// Default: 3600 (1 hour), Max: 86400 (24 hours)
+// define('ELFINDER_ZOHO_OFFICE_CALLBACK_TTL', 3600);
 // ===============================================
 
 // // Online converter (online-convert.com) APIKey
@@ -148,6 +159,9 @@ $opts = array(
 			'URL'           => dirname($_SERVER['PHP_SELF']) . '/../files/', // URL to files (REQUIRED)
 			'trashHash'     => 't1_Lw',                     // elFinder's hash of trash folder
 			'winHashFix'    => DIRECTORY_SEPARATOR !== '/', // to make hash same to Linux one on windows too
+			// WARNING: You MUST explicitly set 'uploadAllow' and 'uploadDeny'.
+			// Leaving these empty permits ALL file types including PHP scripts,
+			// which may lead to remote code execution.
 			'uploadDeny'    => array('all'),                // All Mimetypes not allowed to upload
 			'uploadAllow'   => array('image/x-ms-bmp', 'image/gif', 'image/jpeg', 'image/png', 'image/x-icon', 'text/plain'), // Mimetype `image` and `text/plain` allowed to upload
 			'uploadOrder'   => array('deny', 'allow'),      // allowed Mimetype `image` and `text/plain` only
@@ -160,6 +174,9 @@ $opts = array(
 			'path'          => '../files/.trash/',
 			'tmbURL'        => dirname($_SERVER['PHP_SELF']) . '/../files/.trash/.tmb/',
 			'winHashFix'    => DIRECTORY_SEPARATOR !== '/', // to make hash same to Linux one on windows too
+			// WARNING: You MUST explicitly set 'uploadAllow' and 'uploadDeny'.
+			// Leaving these empty permits ALL file types including PHP scripts,
+			// which may lead to remote code execution.
 			'uploadDeny'    => array('all'),                // Recomend the same settings as the original volume that uses the trash
 			'uploadAllow'   => array('image/x-ms-bmp', 'image/gif', 'image/jpeg', 'image/png', 'image/x-icon', 'text/plain'), // Same as above
 			'uploadOrder'   => array('deny', 'allow'),      // Same as above

@@ -10,7 +10,7 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
    * @throws \Exception
    */
   public function run() {
-    if (!CRM_Core_Permission::check('access uploaded files')) {
+    if (!CRM_Core_Permission::check('access CiviCRM') || !CRM_Core_Permission::check('access uploaded files')) {
       throw new CRM_Core_Exception('Permission denied');
     }
 
@@ -30,7 +30,7 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
     // define('ELFINDER_JPEGTRAN_PATH', '/PATH/TO/jpegtran');
     // define('ELFINDER_FFMPEG_PATH',   '/PATH/TO/ffmpeg');
 
-    define('ELFINDER_CONNECTOR_URL', CRM_Utils_System::url('civicrm/image/access', NULL, TRUE, NULL, FALSE, FALSE, TRUE));
+    define('ELFINDER_CONNECTOR_URL', CRM_Utils_System::url('civicrm/ckeditor5/image-manager', NULL, TRUE, NULL, FALSE, FALSE, TRUE));
     // see elFinder::getConnectorUrl()
 
     // define('ELFINDER_DEBUG_ERRORLEVEL', -1); // Error reporting level of debug mode
@@ -42,16 +42,8 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
     // define('ELFINDER_IMAGEMAGICK_PS', true);
     // ===============================================
 
-    // // load composer autoload before load elFinder autoload If you need composer
-    // // You need to run the composer command in the php directory.
-    is_readable('./vendor/autoload.php') && require './vendor/autoload.php';
-
-    // // elFinder autoload
+    // elFinder autoload
     require CRM_Core_Resources::singleton()->getPath('ckeditor5', '/js/elFinder/php/autoload.php');
-    // ===============================================
-
-    // // Enable FTP connector netmount
-    elFinder::$netDrivers['ftp'] = 'FTP';
     // ===============================================
 
     // // Required for Dropbox network mount
@@ -130,7 +122,8 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
 
     /**
      * Simple function to demonstrate how to control file access using "accessControl" callback.
-     * This method will disable accessing files/folders starting from '.' (dot)
+     * This method hides internal thumbnail directories and files/folders
+     * starting from '.' (dot).
      *
      * @param string $attr attribute name (read|write|locked|hidden)
      * @param string $path absolute file path
@@ -141,15 +134,19 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
      *
      * @return bool|null
      **/
-    function access($attr, $path, $data, $volume, $isDir, $relpath) {
+    $accessControl = static function($attr, $path, $data, $volume, $isDir, $relpath) {
       $basename = basename($path);
-      return $basename[0] === '.'                  // if file/folder begins with '.' (dot)
+      return ($basename[0] === '.' || ($isDir && $basename === 'thumbnails'))
       && strlen($relpath) !== 1           // but with out volume root
         ? !($attr === 'read' || $attr === 'write') // set read+write to false, other (locked+hidden) set to true
         : NULL;                                 // else elFinder decide it itself
-    }
+    };
 
-    $requiredDirectories = ['persist/contribute/images/.trash', 'persist/contribute/images/.trash/.tmb'];
+    $requiredDirectories = [
+      'persist/contribute/images/thumbnails',
+      'persist/contribute/images/.trash',
+      'persist/contribute/images/.trash/thumbnails',
+    ];
     foreach ($requiredDirectories as $directory) {
       $directory = Civi::paths()->getPath('[civicrm.files]/' . $directory);
       if (!is_dir($directory) && !mkdir($directory, 0775, TRUE)) {
@@ -157,10 +154,43 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
 
       }
     }
+
+    $imageUrl = Civi::paths()->getUrl('[civicrm.files]/persist/contribute/images');
+    $thumbnailPath = Civi::paths()->getPath('[civicrm.files]/persist/contribute/images/thumbnails');
+    $thumbnailUrl = Civi::paths()->getUrl('[civicrm.files]/persist/contribute/images/thumbnails/');
+    $trashThumbnailPath = Civi::paths()->getPath('[civicrm.files]/persist/contribute/images/.trash/thumbnails');
+    $trashThumbnailUrl = Civi::paths()->getUrl('[civicrm.files]/persist/contribute/images/.trash/thumbnails/');
+    // Some CMS path configurations return a local URL with a doubled leading
+    // slash. Browsers interpret it as a protocol-relative hostname (e.g.
+    // //sites/... becomes https://sites/...), so keep local paths root-relative.
+    if (substr($imageUrl, 0, 2) === '//') {
+      $imageUrl = substr($imageUrl, 1);
+    }
+    if (substr($thumbnailUrl, 0, 2) === '//') {
+      $thumbnailUrl = substr($thumbnailUrl, 1);
+    }
+    if (substr($trashThumbnailUrl, 0, 2) === '//') {
+      $trashThumbnailUrl = substr($trashThumbnailUrl, 1);
+    }
+
+    $allowedMimeTypes = [
+      'image/x-ms-bmp',
+      'image/gif',
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/x-icon',
+    ];
+    $disabledCommands = ['mkfile', 'archive', 'extract', 'edit', 'netmount'];
+
     // Documentation for connector options:
     // https://github.com/Studio-42/elFinder/wiki/Connector-configuration-options
     $opts = [
       'debug' => Civi::settings()->get('debug_enabled'),
+      // The image manager does not need to fetch arbitrary server-side URLs.
+      'urlUploadFilter' => static function($url) {
+        return FALSE;
+      },
       'roots' => [
         // Items volume
         [
@@ -168,25 +198,31 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
           // path to files (REQUIRED)
           'path' => Civi::paths()->getPath('[civicrm.files]/persist/contribute/images'),
           // URL to files (REQUIRED)
-          'URL' => Civi::paths()->getUrl('[civicrm.files]/persist/contribute/images'),
+          'URL' => $imageUrl,
+          // Dot-prefixed directories are commonly blocked by the web server.
+          'tmbPath' => $thumbnailPath,
+          'tmbURL' => $thumbnailUrl,
           'trashHash' => 't1_Lw',                     // elFinder's hash of trash folder
           'winHashFix' => DIRECTORY_SEPARATOR !== '/', // to make hash same to Linux one on windows too
           'uploadDeny' => ['all'],                // All Mimetypes not allowed to upload
-          'uploadAllow' => ['image/x-ms-bmp', 'image/gif', 'image/jpeg', 'image/png', 'image/x-icon', 'text/plain'], // Mimetype `image` and `text/plain` allowed to upload
-          'uploadOrder' => ['deny', 'allow'],      // allowed Mimetype `image` and `text/plain` only
-          'accessControl' => 'access'                     // disable and hide dot starting files (OPTIONAL)
+          'uploadAllow' => $allowedMimeTypes,
+          'uploadOrder' => ['deny', 'allow'],
+          'disabled' => $disabledCommands,
+          'accessControl' => $accessControl,              // disable and hide dot starting files (OPTIONAL)
         ],
         // Trash volume
         [
           'id' => '1',
           'driver' => 'Trash',
           'path' => Civi::paths()->getPath('[civicrm.files]/persist/contribute/images/.trash/'),
-          'tmbURL' => Civi::paths()->getUrl('[civicrm.files]/persist/contribute/images/.trash/.tmb/'),
+          'tmbPath' => $trashThumbnailPath,
+          'tmbURL' => $trashThumbnailUrl,
           'winHashFix' => DIRECTORY_SEPARATOR !== '/', // to make hash same to Linux one on windows too
           'uploadDeny' => ['all'],                // Recomend the same settings as the original volume that uses the trash
-          'uploadAllow' => ['image/x-ms-bmp', 'image/gif', 'image/jpeg', 'image/png', 'image/x-icon', 'text/plain'], // Same as above
+          'uploadAllow' => $allowedMimeTypes,
           'uploadOrder' => ['deny', 'allow'],      // Same as above
-          'accessControl' => 'access',                    // Same as above
+          'disabled' => $disabledCommands,
+          'accessControl' => $accessControl,              // Same as above
         ],
       ]
     ];
