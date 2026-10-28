@@ -286,11 +286,20 @@ class BatchSummaryMailer {
    * @return string
    */
   private function getIncompleteBatchesHtml(array $batches): string {
-    $html = $this->getTableHeader(['Batch', 'Created Date', 'Currency', 'Total', 'Count', 'Status', 'Phab']);
+    $cell = 'border: 1px solid #ccc; padding: 6px;';
+    $html = $this->getTableHeader(['Batch', 'Created Date', 'Currency', 'Total', 'Count', 'Status', 'Last Verified', 'Last Discrepancy', 'Phab']);
     foreach ($batches as $incompleteBatch) {
       $phabLink = ($incompleteBatch['batch_data.issue_tracker_reference'] ? ('<a href="https://phabricator.wikimedia.org/' . $incompleteBatch['batch_data.issue_tracker_reference'] . '">' . $incompleteBatch['batch_data.issue_tracker_reference'] . '</a>') : '');
-      $html .= "<tr><td>{$incompleteBatch['name']}</td><td>{$incompleteBatch['created_date']}</td><td>{$incompleteBatch['batch_data.settlement_currency']}</td><td>{$incompleteBatch['batch_data.settled_net_amount']}</td><td>{$incompleteBatch['item_count']}</td><td>{$incompleteBatch['status_id:label']}</td>
-        <td>{$phabLink}</td>
+      $html .= "<tr>
+        <td style=\"$cell\">{$incompleteBatch['name']}</td>
+        <td style=\"$cell\">{$incompleteBatch['created_date']}</td>
+        <td style=\"$cell\">{$incompleteBatch['batch_data.settlement_currency']}</td>
+        <td style=\"$cell\">{$incompleteBatch['batch_data.settled_net_amount']}</td>
+        <td style=\"$cell\">{$incompleteBatch['item_count']}</td>
+        <td style=\"$cell\">{$incompleteBatch['status_id:label']}</td>
+        <td style=\"$cell\">{$incompleteBatch['batch_data.last_successful_validation_date']}</td>
+        <td style=\"$cell\">{$incompleteBatch['batch_data.last_discrepancy']}</td>
+        <td style=\"$cell\">{$phabLink}</td>
       </tr>";
     }
     $html .= '</tbody></table>';
