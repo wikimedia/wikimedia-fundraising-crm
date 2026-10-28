@@ -360,6 +360,48 @@ class GenerateBatchTest extends BaseAuditTestCase {
   }
 
   /**
+   * Engage sometimes has a fee recorded against the individual contribution
+   * but not at the batch level - the batch is entered with the full net
+   * amount as "donation" and no fee, while the per-contribution data has the
+   * real donation/fee split. Once the net settled amount already reconciles,
+   * GenerateBatch should trust the per-contribution breakdown rather than
+   * failing the batch over the fee/donation split alone.
+   */
+  public function testEngageFeeAndDonationSplitCorrectedWhenNetAmountMatches(): void {
+    $prefix = 'engage_341';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-01-28';
+
+    $this->createQueueContribution([
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      // A real (non-gateway-level) trxn_id, so the fee lands in the "Donation
+      // Fees" branch of getBatchSql() rather than being excluded from every branch.
+      'trxn_id' => 'engage check123',
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 23.00,
+      'contribution_settlement.settled_fee_amount' => -2.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    // Batch entered with the full net amount (21.00) as "donation" and no
+    // fee, but the row above actually has a 23.00 donation and a 2.00 fee -
+    // the net amount still reconciles at 21.00.
+    $result = $this->runGenerate($batchName, $currency, $settlementDate, 21.00, 1, $prefix);
+
+    $this->assertEquals(0, array_sum($result[0]['validation']), 'Batch should validate once the fee/donation split is self-corrected: ' . print_r($result[0]['validation'], TRUE));
+
+    $batch = Batch::get(FALSE)
+      ->addSelect('batch_data.settled_donation_amount', 'batch_data.settled_fee_amount')
+      ->addWhere('name', '=', $batchName)
+      ->execute()->single();
+    $this->assertEquals(23.00, (float) $batch['batch_data.settled_donation_amount'], 'Expected donation amount to be corrected to the per-contribution total');
+    $this->assertEquals(-2.00, (float) $batch['batch_data.settled_fee_amount'], 'Expected fee amount to be corrected to the per-contribution total (negative)');
+  }
+
+  /**
    * Create a total_verified Automatic Batch with the minimal batch_data fields.
    */
   private function createBatch(string $batchName, string $currency, string $settlementDate, float $net, int $itemCount): void {
