@@ -964,18 +964,20 @@ GROUP BY s.settlement_batch_reference
    */
   private function getGatewayLevelTransactionExcludeClause($batchName): string {
     $gateway = $this->getAuditGateway($batchName);
-    return "(trxn_id NOT LIKE '{$gateway} transaction%'
-      AND trxn_id NOT LIKE '{$gateway} invoice%'
-      AND trxn_id NOT LIKE '{$gateway} rounding%'
-      AND trxn_id NOT LIKE '{$gateway} fee%'
-      AND trxn_id NOT LIKE '{$gateway} deposit%'
+    // COALESCE guards against NULL trxn_id, where "NULL NOT LIKE '...'" is
+    // NULL, silently dropping the row from this clause and its inverse below.
+    return "(COALESCE(trxn_id, '') NOT LIKE '{$gateway} transaction%'
+      AND COALESCE(trxn_id, '') NOT LIKE '{$gateway} invoice%'
+      AND COALESCE(trxn_id, '') NOT LIKE '{$gateway} rounding%'
+      AND COALESCE(trxn_id, '') NOT LIKE '{$gateway} fee%'
+      AND COALESCE(trxn_id, '') NOT LIKE '{$gateway} deposit%'
     )";
   }
 
   private function getGatewayLevelTransactionExcludeAdjustmentClause($batchName): string {
     $gateway = $this->getAuditGateway($batchName);
     return "(
-      trxn_id NOT LIKE '{$gateway} adjustment%'
+      COALESCE(trxn_id, '') NOT LIKE '{$gateway} adjustment%'
     )";
   }
 
