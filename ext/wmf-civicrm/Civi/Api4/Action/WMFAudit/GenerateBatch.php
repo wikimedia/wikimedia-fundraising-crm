@@ -335,74 +335,118 @@ class GenerateBatch extends AbstractAction {
       if (empty($this->incompleteRows[$batchName])) {
         foreach ($csv_rows as $row) {
           if (!$isEndowmentGateway && $row['is_endowment'] && !str_ends_with(trim($row['MEMO']), 'Fees') && ($row['ACCT_NO'] != $this->getReversalAccountCode($row['CURRENCY'], $batchName))) {
-            if (!isset($endowmentWriterFrom) || !isset($endowmentWriterTo)) {
-              $endowmentWriterFrom = $this->getEndowmentWriter(array_keys($row), $batchName, 'wmf');
-              $csvFiles['journal_endowment_from_wmf'] = ['file' => $endowmentWriterFrom->getPathname(), 'is_journal' => TRUE, 'instance' => 'wmf', 'suffix' => 'e', 'remote_descriptor' => 'to_endowment'];
-              $endowmentWriterTo = $this->getEndowmentWriter(array_keys($row), $batchName, 'endowment');
-              $csvFiles['journal_wmf_to_endowment'] = ['file' => $endowmentWriterTo->getPathname(), 'is_journal' => TRUE, 'instance' => 'endowment', 'suffix' => 'e',  'remote_descriptor' => 'endowment_instance'];
-            }
-
-            $fromRow = $fromBalancingRow = $row;
-            $endowmentValues = [
-              'LOCATION_ID' => self::LOCATION_ID_ENDOWMENT,
-              'DEPT_ID' => '',
-              'GLENTRY_VENDORID' => $this->mapVendorToEndowmentVendor($batchName),
-            ];
-            $toBalancingRow = $toRow = array_merge($row, $endowmentValues);
-            if (str_starts_with($this->getAccountName($toRow['ACCT_NO']), 'Major Gifts')) {
-              // In endowment journal treat all major gifts as restricted.
-              $toRow['ACCT_NO'] = $this->getRestrictedMajorGiftsAccount();
-            }
-
-            $fromRow['DEBIT'] = $toBalancingRow['DEBIT'] = $row['CREDIT'];
-            $fromRow['CREDIT'] = $toBalancingRow['CREDIT'] = $row['DEBIT'];
-            $fromBalancingRow['ACCT_NO'] = self::GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT;
-            $toBalancingRow['ACCT_NO'] = self::GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE;
-            $transfer = (string) ($row['CREDIT'] - $row['DEBIT']);
-            $this->batchSummary[$batchName]['endowment_transfer'] = $this->batchSummary[$batchName]['endowment_transfer']->plus($transfer);
-            $endowmentWriterFrom->insertOne($fromRow);
-            $endowmentWriterFrom->insertOne($fromBalancingRow);
-            $endowmentWriterTo->insertOne($toRow);
-            $endowmentWriterTo->insertOne($toBalancingRow);
+            $this->writeCrossInstanceTransfer($row, $batchName, $csvFiles, $endowmentWriterFrom, $endowmentWriterTo, $this->getEndowmentTransferConfig());
           }
           elseif ($isEndowmentGateway && !$row['is_endowment'] && !str_ends_with(trim($row['MEMO']), 'Fees') && ($row['ACCT_NO'] != $this->getReversalAccountCode($row['CURRENCY'], $batchName))) {
             // Reverse of the block above: an endowment-gateway batch whose
             // rows are earmarked for the annual (foundation) fund get
             // carved out and journaled over to the wmf/foundation instance.
-            if (!isset($foundationWriterFrom) || !isset($foundationWriterTo)) {
-              $foundationWriterFrom = $this->getFoundationWriter(array_keys($row), $batchName, 'endowment');
-              $csvFiles['journal_foundation_from_endowment'] = ['file' => $foundationWriterFrom->getPathname(), 'is_journal' => TRUE, 'instance' => 'endowment', 'suffix' => 'f', 'remote_descriptor' => 'to_foundation'];
-              $foundationWriterTo = $this->getFoundationWriter(array_keys($row), $batchName, 'wmf');
-              $csvFiles['journal_endowment_to_foundation'] = ['file' => $foundationWriterTo->getPathname(), 'is_journal' => TRUE, 'instance' => 'wmf', 'suffix' => 'f', 'remote_descriptor' => 'foundation'];
-            }
-
-            $fromRow = $fromBalancingRow = $row;
-            $foundationValues = [
-              'LOCATION_ID' => self::LOCATION_ID_WMF,
-              'DEPT_ID' => '',
-              'GLENTRY_VENDORID' => $this->mapVendorToFoundationVendor($batchName),
-            ];
-            $toBalancingRow = $toRow = array_merge($row, $foundationValues);
-            // @todo unlike the endowment-bound branch above, this doesn't
-            // remap Major Gifts to a restricted account - unconfirmed
-            // whether an equivalent un-restricting remap is needed here.
-
-            $fromRow['DEBIT'] = $toBalancingRow['DEBIT'] = $row['CREDIT'];
-            $fromRow['CREDIT'] = $toBalancingRow['CREDIT'] = $row['DEBIT'];
-            $fromBalancingRow['ACCT_NO'] = self::GL_BALANCING_ACCOUNT_ENDOWMENT_TO_WMF;
-            $toBalancingRow['ACCT_NO'] = self::GL_BALANCING_ACCOUNT_WMF_INSTANCE;
-            $transfer = (string) ($row['CREDIT'] - $row['DEBIT']);
-            $this->batchSummary[$batchName]['foundation_transfer'] = $this->batchSummary[$batchName]['foundation_transfer']->plus($transfer);
-            $foundationWriterFrom->insertOne($fromRow);
-            $foundationWriterFrom->insertOne($fromBalancingRow);
-            $foundationWriterTo->insertOne($toRow);
-            $foundationWriterTo->insertOne($toBalancingRow);
+            $this->writeCrossInstanceTransfer($row, $batchName, $csvFiles, $foundationWriterFrom, $foundationWriterTo, $this->getFoundationTransferConfig());
           }
         }
       }
       return [$csvFiles, empty($this->incompleteRows[$batchName])];
     }
     return [[], FALSE];
+  }
+
+  /**
+   * Build and write one row's from/to balancing pair for a transfer
+   * between the wmf and endowment Intacct instances, and accumulate the
+   * transferred amount into batchSummary. Shared by the two directions -
+   * see getEndowmentTransferConfig()/getFoundationTransferConfig() for what
+   * differs between them.
+   *
+   * @param array $row
+   * @param string $batchName
+   * @param array $csvFiles
+   * @param Writer|null $writerFrom
+   * @param Writer|null $writerTo
+   * @param array $config
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\CannotInsertRecord
+   */
+  private function writeCrossInstanceTransfer(array $row, string $batchName, array &$csvFiles, ?Writer &$writerFrom, ?Writer &$writerTo, array $config): void {
+    if (!isset($writerFrom) || !isset($writerTo)) {
+      $writerFrom = $this->{$config['writerMethod']}(array_keys($row), $batchName, $config['fromInstance']);
+      $csvFiles[$config['fromKey']] = ['file' => $writerFrom->getPathname(), 'is_journal' => TRUE, 'instance' => $config['fromInstance'], 'suffix' => $config['suffix'], 'remote_descriptor' => $config['fromDescriptor']];
+      $writerTo = $this->{$config['writerMethod']}(array_keys($row), $batchName, $config['toInstance']);
+      $csvFiles[$config['toKey']] = ['file' => $writerTo->getPathname(), 'is_journal' => TRUE, 'instance' => $config['toInstance'], 'suffix' => $config['suffix'], 'remote_descriptor' => $config['toDescriptor']];
+    }
+
+    $fromRow = $fromBalancingRow = $row;
+    $toValues = [
+      'LOCATION_ID' => $config['toLocationId'],
+      'DEPT_ID' => '',
+      'GLENTRY_VENDORID' => $this->{$config['vendorMapperMethod']}($batchName),
+    ];
+    $toBalancingRow = $toRow = array_merge($row, $toValues);
+    if ($config['remapMajorGiftsToRestricted'] && str_starts_with($this->getAccountName($toRow['ACCT_NO']), 'Major Gifts')) {
+      // In endowment journal treat all major gifts as restricted.
+      $toRow['ACCT_NO'] = $this->getRestrictedMajorGiftsAccount();
+    }
+
+    $fromRow['DEBIT'] = $toBalancingRow['DEBIT'] = $row['CREDIT'];
+    $fromRow['CREDIT'] = $toBalancingRow['CREDIT'] = $row['DEBIT'];
+    $fromBalancingRow['ACCT_NO'] = $config['fromBalancingAccount'];
+    $toBalancingRow['ACCT_NO'] = $config['toBalancingAccount'];
+    $transfer = (string) ($row['CREDIT'] - $row['DEBIT']);
+    $this->batchSummary[$batchName][$config['summaryKey']] = $this->batchSummary[$batchName][$config['summaryKey']]->plus($transfer);
+    $writerFrom->insertOne($fromRow);
+    $writerFrom->insertOne($fromBalancingRow);
+    $writerTo->insertOne($toRow);
+    $writerTo->insertOne($toBalancingRow);
+  }
+
+  /**
+   * Config for the wmf->endowment transfer (normal gateways, donation rows
+   * earmarked for the endowment fund) - see writeCrossInstanceTransfer().
+   */
+  private function getEndowmentTransferConfig(): array {
+    return [
+      'writerMethod' => 'getEndowmentWriter',
+      'fromInstance' => 'wmf',
+      'toInstance' => 'endowment',
+      'fromKey' => 'journal_endowment_from_wmf',
+      'toKey' => 'journal_wmf_to_endowment',
+      'fromDescriptor' => 'to_endowment',
+      'toDescriptor' => 'endowment_instance',
+      'suffix' => 'e',
+      'toLocationId' => self::LOCATION_ID_ENDOWMENT,
+      'vendorMapperMethod' => 'mapVendorToEndowmentVendor',
+      'remapMajorGiftsToRestricted' => TRUE,
+      'fromBalancingAccount' => self::GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT,
+      'toBalancingAccount' => self::GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE,
+      'summaryKey' => 'endowment_transfer',
+    ];
+  }
+
+  /**
+   * Config for the endowment->wmf transfer (endowment-first gateways,
+   * rows earmarked for the annual/foundation fund) - the reverse of
+   * getEndowmentTransferConfig() - see writeCrossInstanceTransfer().
+   */
+  private function getFoundationTransferConfig(): array {
+    return [
+      'writerMethod' => 'getFoundationWriter',
+      'fromInstance' => 'endowment',
+      'toInstance' => 'wmf',
+      'fromKey' => 'journal_foundation_from_endowment',
+      'toKey' => 'journal_endowment_to_foundation',
+      'fromDescriptor' => 'to_foundation',
+      'toDescriptor' => 'foundation',
+      'suffix' => 'f',
+      'toLocationId' => self::LOCATION_ID_WMF,
+      'vendorMapperMethod' => 'mapVendorToFoundationVendor',
+      // @todo unlike the endowment-bound transfer, this doesn't remap
+      // Major Gifts to a restricted account - unconfirmed whether an
+      // equivalent un-restricting remap is needed here.
+      'remapMajorGiftsToRestricted' => FALSE,
+      'fromBalancingAccount' => self::GL_BALANCING_ACCOUNT_ENDOWMENT_TO_WMF,
+      'toBalancingAccount' => self::GL_BALANCING_ACCOUNT_WMF_INSTANCE,
+      'summaryKey' => 'foundation_transfer',
+    ];
   }
 
   private function mapVendorToEndowmentVendor(string $batchName): string {
