@@ -40,6 +40,20 @@ class GenerateBatch extends AbstractAction {
   const LOCATION_ID_WMF = '100-WMF';
   const LOCATION_ID_ENDOWMENT = '300-END';
 
+  // Default GL account for a fee row (see getFeeAccountCodeClause()).
+  const GL_FEE_DEFAULT = 60917;
+
+  /**
+   * Gateway-keyed override of GL_FEE_DEFAULT, split by whether the batch's
+   * own gateway account is a foundation or endowment account.
+   *
+   * Only CCK (Chisholm Chisholm & Kilpatrick, who process bequests) need this today.
+   */
+  const GATEWAY_ACCOUNTS_FEE_GL_CODES = [
+    'cck' => 60931,
+    'cckendowment' => 60932,
+  ];
+
   const GL_ENDOWMENT_MEMO_SUFFIX = 'Earmarked for Endowment from WMF';
 
   const BALANCING_ACCOUNT_HARD_CODED = 'determined_in_code';
@@ -597,6 +611,18 @@ END";
   }
 
   /**
+   * GL Code for a fee row: generally GL_FEE_DEFAULT except for cck
+   * which has different overrides for foundation & endowment accounts.
+   *
+   * @param string $batchName
+   *
+   * @return string
+   */
+  private function getFeeAccountCode(string $batchName): string {
+    return (string) (self::GATEWAY_ACCOUNTS_FEE_GL_CODES[$this->getGateway($batchName)] ?? self::GL_FEE_DEFAULT);
+  }
+
+  /**
    * @return string
    */
   public function getRestrictionsClause(): string {
@@ -913,6 +939,7 @@ END";
     $gatewayLevelTrxnExcludeClause = ' AND ' . $this->getGatewayLevelTransactionExcludeClause($batchName) . ' AND ' . $this->getGatewayLevelTransactionExcludeAdjustmentClause($batchName);
     $gatewayLevelTrxnIncludeClause = ' AND ' . $this->getGatewayLevelTrxnIncludeClause($batchName);
     $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
+    $feeAccountCodeClause = $this->getFeeAccountCode($batchName);
 
     return "SELECT
     CONCAT('Contribution Revenue ', '{$dateDescription}') as DESCRIPTION,
@@ -960,7 +987,7 @@ UNION ALL
 SELECT
 -- note GROUP BY here....
     CONCAT('Contribution Revenue ', '{$dateDescription}' ) as DESCRIPTION,
-    60917 as ACCT_NO,
+    $feeAccountCodeClause as ACCT_NO,
 -- cost centre - CC-1014 for all fees
     'CC-1014' as DEPT_ID,
     -- @todo - not always donations at the end of memo
@@ -985,7 +1012,7 @@ UNION ALL
 SELECT
 -- note GROUP BY here....
     CONCAT('Contribution Revenue ', '{$dateDescription}') as DESCRIPTION,
-    60917 as ACCT_NO,
+    $feeAccountCodeClause as ACCT_NO,
 -- cost centre - CC-1014 for all fees
     'CC-1014' as DEPT_ID,
     -- @todo - not always donations at the end of memo

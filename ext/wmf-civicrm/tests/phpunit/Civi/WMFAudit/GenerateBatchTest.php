@@ -57,6 +57,12 @@ class GenerateBatchTest extends BaseAuditTestCase {
     GatewayAccount::delete(FALSE)
       ->addWhere('name', '=', 'endowtest')
       ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'cck_343%')
+      ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'cckendowment_344%')
+      ->execute();
     parent::tearDown();
   }
 
@@ -331,6 +337,122 @@ class GenerateBatchTest extends BaseAuditTestCase {
   }
 
   /**
+   * CCK (Chisholm Chisholm & Kilpatrick, who process bequests) fees should
+   * be coded to GL 60931 (CCK Fees Foundation Incurred) or 60932 (CCK Fees
+   * to Endowment) depending on which gateway account - i.e. which entity
+   * the money was actually banked to.
+   */
+  public function testCckFeeAccountCodeDependsOnGatewayAccount(): void {
+    $prefix = 'cck_343';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-02-01';
+
+    $this->createQueueContribution([
+      'financial_type_id:name' => 'Cash',
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settled_fee_amount' => -1.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $this->createQueueContribution([
+      'financial_type_id:name' => 'Endowment Gift',
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 20.00,
+      'contribution_settlement.settled_fee_amount' => -2.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $this->createTestEntity('Batch', [
+      'name' => $batchName,
+      'mode_id:name' => 'Automatic Batch',
+      'status_id:name' => 'total_verified',
+      'item_count' => 2,
+      'batch_data.settlement_currency' => $currency,
+      'batch_data.settlement_date' => $settlementDate,
+      'batch_data.settled_donation_amount' => 30.00,
+      'batch_data.settled_reversal_amount' => 0,
+      'batch_data.settled_fee_amount' => -3.00,
+      'batch_data.settled_net_amount' => 27.00,
+    ], $batchName);
+
+    $result = WMFAudit::generateBatch(FALSE)
+      ->setBatchPrefix($prefix)
+      ->setIsDryRun(TRUE)
+      ->setIsOutputRows(TRUE)
+      ->execute();
+
+    $this->assertNotEmpty($result, 'Expected at least one batch result');
+    $batchResult = $result[0];
+    $this->assertEquals(0, array_sum($batchResult['validation']), 'Batch should validate: ' . print_r($batchResult['validation'], TRUE));
+
+    $rows = $batchResult['csv_rows'] ?? [];
+    $feeRows = array_values(array_filter($rows, fn($r) => str_ends_with((string) ($r['MEMO'] ?? ''), 'Donation Fees')));
+    $this->assertCount(2, $feeRows, 'Expected separate Donation Fees rows for the Cash and Endowment Gift contributions (is_endowment still tracked per-contribution for reporting)');
+
+    foreach ($feeRows as $feeRow) {
+      $this->assertSame('60931', (string) $feeRow['ACCT_NO'], 'CCK fees on the non-endowment gateway account should all use GL 60931');
+    }
+  }
+
+  /**
+   * Companion to the above: a batch on the 'cckendowment' gateway account
+   * (is_endowment = TRUE) should code its fee to GL 60932.
+   */
+  public function testCckEndowmentGatewayAccountFeeUsesEndowmentGlCode(): void {
+    $prefix = 'cckendowment_344';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-02-01';
+
+    $this->createQueueContribution([
+      'financial_type_id:name' => 'Cash',
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settled_fee_amount' => -1.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $this->createTestEntity('Batch', [
+      'name' => $batchName,
+      'mode_id:name' => 'Automatic Batch',
+      'status_id:name' => 'total_verified',
+      'item_count' => 1,
+      'batch_data.settlement_currency' => $currency,
+      'batch_data.settlement_date' => $settlementDate,
+      'batch_data.settled_donation_amount' => 10.00,
+      'batch_data.settled_reversal_amount' => 0,
+      'batch_data.settled_fee_amount' => -1.00,
+      'batch_data.settled_net_amount' => 9.00,
+    ], $batchName);
+
+    $result = WMFAudit::generateBatch(FALSE)
+      ->setBatchPrefix($prefix)
+      ->setIsDryRun(TRUE)
+      ->setIsOutputRows(TRUE)
+      ->execute();
+
+    $this->assertNotEmpty($result, 'Expected at least one batch result');
+    $batchResult = $result[0];
+    $this->assertEquals(0, array_sum($batchResult['validation']), 'Batch should validate: ' . print_r($batchResult['validation'], TRUE));
+
+    $rows = $batchResult['csv_rows'] ?? [];
+    $feeRows = array_values(array_filter($rows, fn($r) => str_ends_with((string) ($r['MEMO'] ?? ''), 'Donation Fees')));
+    $this->assertCount(1, $feeRows, 'Expected one Donation Fees row');
+    $this->assertSame('60932', (string) $feeRows[0]['ACCT_NO'], 'CCK fees on the endowment gateway account should use GL 60932');
+  }
+
+  /**
    * Engage's item_count comes from the "Checks" column of their deposit
    * summary report, not from CiviCRM's own data (see EngageSummary
    * skipRowsWithoutChecks()), so it can drift out of sync with the actual
@@ -437,7 +559,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
       'total_amount' => 10.0,
       'currency' => 'USD',
       'financial_type_id:name' => 'Cash',
-      'contact_id' => $this->createIndividual(), // BaseAuditTestCase usually provides something like this.
+      'contact_id' => $this->createIndividual(),
 
       'Gift_Data.Channel' => 'Mobile Banner',
       'Gift_Data.Fund' => 'Unrestricted',

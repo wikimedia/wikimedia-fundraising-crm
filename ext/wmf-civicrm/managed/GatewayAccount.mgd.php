@@ -355,8 +355,28 @@ return [
         'label' => 'Chisholm Chisholm & Kilpatrick',
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V04824',
-        // No endowment vendor code given yet.
-        'vendor_code_endowment' => NULL,
+        'vendor_code_endowment' => 'V04983',
+        'balancing_account_foundation' => '11250',
+      ],
+      'match' => [
+        'name',
+      ],
+    ],
+  ],
+  [
+    'name' => 'GatewayAccount_chisholm_endowment',
+    'entity' => 'GatewayAccount',
+    'cleanup' => 'never',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'name' => 'cckendowment',
+        'gateway' => 'cck',
+        'label' => 'Chisholm Chisholm & Kilpatrick (Endowment)',
+        'is_endowment' => TRUE,
+        'vendor_code_foundation' => 'V04824',
+        'vendor_code_endowment' => 'V04983',
         'balancing_account_foundation' => '11250',
       ],
       'match' => [
