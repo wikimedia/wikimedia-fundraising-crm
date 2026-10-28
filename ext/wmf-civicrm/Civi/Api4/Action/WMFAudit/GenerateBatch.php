@@ -465,6 +465,7 @@ class GenerateBatch extends AbstractAction {
   WHEN gift.channel = 'Wikimedia Portal' THEN 43484   -- Other Online Contributions
   WHEN gift.channel = 'Other Portal'    THEN 43484   -- Other Online Contributions
   WHEN gift.channel = 'Social Media'    THEN 43484   -- Other Online Contributions
+  WHEN gift.channel = 'Interest'        THEN 45050   -- Interest (occurs with CCK)
   -- 3) Everything else -> Online Other Contributions
   -- remaining = 'Workplace Giving','Direct Solicitation','Planned Giving', 'Events','White Mail','Other Offline'
   ELSE '' -- default/fallback - this will cause the batch to report errors and not close.
