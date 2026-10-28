@@ -90,6 +90,12 @@ class BatchSummaryMailer {
    * @throws \CRM_Core_Exception
    */
   public function send(): void {
+    // Batch.validate makes an internal, re-validate-a-single-batch call into
+    // GenerateBatch with emailSummaryAddress explicitly set to '' - that's
+    // not a real generateBatch run, so no email (either one) should go out.
+    if (!$this->emailSummaryAddress) {
+      return;
+    }
     $this->sendMainSummary();
     $this->sendOfflineBatchSummary();
   }
@@ -99,9 +105,6 @@ class BatchSummaryMailer {
    * @throws \CRM_Core_Exception
    */
   private function sendMainSummary(): void {
-    if (!$this->emailSummaryAddress) {
-      return;
-    }
     $hasUploadErrors = FALSE;
     foreach ($this->result as $row) {
       if ($this->outputMethod === 'api' && !($row['is_uploaded'] ?? FALSE)) {
@@ -248,22 +251,22 @@ class BatchSummaryMailer {
       return;
     }
 
-    $html = '<html><h3>Offline batches needing attention</h3>';
-    if (empty($this->incompleteOfflineBatches)) {
-      $html .= '<p>No offline batches currently need attention.</p>';
-    }
-    else {
-      $html .= '<p>The following manually entered batches are still open, pending a verified total or manual intervention</p>'
-        . $this->getIncompleteBatchesHtml($this->incompleteOfflineBatches);
-    }
-
-    $html .= '<h3>All offline batches</h3>';
+    $html = '<html><h3>All offline batches</h3>';
     if (empty($this->offlineResult)) {
       $html .= '<p>No offline batches processed this run.</p>';
     }
     else {
       $html .= '<p>Status of every manually entered batch processed</p>'
         . $this->getBatchResultTableHtml($this->offlineResult);
+    }
+
+    $html .= '<h3>Offline batches needing attention</h3>';
+    if (empty($this->incompleteOfflineBatches)) {
+      $html .= '<p>No offline batches currently need attention.</p>';
+    }
+    else {
+      $html .= '<p>The following manually entered batches are still open, pending a verified total or manual intervention</p>'
+        . $this->getIncompleteBatchesHtml($this->incompleteOfflineBatches);
     }
     $html .= '</html>';
 
