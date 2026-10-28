@@ -1153,21 +1153,7 @@ GROUP BY s.settlement_batch_reference
       'fee' => $result['expected']['fee'] + $result['totals']['fee'],
       'settled' => $result['expected']['settled'] - $result['totals']['settled'],
     ];
-    if ($result['validation']['count'] !== 0 && $this->getAuditGateway($batch['name']) === 'engage') {
-      // Engage's item_count comes from their deposit summary's "Checks" column, not
-      // CiviCRM, so it can drift - trust our count if the dollar totals reconcile.
-      $otherDiscrepancies = $result['validation'];
-      unset($otherDiscrepancies['count']);
-      if (empty(array_filter($otherDiscrepancies))) {
-        Batch::update(FALSE)
-          ->addValue('item_count', $result['totals']['count'])
-          ->addWhere('id', '=', $batch['id'])
-          ->execute();
-        $this->log($batch['name'] . ' item_count corrected from ' . $result['expected']['count'] . ' to ' . $result['totals']['count']);
-        $result['expected']['count'] = $result['totals']['count'];
-        $result['validation']['count'] = 0;
-      }
-    }
+    $this->adjustEngageBatchSecondaryTotals($batch, $result);
     $isValid = empty(array_filter($result['validation']));
     $this->batches[$batch['name']]['is_valid'] = $isValid;
     $this->log($batch['name'] . ' ' . ($isValid ? 'has valid totals' : ' has a discrepancy '));
@@ -1202,6 +1188,53 @@ GROUP BY s.settlement_batch_reference
       }
     }
     return $result;
+  }
+
+  /**
+   * For engage, trust our per-contribution count/fee/donation breakdown over
+   * the batch's entered figures whenever the net settled amount (and
+   * reversals) already reconcile.
+   *
+   * Engage's entered item count and fee/donation split can drift from
+   * CiviCRM's per-contribution data - e.g. staff split one check into
+   * several contributions, or a fee was entered per-contribution but not
+   * at the batch level.
+   *
+   * @param array $batch
+   * @param array $result modified in place - 'expected'/'validation' are
+   *   zeroed for whatever got corrected, and the Batch record is updated to
+   *   match, when the net settled amount and reversals already reconcile.
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  private function adjustEngageBatchSecondaryTotals(array $batch, array &$result): void {
+    if ($this->getAuditGateway($batch['name']) !== 'engage') {
+      return;
+    }
+    $mustBalance = array_filter([
+      'debit' => $result['validation']['debit'],
+      'settled' => $result['validation']['settled'],
+    ]);
+    $toCorrect = array_filter([
+      'count' => $result['validation']['count'],
+      'credit' => $result['validation']['credit'],
+      'fee' => $result['validation']['fee'],
+    ]);
+    if (empty($mustBalance) && !empty($toCorrect)) {
+      Batch::update(FALSE)
+        ->addValue('item_count', $result['totals']['count'])
+        ->addValue('batch_data.settled_donation_amount', $result['totals']['credit'])
+        // settled_fee_amount is stored as a negative value; totals['fee'] is its
+        // positive mirror (see validation['fee'] = expected['fee'] + totals['fee']).
+        ->addValue('batch_data.settled_fee_amount', -$result['totals']['fee'])
+        ->addWhere('id', '=', $batch['id'])
+        ->execute();
+      $this->log($batch['name'] . ' item count, fee and/or donation amount corrected to the per-contribution totals (net settled amount already reconciled): ' . implode(', ', array_keys($toCorrect)));
+      foreach (array_keys($toCorrect) as $key) {
+        $result['expected'][$key] = $result['totals'][$key];
+        $result['validation'][$key] = 0;
+      }
+    }
   }
 
   /**
