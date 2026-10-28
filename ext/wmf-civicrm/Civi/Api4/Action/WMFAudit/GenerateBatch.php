@@ -623,6 +623,12 @@ END";
         $staleOfflineBatches[] = $batch;
       }
     }
+    $offlineResult = [];
+    foreach ($result as $row) {
+      if ($row['batch']['mode_id:name'] !== 'Automatic Batch') {
+        $offlineResult[] = $row;
+      }
+    }
 
     (new BatchSummaryMailer(
       $result,
@@ -636,7 +642,7 @@ END";
       $this->emailSummaryAddress,
       array_merge($incompleteAutomaticBatches, $staleOfflineBatches),
       $incompleteOfflineBatches,
-      $this->getAllOfflineBatches(),
+      $offlineResult,
       \Civi::settings()->get('wmf_audit_offline_batch_email')
     ))->send();
   }
@@ -667,19 +673,6 @@ END";
     return [$automaticBatches, $offlineBatches];
   }
 
-  /**
-   * Get all offline (non-Automatic Batch) batches, regardless of status.
-   *
-   * @return array
-   * @throws \CRM_Core_Exception
-   */
-  private function getAllOfflineBatches(): array {
-    return (array) Batch::get(FALSE)
-      ->addWhere('mode_id:name', '!=', 'Automatic Batch')
-      ->addSelect('*', 'batch_data.*', 'status_id:label')
-      ->execute();
-  }
-
   private function log(string $string): void {
     $this->log[] = date('Y-m-d-m-Y-H-i-s') . ' ' . $string;
     \Civi::log('finance_integration')->info($string);
@@ -706,7 +699,7 @@ END";
   private function getBatches(): array {
     if (!isset($this->batches)) {
       $this->batches = [];
-      $batchGet = Batch::get(FALSE)->addSelect('batch_data.*', '*', 'status_id:name');
+      $batchGet = Batch::get(FALSE)->addSelect('batch_data.*', '*', 'status_id:name', 'mode_id:name');
       if ($this->id) {
         $this->batches = (array) $batchGet->addWhere('id', '=', $this->id)
           ->execute()->indexBy('name');

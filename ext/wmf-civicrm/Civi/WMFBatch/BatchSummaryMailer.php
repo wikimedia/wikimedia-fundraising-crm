@@ -34,7 +34,7 @@ class BatchSummaryMailer {
 
   private array $incompleteOfflineBatches;
 
-  private array $allOfflineBatches;
+  private array $offlineResult;
 
   private ?string $offlineBatchEmail;
 
@@ -52,7 +52,7 @@ class BatchSummaryMailer {
    * @param string|null $emailSummaryAddress address to send the summary to - if empty, nothing is sent.
    * @param array $mainIncompleteBatches Automatic batches, plus stale offline batches, still open/needs_attention.
    * @param array $incompleteOfflineBatches all offline batches still open/needs_attention, regardless of age.
-   * @param array $allOfflineBatches every offline batch, regardless of status.
+   * @param array $offlineResult the subset of $result rows for offline batches processed this run.
    * @param string|null $offlineBatchEmail address to send the offline batch report to - if empty, nothing is sent.
    */
   public function __construct(
@@ -67,7 +67,7 @@ class BatchSummaryMailer {
     ?string $emailSummaryAddress,
     array $mainIncompleteBatches,
     array $incompleteOfflineBatches,
-    array $allOfflineBatches,
+    array $offlineResult,
     ?string $offlineBatchEmail
   ) {
     $this->result = $result;
@@ -81,7 +81,7 @@ class BatchSummaryMailer {
     $this->emailSummaryAddress = $emailSummaryAddress;
     $this->mainIncompleteBatches = $mainIncompleteBatches;
     $this->incompleteOfflineBatches = $incompleteOfflineBatches;
-    $this->allOfflineBatches = $allOfflineBatches;
+    $this->offlineResult = $offlineResult;
     $this->offlineBatchEmail = $offlineBatchEmail;
   }
 
@@ -104,7 +104,7 @@ class BatchSummaryMailer {
     }
     $hasUploadErrors = FALSE;
     foreach ($this->result as $row) {
-      if ($this->outputMethod === 'api' && !$row['is_uploaded']) {
+      if ($this->outputMethod === 'api' && !($row['is_uploaded'] ?? FALSE)) {
         $hasUploadErrors = TRUE;
       }
     }
@@ -117,6 +117,7 @@ class BatchSummaryMailer {
     $invalidBatches = 0;
     $html = '';
     $tableOpenHtml = $this->getTableOpenHtml();
+    $cell = 'border: 1px solid #ccc; padding: 6px;';
     if (!count($this->result)) {
       $params['subject'] .= ' no batches able to be generated';
     }
@@ -135,73 +136,12 @@ class BatchSummaryMailer {
         $html .= "<p>One of more errors have prevented the batch from being closed.</p>";
       }
 
-      $html .= $tableOpenHtml . '
-        <thead>
-          <tr style="background-color: #f2f2f2; font-weight: bold;">
-            <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Batch</th>
-            <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Settled Currency</th>
-            <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Settled Total (In Bank)</th>
-            <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Total in batch (From CiviCRM)</th>
-            <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Discrepancy</th>
-            <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Journal total (debits + credits)</th>
-            <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Intacct Batch</th>
-            <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Exchange rate in Intacct</th>
-            <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Files</th>
-          </tr>
-        </thead>
-        <tbody>
-    ';
-
       foreach ($this->result as $batch) {
         if (!empty(array_filter($batch['validation']))) {
           $invalidBatches++;
         }
-        $currency = htmlspecialchars($batch['batch']['batch_data.settlement_currency'], ENT_QUOTES, 'UTF-8', $batch['batch']['batch_data.settlement_currency']);
-        $discrepancy = $batch['validation']['settled'];
-
-        // Base cell styles
-        $cell = 'border: 1px solid #ccc; padding: 6px;';
-        $cellRight = $cell . ' text-align: right;';
-
-        // Discrepancy cell: red + bold when non-zero
-        $discrepancyStyle = $cellRight;
-        if ((float) $discrepancy !== 0.0) {
-          $discrepancyStyle .= ' color: #b30000; font-weight: bold;';
-        }
-        $discrepancy = \Civi::format()->money($discrepancy, $currency);
-
-        $batchName = htmlspecialchars($batch['batch']['name'], ENT_QUOTES, 'UTF-8');
-        $batchUrl = (string) \Civi::url('backend://civicrm/contribution/settled#?finance_batch=' . $batch['batch']['name'], 'a');
-
-        $settled = \Civi::format()
-          ->money(htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8'), $currency);
-        $journalTotal = \Civi::format()
-          ->money(htmlspecialchars($batch['totals']['debit'] + $batch['totals']['credit'] + $batch['totals']['fee'], ENT_QUOTES, 'UTF-8'), $currency);
-        $remoteBatch = $batch['remote']['foundation'] ?? [];
-        $usdJournalTotal = $currency === 'USD' ? $journalTotal : $remoteBatch['usd_journal_total'] ?? '';
-        $totalInBatch = \Civi::format()
-          ->money(htmlspecialchars($batch['batch']['batch_data.settled_net_amount'] ?? 0, ENT_QUOTES, 'UTF-8'), $currency);
-        $numberOfTransactions = $batch['batch']['total'];
-        $transactionsUrl = BatchFile::getBatchFileUrl([$batchName], 'details');
-        $journalUrl = BatchFile::getBatchFileUrl([$batchName], 'journals');
-        $remoteURL = $remoteBatch['url'] ?? '';
-        $exchangeRate = $remoteBatch['exchange_rate'] ?? '';
-        $html .= "
-        <tr>
-          <td style=\"$cell\"><a href='{$batchUrl}'>{$batchName}</a></td>
-          <td style=\"$cell\">{$currency}</td>
-          <td style=\"$cellRight\">{$totalInBatch}</td>
-          <td style=\"$cellRight\">{$settled}</td>
-          <td style=\"$discrepancyStyle\">{$discrepancy}</td>
-          <td style=\"$cellRight\">{$journalTotal} ($usdJournalTotal)</td>
-          <td style=\"$cellRight\">" . ($remoteURL ? "<a href='{$remoteURL}'>{$remoteBatch['txn_number']}</a>" : '') . "</td>
-          <td style=\"$cellRight\">{$exchangeRate}</td><td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" . "<br><a href='{$journalUrl}'> Download Journals</a>" : '') . "</td>
-        </tr>
-      ";
       }
-      $html .= "
-        </tbody>
-      </table>";
+      $html .= $this->getBatchResultTableHtml($this->result);
 
       if ($this->incompleteRows) {
         $html .= "<h3>Found contribution/s without Account code</h3><p>The summary table below will not add up to the total due to these</p>" . $tableOpenHtml . '
@@ -304,7 +244,7 @@ class BatchSummaryMailer {
    * @return void
    */
   private function sendOfflineBatchSummary(): void {
-    if (!$this->offlineBatchEmail || (empty($this->incompleteOfflineBatches) && empty($this->allOfflineBatches))) {
+    if (!$this->offlineBatchEmail || (empty($this->incompleteOfflineBatches) && empty($this->offlineResult))) {
       return;
     }
 
@@ -318,12 +258,12 @@ class BatchSummaryMailer {
     }
 
     $html .= '<h3>All offline batches</h3>';
-    if (empty($this->allOfflineBatches)) {
-      $html .= '<p>No offline batches found.</p>';
+    if (empty($this->offlineResult)) {
+      $html .= '<p>No offline batches processed this run.</p>';
     }
     else {
       $html .= '<p>Status of every manually entered batch processed</p>'
-        . $this->getIncompleteBatchesHtml($this->allOfflineBatches);
+        . $this->getBatchResultTableHtml($this->offlineResult);
     }
     $html .= '</html>';
 
@@ -352,6 +292,84 @@ class BatchSummaryMailer {
     }
     $html .= '</tbody></table>';
     return $html;
+  }
+
+  /**
+   * @param array $result rows shaped like GenerateBatch::_run()'s $result - each with 'batch', 'totals',
+   *   'validation' and 'remote' keys.
+   * @return string
+   */
+  private function getBatchResultTableHtml(iterable $result): string {
+    $html = $this->getTableOpenHtml() . '
+      <thead>
+        <tr style="background-color: #f2f2f2; font-weight: bold;">
+          <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Batch</th>
+          <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Settled Currency</th>
+          <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Settled Total (In Bank)</th>
+          <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Total in batch (From CiviCRM)</th>
+          <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Discrepancy</th>
+          <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Journal total (debits + credits)</th>
+          <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Intacct Batch</th>
+          <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Exchange rate in Intacct</th>
+          <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Files</th>
+        </tr>
+      </thead>
+      <tbody>
+    ';
+    foreach ($result as $batch) {
+      $html .= $this->getBatchResultRowHtml($batch);
+    }
+    $html .= '</tbody></table>';
+    return $html;
+  }
+
+  /**
+   * @param array $batch one row of GenerateBatch::_run()'s $result.
+   * @return string
+   */
+  private function getBatchResultRowHtml(array $batch): string {
+    $currency = htmlspecialchars($batch['batch']['batch_data.settlement_currency'], ENT_QUOTES, 'UTF-8', $batch['batch']['batch_data.settlement_currency']);
+    $discrepancy = $batch['validation']['settled'];
+
+    // Base cell styles
+    $cell = 'border: 1px solid #ccc; padding: 6px;';
+    $cellRight = $cell . ' text-align: right;';
+
+    // Discrepancy cell: red + bold when non-zero
+    $discrepancyStyle = $cellRight;
+    if ((float) $discrepancy !== 0.0) {
+      $discrepancyStyle .= ' color: #b30000; font-weight: bold;';
+    }
+    $discrepancy = \Civi::format()->money($discrepancy, $currency);
+
+    $batchName = htmlspecialchars($batch['batch']['name'], ENT_QUOTES, 'UTF-8');
+    $batchUrl = (string) \Civi::url('backend://civicrm/contribution/settled#?finance_batch=' . $batch['batch']['name'], 'a');
+
+    $settled = \Civi::format()
+      ->money(htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8'), $currency);
+    $journalTotal = \Civi::format()
+      ->money(htmlspecialchars($batch['totals']['debit'] + $batch['totals']['credit'] + $batch['totals']['fee'], ENT_QUOTES, 'UTF-8'), $currency);
+    $remoteBatch = $batch['remote']['foundation'] ?? [];
+    $usdJournalTotal = $currency === 'USD' ? $journalTotal : $remoteBatch['usd_journal_total'] ?? '';
+    $totalInBatch = \Civi::format()
+      ->money(htmlspecialchars($batch['batch']['batch_data.settled_net_amount'] ?? 0, ENT_QUOTES, 'UTF-8'), $currency);
+    $numberOfTransactions = $batch['batch']['total'];
+    $transactionsUrl = BatchFile::getBatchFileUrl([$batchName], 'details');
+    $journalUrl = BatchFile::getBatchFileUrl([$batchName], 'journals');
+    $remoteURL = $remoteBatch['url'] ?? '';
+    $exchangeRate = $remoteBatch['exchange_rate'] ?? '';
+    return "
+    <tr>
+      <td style=\"$cell\"><a href='{$batchUrl}'>{$batchName}</a></td>
+      <td style=\"$cell\">{$currency}</td>
+      <td style=\"$cellRight\">{$totalInBatch}</td>
+      <td style=\"$cellRight\">{$settled}</td>
+      <td style=\"$discrepancyStyle\">{$discrepancy}</td>
+      <td style=\"$cellRight\">{$journalTotal} ($usdJournalTotal)</td>
+      <td style=\"$cellRight\">" . ($remoteURL ? "<a href='{$remoteURL}'>{$remoteBatch['txn_number']}</a>" : '') . "</td>
+      <td style=\"$cellRight\">{$exchangeRate}</td><td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" . "<br><a href='{$journalUrl}'> Download Journals</a>" : '') . "</td>
+    </tr>
+    ";
   }
 
   /**
