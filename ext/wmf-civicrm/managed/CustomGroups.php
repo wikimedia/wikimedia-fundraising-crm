@@ -556,6 +556,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
         ['name' => 'Chapter_Gifts', 'label' => 'Chapter Gifts', 'value' => 'Chapter Gifts', 'description' => 'GL43440'],
         ['name' => 'Other_Offline', 'label' => 'Other Offline', 'value' => 'Other Offline', 'description' => 'GL43485'],
         ['name' => 'Other_Online', 'label' => 'Other Online', 'value' => 'Other Online', 'description' => 'GL43484'],
+        ['name' => 'Interest', 'label' => 'Interest', 'value' => 'Interest', 'description' => 'GL45050'],
       ],
     ],
     'is_major_gift' => [
@@ -589,6 +590,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
         ['name' => 'GL43440', 'label' => 'GL43440 Chapter Gifts', 'value' => 'GL43440'],
         ['name' => 'GL43485', 'label' => 'GL43485 Major Gifts - Unrestricted', 'value' => 'GL43485'],
         ['name' => 'GL43428', 'label' => 'GL43428 Major Gifts - Restricted', 'value' => 'GL43428'],
+        ['name' => 'GL45050', 'label' => 'GL45050 Interest', 'value' => 'GL45050'],
       ],
     ],
   ];
