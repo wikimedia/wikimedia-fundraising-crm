@@ -3,7 +3,6 @@
 namespace Civi\WMFBatch;
 
 use Brick\Money\Money;
-use Civi\Api4\Batch;
 use Civi\Api4\Generic\Result;
 
 /**
@@ -31,6 +30,14 @@ class BatchSummaryMailer {
 
   private ?string $emailSummaryAddress;
 
+  private array $mainIncompleteBatches;
+
+  private array $incompleteOfflineBatches;
+
+  private array $allOfflineBatches;
+
+  private ?string $offlineBatchEmail;
+
   private array $incomingFiles;
 
   /**
@@ -43,6 +50,10 @@ class BatchSummaryMailer {
    * @param string $outputMethod 'api' if journals are pushed to Intacct.
    * @param bool $isOutputCsv whether CSVs (and hence download links) were generated.
    * @param string|null $emailSummaryAddress address to send the summary to - if empty, nothing is sent.
+   * @param array $mainIncompleteBatches Automatic batches, plus stale offline batches, still open/needs_attention.
+   * @param array $incompleteOfflineBatches all offline batches still open/needs_attention, regardless of age.
+   * @param array $allOfflineBatches every offline batch, regardless of status.
+   * @param string|null $offlineBatchEmail address to send the offline batch report to - if empty, nothing is sent.
    */
   public function __construct(
     Result $result,
@@ -53,7 +64,11 @@ class BatchSummaryMailer {
     array $accountMapping,
     string $outputMethod,
     bool $isOutputCsv,
-    ?string $emailSummaryAddress
+    ?string $emailSummaryAddress,
+    array $mainIncompleteBatches,
+    array $incompleteOfflineBatches,
+    array $allOfflineBatches,
+    ?string $offlineBatchEmail
   ) {
     $this->result = $result;
     $this->batches = $batches;
@@ -64,6 +79,10 @@ class BatchSummaryMailer {
     $this->outputMethod = $outputMethod;
     $this->isOutputCsv = $isOutputCsv;
     $this->emailSummaryAddress = $emailSummaryAddress;
+    $this->mainIncompleteBatches = $mainIncompleteBatches;
+    $this->incompleteOfflineBatches = $incompleteOfflineBatches;
+    $this->allOfflineBatches = $allOfflineBatches;
+    $this->offlineBatchEmail = $offlineBatchEmail;
   }
 
   /**
@@ -71,6 +90,15 @@ class BatchSummaryMailer {
    * @throws \CRM_Core_Exception
    */
   public function send(): void {
+    $this->sendMainSummary();
+    $this->sendOfflineBatchSummary();
+  }
+
+  /**
+   * @return void
+   * @throws \CRM_Core_Exception
+   */
+  private function sendMainSummary(): void {
     if (!$this->emailSummaryAddress) {
       return;
     }
@@ -203,23 +231,12 @@ class BatchSummaryMailer {
       }
     }
 
-    $incompleteBatches = Batch::get(FALSE)
-      // Status list will probably grow.
-      ->addWhere('status_id:name', 'IN', ['Open', 'needs_attention'])
-      ->addWhere('mode_id:name', '=', 'Automatic Batch')
-      ->addSelect('*', 'batch_data.*', 'status_id:label')
-      ->execute();
-    if (!empty($incompleteBatches)) {
-      $html .= "<h3>Incomplete batches</h3><p>The following batches are still open, pending a verified total or manual intervention</p>" . $tableOpenHtml;
-      $html .= $this->getTableHeader(['Batch', 'Created Date', 'Currency', 'Total', 'Count', 'Status', 'Phab']);
-      foreach ($incompleteBatches as $incompleteBatch) {
-        $phabLink = ($incompleteBatch['batch_data.issue_tracker_reference'] ? ('<a href="https://phabricator.wikimedia.org/' . $incompleteBatch['batch_data.issue_tracker_reference'] . '">' . $incompleteBatch['batch_data.issue_tracker_reference'] . '</a>') : '');
-        $html .= "<tr><td>{$incompleteBatch['name']}</td><td>{$incompleteBatch['created_date']}</td><td>{$incompleteBatch['batch_data.settlement_currency']}</td><td>{$incompleteBatch['batch_data.settled_net_amount']}</td><td>{$incompleteBatch['item_count']}</td><td>{$incompleteBatch['status_id:label']}</td>
-          <td>{$phabLink}</td>
-        </tr>";
-      }
-      $html .= "</table>";
-
+    // Offline (manually entered) batches that are not yet ready are noisy in their
+    // first week (that's a normal part of manual entry), so only surface the stale
+    // ones here. The full offline list goes to the offline batch email instead.
+    if (!empty($this->mainIncompleteBatches)) {
+      $html .= "<h3>Incomplete batches</h3><p>The following batches are still open, pending a verified total or manual intervention</p>";
+      $html .= $this->getIncompleteBatchesHtml($this->mainIncompleteBatches);
     }
     $html .= $this->renderIncomingFilesHtml();
 
@@ -278,6 +295,63 @@ class BatchSummaryMailer {
     if (!\CRM_Utils_Mail::send($params)) {
       \Civi::log('wmf')->warning('Summary failed to send to ' . $params['toEmail']);
     }
+  }
+
+  /**
+   * Email the offline batch report to the configured address: the not-ready
+   * batches, plus a full status table covering every offline batch.
+   *
+   * @return void
+   */
+  private function sendOfflineBatchSummary(): void {
+    if (!$this->offlineBatchEmail || (empty($this->incompleteOfflineBatches) && empty($this->allOfflineBatches))) {
+      return;
+    }
+
+    $html = '<html><h3>Offline batches needing attention</h3>';
+    if (empty($this->incompleteOfflineBatches)) {
+      $html .= '<p>No offline batches currently need attention.</p>';
+    }
+    else {
+      $html .= '<p>The following manually entered batches are still open, pending a verified total or manual intervention</p>'
+        . $this->getIncompleteBatchesHtml($this->incompleteOfflineBatches);
+    }
+
+    $html .= '<h3>All offline batches</h3>';
+    if (empty($this->allOfflineBatches)) {
+      $html .= '<p>No offline batches found.</p>';
+    }
+    else {
+      $html .= '<p>Status of every manually entered batch processed</p>'
+        . $this->getIncompleteBatchesHtml($this->allOfflineBatches);
+    }
+    $html .= '</html>';
+
+    $params = [
+      'toEmail' => $this->offlineBatchEmail,
+      'subject' => 'Offline batch status (' . count($this->incompleteOfflineBatches) . ' needing attention)',
+      'from' => \CRM_Core_BAO_Domain::getFromEmail(),
+      'html' => $html,
+    ];
+    if (!\CRM_Utils_Mail::send($params)) {
+      \Civi::log('wmf')->warning('Offline batch summary failed to send to ' . $this->offlineBatchEmail);
+    }
+  }
+
+  /**
+   * @param array $batches
+   * @return string
+   */
+  private function getIncompleteBatchesHtml(array $batches): string {
+    $html = $this->getTableHeader(['Batch', 'Created Date', 'Currency', 'Total', 'Count', 'Status', 'Phab']);
+    foreach ($batches as $incompleteBatch) {
+      $phabLink = ($incompleteBatch['batch_data.issue_tracker_reference'] ? ('<a href="https://phabricator.wikimedia.org/' . $incompleteBatch['batch_data.issue_tracker_reference'] . '">' . $incompleteBatch['batch_data.issue_tracker_reference'] . '</a>') : '');
+      $html .= "<tr><td>{$incompleteBatch['name']}</td><td>{$incompleteBatch['created_date']}</td><td>{$incompleteBatch['batch_data.settlement_currency']}</td><td>{$incompleteBatch['batch_data.settled_net_amount']}</td><td>{$incompleteBatch['item_count']}</td><td>{$incompleteBatch['status_id:label']}</td>
+        <td>{$phabLink}</td>
+      </tr>";
+    }
+    $html .= '</tbody></table>';
+    return $html;
   }
 
   /**

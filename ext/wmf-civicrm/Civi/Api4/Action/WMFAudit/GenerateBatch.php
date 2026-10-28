@@ -592,6 +592,15 @@ END";
    * @throws \CRM_Core_Exception
    */
   public function sendSummary(Result $result): void {
+    [$incompleteAutomaticBatches, $incompleteOfflineBatches] = $this->getIncompleteBatchesByMode();
+    $offlineBatchStaleDays = (int) \Civi::settings()->get('wmf_audit_offline_batch_stale_days');
+    $staleOfflineBatches = [];
+    foreach ($incompleteOfflineBatches as $batch) {
+      if (strtotime($batch['created_date']) < strtotime('-' . $offlineBatchStaleDays . ' days')) {
+        $staleOfflineBatches[] = $batch;
+      }
+    }
+
     (new BatchSummaryMailer(
       $result,
       $this->batches,
@@ -601,8 +610,51 @@ END";
       $this->getAccountMapping(),
       $this->outputMethod,
       $this->isOutputCsv,
-      $this->emailSummaryAddress
+      $this->emailSummaryAddress,
+      array_merge($incompleteAutomaticBatches, $staleOfflineBatches),
+      $incompleteOfflineBatches,
+      $this->getAllOfflineBatches(),
+      \Civi::settings()->get('wmf_audit_offline_batch_email')
     ))->send();
+  }
+
+  /**
+   * Get batches still open/needs_attention, split into Automatic vs offline (e.g Manual Batch).
+   *
+   * @return array{0: array, 1: array}
+   * @throws \CRM_Core_Exception
+   */
+  private function getIncompleteBatchesByMode(): array {
+    $incompleteBatches = Batch::get(FALSE)
+      // Status list will probably grow.
+      ->addWhere('status_id:name', 'IN', ['Open', 'needs_attention'])
+      ->addSelect('*', 'batch_data.*', 'status_id:label', 'mode_id:name')
+      ->execute();
+
+    $automaticBatches = [];
+    $offlineBatches = [];
+    foreach ($incompleteBatches as $batch) {
+      if ($batch['mode_id:name'] === 'Automatic Batch') {
+        $automaticBatches[] = $batch;
+      }
+      else {
+        $offlineBatches[] = $batch;
+      }
+    }
+    return [$automaticBatches, $offlineBatches];
+  }
+
+  /**
+   * Get all offline (non-Automatic Batch) batches, regardless of status.
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  private function getAllOfflineBatches(): array {
+    return (array) Batch::get(FALSE)
+      ->addWhere('mode_id:name', '!=', 'Automatic Batch')
+      ->addSelect('*', 'batch_data.*', 'status_id:label')
+      ->execute();
   }
 
   private function log(string $string): void {
