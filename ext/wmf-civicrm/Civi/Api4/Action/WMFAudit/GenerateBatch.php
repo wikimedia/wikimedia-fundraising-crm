@@ -362,7 +362,7 @@ class GenerateBatch extends AbstractAction {
    * @return Writer
    */
   public function getDetailsWriter(array $headers, $batchName): Writer {
-    $detailWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_details.csv', 'w');
+    $detailWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $this->getSafeFileName($batchName) . '_details.csv', 'w');
     $detailWriter->insertOne($headers);
     return $detailWriter;
   }
@@ -372,7 +372,7 @@ class GenerateBatch extends AbstractAction {
    */
   public function getEndowmentWriter(array $headers, string $batchName, string $instance): Writer {
     $fromTo = $instance === 'endowment' ? '_endowment_from_wmf' : '_wmf_to_endowment';
-    $fileName = $batchName . $fromTo . '.csv';
+    $fileName = $this->getSafeFileName($batchName) . $fromTo . '.csv';
     $detailWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $fileName, 'w');
     $detailWriter->insertOne($headers);
     return $detailWriter;
@@ -382,9 +382,32 @@ class GenerateBatch extends AbstractAction {
    * @return Writer
    */
   private function getBatchJournalWriter(string $batchName): Writer {
-    $journalWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_journals.csv', 'w');
+    $journalWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $this->getSafeFileName($batchName) . '_journals.csv', 'w');
     $journalWriter->insertOne($this->headers);
     return $journalWriter;
+  }
+
+  /**
+   * Batch names follow gateway_middle_currency (e.g adyen_1128_USD), but the
+   * middle piece of a Manual Batch can be free text (e.g a wire description)
+   * containing characters - "/" in particular - that aren't safe as part of
+   * a path. Sanitize only that middle piece, replacing anything that isn't
+   * alphanumeric (including any "_" already in there) with "-", so the
+   * gateway_..._currency structure (relied on elsewhere, e.g. getGateway())
+   * stays intact and the only underscores left are the two delimiters.
+   *
+   * e.g "wire_WIRE FROM 1/MICHAEL BERNARD_USD" becomes
+   * "wire_WIRE-FROM-1-MICHAEL-BERNARD_USD".
+   */
+  private function getSafeFileName(string $batchName): string {
+    $parts = explode('_', $batchName);
+    if (count($parts) < 3) {
+      return preg_replace('/[^a-zA-Z0-9_-]+/', '-', $batchName);
+    }
+    $gateway = array_shift($parts);
+    $currency = array_pop($parts);
+    $middle = preg_replace('/[^a-zA-Z0-9-]+/', '-', implode('_', $parts));
+    return $gateway . '_' . $middle . '_' . $currency;
   }
 
   /**
