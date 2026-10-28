@@ -10,7 +10,7 @@ use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\FinanceIntegration;
 use Civi\Api4\GatewayAccount;
-use Civi\WMFBatch\BatchFile;
+use Civi\WMFBatch\BatchSummaryMailer;
 use CRM_Core_DAO;
 use League\Csv\Writer;
 
@@ -31,8 +31,6 @@ class GenerateBatch extends AbstractAction {
   const GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT = 27375;
 
   const GL_ENDOWMENT_MEMO_SUFFIX = 'Earmarked for Endowment from WMF';
-
-  const NUMBER_OF_DAYS_OLD = 2;
 
   const BALANCING_ACCOUNT_HARD_CODED = 'determined_in_code';
 
@@ -112,8 +110,6 @@ class GenerateBatch extends AbstractAction {
   private string $endDate = '';
 
   private array $batches;
-
-  private array $incomingFiles;
 
   /**
    * GatewayAccount records, indexed by name. Lazy-loaded & cached for the
@@ -366,7 +362,7 @@ class GenerateBatch extends AbstractAction {
    * @return Writer
    */
   public function getDetailsWriter(array $headers, $batchName): Writer {
-    $detailWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_details.csv', 'w');
+    $detailWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $this->getSafeFileName($batchName) . '_details.csv', 'w');
     $detailWriter->insertOne($headers);
     return $detailWriter;
   }
@@ -376,7 +372,7 @@ class GenerateBatch extends AbstractAction {
    */
   public function getEndowmentWriter(array $headers, string $batchName, string $instance): Writer {
     $fromTo = $instance === 'endowment' ? '_endowment_from_wmf' : '_wmf_to_endowment';
-    $fileName = $batchName . $fromTo . '.csv';
+    $fileName = $this->getSafeFileName($batchName) . $fromTo . '.csv';
     $detailWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $fileName, 'w');
     $detailWriter->insertOne($headers);
     return $detailWriter;
@@ -386,9 +382,32 @@ class GenerateBatch extends AbstractAction {
    * @return Writer
    */
   private function getBatchJournalWriter(string $batchName): Writer {
-    $journalWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $batchName . '_journals.csv', 'w');
+    $journalWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $this->getSafeFileName($batchName) . '_journals.csv', 'w');
     $journalWriter->insertOne($this->headers);
     return $journalWriter;
+  }
+
+  /**
+   * Batch names follow gateway_middle_currency (e.g adyen_1128_USD), but the
+   * middle piece of a Manual Batch can be free text (e.g a wire description)
+   * containing characters - "/" in particular - that aren't safe as part of
+   * a path. Sanitize only that middle piece, replacing anything that isn't
+   * alphanumeric (including any "_" already in there) with "-", so the
+   * gateway_..._currency structure (relied on elsewhere, e.g. getGateway())
+   * stays intact and the only underscores left are the two delimiters.
+   *
+   * e.g "wire_WIRE FROM 1/MICHAEL BERNARD_USD" becomes
+   * "wire_WIRE-FROM-1-MICHAEL-BERNARD_USD".
+   */
+  private function getSafeFileName(string $batchName): string {
+    $parts = explode('_', $batchName);
+    if (count($parts) < 3) {
+      return preg_replace('/[^a-zA-Z0-9_-]+/', '-', $batchName);
+    }
+    $gateway = array_shift($parts);
+    $currency = array_pop($parts);
+    $middle = preg_replace('/[^a-zA-Z0-9-]+/', '-', implode('_', $parts));
+    return $gateway . '_' . $middle . '_' . $currency;
   }
 
   /**
@@ -594,234 +613,76 @@ END";
    * @param Result $result
    * @return void
    * @throws \CRM_Core_Exception
-
    */
   public function sendSummary(Result $result): void {
-    $hasUploadErrors = FALSE;
-    foreach ($result as $row) {
-      if ($this->outputMethod === 'api' && !$row['is_uploaded']) {
-        $hasUploadErrors = TRUE;
+    [$incompleteAutomaticBatches, $incompleteOfflineBatches] = $this->getIncompleteBatchesByMode();
+    $offlineBatchStaleDays = (int) \Civi::settings()->get('wmf_audit_offline_batch_stale_days');
+    $staleOfflineBatches = [];
+    foreach ($incompleteOfflineBatches as $batch) {
+      if (strtotime($batch['created_date']) < strtotime('-' . $offlineBatchStaleDays . ' days')) {
+        $staleOfflineBatches[] = $batch;
       }
     }
 
-    if ($this->emailSummaryAddress) {
-      $params = [
-        'toEmail' => $this->emailSummaryAddress,
-        'subject' => 'Finance batch generated',
-        'from' => \CRM_Core_BAO_Domain::getFromEmail(),
-      ];
-      $invalidBatches = 0;
-      $html = '';
-      $tableOpenHtml = $this->getTableOpenHtml();
-      if (!count($result)) {
-        $params['subject'] .= ' no batches able to be generated';
+    (new BatchSummaryMailer(
+      $result,
+      $this->batches,
+      $this->batchSummary,
+      $this->incompleteRows,
+      $this->log,
+      $this->getAccountMapping(),
+      $this->outputMethod,
+      $this->isOutputCsv,
+      $this->emailSummaryAddress,
+      array_merge($incompleteAutomaticBatches, $staleOfflineBatches),
+      $incompleteOfflineBatches,
+      $this->getAllOfflineBatches(),
+      \Civi::settings()->get('wmf_audit_offline_batch_email')
+    ))->send();
+  }
+
+  /**
+   * Get batches still open/needs_attention, split into Automatic vs offline (e.g Manual Batch).
+   *
+   * @return array{0: array, 1: array}
+   * @throws \CRM_Core_Exception
+   */
+  private function getIncompleteBatchesByMode(): array {
+    $incompleteBatches = Batch::get(FALSE)
+      // Status list will probably grow.
+      ->addWhere('status_id:name', 'IN', ['Open', 'needs_attention'])
+      ->addSelect('*', 'batch_data.*', 'status_id:label', 'mode_id:name')
+      ->execute();
+
+    $automaticBatches = [];
+    $offlineBatches = [];
+    foreach ($incompleteBatches as $batch) {
+      if ($batch['mode_id:name'] === 'Automatic Batch') {
+        $automaticBatches[] = $batch;
       }
-      if (count($result)) {
-        // Start styled table.
-        $html = '<html> <h3>The following batches have been generated</h3>';
-        if (empty($this->getInvalidBatches()) && empty($this->incompleteRows)) {
-          if (!$hasUploadErrors) {
-            $html .= '<p>All batches have validated and the batches have been closed.</p>';
-          }
-          else {
-            $html .= '<p>All batches have validated and the batches have been closed but upload was not fully succesful.</p>';
-          }
-        }
-        else {
-          $html .= "<p>One of more errors have prevented the batch from being closed.</p>";
-        }
-
-        $html .= $tableOpenHtml . '
-          <thead>
-            <tr style="background-color: #f2f2f2; font-weight: bold;">
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Batch</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Settled Currency</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Settled Total (In Bank)</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Total in batch (From CiviCRM)</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Discrepancy</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Journal total (debits + credits)</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Intacct Batch</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Exchange rate in Intacct</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Files</th>
-            </tr>
-          </thead>
-          <tbody>
-      ';
-
-        foreach ($result as $batch) {
-          if (!empty(array_filter($batch['validation']))) {
-            $invalidBatches++;
-          }
-          $currency = htmlspecialchars($batch['batch']['batch_data.settlement_currency'], ENT_QUOTES, 'UTF-8', $batch['batch']['batch_data.settlement_currency']);
-          $discrepancy = $batch['validation']['settled'];
-
-          // Base cell styles
-          $cell = 'border: 1px solid #ccc; padding: 6px;';
-          $cellRight = $cell . ' text-align: right;';
-
-          // Discrepancy cell: red + bold when non-zero
-          $discrepancyStyle = $cellRight;
-          if ((float) $discrepancy !== 0.0) {
-            $discrepancyStyle .= ' color: #b30000; font-weight: bold;';
-          }
-          $discrepancy = \Civi::format()->money($discrepancy, $currency);
-
-          $batchName = htmlspecialchars($batch['batch']['name'], ENT_QUOTES, 'UTF-8');
-          $batchUrl = (string) \Civi::url('backend://civicrm/contribution/settled#?finance_batch=' . $batch['batch']['name'], 'a');
-
-          $settled = \Civi::format()
-            ->money(htmlspecialchars($batch['totals']['settled'], ENT_QUOTES, 'UTF-8'), $currency);
-          $journalTotal = \Civi::format()
-            ->money(htmlspecialchars($batch['totals']['debit'] + $batch['totals']['credit'] + $batch['totals']['fee'], ENT_QUOTES, 'UTF-8'), $currency);
-          $remoteBatch = $batch['remote']['foundation'] ?? [];
-          $usdJournalTotal = $currency === 'USD' ? $journalTotal : $remoteBatch['usd_journal_total'] ?? '';
-          $totalInBatch = \Civi::format()
-            ->money(htmlspecialchars($batch['batch']['batch_data.settled_net_amount'] ?? 0, ENT_QUOTES, 'UTF-8'), $currency);
-          $numberOfTransactions = $batch['batch']['total'];
-          $transactionsUrl = BatchFile::getBatchFileUrl([$batchName], 'details');
-          $journalUrl = BatchFile::getBatchFileUrl([$batchName], 'journals');
-          $remoteURL = $remoteBatch['url'] ?? '';
-          $exchangeRate = $remoteBatch['exchange_rate'] ?? '';
-          $html .= "
-          <tr>
-            <td style=\"$cell\"><a href='{$batchUrl}'>{$batchName}</a></td>
-            <td style=\"$cell\">{$currency}</td>
-            <td style=\"$cellRight\">{$totalInBatch}</td>
-            <td style=\"$cellRight\">{$settled}</td>
-            <td style=\"$discrepancyStyle\">{$discrepancy}</td>
-            <td style=\"$cellRight\">{$journalTotal} ($usdJournalTotal)</td>
-            <td style=\"$cellRight\">" . ($remoteURL ? "<a href='{$remoteURL}'>{$remoteBatch['txn_number']}</a>" : '') . "</td>
-            <td style=\"$cellRight\">{$exchangeRate}</td><td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" . "<br><a href='{$journalUrl}'> Download Journals</a>" : '') . "</td>
-          </tr>
-        ";
-        }
-        $html .= "
-          </tbody>
-        </table>";
-
-        if ($this->incompleteRows) {
-          $html .= "<h3>Found contribution/s without Account code</h3><p>The summary table below will not add up to the total due to these</p>" . $tableOpenHtml . '
-          <thead>
-            <tr style="background-color: #f2f2f2; font-weight: bold;">
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Contribution</th>
-              <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Channel</th>
-            </tr>
-          </thead>
-          <tbody>';
-          foreach ($this->incompleteRows as $batchName => $rows) {
-            foreach ($rows as $row) {
-              $contributionURL = \CRM_Utils_System::url('civicrm/contact/view/contribution', [
-                'id' => $row['contribution_id'],
-                'reset' => 1,
-                'action' => 'view',
-              ], TRUE);
-              $html .= "
-          <tr>
-            <td style=\"$cell\">{$batchName} <a href='{$contributionURL}'>{$row['contribution_id']}</a></td>
-            <td style=\"$cell\">{$row['channel']}</td>
-          </tr>
-        ";
-            }
-          }
-          $html .= " </tbody> </table>";
-        }
-      }
-
-      $incompleteBatches = Batch::get(FALSE)
-        // Status list will probably grow.
-        ->addWhere('status_id:name', 'IN', ['Open', 'needs_attention'])
-        ->addWhere('mode_id:name', '=', 'Automatic Batch')
-        ->addSelect('*', 'batch_data.*', 'status_id:label')
-        ->execute();
-      if (!empty($incompleteBatches)) {
-        $html .= "<h3>Incomplete batches</h3><p>The following batches are still open, pending a verified total or manual intervention</p>" . $tableOpenHtml;
-        $html .= $this->getTableHeader( ['Batch', 'Created Date', 'Currency', 'Total', 'Count', 'Status', 'Phab']);
-        foreach ($incompleteBatches as $incompleteBatch) {
-          $phabLink = ($incompleteBatch['batch_data.issue_tracker_reference'] ? ('<a href="https://phabricator.wikimedia.org/' . $incompleteBatch['batch_data.issue_tracker_reference'] . '">' . $incompleteBatch['batch_data.issue_tracker_reference'] . '</a>') : '');
-          $html .= "<tr><td>{$incompleteBatch['name']}</td><td>{$incompleteBatch['created_date']}</td><td>{$incompleteBatch['batch_data.settlement_currency']}</td><td>{$incompleteBatch['batch_data.settled_net_amount']}</td><td>{$incompleteBatch['item_count']}</td><td>{$incompleteBatch['status_id:label']}</td>
-            <td>{$phabLink}</td>
-          </tr>";
-        }
-        $html .= "</table>";
-
-      }
-      $html .= $this->renderIncomingFilesHtml();
-
-      if ($this->batchSummary) {
-        $html .= '<h3>Batch Summary</h3>';
-        $html .= $this->getTableHeader(['Batch', 'Account Code', 'Account', 'Endowment Amount', 'Annual Fund Amount']);
-        foreach ($this->batchSummary as $batchName => $batch) {
-          $start = "<tr><td>{$batchName}</td>";
-          if (!$batch['annual_fund_fees']->isEqualTo(0)) {
-            $amount = $this->formatAmount($batch['annual_fund_fees']);
-            $html .= $start . "<td>60917</td><td>Fees</td><td></td><td>{$amount}</td></tr>";
-          }
-
-          if (!$batch['endowment_fund_fees']->isEqualTo(0)) {
-            $amount = $this->formatAmount($batch['endowment_fund_fees']);
-            $html .= $start . "<td>60917</td><td>Fees</td><td>{$amount}</td><td></td></tr>";
-          }
-          foreach ($batch['accounts'] ?? [] as $accountNumber => $account) {
-            $accountName = $this->getAccountName($accountNumber);
-            if (!$account['annual_fund']->isEqualTo(0)) {
-              $amount = $this->formatAmount($account['annual_fund']);
-              $html .= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td></td><td>{$amount}</td></tr>";
-            }
-            if (!$account['endowment_fund']->isEqualTo(0)) {
-              $amount = $this->formatAmount($account['endowment_fund']);
-              $html .= $start . "<td>{$accountNumber}</td><td>{$accountName}</td><td>{$amount}</td><td></td></tr>";
-            }
-          }
-        }
-        $html .= '</tbody></table>';
-      }
-      $html .= '<h3>Log</h3> ' . $tableOpenHtml;
-      foreach ($this->log as $log) {
-        $log = nl2br($log);
-        $html .= "<tr><td>$log</td></tr>";
-      }
-
-      $html .= '</table></html>';
-
-      if ($invalidBatches) {
-        $params['subject'] .= " {$invalidBatches} need attention";
-      }
-      if ($this->incompleteRows) {
-        $incompleteCount = 0;
-        foreach ($this->incompleteRows as $batch) {
-          $incompleteCount += count($batch);
-        }
-        $params['subject'] .= " $incompleteCount contributions need attention";
-      }
-      if ($this->countOldIncomingFiles()) {
-        $params['subject'] .= ', ' . $this->countOldIncomingFiles() ." incoming files older than " . self::NUMBER_OF_DAYS_OLD . 'days';
-      }
-
-      $params['html'] = $html;
-
-      if (!\CRM_Utils_Mail::send($params)) {
-        \Civi::log('wmf')->warning('Summary failed to send to ' . $params['toEmail']);
+      else {
+        $offlineBatches[] = $batch;
       }
     }
+    return [$automaticBatches, $offlineBatches];
+  }
+
+  /**
+   * Get all offline (non-Automatic Batch) batches, regardless of status.
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  private function getAllOfflineBatches(): array {
+    return (array) Batch::get(FALSE)
+      ->addWhere('mode_id:name', '!=', 'Automatic Batch')
+      ->addSelect('*', 'batch_data.*', 'status_id:label')
+      ->execute();
   }
 
   private function log(string $string): void {
     $this->log[] = date('Y-m-d-m-Y-H-i-s') . ' ' . $string;
     \Civi::log('finance_integration')->info($string);
-  }
-
-  /**
-   * Get batches that did not validated.
-   * @return array
-   */
-  private function getInvalidBatches(): array {
-    $invalidBatches = [];
-    foreach ($this->batches as $batchName => $batch) {
-      if (!$batch['is_valid']) {
-        $invalidBatches[] = $batchName;
-      }
-    }
-    return $invalidBatches;
   }
 
   /**
@@ -905,36 +766,6 @@ END";
       }
     }
     return $this->batches;
-  }
-
-  /**
-   * @param Money $money
-   * @return string
-   * @throws \CRM_Core_Exception
-   */
-  private function formatAmount(Money $money): string {
-    return \Civi::format()->money($money->getAmount(), $money->getCurrency());
-  }
-
-  /**
-   * @return string
-   */
-  public function getTableOpenHtml(): string {
-    $tableOpenHtml = '<table style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 14px;">';
-    return $tableOpenHtml;
-  }
-
-  /**
-   * @param array $columns
-   * @return string
-   */
-  private function getTableHeader(array $columns): string {
-    $html = $this->getTableOpenHtml() . '<thead><tr style="background-color: #f2f2f2; font-weight: bold;">';
-    foreach ($columns as $columnName) {
-      $html .= '<th style="border: 1px solid #ccc; padding: 6px; text-align: left;">' . $columnName . '</th>';
-    }
-    $html .= '</tr></thead><tbody>';
-    return $html;
   }
 
   /**
@@ -1436,129 +1267,6 @@ GROUP BY s.settlement_batch_reference
       43485 => 'Major Gifts - Unrestricted',
       43428 => 'Major Gifts - Restricted',
     ];
-  }
-
-  private function renderIncomingFilesHtml(): string {
-    $tableOpenHtml = $this->getTableOpenHtml();
-    $files = $this->getUnprocessedAuditFiles();
-
-    $html = '<h3>Incoming files</h3>';
-
-    if (empty($files)) {
-      $html .= '<p>No files found in incoming directories.</p>';
-      return $html;
-    }
-
-    $oldCount = count(array_filter($files, fn(array $file): bool => !empty($file['old'])));
-
-    if ($oldCount) {
-      $html .= '<p style="color: #b30000; font-weight: bold;">'
-        . $oldCount . ' file(s) older than 2 days were found in incoming directories.'
-        . '</p>';
-    }
-    else {
-      $html .= '<p>No files older than 2 days were found in incoming directories.</p>';
-    }
-
-    $html .= $tableOpenHtml . '
-    <thead>
-      <tr style="background-color: #f2f2f2; font-weight: bold;">
-        <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Modified</th>
-        <th style="border: 1px solid #ccc; padding: 6px; text-align: right;">Size</th>
-        <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Path</th>
-        <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Status</th>
-        <th style="border: 1px solid #ccc; padding: 6px; text-align: left;">Age (days)</th>
-      </tr>
-    </thead>
-    <tbody>
-  ';
-
-    foreach ($files as $file) {
-      $rowStyle = 'border: 1px solid #ccc; padding: 6px;';
-      $rowStyleRight = $rowStyle . ' text-align: right;';
-      $highlight = !empty($file['old']) ? ' color: #b30000; font-weight: bold;' : '';
-
-      $html .= '<tr>';
-      $html .= '<td style="' . $rowStyle . $highlight . '">'
-        . htmlspecialchars(date('Y-m-d H:i', $file['mtime']), ENT_QUOTES, 'UTF-8')
-        . '</td>';
-      $html .= '<td style="' . $rowStyleRight . $highlight . '">'
-        . number_format($file['size'])
-        . '</td>';
-      $html .= '<td style="' . $rowStyle . $highlight . '">'
-        . htmlspecialchars($file['path'], ENT_QUOTES, 'UTF-8')
-        . '</td>';
-      $html .= '<td style="' . $rowStyle . $highlight . '">'
-        . (!empty($file['old']) ? 'OLDER THAN 2 DAYS' : 'OK')
-        . '</td>';
-      $html .= '<td style="' . $rowStyle . $highlight . '">' . $file['days_old'] . '</td>';
-      $html .= '</tr>';
-    }
-
-    $html .= '</tbody></table>';
-
-    return $html;
-  }
-
-  private function getUnprocessedAuditFiles(): array {
-    if (isset($this->incomingFiles)) {
-      return $this->incomingFiles;
-    }
-    $basePath = \Civi::settings()->get('wmf_audit_directory_audit');
-    $cutoff = time() - (self::NUMBER_OF_DAYS_OLD * 24 * 60 * 60);
-
-    $this->incomingFiles = [];
-
-    $topLevelDirs = new \DirectoryIterator($basePath);
-
-    foreach ($topLevelDirs as $dir) {
-      if (!$dir->isDir() || $dir->isDot()) {
-        continue;
-      }
-
-      $incomingDir = $dir->getPathname() . DIRECTORY_SEPARATOR . 'incoming';
-      \Civi::log('wmf')->info('Looking for files in ' . $incomingDir);
-
-      if (!is_dir($incomingDir) || !is_readable($incomingDir)) {
-        \Civi::log('wmf')->info('Problem reading ' . $incomingDir);
-        continue;
-      }
-
-      $incomingFiles = new \DirectoryIterator($incomingDir);
-
-      foreach ($incomingFiles as $file) {
-        if (!$file->isFile() || $file->isDot()) {
-          continue;
-        }
-
-        $mtime = $file->getMTime();
-
-        $this->incomingFiles[] = [
-          'path' => $file->getPathname(),
-          'mtime' => $mtime,
-          'size' => $file->getSize(),
-          'old' => ($mtime < $cutoff),
-          'days_old' => (int) floor((time() - $mtime) / (24 * 60 * 60)),
-        ];
-      }
-    }
-
-    usort($this->incomingFiles, function(array $a, array $b): int {
-      return $a['mtime'] <=> $b['mtime'];
-    });
-
-    return $this->incomingFiles;
-  }
-
-  private function countOldIncomingFiles(): int {
-    $files = $this->getUnprocessedAuditFiles();
-    $count = 0;
-    foreach ($files as $file) {
-      if (!empty($file['old'])) {
-        $count++;
-      }
-    }
-    return $count;
   }
 
 }
