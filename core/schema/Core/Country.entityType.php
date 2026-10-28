@@ -21,6 +21,13 @@ return [
       'unique' => TRUE,
       'add' => '1.1',
     ],
+    'UI_iso_code' => [
+      'fields' => [
+        'iso_code' => TRUE,
+      ],
+      'unique' => TRUE,
+      'add' => '6.20',
+    ],
   ],
   'getFields' => fn() => [
     'id' => [
