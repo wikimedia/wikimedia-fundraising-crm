@@ -5,12 +5,103 @@
 
 /* Set the width of the editor */
 .ck.ck-editor {
-  max-width: 95%;
+  width: 100%;
+  max-width: none;
 }
 
-/* Place elfinder above CiviCRM popup */
+/* CiviMail floats its native token picker before the HTML editor. */
+html body .ck.ck-editor[data-ckeditor5-preset="civimail"] {
+  clear: both;
+}
+
+/* CKEditor's reset sets the toolbar width back to auto after this stylesheet. */
+html body .ck.ck-toolbar {
+  width: 100%;
+}
+
+.crm-ckeditor5-token-dialog label,
+.crm-ckeditor5-token-dialog input,
+.crm-ckeditor5-token-dialog select {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+}
+
+.crm-ckeditor5-token-dialog label {
+  font-weight: 600;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.crm-ckeditor5-token-dialog select {
+  min-height: 18rem;
+}
+
+/* Keep the CiviCRM dialog usable above CKEditor's fullscreen layer (10000). */
+.crm-ckeditor5-token-dialog-overlay {
+  z-index: 10999 !important;
+}
+
+.crm-ckeditor5-token-dialog-shell {
+  z-index: 11000 !important;
+}
+
+.crm-ckeditor5-token-autocomplete {
+  background: #ffffff;
+  border: 1px solid #c4c4c4;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+  color: #1f1f1f;
+  font-family: inherit;
+  font-size: 13px;
+  max-height: 240px;
+  max-width: 440px;
+  min-width: 240px;
+  overflow-y: auto;
+  padding: 4px 0;
+  position: fixed;
+  z-index: 11001 !important;
+}
+
+.crm-ckeditor5-token-autocomplete__item {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 6px 10px;
+}
+
+.crm-ckeditor5-token-autocomplete__item.is-active,
+.crm-ckeditor5-token-autocomplete__item:hover {
+  background: #e8f0fe;
+  color: #0b57d0;
+}
+
+.crm-ckeditor5-token-autocomplete__label {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-ckeditor5-token-autocomplete__code {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  color: #444444;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
+/* Keep elFinder above CKEditor dialogs, including the fullscreen layer. */
 .ui-front.dialogelfinder {
-  z-index: 9000;
+  z-index: calc(var(--ck-z-dialog, 100000) + 1) !important;
+}
+
+/* Safari otherwise composites the fullscreen editor above an absolute dialog. */
+body.ck-fullscreen .ui-front.dialogelfinder {
+  position: fixed;
 }
 
 .image.image-style-align-center {
@@ -28,7 +119,66 @@
   margin-left: 1em;
 }
 
-/* CKEditor does not support dark theme, so override the dark theme's white text on CKEditor's white background. */
-html body .ck.ck-editor__main * {
-  color: black;
+/* Override dark theme text color on the white editable surface in both normal and fullscreen modes. */
+html body .ck.ck-editor__main > .ck-editor__editable,
+html body .ck-fullscreen__main-wrapper .ck-fullscreen__editable > .ck.ck-editor__editable {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.ck-fullscreen__main-wrapper .ck-fullscreen__editable.crm-container {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: inherit;
+  padding: 0;
+}
+
+/* Legacy email table alignment must remain visible in both normal and
+ * fullscreen editing without inheriting CiviCRM's generic table styles. */
+html body .ck-content table.civi-email-align-center {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+html body .ck-content table.civi-email-align-left {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+html body .ck-content table.civi-email-align-right {
+  margin-left: auto !important;
+  margin-right: 0 !important;
+}
+
+.ck5-html-qa {
+  border: 1px solid #b8b8b8;
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+}
+
+.ck5-html-qa summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.ck5-html-qa__columns {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  margin-top: 0.75rem;
+}
+
+.ck5-html-qa__columns h4 {
+  margin-bottom: 0.25rem;
+}
+
+.ck5-html-qa__columns ul {
+  max-height: 18rem;
+  overflow: auto;
+  padding-left: 1.5rem;
+}
+
+.ck5-html-qa__copy {
+  margin-top: 0.5rem;
 }

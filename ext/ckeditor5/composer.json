@@ -1,11 +1,5 @@
 {
   "name": "civicrm/ckeditor5",
   "description": "This presents CKEditor 5 as an option for the wysiwyg editor.",
-  "extra": {
-    "downloads": {
-      "ckeditor5": {
-        "url": "https://download.cksource.com/CKEditor/CKEditor5/27.1.0/ckeditor5-build-classic-27.1.0.zip"
-      }
-    }
-  }
+  "license": "AGPL-3.0-only"
 }

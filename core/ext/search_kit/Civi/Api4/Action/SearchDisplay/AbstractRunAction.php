@@ -726,7 +726,7 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
    * @throws \CRM_Core_Exception
    */
   protected function formatLink(array $link, array $data, bool $allowMultiple = FALSE, ?string $text = NULL, ?int $index = NULL): ?array {
-    $useApi = (!empty($link['entity']) && !empty($link['action']));
+    $useApi = (!empty($link['entity']) && !empty($link['action']) && empty($link['task']));
     // When rendering multiple links, gather multivalued token values
     if (isset($index)) {
       foreach ($data as $key => $value) {
@@ -1045,8 +1045,12 @@ abstract class AbstractRunAction extends \Civi\Api4\Generic\AbstractAction {
     ];
     $entity = $link['entity'];
     // Fix user error - if path has args but omits the question mark, change the first `&` to a `?`
+    // Unless the path begins with a token (e.g. `[MyFile]&download=0`) which may already contain query params
     if ($link['path'] && str_contains($link['path'], '&') && !str_contains($link['path'], '?')) {
-      $link['path'] = preg_replace('/&/', '?', $link['path'], 1);
+      $beforeFirstAmp = strstr($link['path'], '&', TRUE);
+      if (!str_contains($beforeFirstAmp, '[')) {
+        $link['path'] = preg_replace('/&/', '?', $link['path'], 1);
+      }
     }
     if ($entity && CoreUtil::entityExists($entity)) {
       $idKey = $this->getIdKeyName($entity);

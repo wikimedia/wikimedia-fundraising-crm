@@ -7,11 +7,11 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 /**
- * DataSource for importing Julie's finance spreadsheet (xls, xlsx, csv or
- * ods) - a plain table of DATE / TRANSACTION TYPE / DESCRIPTION /
- * AMOUNT (USD) / BALANCE (USD) rows, some blank, only the ACH and Wire rows
- * of which are real batches to import. BALANCE (USD), a running balance,
- * isn't touched here - it's just left for the saved mapping to ignore.
+ * DataSource for importing Julie's finance spreadsheet (xls, xlsx or csv) - a
+ * plain table of DATE / TRANSACTION TYPE / DESCRIPTION / AMOUNT (USD) /
+ * BALANCE (USD) rows, some blank, only the ACH and Wire rows of which are
+ * real batches to import. BALANCE (USD), a running balance, isn't touched
+ * here - it's just left for the saved mapping to ignore.
  */
 class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInterface {
   use DataSourceTrait;
@@ -70,7 +70,7 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
       2 => $maxFileSizeBytes,
     ]), 'maxfilesize', $maxFileSizeBytes);
     $form->registerRule('financeSpreadsheet', 'callback', 'isValidFinanceSpreadsheet', self::class);
-    $form->addRule('uploadFile', ts('The file must be of type XLS, XLSX, CSV or ODS.'), 'financeSpreadsheet');
+    $form->addRule('uploadFile', ts('The file must be of type XLS, XLSX or CSV.'), 'financeSpreadsheet');
   }
 
   /**
@@ -83,7 +83,7 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
       return FALSE;
     }
     $file_type = IOFactory::identify($file['tmp_name']);
-    return in_array($file_type, ['Xls', 'Xlsx', 'Csv', 'Ods'], TRUE);
+    return in_array($file_type, ['Xls', 'Xlsx', 'Csv'], TRUE);
   }
 
   public function getSubmittableFields(): array {
@@ -229,7 +229,7 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
    * Convert the "DATE" column to a plain m/d/Y string.
    *
    * uploadToTable() reads with formatData=FALSE, so a date cell in a real
-   * spreadsheet (xls/xlsx/ods) is always a bare Excel serial number here,
+   * spreadsheet (xls/xlsx) is always a bare Excel serial number here,
    * e.g. "45660" - not a string pre-formatted in whatever locale that cell
    * happens to carry.
    *
@@ -308,7 +308,7 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
    * Is this file for the Endowment (rather than the Foundation)?
    *
    * Signalled by the literal substring "END" somewhere in the filename
-   * (e.g. "September END 9.01.26 to 9.15.26.ods").
+   * (e.g. "September END 9.01.26 to 9.15.26.xlsx").
    *
    * @param string $fileName
    *

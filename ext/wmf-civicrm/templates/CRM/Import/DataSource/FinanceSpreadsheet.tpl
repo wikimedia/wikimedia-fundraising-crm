@@ -14,7 +14,7 @@
     <td class="label">{$form.uploadFile.label}</td>
     <td>{$form.uploadFile.html}<br />
       <div class="description">
-        {ts}The file must be Julie's finance spreadsheet export, as XLS, XLSX, CSV or ODS.{/ts}<br />
+        {ts}The file must be Julie's finance spreadsheet export, as XLS, XLSX or CSV.{/ts}<br />
         {ts 1=$uploadSize}Maximum Upload File Size: %1 MB{/ts}
       </div>
     </td>

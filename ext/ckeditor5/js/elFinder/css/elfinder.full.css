@@ -1,9 +1,9 @@
 /*!
  * elFinder - file manager for web
- * Version 2.1.53 (2020-01-25)
+ * Version 2.1.70 (2026-08-03)
  * http://elfinder.org
  * 
- * Copyright 2009-2020, Studio 42
+ * Copyright 2009-2026, Studio 42
  * Licensed under a 3-clauses BSD license
  */
 
@@ -1184,6 +1184,12 @@ div.elfinder {
     opacity: .8;
 }
 
+.elfinder div.elfinder-bottomtray > div {
+    top: initial;
+    right: initial;
+    left: initial;
+}
+
 .elfinder.elfinder-ltr div.elfinder-bottomtray {
     left: 0;
 }
@@ -1199,6 +1205,24 @@ div.elfinder {
     padding: 2px 4px;
 }
 
+/* progressbar */
+.elfinder-ui-progressbar {
+    pointer-events: none;
+    position: absolute;
+    width: 0;
+    height: 2px;
+    top: 0px;
+    border-radius: 2px;
+    filter: blur(1px);
+}
+
+.elfinder-ltr .elfinder-ui-progressbar {
+    left: 0;
+}
+
+.elfinder-rtl .elfinder-ui-progressbar {
+    right: 0;
+}
 /* File: /css/contextmenu.css */
 /* menu and submenu */
 .elfinder .elfinder-contextmenu,
@@ -3019,10 +3043,46 @@ tr.elfinder-cwd-file td .elfinder-cwd-select {
 
 .elfinder-dialog-notify .ui-dialog-titlebar {
     height: 5px;
+    overflow: hidden;
 }
 
-.elfinder-dialog-notify .ui-dialog-titlebar-close {
+.elfinder.elfinder-touch > .elfinder-dialog-notify .ui-dialog-titlebar {
+    height: 10px;
+}
+
+.elfinder > .elfinder-dialog-notify .ui-dialog-titlebar .elfinder-titlebar-button {
+    top: 2px;
+}
+
+.elfinder.elfinder-touch > .elfinder-dialog-notify .ui-dialog-titlebar .elfinder-titlebar-button {
+    top: 4px;
+}
+
+.elfinder > .elfinder-dialog-notify .ui-dialog-titlebar .elfinder-titlebar-button {
+    left: -18px;
+    right: 18px;
+}
+
+.elfinder > .elfinder-dialog-notify .ui-dialog-titlebar .elfinder-titlebar-button.elfinder-titlebar-button-right {
+    left: 18px;
+    right: -18px;
+}
+
+.ui-dialog-titlebar .elfinder-ui-progressbar {
+    position: absolute;
+    top: 17px;
+}
+
+.elfinder-touch .ui-dialog-titlebar .elfinder-ui-progressbar {
+    top: 26px;
+}
+
+.elfinder-dialog-notify.elfinder-titlebar-button-hide .ui-dialog-titlebar-close {
     display: none;
+}
+
+.elfinder-dialog-notify.elfinder-dialog-minimized.elfinder-titlebar-button-hide .ui-dialog-titlebar span.elfinder-dialog-title {
+    max-width: initial;
 }
 
 .elfinder-dialog-notify .ui-dialog-content {
@@ -3071,6 +3131,22 @@ tr.elfinder-cwd-file td .elfinder-cwd-select {
     -moz-border-radius: 2px;
     -webkit-border-radius: 2px;
     border-radius: 2px;
+}
+
+.elfinder-notify-cancel {
+    position: relative;
+    top: -18px;
+    right: calc(-50% + 15px);
+}
+
+.elfinder-notify-cancel .ui-icon-close {
+    background-position: -80px -128px;
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    border: none;
+    background-position: -80px -128px;
+    cursor: pointer;
 }
 
 /* icons */
@@ -3361,92 +3437,56 @@ button.elfinder-info-button {
 }
 
 /* File: /css/fonts.css */
-.elfinder-font-mono {
-    font-family: "Ricty Diminished", "Myrica M", Consolas, "Courier New", Courier, Monaco, monospace;
-    font-size: 1.1em;
-}
-
-.elfinder-contextmenu .elfinder-contextmenu-item span {
-    font-size: .72em;
-}
-
-.elfinder-cwd-view-icons .elfinder-cwd-filename {
-    font-size: .7em;
-}
-
-.elfinder-cwd-view-list td {
-    font-size: .7em;
+.dialogelfinder .dialogelfinder-drag,
+.elfinder-place-drag .elfinder-navbar-dir,
+.elfinder-quicklook-preview-text-wrapper,
+.elfinder-info-tb {
+    font-size: .8em;
 }
 
 .std42-dialog .ui-dialog-titlebar {
     font-size: .82em;
 }
 
-.std42-dialog .ui-dialog-content {
-    font-size: .72em;
-}
-
-.std42-dialog .ui-dialog-buttonpane {
-    font-size: .76em;
-}
-
-.elfinder-info-tb {
-    font-size: .9em;
-}
-
-.elfinder-upload-dropbox {
-    font-size: 1.2em;
-}
-
-.elfinder-upload-dialog-or {
-    font-size: 1.2em;
-}
-
-.dialogelfinder .dialogelfinder-drag {
-    font-size: .9em;
-}
-
-.elfinder .elfinder-navbar {
-    font-size: .72em;
-}
-
-.elfinder-place-drag .elfinder-navbar-dir {
-    font-size: .9em;
-}
-
-.elfinder-quicklook-title {
-    font-size: .7em;
-    font-weight: normal;
-}
-
-.elfinder-quicklook-info-data {
-    font-size: .72em;
-}
-
-.elfinder-quicklook-preview-text-wrapper {
-    font-size: .9em;
-}
-
-.elfinder-button-menu-item {
-    font-size: .72em;
-}
-
 .elfinder-button-search input {
     font-size: .8em;
 }
 
+.std42-dialog .ui-dialog-buttonpane, .elfinder-toast {
+    font-size: .76em;
+}
+
+.elfinder-contextmenu .elfinder-contextmenu-item span,
+.std42-dialog .ui-dialog-content,
+.elfinder .elfinder-navbar,
+.elfinder-quicklook-info-data,
+.elfinder-button-menu-item {
+    font-size: .72em;
+}
+
+.elfinder-cwd-view-icons .elfinder-cwd-filename,
+.elfinder-cwd-view-list td,
+.elfinder-quicklook-title,
 .elfinder-statusbar div {
     font-size: .7em;
+}
+
+.elfinder-upload-dropbox, .elfinder-upload-dialog-or {
+    font-size: 1.2em;
+}
+
+.elfinder-font-mono {
+    font-family: "Ricty Diminished", "Myrica M", Consolas, "Courier New", Courier, Monaco, monospace;
+    font-size: 1.1em;
 }
 
 .elfinder-drag-num {
     font-size: 12px;
 }
 
-.elfinder-toast {
-    font-size: .76em;
+.elfinder-quicklook-title {
+    font-weight: normal;
 }
-
 
 /* File: /css/navbar.css */
 /*********************************************/
@@ -4140,6 +4180,12 @@ button.elfinder-info-button {
     color: #fff;
 }
 
+.elfinder-quicklook-info-progress {
+    width: 0;
+    height: 4px;
+    border-radius: 2px;
+}
+
 /* file icon */
 .elfinder-quicklook .elfinder-cwd-icon {
     position: absolute;
@@ -4174,7 +4220,7 @@ button.elfinder-info-button {
 }
 
 .elfinder-ltr .elfinder-quicklook .elfinder-cwd-icon:after {
-    left: -20px;
+    left: -42px;
 }
 
 .elfinder-ltr .elfinder-navdock .elfinder-quicklook .elfinder-cwd-icon:after {
@@ -4188,7 +4234,7 @@ button.elfinder-info-button {
 
 .elfinder-rtl .elfinder-quicklook .elfinder-cwd-icon:after {
     left: auto;
-    right: 46px;
+    right: 42px;
 }
 
 /* image in preview */
@@ -4330,7 +4376,6 @@ pre.elfinder-quicklook-preview-text.prettyprint {
     padding: 3px 9px;
     border: none;
     overflow: visible;
-    background: #fff;
     -o-tab-size: 4;
     -moz-tab-size: 4;
     tab-size: 4;

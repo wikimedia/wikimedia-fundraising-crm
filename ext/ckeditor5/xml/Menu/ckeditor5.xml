@@ -1,9 +1,21 @@
 <?xml version="1.0"?>
 <menu>
   <item>
-    <path>civicrm/image/access</path>
+    <path>civicrm/admin/ckeditor5</path>
+    <page_callback>CRM_Ckeditor5_Form_Presets</page_callback>
+    <title>CKEditor 5 presets</title>
+    <access_arguments>administer CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/ckeditor5/image-manager</path>
     <page_callback>CRM_Ckeditor5_Page_ImageManager</page_callback>
     <title>ImageManager</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+  <item>
+    <path>civicrm/ckeditor5/tokens</path>
+    <page_callback>CRM_Ckeditor5_Page_Tokens</page_callback>
+    <title>CKEditor 5 tokens</title>
     <access_arguments>access CiviCRM</access_arguments>
   </item>
 </menu>

@@ -1,0 +1,14 @@
+.ck5-presets { max-width: 960px; }
+.ck5-preset-tabs { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.ck5-preset-tabs a { padding: 8px 12px; border: 1px solid #aaa; border-radius: 3px; }
+.ck5-preset-tabs [aria-current="page"] { font-weight: bold; border-bottom: 3px solid currentColor; }
+.ck5-presets fieldset { margin: 16px 0; padding: 12px; border: 1px solid #aaa; }
+.ck5-section { margin-top: 12px; }
+.ck5-section textarea { display: block; max-width: 100%; }
+#ck5-toolbar { list-style: none; padding: 0; max-width: 650px; }
+#ck5-toolbar li { display: flex; align-items: center; gap: 6px; padding: 6px; margin: 4px 0; border: 1px solid #aaa; cursor: grab; }
+#ck5-toolbar li span { flex: 1; }
+.ck5-swatch { display: inline-block; border-left: 24px solid; padding: 4px 8px; margin: 4px; }
+.ck5-values { width: 100%; margin: 8px 0; }
+.ck5-values th, .ck5-values td { padding: 6px; text-align: left; }
+.ck5-values input[type="text"] { box-sizing: border-box; width: 100%; }
