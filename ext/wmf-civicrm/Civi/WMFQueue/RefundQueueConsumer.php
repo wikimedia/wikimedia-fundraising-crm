@@ -18,6 +18,8 @@ use SmashPig\PaymentProviders\PaymentProviderFactory;
 
 class RefundQueueConsumer extends TransactionalQueueConsumer {
 
+  private const MAX_RETRYABLE_CHARGEBACKS = 3;
+
   /**
    * @throws \CRM_Core_Exception
    * @throws \Civi\WMFException\WMFException
@@ -73,7 +75,10 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         }
       }
       // Some chargebacks for ACH and SEPA are retryable, don't cancel the recurrings
-      if (!$this->isRetryableChargeback($reason)) {
+      // unless they keep happening
+      if (!empty($originalContribution['contribution_recur_id'])
+        && (!$this->isRetryableChargeback($reason) || $this->isRepeatedChargeback($originalContribution['contribution_recur_id']))
+      ) {
         $this->cancelRecurringOnChargeback($contributionStatus, $originalContribution, $gateway);
       }
     }
@@ -357,10 +362,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
    * @throws \SmashPig\Core\DataStores\DataStoreException
    */
   private function cancelRecurringOnChargeback(string $contributionStatus, array $firstContribution, string $gateway): void {
-    if (
-      $contributionStatus === 'Chargeback' &&
-      !empty($firstContribution['contribution_recur_id'])
-    ) {
+    if ($contributionStatus === 'Chargeback') {
       if (RecurHelper::gatewayManagesOwnRecurringSchedule($gateway)) {
         $recurRecord = ContributionRecur::get(FALSE)
           ->addWhere('id', '=', $firstContribution['contribution_recur_id'])
@@ -381,6 +383,32 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
       ];
       QueueWrapper::push('recurring', $message);
     }
+  }
+
+  /**
+   * Are the latest MAX_RETRYABLE_CHARGEBACKS payments on this recurring all chargebacks?
+   *
+   * @param int $contributionRecurID
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  private function isRepeatedChargeback(int $contributionRecurID): bool {
+    $latestContributions = Contribution::get(FALSE)
+      ->addSelect('contribution_status_id:name')
+      ->addWhere('contribution_recur_id', '=', $contributionRecurID)
+      ->addOrderBy('receive_date', 'DESC')
+      ->setLimit(self::MAX_RETRYABLE_CHARGEBACKS)
+      ->execute();
+    if ($latestContributions->count() < self::MAX_RETRYABLE_CHARGEBACKS) {
+      return FALSE;
+    }
+    foreach ($latestContributions as $latestContribution) {
+      if ($latestContribution['contribution_status_id:name'] !== 'Chargeback') {
+        return FALSE;
+      }
+    }
+    return TRUE;
   }
 
   /**
