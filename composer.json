@@ -54,7 +54,8 @@
         "php-parallel-lint/php-parallel-lint": "^1.2",
         "drupal/coder": "dev-8.x-2.x-civi",
         "johnkary/phpunit-speedtrap": "^4.0",
-        "clagiordano/phpunit-result-printer": "^3.0"
+        "clagiordano/phpunit-result-printer": "^3.0",
+        "brianium/paratest": "^6.11"
     },
     "replace": {
         "symfony/polyfill-php54": "*",
