@@ -5617,6 +5617,27 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Increase the length of Batch.name - 64 characters is tight for an
+   * import batch's programmatic name, especially when it's auto-generated
+   * from a file name or label.
+   *
+   * Ported ahead of core 6.21: https://github.com/civicrm/civicrm-core/pull/37770
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5210(): bool {
+    E::schema()->alterSchemaField('Batch', 'name', [
+      'title' => ts('Batch Name'),
+      'sql_type' => 'varchar(255)',
+      'input_type' => 'Text',
+      'description' => ts('Variable name/programmatic handle for this batch.'),
+      'add' => '3.3',
+    ]);
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
