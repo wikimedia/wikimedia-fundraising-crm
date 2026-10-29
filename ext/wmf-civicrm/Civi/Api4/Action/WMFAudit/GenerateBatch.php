@@ -1289,7 +1289,7 @@ GROUP BY s.settlement_batch_reference
       'fee' => $result['expected']['fee'] + $result['totals']['fee'],
       'settled' => $result['expected']['settled'] - $result['totals']['settled'],
     ];
-    $this->adjustEngageBatchSecondaryTotals($batch, $result);
+    $this->adjustManualBatchSecondaryTotals($batch, $result);
     $isValid = empty(array_filter($result['validation']));
     $this->batches[$batch['name']]['is_valid'] = $isValid;
     $this->log($batch['name'] . ' ' . ($isValid ? 'has valid totals' : ' has a discrepancy '));
@@ -1327,14 +1327,14 @@ GROUP BY s.settlement_batch_reference
   }
 
   /**
-   * For engage, trust our per-contribution count/fee/donation breakdown over
+   * For engage and ach, trust our per-contribution count/fee/donation breakdown over
    * the batch's entered figures whenever the net settled amount (and
    * reversals) already reconcile.
    *
    * Engage's entered item count and fee/donation split can drift from
    * CiviCRM's per-contribution data - e.g. staff split one check into
-   * several contributions, or a fee was entered per-contribution but not
-   * at the batch level.
+   * several contributions. For ach or engage we can see a fee entered per-contribution but not
+   * at the batch level because it is not known at that point.
    *
    * @param array $batch
    * @param array $result modified in place - 'expected'/'validation' are
@@ -1343,19 +1343,25 @@ GROUP BY s.settlement_batch_reference
    * @return void
    * @throws \CRM_Core_Exception
    */
-  private function adjustEngageBatchSecondaryTotals(array $batch, array &$result): void {
-    if ($this->getAuditGateway($batch['name']) !== 'engage') {
+  private function adjustManualBatchSecondaryTotals(array $batch, array &$result): void {
+    $auditGateway = $this->getAuditGateway($batch['name']);
+    if (!in_array($auditGateway, ['engage', 'ach', 'wire'], TRUE)) {
       return;
     }
     $mustBalance = array_filter([
       'debit' => $result['validation']['debit'],
       'settled' => $result['validation']['settled'],
     ]);
-    $toCorrect = array_filter([
-      'count' => $result['validation']['count'],
+    $toCorrect = [
       'credit' => $result['validation']['credit'],
       'fee' => $result['validation']['fee'],
-    ]);
+    ];
+    if ($auditGateway === 'engage') {
+      // At this stage we think ach & wire WILL not need flexibility on count - but we will see.
+      // just engage for now.
+      $toCorrect['count'] = $result['validation']['count'];
+    }
+    $toCorrect = array_filter($toCorrect);
     if (empty($mustBalance) && !empty($toCorrect)) {
       Batch::update(FALSE)
         ->addValue('item_count', $result['totals']['count'])
