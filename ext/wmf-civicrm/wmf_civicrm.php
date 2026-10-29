@@ -226,6 +226,22 @@ function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermission
         'continueOnError' => TRUE,
       ],
     ];
+    $tasks['Batch']['generate_batch'] = [
+      'title' => E::ts('Generate Batch'),
+      'entity' => 'Batch',
+      'description' => E::ts('Generate the journal for selected batches and push to Intacct, closing each batch on success.'),
+      'ui' => [
+        'confirm' => E::ts('Generate %1 selected batch(es)? This will push journal entries to Intacct and close each batch.', [1 => '{count}']),
+        'successMsg' => E::ts('Generation complete for %1 batch(es).', [1 => '{count}']),
+      ],
+      'apiBatch' => [
+       'action' => 'generateBatch',
+        // Run in small batches.
+        'batchSize' => 2,
+        // Optional: continue even if some items fail
+        'continueOnError' => TRUE,
+      ],
+    ];
     $tasks['Batch']['confirm'] = [
       'title' => E::ts('Confirm'),
       'icon' => 'fa-check',

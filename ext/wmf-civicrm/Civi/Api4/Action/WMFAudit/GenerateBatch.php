@@ -705,9 +705,10 @@ END";
         $this->batches = (array) $batchGet->addWhere('id', '=', $this->id)
           ->execute()->indexBy('name');
         $batch = reset($this->batches);
-        if (!$this->isDryRun && !in_array($batch['status_id:name'], ['validated', 'total_verified'])) {
+        $isPreviouslyVerified = $batch['status_id:name'] === 'needs_attention' && !empty($batch['batch_data.last_successful_total_verification_date']);
+        if (!$this->isDryRun && !in_array($batch['status_id:name'], ['validated', 'total_verified']) && !$isPreviouslyVerified) {
           // They have selected a specific batch, but it is not exportable, throw an exception.
-          throw new \CRM_Core_Exception('batch status of ' . $batch['status_id:name'] . ' is not valid for export');
+          throw new \CRM_Core_Exception('Batch ' . $batch['name'] . ' status of ' . $batch['status_id:name'] . ' is not valid for export - it must be validated/total_verified, or needs_attention with a prior successful total verification.');
         }
       }
       else {

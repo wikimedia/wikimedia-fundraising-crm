@@ -67,7 +67,7 @@ return [
             ],
           ],
           'limit' => 50,
-          'pager' => [],
+          'pager' => ['show_count' => TRUE],
           'placeholder' => 5,
           'columns' => [
             [
