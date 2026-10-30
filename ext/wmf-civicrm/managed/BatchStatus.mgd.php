@@ -117,4 +117,33 @@ return [
       ],
     ],
   ],
+  [
+    'name' => 'OptionValue_BatchStatus_PartiallyExported',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'batch_status',
+        'label' => 'Partially Exported',
+        'value' => 10,
+        'name' => 'Partially Exported',
+        'filter' => 1,
+        'is_default' => FALSE,
+        'description' => 'Exported journals to one entity but failed on the other - needs manual review before further export attempts',
+        'is_optgroup' => FALSE,
+        'is_reserved' => TRUE,
+        'is_active' => TRUE,
+        'component_id' => NULL,
+        'visibility_id' => NULL,
+        'icon' => 'fa-exclamation-triangle',
+        'color' => NULL,
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+      ],
+    ],
+  ],
 ];

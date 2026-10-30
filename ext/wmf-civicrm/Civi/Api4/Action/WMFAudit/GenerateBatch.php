@@ -197,7 +197,20 @@ class GenerateBatch extends AbstractAction {
           $this->log('Batch has missing GL data & hence not closed ' . $batch['name']);
         }
         elseif ($this->outputMethod === 'api') {
-          $record = array_merge($record, $this->pushJournalsToIntacct($batch, $record['csv']));
+          // Locked to prevent race conditions in this code and in the tracking of adjusments
+          // per https://wikitech.wikimedia.org/wiki/Fundraising/Data_and_flow/Intacct#Identifying_and_journaling_contribution_changes
+          $lock = \Civi::lockManager()->acquire('data.finance_batch.' . $batch['name']);
+          if (!$lock->isAcquired()) {
+            $this->log('Batch locked by a pending financial data change, skipping this run ' . $batch['name']);
+          }
+          else {
+            try {
+              $record = array_merge($record, $this->pushJournalsToIntacct($batch, $record['csv']));
+            }
+            finally {
+              $lock->release();
+            }
+          }
         }
       }
       else {
@@ -219,7 +232,7 @@ class GenerateBatch extends AbstractAction {
    *
    * @return array with 'is_uploaded' (bool), 'remote' (per-journal remote
    *   info, keyed by remote_descriptor) and, on failure, 'upload_errors' -
-   *   to be merged into the caller's $record for this batch.
+   *   merge these into the caller's $record for this batch.
    */
   private function pushJournalsToIntacct(array $batch, array $csvRows): array {
     $journalsToUpload = [];
@@ -250,6 +263,17 @@ class GenerateBatch extends AbstractAction {
       // already in $result, which is what the pre-extraction code did
       // (this ran before $record was appended to $result for this batch).
       $outcome['upload_errors'] = 'journal upload failed';
+    }
+    $journalCount = count($journalsToUpload);
+    if ($journalCount && $successFullUploads > 0 && $successFullUploads < $journalCount) {
+      // Exported to one entity but not the other - a straddling
+      // state that needs manual review before any further export
+      // attempt on this batch.
+      Batch::update(FALSE)
+        ->addWhere('name', '=', $batch['name'])
+        ->addValue('status_id:name', 'Partially Exported')
+        ->execute();
+      $this->log($batch['name'] . ': only exported to ' . $successFullUploads . ' of ' . $journalCount . ' entities - status set to Partially Exported');
     }
     return $outcome;
   }

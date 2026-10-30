@@ -63,6 +63,9 @@ class GenerateBatchTest extends BaseAuditTestCase {
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'cckendowment_344%')
       ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'adyen_346%')
+      ->execute();
     parent::tearDown();
   }
 
@@ -856,6 +859,69 @@ class GenerateBatchTest extends BaseAuditTestCase {
     // 27375 = GL_BALANCING_ACCOUNT_WMF_INSTANCE.
     $balancingRows = array_values(array_filter($rows, fn($r) => (string) ($r['ACCT_NO'] ?? '') === '27375'));
     $this->assertNotEmpty($balancingRows, 'Expected a balancing row using the WMF instance balancing account');
+  }
+
+  /**
+   * While something else (e.g. Civi\WMFHook\FinancialDataChange::pre())
+   * holds the settlement batch lock, GenerateBatch must not export it this
+   * run - otherwise it could race a pending financial-data correction and
+   * export a journal for stale gl_code/financial_type values.
+   */
+  public function testLockedBatchIsSkippedThisRun(): void {
+    $prefix = 'adyen_346';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-02-01';
+
+    $this->createQueueContribution([
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $this->addBatchWebResponses();
+
+    $competingLock = $this->acquireCompetingLock('data.finance_batch.' . $batchName);
+    $this->runGenerateWithGuzzle($batchName, $currency, $settlementDate, 10, 1, $prefix);
+
+    $this->assertEmpty($this->container, 'No Intacct calls should be made while the batch is locked');
+    $batch = Batch::get(FALSE)
+      ->addWhere('name', '=', $batchName)
+      ->addSelect('status_id:name')
+      ->execute()->single();
+    $this->assertEquals('total_verified', $batch['status_id:name'], 'Batch status should be untouched while locked');
+
+    // Release the competing connection's lock now that the assertions
+    // above are done with it.
+    $competingLock->disconnect();
+  }
+
+  /**
+   * Hold a MySQL named lock on $lockName from a second connection, so
+   * GenerateBatch's own acquire() attempt (on the shared request
+   * connection) fails - simulating a concurrent FinancialDataChange::pre()
+   * holding the lock. Mirrors the scoped lock-name formula in
+   * CRM_Core_Lock::__construct().
+   *
+   * Opens the second connection via DB::connect() on CiviCRM's own DSN,
+   * rather than hand-parsing it into a raw PDO connection - the DSN's
+   * credentials aren't necessarily in a shape a manually-built PDO DSN
+   * can reproduce (e.g. a blank/trust-auth user that only works via the
+   * same driver CiviCRM itself connects with).
+   */
+  private function acquireCompetingLock(string $lockName): \DB_common {
+    $dsn = \CRM_Utils_SQL::autoSwitchDSN(\CRM_Core_Config::singleton()->dsn);
+    $scopedName = \DB::parseDSN($dsn)['database'] . '.' . \CRM_Core_Config::domainID() . '.' . $lockName;
+    $db = \DB::connect($dsn);
+    if (\DB::isError($db)) {
+      $this->fail('Failed to open a competing DB connection: ' . $db->getMessage());
+    }
+    $acquired = $db->getOne('SELECT GET_LOCK(?, 5)', [sha1($scopedName)]);
+    $this->assertEquals(1, (int) $acquired, 'Failed to acquire the competing lock needed to set up this test');
+    return $db;
   }
 
   /**
