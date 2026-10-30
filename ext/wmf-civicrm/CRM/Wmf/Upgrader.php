@@ -5638,6 +5638,18 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Add the FinancialDataAdjustment custom group - see the GL Code &
+   * Financial Type Correction Plan.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5215(): bool {
+    civicrm_api4('WMFConfig', 'SyncCustomFields');
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

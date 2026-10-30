@@ -14,6 +14,7 @@
 // ******
 use Civi\Api4\OptionValue;
 use Civi\WMFHook\CalculatedData;
+use CRM_Wmf_ExtensionUtil as E;
 
 $calculatedData = new CalculatedData();
 // The option value for relationship is also ensured in the relationship
@@ -448,6 +449,22 @@ return [
       'extends' => 'Contribution',
     ],
     'fields' => _wmf_civicrm_get_gift_information_fields(),
+  ],
+  'FinancialDataAdjustment' => [
+    'group' => [
+      'name' => 'FinancialDataAdjustment',
+      'table_name' => 'civicrm_financial_data_adjustment',
+      'title' => E::ts('Financial Data Adjustment'),
+      'extends' => 'Contribution',
+      // 'Tab with table' keeps this off the Contribution edit screen, where it would
+      // otherwise show as a confusing, editable-looking inline block. UI exposure
+      // (e.g. a dedicated tab or report) is a follow-up.
+      'style' => 'Tab with table',
+      'collapse_display' => 1,
+      'is_active' => 1,
+      'is_multiple' => TRUE,
+    ],
+    'fields' => _wmf_civicrm_get_financial_data_adjustment_fields(),
   ],
 ];
 
@@ -2644,6 +2661,138 @@ function _wmf_civicrm_get_batch_data_fields(): array {
       'data_type' => 'Money',
       'html_type' => 'Text',
       'weight' => 22,
+    ],
+  ];
+}
+
+/**
+ * Get fields for the financial data adjustment custom group.
+ *
+ * One record per GL code / financial type correction made to a contribution
+ * after the fact.
+ *
+ * @see https://wikitech.wikimedia.org/wiki/Fundraising/Data_and_flow/Intacct#Identifying_and_journaling_contribution_changes
+ *
+ * @return array
+ */
+function _wmf_civicrm_get_financial_data_adjustment_fields(): array {
+  return [
+    'gl_code_before' => [
+      'name' => 'gl_code_before',
+      'column_name' => 'gl_code_before',
+      'label' => E::ts('GL Code (Before)'),
+      // Free-text snapshot, not Select - survives the gl_code option list changing later.
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'text_length' => 32,
+      'is_view' => 1,
+    ],
+    'gl_code_after' => [
+      'name' => 'gl_code_after',
+      'column_name' => 'gl_code_after',
+      'label' => E::ts('GL Code (After)'),
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'text_length' => 32,
+      'is_view' => 1,
+    ],
+    'is_endowment_before' => [
+      'name' => 'is_endowment_before',
+      'column_name' => 'is_endowment_before',
+      'label' => E::ts('Is Endowment (Before)'),
+      'data_type' => 'Boolean',
+      'html_type' => 'Radio',
+      'is_view' => 1,
+    ],
+    'is_endowment_after' => [
+      'name' => 'is_endowment_after',
+      'column_name' => 'is_endowment_after',
+      'label' => E::ts('Is Endowment (After)'),
+      'data_type' => 'Boolean',
+      'html_type' => 'Radio',
+      'is_view' => 1,
+    ],
+    'status' => [
+      'name' => 'status',
+      'column_name' => 'status',
+      'label' => E::ts('Status'),
+      'data_type' => 'String',
+      'html_type' => 'Select',
+      'default_value' => 'pending',
+      'is_searchable' => TRUE,
+      'is_view' => 1,
+      'option_values' => [
+        ['name' => 'pending', 'label' => 'Pending', 'value' => 'pending'],
+        ['name' => 'cancelled', 'label' => 'Cancelled', 'value' => 'cancelled'],
+        ['name' => 'needs_attention', 'label' => 'Needs Attention', 'value' => 'needs_attention'],
+        ['name' => 'complete', 'label' => 'Complete', 'value' => 'complete'],
+        ['name' => 'error', 'label' => 'Error', 'value' => 'error'],
+      ],
+    ],
+    'status_note' => [
+      'name' => 'status_note',
+      'column_name' => 'status_note',
+      'label' => E::ts('Status Note'),
+      'data_type' => 'Memo',
+      'html_type' => 'TextArea',
+      'is_view' => 1,
+    ],
+    'created_date' => [
+      'name' => 'created_date',
+      'column_name' => 'created_date',
+      'label' => E::ts('Created Date'),
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'date_format' => 'yy-mm-dd',
+      'time_format' => 2,
+      'is_view' => 1,
+    ],
+    'modified_date' => [
+      'name' => 'modified_date',
+      'column_name' => 'modified_date',
+      'label' => E::ts('Modified Date'),
+      'data_type' => 'Date',
+      'html_type' => 'Select Date',
+      'date_format' => 'yy-mm-dd',
+      'time_format' => 2,
+      'is_view' => 1,
+    ],
+    'created_id' => [
+      'name' => 'created_id',
+      'column_name' => 'created_id',
+      'label' => E::ts('Created By'),
+      'html_type' => 'Autocomplete-Select',
+      'data_type' => 'EntityReference',
+      'fk_entity' => 'Contact',
+      'is_view' => 1,
+    ],
+    'original_batch' => [
+      'name' => 'original_batch',
+      'column_name' => 'original_batch',
+      'label' => E::ts('Original Batch'),
+      // The exported batch's Batch.name; only set when that batch's status_id:name
+      // was 'Exported' at the moment of change - null means no adjustment journal is needed.
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_view' => 1,
+    ],
+    'adjustment_batch_reference' => [
+      'name' => 'adjustment_batch_reference',
+      'column_name' => 'adjustment_batch_reference',
+      'label' => E::ts('Adjustment Batch Reference'),
+      // Set during reservation to the recreation-side batch name.
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_view' => 1,
+    ],
+    'adjustment_reversal_batch_reference' => [
+      'name' => 'adjustment_reversal_batch_reference',
+      'column_name' => 'adjustment_reversal_batch_reference',
+      'label' => E::ts('Adjustment Reversal Batch Reference'),
+      // Set during reservation to the reversal-side batch name.
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_view' => 1,
     ],
   ];
 }
