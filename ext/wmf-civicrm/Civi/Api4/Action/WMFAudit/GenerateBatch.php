@@ -232,53 +232,10 @@ class GenerateBatch extends AbstractAction {
     $successFullUploads = 0;
     try {
       foreach ($journalsToUpload as $journal) {
-        $this->log('Journal being pushed to the staging ' . $journal['instance'] . 'version of Intacct via the api : ' . $batch['name'] . $journal['suffix']);
-        $apiOutcome = FinanceIntegration::pushJournal(FALSE)
-          ->setJournalFile($journal['file'])
-          ->setIsDryRun($this->isDryRun)
-          ->setInstance($journal['instance'])
-          ->setBatchName($batch['name'] . $journal['suffix'])
-          ->setBatchDescriptionPrefix($batch['batch_data.settlement_gateway'])
-          ->execute();
-        $this->log('Journal ' . $batch['name'] . $journal['suffix'] . ' successfully pushed to Intacct ' . $journal['instance'] . ' instance with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
-        foreach ($apiOutcome as $apiBatch) {
-          if ($apiBatch['status'] === 'Valid Remotely') {
-            $successFullUploads++;
-            $outcome['is_uploaded'] = $successFullUploads === count($journalsToUpload);
-            $statusUpdate = $outcome['is_uploaded'] ? ['status_id:name' => 'Exported'] : [];
-            $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct ' . ($outcome['is_uploaded'] ? ' and is now being closed (status set to Exported)' : ''));
-            $remote = [
-              'url' => $apiBatch['url'],
-              'id' => $apiBatch['remote_journal_id'],
-              'exchange_rate' => $apiBatch['exchange_rate'] ?? 1,
-              'txn_number' => $apiBatch['txn_number'],
-              'usd_journal_total' => $apiBatch['usd_journal_total'] ?? '',
-              'usd_credit' => $apiBatch['usd_credit'] ?? '',
-              'usd_debit' => $apiBatch['usd_debit'] ?? '',
-            ];
-            $outcome['remote'][$journal['remote_descriptor']] = $remote;
-            $totalDonationAmount = Money::of((string) ($batch['batch_data.settled_donation_amount'] ?? 0), $this->batchSummary[$batch['name']]['currency']);
-            if ($this->batchSummary[$batch['name']]['is_endowment_gateway']) {
-              $amountJournaledToFoundation = $this->batchSummary[$batch['name']]['foundation_transfer'];
-              $amountJournaledToEndowment = $totalDonationAmount->minus($amountJournaledToFoundation);
-            }
-            else {
-              $amountJournaledToEndowment = $this->batchSummary[$batch['name']]['endowment_transfer'];
-              $amountJournaledToFoundation = $totalDonationAmount->minus($amountJournaledToEndowment);
-            }
-            Batch::update(FALSE)
-              ->addWhere('name', '=', $batch['name'])
-              ->setValues([
-                'batch_data.exchange_rate' => $remote['exchange_rate'],
-                'batch_data.exchange_rate_source' => 'Intacct',
-                'batch_data.remote_url_' . $journal['remote_descriptor'] => $remote['url'],
-                'batch_data.remote_identifier_' . $journal['remote_descriptor'] => $remote['txn_number'],
-                'batch_data.amount_journaled_to_endowment' => (string) $amountJournaledToEndowment->getAmount(),
-                'batch_data.amount_journaled_to_foundation' => (string) $amountJournaledToFoundation->getAmount(),
-              ] + $statusUpdate)
-              ->execute();
-          }
-          $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['txn_number'] . '</a>');
+        foreach ($this->pushJournalToIntacct($batch, $journal, $successFullUploads, count($journalsToUpload)) as $pushResult) {
+          $successFullUploads++;
+          $outcome['remote'][$pushResult['remote_descriptor']] = $pushResult['remote'];
+          $outcome['is_uploaded'] = $pushResult['is_uploaded'];
         }
       }
     }
@@ -295,6 +252,77 @@ class GenerateBatch extends AbstractAction {
       $outcome['upload_errors'] = 'journal upload failed';
     }
     return $outcome;
+  }
+
+  /**
+   * Push a single journal to Intacct for $batch, updating its remote/
+   * status custom fields for any outcome Intacct confirms.
+   *
+   * $priorSuccessCount is how many of this batch's journals have already
+   * been confirmed by earlier calls for the same batch - needed, together
+   * with $journalCount, to know whether a given confirmation is the
+   * batch's last outstanding one, so the batch can be marked Exported.
+   *
+   * @return array[] zero or more {remote_descriptor, remote, is_uploaded}
+   *   results - normally one per journal, but pushJournal() can return
+   *   more than one outcome for a single call.
+   */
+  private function pushJournalToIntacct(array $batch, array $journal, int $priorSuccessCount, int $journalCount): array {
+    $this->log('Journal being pushed to the staging ' . $journal['instance'] . 'version of Intacct via the api : ' . $batch['name'] . $journal['suffix']);
+    $apiOutcome = FinanceIntegration::pushJournal(FALSE)
+      ->setJournalFile($journal['file'])
+      ->setIsDryRun($this->isDryRun)
+      ->setInstance($journal['instance'])
+      ->setBatchName($batch['name'] . $journal['suffix'])
+      ->setBatchDescriptionPrefix($batch['batch_data.settlement_gateway'])
+      ->execute();
+    $this->log('Journal ' . $batch['name'] . $journal['suffix'] . ' successfully pushed to Intacct ' . $journal['instance'] . ' instance with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
+    $successCount = $priorSuccessCount;
+    $results = [];
+    foreach ($apiOutcome as $apiBatch) {
+      if ($apiBatch['status'] === 'Valid Remotely') {
+        $successCount++;
+        $isUploaded = $successCount === $journalCount;
+        $statusUpdate = $isUploaded ? ['status_id:name' => 'Exported'] : [];
+        $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct ' . ($isUploaded ? ' and is now being closed (status set to Exported)' : ''));
+        $remote = [
+          'url' => $apiBatch['url'],
+          'id' => $apiBatch['remote_journal_id'],
+          'exchange_rate' => $apiBatch['exchange_rate'] ?? 1,
+          'txn_number' => $apiBatch['txn_number'],
+          'usd_journal_total' => $apiBatch['usd_journal_total'] ?? '',
+          'usd_credit' => $apiBatch['usd_credit'] ?? '',
+          'usd_debit' => $apiBatch['usd_debit'] ?? '',
+        ];
+        $totalDonationAmount = Money::of((string) ($batch['batch_data.settled_donation_amount'] ?? 0), $this->batchSummary[$batch['name']]['currency']);
+        if ($this->batchSummary[$batch['name']]['is_endowment_gateway']) {
+          $amountJournaledToFoundation = $this->batchSummary[$batch['name']]['foundation_transfer'];
+          $amountJournaledToEndowment = $totalDonationAmount->minus($amountJournaledToFoundation);
+        }
+        else {
+          $amountJournaledToEndowment = $this->batchSummary[$batch['name']]['endowment_transfer'];
+          $amountJournaledToFoundation = $totalDonationAmount->minus($amountJournaledToEndowment);
+        }
+        Batch::update(FALSE)
+          ->addWhere('name', '=', $batch['name'])
+          ->setValues([
+            'batch_data.exchange_rate' => $remote['exchange_rate'],
+            'batch_data.exchange_rate_source' => 'Intacct',
+            'batch_data.remote_url_' . $journal['remote_descriptor'] => $remote['url'],
+            'batch_data.remote_identifier_' . $journal['remote_descriptor'] => $remote['txn_number'],
+            'batch_data.amount_journaled_to_endowment' => (string) $amountJournaledToEndowment->getAmount(),
+            'batch_data.amount_journaled_to_foundation' => (string) $amountJournaledToFoundation->getAmount(),
+          ] + $statusUpdate)
+          ->execute();
+        $results[] = [
+          'remote_descriptor' => $journal['remote_descriptor'],
+          'remote' => $remote,
+          'is_uploaded' => $isUploaded,
+        ];
+      }
+      $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['txn_number'] . '</a>');
+    }
+    return $results;
   }
 
   public static function fields(): array {
