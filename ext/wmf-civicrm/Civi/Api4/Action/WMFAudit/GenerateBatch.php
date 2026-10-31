@@ -11,6 +11,7 @@ use Civi\Api4\Generic\Result;
 use Civi\Api4\FinanceIntegration;
 use Civi\Api4\GatewayAccount;
 use Civi\WMFBatch\BatchSummaryMailer;
+use Civi\WMFBatch\JournalGLConstants;
 use CRM_Core_DAO;
 use League\Csv\Writer;
 
@@ -26,37 +27,6 @@ use League\Csv\Writer;
  * @method $this setId(int $batch_id)
  */
 class GenerateBatch extends AbstractAction {
-
-  // Balancing accounts for a transfer between the wmf (foundation) and
-  // endowment instances - one const per instance per direction, for
-  // transparency about which is in play, but the values are shared: each
-  // instance always uses the same balancing account for the transfer,
-  // whichever direction it's moving.
-  const GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT = 27375;
-  const GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE = 11110;
-  const GL_BALANCING_ACCOUNT_ENDOWMENT_TO_WMF = 11110;
-  const GL_BALANCING_ACCOUNT_WMF_INSTANCE = 27375;
-
-  const LOCATION_ID_WMF = '100-WMF';
-  const LOCATION_ID_ENDOWMENT = '300-END';
-
-  // Default GL account for a fee row (see getFeeAccountCodeClause()).
-  const GL_FEE_DEFAULT = 60917;
-
-  /**
-   * Gateway-keyed override of GL_FEE_DEFAULT, split by whether the batch's
-   * own gateway account is a foundation or endowment account.
-   *
-   * Only CCK (Chisholm Chisholm & Kilpatrick, who process bequests) need this today.
-   */
-  const GATEWAY_ACCOUNTS_FEE_GL_CODES = [
-    'cck' => 60931,
-    'cckendowment' => 60932,
-  ];
-
-  const GL_ENDOWMENT_MEMO_SUFFIX = 'Earmarked for Endowment from WMF';
-
-  const BALANCING_ACCOUNT_HARD_CODED = 'determined_in_code';
 
   /**
    * Is this a dry run (if so do not close batches or push to the api).
@@ -493,11 +463,11 @@ class GenerateBatch extends AbstractAction {
       'fromDescriptor' => 'to_endowment',
       'toDescriptor' => 'endowment_instance',
       'suffix' => 'e',
-      'toLocationId' => self::LOCATION_ID_ENDOWMENT,
+      'toLocationId' => JournalGLConstants::LOCATION_ID_ENDOWMENT,
       'vendorMapperMethod' => 'mapVendorToEndowmentVendor',
       'remapMajorGiftsToRestricted' => TRUE,
-      'fromBalancingAccount' => self::GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT,
-      'toBalancingAccount' => self::GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE,
+      'fromBalancingAccount' => JournalGLConstants::GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT,
+      'toBalancingAccount' => JournalGLConstants::GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE,
       'summaryKey' => 'endowment_transfer',
     ];
   }
@@ -517,14 +487,14 @@ class GenerateBatch extends AbstractAction {
       'fromDescriptor' => 'to_foundation',
       'toDescriptor' => 'foundation',
       'suffix' => 'f',
-      'toLocationId' => self::LOCATION_ID_WMF,
+      'toLocationId' => JournalGLConstants::LOCATION_ID_WMF,
       'vendorMapperMethod' => 'mapVendorToFoundationVendor',
       // @todo unlike the endowment-bound transfer, this doesn't remap
       // Major Gifts to a restricted account - unconfirmed whether an
       // equivalent un-restricting remap is needed here.
       'remapMajorGiftsToRestricted' => FALSE,
-      'fromBalancingAccount' => self::GL_BALANCING_ACCOUNT_ENDOWMENT_TO_WMF,
-      'toBalancingAccount' => self::GL_BALANCING_ACCOUNT_WMF_INSTANCE,
+      'fromBalancingAccount' => JournalGLConstants::GL_BALANCING_ACCOUNT_ENDOWMENT_TO_WMF,
+      'toBalancingAccount' => JournalGLConstants::GL_BALANCING_ACCOUNT_WMF_INSTANCE,
       'summaryKey' => 'foundation_transfer',
     ];
   }
@@ -685,7 +655,7 @@ END";
    * @return string
    */
   private function getFeeAccountCode(string $batchName): string {
-    return (string) (self::GATEWAY_ACCOUNTS_FEE_GL_CODES[$this->getGateway($batchName)] ?? self::GL_FEE_DEFAULT);
+    return (string) (JournalGLConstants::GATEWAY_ACCOUNTS_FEE_GL_CODES[$this->getGateway($batchName)] ?? JournalGLConstants::GL_FEE_DEFAULT);
   }
 
   /**
@@ -723,7 +693,7 @@ END";
   public function getDetailData(string $renderedSql, $batchName): array {
     $detailSQL = str_replace('GROUP BY ', 'GROUP BY c.id, ', $renderedSql);
     $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
-    $locationID = $this->isEndowmentGateway($batchName) ? self::LOCATION_ID_ENDOWMENT : self::LOCATION_ID_WMF;
+    $locationID = $this->isEndowmentGateway($batchName) ? JournalGLConstants::LOCATION_ID_ENDOWMENT : JournalGLConstants::LOCATION_ID_WMF;
     $detailSQL = str_replace('GLDIMFUNDING', 'GLDIMFUNDING,
         "' . $locationID . '" as LOCATION_ID,
         "' . $this->getVendorCode($batchName) . '" as GL_VENDOR,
@@ -788,36 +758,10 @@ END";
 
   private function getReversalAccountCode($currency, string $batchName): int {
     $balancingAccount = $this->getGatewayAccounts()[$this->getGateway($batchName)]['balancing_account_foundation'];
-    if ($balancingAccount === self::BALANCING_ACCOUNT_HARD_CODED) {
+    if ($balancingAccount === JournalGLConstants::BALANCING_ACCOUNT_HARD_CODED) {
       // Varies by currency - not yet representable as a single value on the
       // GatewayAccount record (see GatewayAccount_paypal in GatewayAccount.mgd.php).
-      $codes = [
-        'USD' => 10900,
-        'CAD' => 10901,
-        'EUR' => 10902,
-        'GBP' => 10903,
-        'JPY' => 10904,
-        'AUD' => 10906,
-        'NZD' => 10907,
-        'HKD' => 10908,
-        'SGD' => 10909,
-        'CHF' => 10910,
-        'SEK' => 10911,
-        'NOK' => 10912,
-        'DKK' => 10913,
-        'PLN' => 10914,
-        'HUF' => 10915,
-        'CZK' => 10916,
-        'BRL' => 10917,
-        'ILS' => 10918,
-        'MXN' => 10919,
-        'PHP' => 10920,
-        'THB' => 10921,
-        'TWD' => 10922,
-        'ZAR' => 10925,
-        'KRW' => 10926,
-      ];
-      return $codes[$currency];
+      return JournalGLConstants::PAYPAL_REVERSAL_ACCOUNT_CODES_BY_CURRENCY[$currency];
     }
     return (int) $balancingAccount;
   }
@@ -1011,7 +955,7 @@ END";
     CONCAT('Contribution Revenue ', '{$dateDescription}') as DESCRIPTION,
     $accountCodeClause AS ACCT_NO,
     $deptIDClause as DEPT_ID,
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Donations', IF(c.financial_type_id = $endowmentFinancialType, ' " . self::GL_ENDOWMENT_MEMO_SUFFIX . "', '')) as MEMO,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Donations', IF(c.financial_type_id = $endowmentFinancialType, ' " . JournalGLConstants::GL_ENDOWMENT_MEMO_SUFFIX . "', '')) as MEMO,
     IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, 0, -SUM(COALESCE(settled_donation_amount, 0)))  as DEBIT,
     IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, SUM(COALESCE(settled_donation_amount, 0)), 0) as CREDIT,
     s.settlement_currency as CURRENCY,
@@ -1031,7 +975,7 @@ UNION ALL
    CONCAT('Contribution Revenue ', '{$dateDescription}' ) as DESCRIPTION,
    $accountCodeClause AS ACCT_NO,
     $deptIDClause as DEPT_ID,
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Refunds', IF(c.financial_type_id = $endowmentFinancialType, '" . self::GL_ENDOWMENT_MEMO_SUFFIX . "', '')) as MEMO,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Refunds', IF(c.financial_type_id = $endowmentFinancialType, '" . JournalGLConstants::GL_ENDOWMENT_MEMO_SUFFIX . "', '')) as MEMO,
 
     IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, SUM(-COALESCE(settled_reversal_amount, 0)),0) as DEBIT,
     IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, 0, SUM(-COALESCE(settled_reversal_amount, 0)))  as CREDIT,
@@ -1237,7 +1181,7 @@ GROUP BY s.settlement_batch_reference
       'REFERENCE_NO' => '',
       'LINE_NO' => '',
       'ACCT_NO' => '',
-      'LOCATION_ID' => $isEndowmentGateway ? self::LOCATION_ID_ENDOWMENT : self::LOCATION_ID_WMF,
+      'LOCATION_ID' => $isEndowmentGateway ? JournalGLConstants::LOCATION_ID_ENDOWMENT : JournalGLConstants::LOCATION_ID_WMF,
       'DEPT_ID' => '',
       'DOCUMENT' => $batch['name'],
       'DEBIT' => 0,
@@ -1488,7 +1432,7 @@ GROUP BY s.settlement_batch_reference
     $reordered = [
       'gateway' => $row['gateway'],
       'settlement_date' => $row['settlement_date'],
-      'type' => trim(str_replace(self::GL_ENDOWMENT_MEMO_SUFFIX, '', substr(strrchr($row['MEMO'], '|'), 1))),
+      'type' => trim(str_replace(JournalGLConstants::GL_ENDOWMENT_MEMO_SUFFIX, '', substr(strrchr($row['MEMO'], '|'), 1))),
       'DEBIT' => $row['DEBIT'],
       'CREDIT' => $row['CREDIT'],
     ];

@@ -1,6 +1,6 @@
 <?php
 
-use Civi\Api4\Action\WMFAudit\GenerateBatch;
+use Civi\WMFBatch\JournalGLConstants;
 
 return [
   [
@@ -59,7 +59,7 @@ return [
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V00282',
         'vendor_code_endowment' => 'V04989',
-        'balancing_account_foundation' => GenerateBatch::BALANCING_ACCOUNT_HARD_CODED,
+        'balancing_account_foundation' => JournalGLConstants::BALANCING_ACCOUNT_HARD_CODED,
       ],
       'match' => [
         'name',
