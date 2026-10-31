@@ -278,7 +278,8 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
 
     if ($this->nameHandlingSetting && $this->hasAlternatives($name)) {
       if (!$hasNickName && $this->isNickNameOf($name, $otherName)) {
-        $nickName = $this->getOtherNameWithPreferredCasing($otherName, $name);
+        $nickName = $this->getBetterCasing($name, $this->getAlternativesFor($otherName)['alternative_of'] ?? []);
+        $fullName = $this->getBetterCasing($otherName, $this->getAlternativesFor($name)['nick_name_of']);
         if ($this->isKeepNickName) {
           // Always set for the contact Not to keep to force it to be saved since it is on
           // neither contact at the moment.
@@ -288,29 +289,27 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
           $this->setResolvedValue($fieldName, $nickName);
         }
         if ($this->isPreferOtherName) {
-          $this->setResolvedValue($fieldName, $otherName);
+          $this->setResolvedValue($fieldName, $fullName);
         }
       }
     }
   }
 
   /**
-   * Get the name to use but prefer the saved name pair version if it is all lower case.
-   * @param string $name
-   * @param string $otherName
+   * Get the name pair spelling of the value if it has better capitalisation.
+   *
+   * @param string $value
+   * @param string[] $namePairValues
    *
    * @return string
    */
-  public function getOtherNameWithPreferredCasing(string $name, string $otherName): string {
-    if ($otherName <> mb_strtolower($otherName)) {
-      return $otherName;
-    }
-    foreach ($this->getAlternativesFor($name)['alternative_of'] ?? [] as $alternative) {
-      if (mb_strtolower($alternative) === mb_strtolower($otherName)) {
-        return $alternative;
+  private function getBetterCasing(string $value, array $namePairValues): string {
+    foreach ($namePairValues as $namePairValue) {
+      if (mb_strtolower($namePairValue) === mb_strtolower($value) && $this->isBetterCapitalization($value, $namePairValue)) {
+        return $namePairValue;
       }
     }
-    return $otherName;
+    return $value;
   }
 
 }

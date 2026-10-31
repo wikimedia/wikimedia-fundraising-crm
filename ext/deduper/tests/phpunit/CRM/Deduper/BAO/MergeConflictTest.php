@@ -1,6 +1,7 @@
 <?php
 
 use Civi\Api4\Address;
+use Civi\Api4\ContactNamePair;
 use Civi\Api4\CustomGroup;
 use Civi\Api4\OptionValue;
 use Civi\Api4\Phone;
@@ -519,6 +520,68 @@ class CRM_Deduper_BAO_MergeConflictTest extends DedupeBaseTestClass {
     $this->createDuplicateIndividuals([['first_name' => 'Ted'], ['first_name' => 'theodore']]);
     $mergedContact = $this->doMerge($isReverse);
     $this->assertEquals('Ted', $mergedContact['first_name']);
+  }
+
+  /**
+   * Test that an all caps nickname is resolved with the name pair casing.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testMergePreferNickNameWithAllCapsNickName(bool $isReverse): void {
+    $this->setSetting('deduper_equivalent_name_handling', 'prefer_nick_name');
+    $this->createDuplicateIndividuals([['first_name' => 'Theodore'], ['first_name' => 'TED']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Ted', $mergedContact['first_name']);
+  }
+
+  /**
+   * Test that a lower case non nickname is resolved with the name pair casing.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testMergePreferNonNickNameWithCaseMismatch(bool $isReverse): void {
+    $this->setSetting('deduper_equivalent_name_handling', 'prefer_non_nick_name');
+    $this->createDuplicateIndividuals([['first_name' => 'Ted'], ['first_name' => 'theodore']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Theodore', $mergedContact['first_name']);
+  }
+
+  /**
+   * Test that both names are resolved with the name pair casing when keeping the nickname.
+   *
+   * @param bool $isReverse
+   *   Should we reverse which contact we merge into?
+   *
+   * @dataProvider booleanDataProvider
+   */
+  public function testMergePreferNonNickNameKeepNickNameWithCaseMismatch(bool $isReverse): void {
+    $this->setSetting('deduper_equivalent_name_handling', 'prefer_non_nick_name_keep_nick_name');
+    $this->createDuplicateIndividuals([['first_name' => 'THEODORE'], ['first_name' => 'ted']]);
+    $mergedContact = $this->doMerge($isReverse);
+    $this->assertEquals('Theodore', $mergedContact['first_name']);
+    $this->assertEquals('Ted', $mergedContact['nick_name']);
+  }
+
+  /**
+   * Test that saving a name pair clears cached alternatives for both names, regardless of case.
+   */
+  public function testSaveNamePairClearsCachedAlternatives(): void {
+    $cacheKeys = ['name_alternatives_' . md5('zebedee'), 'name_alternatives_' . md5('zeb')];
+    foreach ($cacheKeys as $cacheKey) {
+      \Civi::cache('dedupe_pairs')->set($cacheKey, []);
+    }
+    ContactNamePair::create(FALSE)
+      ->setValues(['name_a' => 'Zebedee', 'name_b' => 'Zeb', 'is_name_b_nickname' => TRUE])
+      ->execute();
+    foreach ($cacheKeys as $cacheKey) {
+      $this->assertFalse(\Civi::cache('dedupe_pairs')->has($cacheKey));
+    }
   }
 
   /**
