@@ -984,6 +984,105 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
+   * Recurring statuses as of a past date use that date's paused window and the recurring log, or before the log the recurring's dates.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testCalculatedAsOfRecurring(): void {
+    $this->createIndividual([], 'logged');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['logged'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'In Progress',
+      'start_date' => '2022-01-01',
+      'next_sched_contribution_date' => '2024-05-15',
+    ], 'logged');
+    $this->setRecurLogDate('logged', '2024-02-15');
+    ContributionRecur::update(FALSE)
+      ->addWhere('id', '=', $this->ids['ContributionRecur']['logged'])
+      ->addValue('contribution_status_id:name', 'Cancelled')
+      ->addValue('cancel_date', '2024-06-01')
+      ->execute();
+    $this->setRecurLogDate('logged', '2024-06-01');
+
+    $this->createIndividual([], 'before_log');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['before_log'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'Failed',
+      'start_date' => '2014-01-01',
+      'cancel_date' => '2015-06-01',
+    ], 'before_log');
+
+    $this->createIndividual([], 'two_recurs');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['two_recurs'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'In Progress',
+      'start_date' => '2014-01-01',
+    ], 'two_recurs_before_log');
+    $this->setRecurLogDate('two_recurs_before_log', '2024-01-01');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['two_recurs'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'In Progress',
+      'start_date' => '2022-01-01',
+      'next_sched_contribution_date' => '2023-06-01',
+    ], 'two_recurs_paused');
+    $this->setRecurLogDate('two_recurs_paused', '2023-01-15');
+
+    $this->createIndividual([], 'same_second');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['same_second'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'In Progress',
+      'start_date' => '2022-01-01',
+      'next_sched_contribution_date' => '2023-02-01',
+    ], 'same_second');
+    ContributionRecur::update(FALSE)
+      ->addWhere('id', '=', $this->ids['ContributionRecur']['same_second'])
+      ->addValue('contribution_status_id:name', 'Cancelled')
+      ->addValue('cancel_date', '2023-01-15')
+      ->execute();
+    $this->setRecurLogDate('same_second', '2023-01-15 10:00:00');
+
+    // Paused based on next scheduled date
+    $this->assertEquals(35, $this->getAsOfValue('civicrm_contribution_recur', 'donor_status_recur_month', '2024-03-01', 'logged'));
+    // Active
+    $this->assertEquals(15, $this->getAsOfValue('civicrm_contribution_recur', 'donor_status_recur_month', '2024-05-01', 'logged'));
+    // Cancelled from the log before this date
+    $this->assertEquals(65, $this->getAsOfValue('civicrm_contribution_recur', 'donor_status_recur_month', '2024-07-01', 'logged'));
+    // Active before cancel_date
+    $this->assertEquals(15, $this->getAsOfValue('civicrm_contribution_recur', 'donor_status_recur_month', '2015-03-01', 'before_log'));
+    // Failed based on current status
+    $this->assertEquals(55, $this->getAsOfValue('civicrm_contribution_recur', 'donor_status_recur_month', '2015-09-01', 'before_log'));
+    // Active, though the logged recurring is paused, as the one from before logging isn't
+    $this->assertEquals(15, $this->getAsOfValue('civicrm_contribution_recur', 'donor_status_recur_month', '2023-02-01', 'two_recurs'));
+    // Cancelled, though logged in the same second as in progress
+    $this->assertEquals(65, $this->getAsOfValue('civicrm_contribution_recur', 'donor_status_recur_month', '2023-02-01', 'same_second'));
+  }
+
+  /**
+   * Set the date of the recurring's log rows written after that date.
+   */
+  private function setRecurLogDate(string $recurKey, string $logDate): void {
+    \CRM_Core_DAO::executeQuery('UPDATE log_civicrm_contribution_recur SET log_date = %1 WHERE id = %2 AND log_date > %1', [
+      1 => [$logDate, 'String'],
+      2 => [$this->ids['ContributionRecur'][$recurKey], 'Integer'],
+    ]);
+  }
+
+  /**
    * Test donor_status_recur_overall across mixed recurring frequencies.
    *
    * The overall field considers recurrings of every frequency, with each
