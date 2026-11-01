@@ -948,6 +948,42 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
+   * Statuses calculated as of a past date use that date's contributions and financial year.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testCalculatedAsOfDate(): void {
+    $this->createIndividual([], 'one_time');
+    foreach (['2022-10-01', '2023-10-01'] as $index => $receiveDate) {
+      $this->createTestEntity('Contribution', [
+        'contact_id' => $this->ids['Contact']['one_time'],
+        'receive_date' => $receiveDate,
+        'total_amount' => 10,
+        'financial_type_id:name' => 'Donation',
+      ], 'one_time_' . $index);
+    }
+
+    // New this year
+    $this->assertEquals(30, $this->getAsOfValue('civicrm_contribution', 'donor_status_overall', '2023-03-01', 'one_time'));
+    // Consecutive this year
+    $this->assertEquals(10, $this->getAsOfValue('civicrm_contribution', 'donor_status_overall', '2024-03-01', 'one_time'));
+    // Consecutive last year
+    $this->assertEquals(40, $this->getAsOfValue('civicrm_contribution', 'donor_status_overall', '2024-08-01', 'one_time'));
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private function getAsOfValue(string $tableName, string $field, string $asOfDate, string $contactKey) {
+    $processor = CalculatedData::createForSourceTables($tableName)[$tableName];
+    $processor->setTriggerContext(FALSE)
+      ->setAsOfDate($asOfDate)
+      ->setWhereClause('c.contact_id = ' . $this->ids['Contact'][$contactKey]);
+    $processor->filterDonorFields([$field]);
+    return \CRM_Core_DAO::executeQuery($processor->getSelectSQL())->fetchAll()[0][$field];
+  }
+
+  /**
    * Test donor_status_recur_overall across mixed recurring frequencies.
    *
    * The overall field considers recurrings of every frequency, with each

@@ -35,6 +35,13 @@ class CalculatedData extends TriggerHook {
   protected bool $triggerContext = TRUE;
 
   /**
+   * Date to calculate as of, in place of the current date.
+   *
+   * @var string|null
+   */
+  protected ?string $asOfDate = NULL;
+
+  /**
    * SQL for the segment selects.
    *
    * @var string
@@ -170,6 +177,27 @@ class CalculatedData extends TriggerHook {
    */
   public function setTriggerContext(bool $triggerContext): self {
     $this->triggerContext = $triggerContext;
+    return $this;
+  }
+
+  /**
+   * Calculate as of the given date rather than now.
+   *
+   * Must be called before any field SQL is built, as that is cached.
+   *
+   * @param string $asOfDate
+   *   SQL datetime, e.g. '2024-07-01 00:00:00'.
+   *
+   * @return \Civi\WMFHook\CalculatedData
+   * @throws \CRM_Core_Exception
+   */
+  public function setAsOfDate(string $asOfDate): self {
+    $timestamp = strtotime($asOfDate);
+    if ($timestamp === FALSE) {
+      throw new \CRM_Core_Exception('Invalid as-of date: ' . $asOfDate);
+    }
+    // Reformatted as it goes straight into the SQL.
+    $this->asOfDate = date('Y-m-d H:i:s', $timestamp);
     return $this;
   }
 
@@ -1161,7 +1189,7 @@ class CalculatedData extends TriggerHook {
   }
 
   /**
-   * Get the string to select the wmf donor data fpr the contribution table.
+   * Get the string to select the wmf donor data for the contribution table.
    *
    * @return string
    */
@@ -1190,7 +1218,8 @@ class CalculatedData extends TriggerHook {
     ON annual_recur.id = c.contribution_recur_id
     AND annual_recur.frequency_unit = 'year'
   WHERE $where
-    AND c.contribution_status_id = 1
+    AND c.contribution_status_id = 1" . (!$this->asOfDate ? '' : "
+    AND c.receive_date <= '$this->asOfDate'") . "
     AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
 $groupBy
   ) as totals" .
@@ -1254,7 +1283,8 @@ $groupBy
         FROM civicrm_contribution c
         USE INDEX(FK_civicrm_contribution_contact_id)
         WHERE $where
-          AND c.contribution_status_id = 1
+          AND c.contribution_status_id = 1" . (!$this->asOfDate ? '' : "
+          AND c.receive_date <= '$this->asOfDate'") . "
           AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
           AND c.total_amount > 0
         GROUP BY c.contact_id, fy
@@ -1635,15 +1665,16 @@ $groupBy
       ['labelColumn' => 'name']
     ));
     $frequencyFilter = $frequencyUnit === 'overall' ? '' : " AND c.frequency_unit = '$frequencyUnit'";
+    $asOf = $this->asOfDate ? "'$this->asOfDate'" : 'NOW()';
     if ($frequencyUnit === 'overall') {
       $pausedUntil = 'CASE c.frequency_unit';
       foreach (['month', 'year'] as $unit) {
-        $pausedUntil .= " WHEN '$unit' THEN NOW() + INTERVAL 1 $unit + INTERVAL 1 DAY";
+        $pausedUntil .= " WHEN '$unit' THEN $asOf + INTERVAL 1 $unit + INTERVAL 1 DAY";
       }
       $pausedUntil .= ' END';
     }
     else {
-      $pausedUntil = "NOW() + INTERVAL 1 $frequencyUnit + INTERVAL 1 DAY";
+      $pausedUntil = "$asOf + INTERVAL 1 $frequencyUnit + INTERVAL 1 DAY";
     }
     return "CASE
       -- Paused status (35), no scheduled payments within the recurring's frequency unit
@@ -2248,8 +2279,9 @@ $groupBy
    * @return int
    */
   protected function getCurrentFinancialYearStartYear(): int {
-    $currentMonth = date('m');
-    return (int) ($currentMonth < 7 ? (date('Y') - 1) : date('Y'));
+    $timestamp = $this->asOfDate ? strtotime($this->asOfDate) : time();
+    $currentMonth = date('m', $timestamp);
+    return (int) ($currentMonth < 7 ? (date('Y', $timestamp) - 1) : date('Y', $timestamp));
   }
 
   /**
