@@ -1316,13 +1316,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ->setEndDate('2023-09-01')
       ->execute();
 
-    $history = WMFDonorHistory::get(FALSE)
-      ->addSelect('log_date', 'donor_segment_overall', 'donor_status_overall', 'donor_status_otg', 'donor_status_recur_overall', 'donor_status_recur_month', 'donor_status_recur_year', 'changed_fields')
-      ->addWhere('entity_id', '=', $contactID)
-      ->addWhere('log_date', '<', '2023-09-01')
-      ->addOrderBy('log_date')
-      ->execute();
-    $savedRows = array_map('array_values', (array) $history);
+    $savedRows = $this->getHistoryRows($contactID, '2023-09-01');
     // [log_date, segment, overall, otg, recur overall, recur month, recur year, changed fields]
     $this->assertEquals([
       // New, replacing the wrong row
@@ -1335,6 +1329,52 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ->addWhere('entity_id', '=', $contactID)
       ->addWhere('log_date', '>=', '2023-09-01')
       ->execute()->column('log_id'));
+  }
+
+  /**
+   * After a merge, the merged contact keeps its history and the kept contact's is rebuilt.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testMergeRebuildsHistory(): void {
+    $contactID = $this->createIndividual([], 'donor');
+    $duplicateID = $this->createIndividual([], 'duplicate');
+    foreach (['donor' => '2023-03-01', 'duplicate' => '2023-10-01'] as $key => $receiveDate) {
+      $this->createTestEntity('Contribution', [
+        'contact_id' => $this->ids['Contact'][$key],
+        'receive_date' => $receiveDate,
+        'total_amount' => 10,
+        'financial_type_id:name' => 'Donation',
+      ], $key);
+    }
+    $duplicateLogIDs = WMFDonorHistory::get(FALSE)
+      ->addWhere('entity_id', '=', $duplicateID)
+      ->execute()->column('log_id');
+    $this->assertNotEmpty($duplicateLogIDs);
+
+    Contact::mergeDuplicates(FALSE)
+      ->setContactId($contactID)
+      ->setDuplicateId($duplicateID)
+      ->execute();
+    $runner = new \CRM_Queue_Runner(['queue' => \Civi::queue('wmf_donor_history')]);
+    $this->assertTrue($runner->runAll());
+
+    // The merged away contact still has the same log rows.
+    $this->assertEquals($duplicateLogIDs, WMFDonorHistory::get(FALSE)
+      ->addWhere('entity_id', '=', $duplicateID)
+      ->addWhere('log_id', 'IN', $duplicateLogIDs)
+      ->execute()->column('log_id'));
+    // [log_date, segment, overall, otg, recur overall, recur month, recur year, changed fields]
+    $this->assertEquals([
+      // New
+      ['2023-03-01 00:00:00', 600, 30, 30, 95, 95, 95, [1, 2, 3, 6, 4, 5]],
+      // New last year, on rollover
+      ['2023-07-01 00:00:00', 600, 60, 60, 95, 95, 95, [2, 3]],
+      // Consecutive, from the merged contact's gift
+      ['2023-10-01 00:00:00', 600, 10, 10, 95, 95, 95, [2, 3]],
+      // Consecutive last year, on rollover
+      ['2024-07-01 00:00:00', 600, 40, 40, 95, 95, 95, [2, 3]],
+    ], $this->getHistoryRows($contactID, '2025-01-01'));
   }
 
   /**
@@ -1380,6 +1420,35 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     foreach (array_keys((new CalculatedData())->getLoggedFields()) as $field) {
       $this->assertEquals($stored["wmf_donor.$field"], $lastRow[$field], $field);
     }
+  }
+
+  /**
+   * Get the contact's history rows before the date, in time order.
+   *
+   * @return array
+   *   [[log_date, segment, overall, otg, recur overall, recur month, recur year, changed fields], ...]
+   * @throws \CRM_Core_Exception
+   */
+  private function getHistoryRows(int $contactID, string $before): array {
+    $history = WMFDonorHistory::get(FALSE)
+      ->addWhere('entity_id', '=', $contactID)
+      ->addWhere('log_date', '<', $before)
+      ->addOrderBy('log_date')
+      ->execute();
+    $rows = [];
+    foreach ($history as $row) {
+      $rows[] = [
+        $row['log_date'],
+        $row['donor_segment_overall'],
+        $row['donor_status_overall'],
+        $row['donor_status_otg'],
+        $row['donor_status_recur_overall'],
+        $row['donor_status_recur_month'],
+        $row['donor_status_recur_year'],
+        $row['changed_fields'],
+      ];
+    }
+    return $rows;
   }
 
   /**
