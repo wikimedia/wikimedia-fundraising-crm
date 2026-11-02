@@ -1332,6 +1332,56 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
+   * rebuildHistory from a start date keeps earlier rows and continues from the last of them.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRebuildHistoryFromStartDate(): void {
+    $contactID = $this->createIndividual([], 'donor');
+    foreach (['2023-03-01', '2023-10-01'] as $index => $receiveDate) {
+      $this->createTestEntity('Contribution', [
+        'contact_id' => $contactID,
+        'receive_date' => $receiveDate,
+        'total_amount' => 10,
+        'financial_type_id:name' => 'Donation',
+      ], 'donor_' . $index);
+    }
+    WMFDonor::rebuildHistory(FALSE)
+      ->setContactIds([$contactID])
+      ->setEndDate('2025-01-01')
+      ->execute();
+    $earlierLogIDs = WMFDonorHistory::get(FALSE)
+      ->addWhere('entity_id', '=', $contactID)
+      ->addWhere('log_date', '<', '2023-08-01')
+      ->execute()->column('log_id');
+    Contribution::update(FALSE)
+      ->addWhere('id', '=', $this->ids['Contribution']['donor_1'])
+      ->addValue('contribution_status_id:name', 'Refunded')
+      ->execute();
+
+    WMFDonor::rebuildHistory(FALSE)
+      ->setContactIds([$contactID])
+      ->setStartDate('2023-08-01')
+      ->setEndDate('2025-01-01')
+      ->execute();
+
+    // [log_date, segment, overall, otg, recur overall, recur month, recur year, changed fields]
+    $this->assertEquals([
+      // New, from earlier
+      ['2023-03-01 00:00:00', 600, 30, 30, 95, 95, 95, [1, 2, 3, 6, 4, 5]],
+      // New last year, on rollover, from earlier
+      ['2023-07-01 00:00:00', 600, 60, 60, 95, 95, 95, [2, 3]],
+      // Lapsed, on rollover, as the refunded gift no longer counts, rebuilt
+      ['2024-07-01 00:00:00', 600, 70, 70, 95, 95, 95, [2, 3]],
+    ], $this->getHistoryRows($contactID, '2025-01-01'));
+    // And the earlier rows aren't changed.
+    $this->assertEquals($earlierLogIDs, WMFDonorHistory::get(FALSE)
+      ->addWhere('entity_id', '=', $contactID)
+      ->addWhere('log_date', '<', '2023-08-01')
+      ->execute()->column('log_id'));
+  }
+
+  /**
    * After a merge, the merged contact keeps its history and the kept contact's is rebuilt.
    *
    * @throws \CRM_Core_Exception

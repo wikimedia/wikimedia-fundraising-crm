@@ -4,6 +4,7 @@ namespace Civi\Api4\Action\WMFDonor;
 
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\WMFDonorHistory;
 use Civi\WMFHook\CalculatedData;
 
 /**
@@ -13,7 +14,7 @@ use Civi\WMFHook\CalculatedData;
  * recurring unpause and financial year rollover, with a row whenever one of
  * them changed. Only the source table that changed is recalculated. Each
  * contact's history before the end date is replaced with these rows, which are
- * also returned.
+ * also returned. With a start date, earlier rows are kept.
  */
 class RebuildHistory extends AbstractAction {
 
@@ -31,6 +32,13 @@ class RebuildHistory extends AbstractAction {
    * @required
    */
   protected $contactIds = [];
+
+  /**
+   * Rebuild history from (including) this SQL datetime. Defaults to all time.
+   *
+   * @var string
+   */
+  protected $startDate;
 
   /**
    * Rebuild history before (not including) this SQL datetime. Defaults to now.
@@ -55,12 +63,14 @@ class RebuildHistory extends AbstractAction {
   public function _run(Result $result): void {
     // Normalised as it's compared as a string.
     $endDate = date('Y-m-d H:i:s', strtotime($this->endDate ?? 'now'));
+    // Events just before the start date may have been merged with ones from it.
+    $startDate = $this->startDate ? date('Y-m-d H:i:s', strtotime($this->startDate) - self::MERGE_SECONDS) : NULL;
     foreach (CalculatedData::createForSourceTables() as $tableName => $processor) {
       $this->loggedFieldsByTable[$tableName] = $processor->getLoggedFields();
     }
     foreach (array_unique(array_diff($this->contactIds, CalculatedData::getExcludedContactIDs())) as $contactID) {
-      $rows = $this->getContactHistory($contactID, $endDate);
-      $this->saveContactHistory($contactID, $endDate, $rows);
+      $rows = $this->getContactHistory($contactID, $startDate, $endDate);
+      $this->saveContactHistory($contactID, $startDate, $endDate, $rows);
       foreach ($rows as $row) {
         $result[] = $row;
       }
@@ -68,21 +78,28 @@ class RebuildHistory extends AbstractAction {
   }
 
   /**
-   * Replace the contact's history rows before the end date.
+   * Replace the contact's history rows from the start date and before the end date.
    *
    * @param int $contactID
+   * @param string|null $startDate
    * @param string $endDate
    * @param array $rows
    *
    * @throws \Throwable
    */
-  private function saveContactHistory(int $contactID, string $endDate, array $rows): void {
+  private function saveContactHistory(int $contactID, ?string $startDate, string $endDate, array $rows): void {
     $transaction = new \CRM_Core_Transaction();
     try {
-      \CRM_Core_DAO::executeQuery('DELETE FROM wmf_donor_history WHERE entity_id = %1 AND log_date < %2', [
+      $where = 'entity_id = %1 AND log_date < %2';
+      $params = [
         1 => [$contactID, 'Integer'],
         2 => [$endDate, 'String'],
-      ]);
+      ];
+      if ($startDate) {
+        $where .= ' AND log_date >= %3';
+        $params[3] = [$startDate, 'String'];
+      }
+      \CRM_Core_DAO::executeQuery("DELETE FROM wmf_donor_history WHERE $where", $params);
       if ($rows) {
         \CRM_Utils_SQL_Insert::into('wmf_donor_history')->rows($rows)->execute();
       }
@@ -95,15 +112,16 @@ class RebuildHistory extends AbstractAction {
   }
 
   /**
-   * Replay the contact's history rows before the end date.
+   * Replay the contact's history rows from the start date to before the end date.
    *
    * @param int $contactID
+   * @param string|null $startDate
    * @param string $endDate
    *
    * @return array
    * @throws \CRM_Core_Exception
    */
-  private function getContactHistory(int $contactID, string $endDate): array {
+  private function getContactHistory(int $contactID, ?string $startDate, string $endDate): array {
     $currentValues = [];
     foreach ($this->loggedFieldsByTable as $fields) {
       foreach ($fields as $field => $spec) {
@@ -114,7 +132,25 @@ class RebuildHistory extends AbstractAction {
     }
     $rows = [];
     $previousValues = NULL;
+    if ($startDate) {
+      $previousRow = WMFDonorHistory::get(FALSE)
+        ->addWhere('entity_id', '=', $contactID)
+        ->addWhere('log_date', '<', $startDate)
+        ->addOrderBy('log_date', 'DESC')
+        ->addOrderBy('log_id', 'DESC')
+        ->setLimit(1)
+        ->execute()->first();
+      if ($previousRow) {
+        foreach (array_keys($currentValues) as $field) {
+          $currentValues[$field] = $previousRow[$field];
+        }
+        $previousValues = $currentValues;
+      }
+    }
     foreach ($this->getCalculationTimes($contactID, $endDate) as ['time' => $asOfDate, 'tables' => $tables]) {
+      if ($startDate && $asOfDate < $startDate) {
+        continue;
+      }
       foreach ($tables as $tableName) {
         $values = $this->getValuesAsOf($tableName, $contactID, $asOfDate);
         foreach ($this->loggedFieldsByTable[$tableName] as $field => $spec) {
