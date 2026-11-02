@@ -1,5 +1,7 @@
 <?php
 
+use Civi\Api4\ContactNamePair;
+
 /**
  * CRM_Deduper_BAO_Resolver_EquivalentNameResolver
  */
@@ -84,18 +86,19 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
    * @throws \Civi\API\Exception\UnauthorizedException
    * @throws \CRM_Core_Exception
    */
-  public function loadAlternatives($value) {
-    if (isset($this->alternatives[$value])) {
+  public function loadAlternatives($value): void {
+    $cacheKey = mb_strtolower($value);
+    if (isset($this->alternatives[$cacheKey])) {
       return;
     }
-    if (!\Civi::cache('dedupe_pairs')->has('name_alternatives_' . md5($value))) {
-      $namePair = \Civi\Api4\ContactNamePair::get()
+    if (!\Civi::cache('dedupe_pairs')->has('name_alternatives_' . md5($cacheKey))) {
+      $namePair = ContactNamePair::get()
         ->addClause('OR', ['name_a', '=', $value], ['name_b', '=', $value])
         ->setCheckPermissions(FALSE)
         ->execute();
       $alternatives = ['inferior_version_of' => [], 'nick_name_of' => []];
       foreach ($namePair as $pair) {
-        if ($pair['name_b'] === $value) {
+        if (mb_strtolower($pair['name_b']) === mb_strtolower($value)) {
           if ($pair['is_name_b_inferior']) {
             $alternatives['inferior_version_of'][] = $pair['name_a'];
           }
@@ -110,9 +113,9 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
           $alternatives['alternative_of'][] = $pair['name_b'];
         }
       }
-      \Civi::cache('dedupe_pairs')->set('name_alternatives_' . md5($value), $alternatives);
+      \Civi::cache('dedupe_pairs')->set('name_alternatives_' . md5($cacheKey), $alternatives);
     }
-    $this->alternatives[$value] = \Civi::cache('dedupe_pairs')->get('name_alternatives_' . md5($value));
+    $this->alternatives[$cacheKey] = \Civi::cache('dedupe_pairs')->get('name_alternatives_' . md5($cacheKey));
   }
 
   /**
@@ -128,7 +131,7 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
     if (is_numeric($value)) {
       return TRUE;
     }
-    return !empty($this->alternatives[$value]['inferior_version_of']);
+    return !empty($this->getAlternativesFor($value)['inferior_version_of']);
   }
 
   /**
@@ -142,12 +145,12 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
    * @param bool $isContactToKeep
    * @param string $otherContactValue
    */
-  protected function resolveInferiorValue($value, $fieldName, $isContactToKeep, string $otherContactValue) {
-    $inferiorVersionOf = $this->alternatives[$value]['inferior_version_of'];
+  protected function resolveInferiorValue($value, $fieldName, $isContactToKeep, string $otherContactValue): void {
+    $inferiorVersionOf = $this->getAlternativesFor($value)['inferior_version_of'] ?? [];
     if (count($inferiorVersionOf) === 1) {
       $this->setContactValue($fieldName, $inferiorVersionOf[0], $isContactToKeep);
     }
-    elseif (in_array($otherContactValue, $inferiorVersionOf, TRUE)) {
+    elseif ($this->isCaseInsensitiveMatch($otherContactValue, $inferiorVersionOf)) {
       $this->setContactValue($fieldName, $otherContactValue, $isContactToKeep);
     }
   }
@@ -158,10 +161,16 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
    * @return bool
    */
   protected function hasAlternatives($value): bool {
-    if (empty($this->alternatives[$value]['alternative_of'])) {
+    $alternativeOf = $this->getAlternativesFor($value)['alternative_of'] ?? [];
+    if (empty($alternativeOf)) {
       return FALSE;
     }
-    $viableAlternatives = array_intersect_key($this->alternatives, array_fill_keys($this->alternatives[$value]['alternative_of'], 1));
+    $viableAlternatives = [];
+    foreach ($alternativeOf as $alternative) {
+      if (isset($this->alternatives[mb_strtolower($alternative)])) {
+        $viableAlternatives[] = $alternative;
+      }
+    }
     return !empty($viableAlternatives);
   }
 
@@ -177,7 +186,7 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
    *
    * @return bool
    */
-  protected function isResolveEquivalentNamesOnPreferredContact($name1, $name2) {
+  protected function isResolveEquivalentNamesOnPreferredContact($name1, $name2): bool {
     if (!$this->isResolveByPreferredContact) {
       // This is kind of short hand. We don't currently permit a combination of
       // prefer nick name but fall back on preferred contact. Preferred contact 'stands alone'
@@ -197,6 +206,7 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
     if (!empty($this->hasAlternatives($name2))) {
       return TRUE;
     }
+    return FALSE;
   }
 
   /**
@@ -208,10 +218,27 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
    * @return bool
    */
   protected function isNickNameOf($value, $otherValue):bool {
-    if (empty($this->alternatives[$value]['nick_name_of'])) {
+    $alternatives = $this->getAlternativesFor($value);
+    if (empty($alternatives['nick_name_of'])) {
       return FALSE;
     }
-    return in_array($otherValue, $this->alternatives[$value]['nick_name_of'], TRUE);
+    return $this->isCaseInsensitiveMatch($otherValue, $alternatives['nick_name_of']);
+  }
+
+  private function getAlternativesFor($value): array {
+    return $this->alternatives[mb_strtolower($value)] ?? [];
+  }
+
+  /**
+   * Is the value present in the list, ignoring case.
+   *
+   * @param string $value
+   * @param string[] $list
+   *
+   * @return bool
+   */
+  private function isCaseInsensitiveMatch($value, array $list): bool {
+    return in_array(mb_strtolower($value), array_map('mb_strtolower', $list), TRUE);
   }
 
   /**
@@ -244,26 +271,46 @@ class CRM_Deduper_BAO_Resolver_EquivalentNameResolver extends CRM_Deduper_BAO_Re
    *
    * @throws \CRM_Core_Exception
    */
-  protected function resolveNamesForPair($name, $otherName, $isContactToKeep, $hasNickName, $fieldName = 'first_name') {
+  protected function resolveNamesForPair($name, $otherName, $isContactToKeep, $hasNickName, $fieldName = 'first_name'): void {
     if ($this->isInferior($name)) {
       $this->resolveInferiorValue($name, 'first_name', $isContactToKeep, $otherName);
     }
 
     if ($this->nameHandlingSetting && $this->hasAlternatives($name)) {
       if (!$hasNickName && $this->isNickNameOf($name, $otherName)) {
+        $nickName = $this->getOtherNameWithPreferredCasing($otherName, $name);
         if ($this->isKeepNickName) {
           // Always set for the contact Not to keep to force it to be saved since it is on
           // neither contact at the moment.
-          $this->setContactValue('nick_name', $name, FALSE);
+          $this->setContactValue('nick_name', $nickName, FALSE);
         }
         if ($this->isPreferNickName) {
-          $this->setResolvedValue($fieldName, $name);
+          $this->setResolvedValue($fieldName, $nickName);
         }
         if ($this->isPreferOtherName) {
           $this->setResolvedValue($fieldName, $otherName);
         }
       }
     }
+  }
+
+  /**
+   * Get the name to use but prefer the saved name pair version if it is all lower case.
+   * @param string $name
+   * @param string $otherName
+   *
+   * @return string
+   */
+  public function getOtherNameWithPreferredCasing(string $name, string $otherName): string {
+    if ($otherName <> mb_strtolower($otherName)) {
+      return $otherName;
+    }
+    foreach ($this->getAlternativesFor($name)['alternative_of'] ?? [] as $alternative) {
+      if (mb_strtolower($alternative) === mb_strtolower($otherName)) {
+        return $alternative;
+      }
+    }
+    return $otherName;
   }
 
 }

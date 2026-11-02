@@ -387,16 +387,7 @@ class CalculatedData extends TriggerHook {
 
     $requiredClauses = [1];
 
-    $matchingGiftDonors = civicrm_api3('Contact', 'get', ['nick_name' => ['IN' => ['Microsoft', 'Google', 'Apple', 'Citi']]])['values'];
-    $excludedContacts = array_keys($matchingGiftDonors);
-    $anonymousContact = civicrm_api3('Contact', 'get', [
-      'first_name' => 'Anonymous',
-      'last_name' => 'Anonymous',
-      'options' => ['limit' => 1, 'sort' => 'id ASC'],
-    ]);
-    if ($anonymousContact['count']) {
-      $excludedContacts[] = $anonymousContact['id'];
-    }
+    $excludedContacts = self::getExcludedContactIDs();
     if (!empty($excludedContacts)) {
       // On live there will always be an anonymous contact. Check is just for dev instances.
       $requiredClauses[] = '(NEW.contact_id NOT IN (' . implode(',', $excludedContacts) . '))';
@@ -447,6 +438,28 @@ class CalculatedData extends TriggerHook {
       'sql' => $deleteSql,
     ];
     return $info;
+  }
+
+  /**
+   * Get the contacts whose contributions don't update wmf_donor.
+   *
+   * These are the matching gift organisations and the anonymous contact.
+   *
+   * @return int[]
+   * @throws \CRM_Core_Exception
+   */
+  public static function getExcludedContactIDs(): array {
+    $matchingGiftDonors = civicrm_api3('Contact', 'get', ['nick_name' => ['IN' => ['Microsoft', 'Google', 'Apple', 'Citi']]])['values'];
+    $excludedContacts = array_keys($matchingGiftDonors);
+    $anonymousContact = civicrm_api3('Contact', 'get', [
+      'first_name' => 'Anonymous',
+      'last_name' => 'Anonymous',
+      'options' => ['limit' => 1, 'sort' => 'id ASC'],
+    ]);
+    if ($anonymousContact['count']) {
+      $excludedContacts[] = $anonymousContact['id'];
+    }
+    return $excludedContacts;
   }
 
   /**
