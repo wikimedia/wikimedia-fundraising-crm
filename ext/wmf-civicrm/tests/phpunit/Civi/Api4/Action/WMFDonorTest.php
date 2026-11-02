@@ -1073,6 +1073,263 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
+   * rebuildHistory replays a donor's data into history rows.
+   *
+   * @dataProvider rebuildHistoryScenarios
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRebuildHistory(array $contributions, ?array $recur, array $expectedRows): void {
+    $contactID = $this->createIndividual([], 'donor');
+    if ($recur) {
+      $this->createTestEntity('ContributionRecur', $recur['params'] + [
+        'contact_id' => $contactID,
+        'frequency_unit' => 'month',
+        'frequency_interval' => 1,
+        'amount' => 10,
+        'contribution_status_id:name' => 'In Progress',
+      ], 'donor');
+    }
+    foreach ($contributions as $index => [$receiveDate, $amount]) {
+      $this->createTestEntity('Contribution', [
+        'contact_id' => $contactID,
+        'contribution_recur_id' => $this->ids['ContributionRecur']['donor'] ?? NULL,
+        'receive_date' => $receiveDate,
+        'total_amount' => $amount,
+        'financial_type_id:name' => 'Donation',
+      ], 'donor_' . $index);
+    }
+    if ($recur) {
+      $this->setRecurLogDate('donor', $recur['logDate']);
+      foreach ($recur['changes'] ?? [] as $logDate => $values) {
+        ContributionRecur::update(FALSE)
+          ->addWhere('id', '=', $this->ids['ContributionRecur']['donor'])
+          ->setValues($values)
+          ->execute();
+        $this->setRecurLogDate('donor', $logDate);
+      }
+    }
+
+    $rows = WMFDonor::rebuildHistory(FALSE)
+      ->setContactIds([$contactID])
+      ->setEndDate('2025-01-01')
+      ->execute();
+
+    $actualRows = [];
+    foreach ($rows as $row) {
+      $actualRows[] = [
+        $row['log_date'],
+        $row['donor_segment_overall'],
+        $row['donor_status_overall'],
+        $row['donor_status_otg'],
+        $row['donor_status_recur_overall'],
+        $row['donor_status_recur_month'],
+        $row['donor_status_recur_year'],
+        \CRM_Utils_Array::explodePadded($row['changed_fields']),
+      ];
+    }
+    $this->assertEquals($expectedRows, $actualRows);
+  }
+
+  /**
+   * Contributions are payments on the recurring, if there is one.
+   *
+   * Expected rows are [log_date, segment, overall, otg, recur overall,
+   * recur month, recur year, changed fields].
+   */
+  public static function rebuildHistoryScenarios(): array {
+    return [
+      'one-time gifts and rollovers' => [
+        'contributions' => [['2022-10-01', 10], ['2023-10-01', 10], ['2023-10-01 12:00:00', 100]],
+        'recur' => NULL,
+        'expectedRows' => [
+          // New
+          ['2022-10-01 00:00:00', 600, 30, 30, 95, 95, 95, [1, 2, 3, 6, 4, 5]],
+          // New last year, on rollover
+          ['2023-07-01 00:00:00', 600, 60, 60, 95, 95, 95, [2, 3]],
+          // Consecutive this year
+          ['2023-10-01 00:00:00', 600, 10, 10, 95, 95, 95, [2, 3]],
+          // Grassroots plus, from a second gift the same day
+          ['2023-10-01 12:00:00', 500, 10, 10, 95, 95, 95, [1]],
+          // Consecutive last year, on rollover
+          ['2024-07-01 00:00:00', 500, 40, 40, 95, 95, 95, [2, 3]],
+        ],
+      ],
+      'gift just before a rollover' => [
+        'contributions' => [['2023-06-30 23:58:00', 10]],
+        'recur' => NULL,
+        'expectedRows' => [
+          // New, not merged into the rollover two minutes later
+          ['2023-06-30 23:58:00', 600, 30, 30, 95, 95, 95, [1, 2, 3, 6, 4, 5]],
+          // New last year, on rollover
+          ['2023-07-01 00:00:00', 600, 60, 60, 95, 95, 95, [2, 3]],
+          // Lapsed, on rollover
+          ['2024-07-01 00:00:00', 600, 70, 70, 95, 95, 95, [2, 3]],
+        ],
+      ],
+      'recurring paused, unpaused and cancelled' => [
+        'contributions' => [],
+        'recur' => [
+          'params' => ['start_date' => '2022-01-01', 'next_sched_contribution_date' => '2022-02-01'],
+          'logDate' => '2022-01-01 09:00:00',
+          'changes' => [
+            '2023-01-15' => ['next_sched_contribution_date' => '2023-04-15'],
+            '2024-02-15' => ['contribution_status_id:name' => 'Cancelled', 'cancel_date' => '2024-02-15'],
+          ],
+        ],
+        'expectedRows' => [
+          // New recurring
+          ['2022-01-01 09:00:00', 990, 99, 99, 25, 25, 95, [1, 2, 3, 6, 4, 5]],
+          // Active recurring, on rollover
+          ['2022-07-01 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
+          // Paused, next payment pushed out
+          ['2023-01-15 00:00:00', 990, 99, 99, 35, 35, 95, [6, 4]],
+          // Active again, a month and a day before the next payment
+          ['2023-03-14 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
+          // Cancelled
+          ['2024-02-15 00:00:00', 990, 99, 99, 65, 65, 95, [6, 4]],
+        ],
+      ],
+      'unpause before a month end payment' => [
+        'contributions' => [],
+        'recur' => [
+          'params' => ['start_date' => '2021-12-31', 'next_sched_contribution_date' => '2023-03-31'],
+          'logDate' => '2023-02-28',
+        ],
+        'expectedRows' => [
+          // Paused, as March 31 is more than a month and a day after February 28
+          ['2023-02-28 00:00:00', 990, 99, 99, 35, 35, 95, [1, 2, 3, 6, 4, 5]],
+          // Active again from March 1
+          ['2023-03-01 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
+        ],
+      ],
+      'unpause before a month start payment' => [
+        'contributions' => [],
+        'recur' => [
+          'params' => ['start_date' => '2022-01-01', 'next_sched_contribution_date' => '2023-03-01'],
+          'logDate' => '2023-01-15',
+        ],
+        'expectedRows' => [
+          // Paused
+          ['2023-01-15 00:00:00', 990, 99, 99, 35, 35, 95, [1, 2, 3, 6, 4, 5]],
+          // Active again from January 28, as January 28 to 31 plus a month are all February 28
+          ['2023-01-28 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
+        ],
+      ],
+      'annual recurring paused and unpaused' => [
+        'contributions' => [],
+        'recur' => [
+          'params' => ['frequency_unit' => 'year', 'start_date' => '2022-01-01', 'next_sched_contribution_date' => '2024-06-01'],
+          'logDate' => '2023-01-15',
+        ],
+        'expectedRows' => [
+          // Paused, as the next payment is more than a year and a day away
+          ['2023-01-15 00:00:00', 990, 99, 99, 35, 95, 35, [1, 2, 3, 6, 4, 5]],
+          // Active again, a year and a day before the next payment
+          ['2023-05-31 00:00:00', 990, 99, 99, 15, 95, 15, [6, 5]],
+        ],
+      ],
+      'recurring from before the log' => [
+        'contributions' => [],
+        'recur' => [
+          'params' => ['contribution_status_id:name' => 'Cancelled', 'start_date' => '2014-01-01', 'cancel_date' => '2015-06-01'],
+          // As the Initialization row from when logging started.
+          'logDate' => CalculatedData::RECUR_LOG_START,
+        ],
+        'expectedRows' => [
+          // New recurring, from its dates as before the log
+          ['2014-01-01 00:00:00', 990, 99, 99, 25, 25, 95, [1, 2, 3, 6, 4, 5]],
+          // Active recurring, on rollover
+          ['2014-07-01 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
+          // Cancelled, from its cancel date
+          ['2015-06-01 00:00:00', 990, 99, 99, 65, 65, 95, [6, 4]],
+          // and unchanged once the log starts
+        ],
+      ],
+      'recurring created after it started' => [
+        'contributions' => [],
+        'recur' => [
+          'params' => ['start_date' => '2014-01-01', 'next_sched_contribution_date' => '2018-04-01'],
+          'logDate' => '2018-03-01',
+        ],
+        'expectedRows' => [
+          // New recurring, from its dates as before its first log row
+          ['2014-01-01 00:00:00', 990, 99, 99, 25, 25, 95, [1, 2, 3, 6, 4, 5]],
+          // Active recurring, on rollover
+          ['2014-07-01 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
+          // and unchanged when logging starts and when it's logged
+        ],
+      ],
+      'recurring payments and their log rows within the merge window' => [
+        'contributions' => [['2023-04-15 03:00:00', 10], ['2023-05-15 03:00:10', 10]],
+        'recur' => [
+          'params' => ['start_date' => '2023-04-15 03:00:00', 'next_sched_contribution_date' => '2023-05-15'],
+          'logDate' => '2023-04-15 03:00:30',
+          'changes' => [
+            // A charge: Processing, the payment, then In Progress with the next payment date.
+            '2023-05-15 03:00:00' => ['contribution_status_id:name' => 'Processing'],
+            '2023-05-15 03:00:20' => ['contribution_status_id:name' => 'In Progress', 'next_sched_contribution_date' => '2023-06-15'],
+          ],
+        ],
+        'expectedRows' => [
+          // One row for the first payment and its recurring's log row 30 seconds later
+          ['2023-04-15 03:00:30', 600, 30, 99, 25, 25, 95, [1, 2, 3, 6, 4, 5]],
+          // No row for the second charge, as nothing logged changes
+          // New last year and active recurring, on rollover
+          ['2023-07-01 00:00:00', 600, 60, 99, 15, 15, 95, [2, 6, 4]],
+          // Lapsed, on rollover
+          ['2024-07-01 00:00:00', 600, 70, 99, 15, 15, 95, [2]],
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Rebuilt up to now, history ends with the values the triggers stored.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRebuildHistoryEndsWithCurrentValues(): void {
+    $contactID = $this->createIndividual([], 'donor');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $contactID,
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'In Progress',
+      'start_date' => $this->financialYearDate(2),
+      'next_sched_contribution_date' => date('Y-m-d', strtotime('+1 week', strtotime($this->currentDate))),
+    ], 'donor');
+    $gifts = [
+      [$this->financialYearDate(2), 300, NULL],
+      [$this->financialYearDate(1), 20, NULL],
+      [$this->currentDate, 10, $this->ids['ContributionRecur']['donor']],
+    ];
+    foreach ($gifts as $index => [$receiveDate, $amount, $recurID]) {
+      $this->createTestEntity('Contribution', [
+        'contact_id' => $contactID,
+        'contribution_recur_id' => $recurID,
+        'receive_date' => $receiveDate,
+        'total_amount' => $amount,
+        'financial_type_id:name' => 'Donation',
+      ], 'donor_' . $index);
+    }
+    $this->setRecurLogDate('donor', $this->financialYearDate(2));
+
+    $rows = (array) WMFDonor::rebuildHistory(FALSE)
+      ->setContactIds([$contactID])
+      ->execute();
+    $lastRow = end($rows);
+    $stored = Contact::get(FALSE)
+      ->addSelect('wmf_donor.*')
+      ->addWhere('id', '=', $contactID)
+      ->execute()->first();
+    foreach (array_keys((new CalculatedData())->getLoggedFields()) as $field) {
+      $this->assertEquals($stored["wmf_donor.$field"], $lastRow[$field], $field);
+    }
+  }
+
+  /**
    * Set the date of the recurring's log rows written after that date.
    */
   private function setRecurLogDate(string $recurKey, string $logDate): void {

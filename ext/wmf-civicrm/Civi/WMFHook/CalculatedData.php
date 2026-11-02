@@ -23,7 +23,7 @@ class CalculatedData extends TriggerHook {
   /**
    * When log_civicrm_contribution_recur starts on prod.
    */
-  protected const RECUR_LOG_START = '2016-05-03 00:07:34';
+  public const RECUR_LOG_START = '2016-05-03 00:07:34';
 
   /**
    * Is this class is being called in trigger context.
@@ -1077,14 +1077,15 @@ class CalculatedData extends TriggerHook {
    * to reflect the column order in the table itself for Analytics' convenience.
    *
    * @return array
-   *   Field specs keyed by name, filtered to those marked 'log_changes'.
+   *   Field specs keyed by name, filtered to those marked 'log_changes', for
+   *   the source table if one is set.
    *
    * @throws \CRM_Core_Exception
    */
   public function getLoggedFields(): array {
     // Only int fields with a select (option list) are supported in the history table.
     return array_filter(
-      $this->getWMFDonorFields(),
+      $this->getCalculatedFields(),
       fn($field) => !empty($field['log_changes']) && $field['data_type'] === 'Int' && $field['html_type'] === 'Select'
     );
   }

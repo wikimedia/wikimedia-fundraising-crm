@@ -1,0 +1,271 @@
+<?php
+
+namespace Civi\Api4\Action\WMFDonor;
+
+use Civi\Api4\Generic\AbstractAction;
+use Civi\Api4\Generic\Result;
+use Civi\WMFHook\CalculatedData;
+
+/**
+ * Rebuild wmf_donor_history by replaying donor data over time.
+ *
+ * The logged fields are calculated as of each contribution, recurring change,
+ * recurring unpause and financial year rollover, and a row is returned
+ * whenever one of them changed. Only the source table that changed is
+ * recalculated.
+ */
+class RebuildHistory extends AbstractAction {
+
+  /**
+   * Events this close together are calculated as one potential segment/status change.
+   *
+   * e.g. a recurring payment and the update to its recurring immediately after.
+   */
+  private const MERGE_SECONDS = 300;
+
+  /**
+   * IDs of the contacts to rebuild history for.
+   *
+   * @var array
+   * @required
+   */
+  protected $contactIds = [];
+
+  /**
+   * Rebuild history before this SQL datetime. Defaults to now.
+   *
+   * @var string
+   */
+  protected $endDate;
+
+  /**
+   * The fields logged in wmf_donor_history, by the source table they're calculated from.
+   *
+   * [tableName => [fieldName => spec]]: the segment and overall and OTG statuses
+   * come from civicrm_contribution, the recurring statuses from civicrm_contribution_recur.
+   *
+   * @var array
+   */
+  private array $loggedFieldsByTable = [];
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  public function _run(Result $result): void {
+    // Normalised as it's compared as a string.
+    $endDate = date('Y-m-d H:i:s', strtotime($this->endDate ?? 'now'));
+    foreach (CalculatedData::createForSourceTables() as $tableName => $processor) {
+      $this->loggedFieldsByTable[$tableName] = $processor->getLoggedFields();
+    }
+    foreach (array_unique(array_diff($this->contactIds, CalculatedData::getExcludedContactIDs())) as $contactID) {
+      foreach ($this->getContactHistory($contactID, $endDate) as $row) {
+        $result[] = $row;
+      }
+    }
+  }
+
+  /**
+   * Replay the contact's history rows before the end date.
+   *
+   * @param int $contactID
+   * @param string $endDate
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  private function getContactHistory(int $contactID, string $endDate): array {
+    $currentValues = [];
+    foreach ($this->loggedFieldsByTable as $fields) {
+      foreach ($fields as $field => $spec) {
+        // Defaults to write into the history table until the field's source
+        // table has an event.
+        $currentValues[$field] = (int) $spec['default_value'];
+      }
+    }
+    $rows = [];
+    $previousValues = NULL;
+    foreach ($this->getCalculationTimes($contactID, $endDate) as ['time' => $asOfDate, 'tables' => $tables]) {
+      foreach ($tables as $tableName) {
+        $values = $this->getValuesAsOf($tableName, $contactID, $asOfDate);
+        foreach ($this->loggedFieldsByTable[$tableName] as $field => $spec) {
+          $currentValues[$field] = (int) ($values[$field] ?? $spec['default_value']);
+        }
+      }
+      $changedFields = [];
+      foreach ($this->loggedFieldsByTable as $fields) {
+        foreach ($fields as $field => $spec) {
+          if ($previousValues === NULL || $previousValues[$field] !== $currentValues[$field]) {
+            $changedFields[] = $spec['log_changes'];
+          }
+        }
+      }
+      if ($changedFields) {
+        $previousValues = $currentValues;
+        $rows[] = ['entity_id' => $contactID] + $currentValues + [
+          'changed_fields' => \CRM_Utils_Array::implodePadded($changedFields),
+          'log_date' => $asOfDate,
+        ];
+      }
+    }
+    return $rows;
+  }
+
+  /**
+   * Get the times to calculate for, with the source tables that may have changed.
+   *
+   * Events are contributions, recurring log rows and unpauses, recurring start,
+   * cancel and end dates before the first log row of recurrings that started
+   * before logging did, and each financial year rollover after the first of the
+   * aforementioned events. Events within MERGE_SECONDS of each other are
+   * calculated together.
+   *
+   * @param int $contactID
+   * @param string $endDate
+   *
+   * @return array
+   *   [['time' => SQL datetime, 'tables' => [tableName, ...]], ...], in ascending time order.
+   * @throws \CRM_Core_Exception
+   */
+  private function getCalculationTimes(int $contactID, string $endDate): array {
+    $activeStatuses = [];
+    foreach (['Pending', 'In Progress', 'Processing'] as $statusName) {
+      $activeStatuses[] = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $statusName);
+    }
+    $params = [
+      1 => [$contactID, 'Integer'],
+      2 => [$endDate, 'String'],
+      3 => [CalculatedData::RECUR_LOG_START, 'String'],
+    ];
+    $events = [];
+
+    // Get the times contributions were received.
+    $receiveDates = \CRM_Core_DAO::executeQuery("
+      SELECT receive_date
+      FROM civicrm_contribution
+      WHERE contact_id = %1 AND contribution_status_id = 1 AND receive_date < %2
+        AND (trxn_id NOT LIKE 'RFD %' OR trxn_id IS NULL)
+    ", $params)->fetchAll();
+    foreach ($receiveDates as $receiveDate) {
+      $events[] = ['time' => $receiveDate['receive_date'], 'tables' => ['civicrm_contribution']];
+    }
+
+    // For recurrings that started before logging did, get their start, cancel
+    // and end dates from before their first log row.
+    $recurs = \CRM_Core_DAO::executeQuery("
+      SELECT c.start_date, c.cancel_date, c.end_date,
+        (SELECT MIN(l.log_date) FROM log_civicrm_contribution_recur l WHERE l.id = c.id) AS first_log_date
+      FROM civicrm_contribution_recur c
+      WHERE c.contact_id = %1 AND c.start_date < %3
+    ", $params)->fetchAll();
+    foreach ($recurs as $recur) {
+      foreach ([$recur['start_date'], $recur['cancel_date'], $recur['end_date']] as $date) {
+        if ($date && $date >= $recur['start_date'] && $date < $endDate && ($date < $recur['first_log_date'] || !$recur['first_log_date'])) {
+          $events[] = ['time' => $date, 'tables' => ['civicrm_contribution_recur']];
+        }
+      }
+    }
+
+    // Get the log rows for each change to the contact's recurrings.
+    $logRows = \CRM_Core_DAO::executeQuery("
+      SELECT l.log_date, l.contribution_status_id, l.next_sched_contribution_date, l.frequency_unit
+      FROM civicrm_contribution_recur c
+      INNER JOIN log_civicrm_contribution_recur l ON l.id = c.id
+      WHERE c.contact_id = %1 AND l.log_date < %2
+    ", $params)->fetchAll();
+    foreach ($logRows as $logRow) {
+      // Add each change
+      $events[] = ['time' => $logRow['log_date'], 'tables' => ['civicrm_contribution_recur']];
+      // For a paused recurring, add an additional event when its next payment
+      // is back within a frequency unit (plus a day), because nothing is
+      // logged for pause / unpause.
+      if ($logRow['next_sched_contribution_date'] && in_array($logRow['contribution_status_id'], $activeStatuses)) {
+        // Ugly date math: The earliest time CalculatedData no longer sees this
+        // as paused: when the time plus one unit (MySQL clamps month ends)
+        // reaches the day before next_sched.
+        $unit = $logRow['frequency_unit'] === 'year' ? 'year' : 'month';
+        $dayBefore = strtotime("{$logRow['next_sched_contribution_date']} -1 day");
+        $unpauseTimestamp = strtotime("-1 $unit", $dayBefore);
+        if (date('j', $unpauseTimestamp) !== date('j', $dayBefore)) {
+          // No such day in the earlier month, so the switch is at the start of the next.
+          $unpauseTimestamp = strtotime(date('Y-m-01 00:00:00', $unpauseTimestamp));
+        }
+        $unpauseTime = date('Y-m-d H:i:s', $unpauseTimestamp);
+        if ($unpauseTime > $logRow['log_date'] && $unpauseTime < $endDate) {
+          $events[] = ['time' => $unpauseTime, 'tables' => ['civicrm_contribution_recur']];
+        }
+      }
+    }
+    if ($events) {
+      // A rollover only recalculates the tables the contact has had an event
+      // for by then, otherwise it's all defaults.
+      $firstEventTimes = [];
+      foreach ($events as $event) {
+        foreach ($event['tables'] as $tableName) {
+          $firstEventTimes[$tableName] = min($firstEventTimes[$tableName] ?? $endDate, $event['time']);
+        }
+      }
+      for ($year = (int) substr(min($firstEventTimes), 0, 4); "$year-07-01 00:00:00" < $endDate; $year++) {
+        $rollover = "$year-07-01 00:00:00";
+        $tables = [];
+        foreach ($firstEventTimes as $tableName => $firstEventTime) {
+          if ($firstEventTime <= $rollover) {
+            $tables[] = $tableName;
+          }
+        }
+        if ($tables) {
+          $events[] = ['time' => $rollover, 'tables' => $tables];
+        }
+      }
+    }
+    array_multisort(array_column($events, 'time'), SORT_ASC, $events);
+
+    // An event less than MERGE_SECONDS after the previous one is merged and
+    // takes the later time, but not across a financial year end, so the values
+    // just before a rollover keep their row.
+    $calculationTimes = [];
+    foreach ($events as $event) {
+      $previous = array_key_last($calculationTimes);
+      if ($previous !== NULL
+        && strtotime($event['time']) - strtotime($calculationTimes[$previous]['time']) < self::MERGE_SECONDS
+        && $this->getFinancialYear($event['time']) === $this->getFinancialYear($calculationTimes[$previous]['time'])) {
+        $calculationTimes[$previous]['time'] = $event['time'];
+        $calculationTimes[$previous]['tables'] = array_unique(array_merge($calculationTimes[$previous]['tables'], $event['tables']));
+      }
+      else {
+        $calculationTimes[] = $event;
+      }
+    }
+    return $calculationTimes;
+  }
+
+  /**
+   * Get the source table's values for the contact as of the date.
+   *
+   * @param string $tableName
+   * @param int $contactID
+   * @param string $asOfDate
+   *
+   * @return array
+   * @throws \CRM_Core_Exception
+   */
+  private function getValuesAsOf(string $tableName, int $contactID, string $asOfDate): array {
+    $processor = CalculatedData::createForSourceTables($tableName)[$tableName];
+    $processor->setTriggerContext(FALSE)
+      ->setAsOfDate($asOfDate)
+      ->setWhereClause("c.contact_id = $contactID");
+    $processor->filterDonorFields(array_keys($this->loggedFieldsByTable[$tableName]));
+    return \CRM_Core_DAO::executeQuery($processor->getSelectSQL())->fetchAll()[0] ?? [];
+  }
+
+  /**
+   * Get the financial year an SQL datetime is in, by the year it starts.
+   *
+   * @param string $time
+   *
+   * @return int
+   */
+  private function getFinancialYear(string $time): int {
+    return (int) substr($time, 0, 4) - ((int) substr($time, 5, 2) < 7 ? 1 : 0);
+  }
+
+}
