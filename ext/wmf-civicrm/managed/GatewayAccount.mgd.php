@@ -143,7 +143,7 @@ return [
         'is_endowment' => TRUE,
         'vendor_code_foundation' => 'V01948',
         'vendor_code_endowment' => 'V04993',
-        'balancing_account_foundation' => '11250',
+        'balancing_account_foundation' => '11252',
       ],
       'match' => [
         'name',
@@ -356,7 +356,7 @@ return [
         'is_endowment' => FALSE,
         'vendor_code_foundation' => 'V04824',
         'vendor_code_endowment' => 'V04983',
-        'balancing_account_foundation' => '11250',
+        'balancing_account_foundation' => '11252',
       ],
       'match' => [
         'name',
@@ -377,7 +377,7 @@ return [
         'is_endowment' => TRUE,
         'vendor_code_foundation' => 'V04824',
         'vendor_code_endowment' => 'V04983',
-        'balancing_account_foundation' => '11250',
+        'balancing_account_foundation' => '11252',
       ],
       'match' => [
         'name',
@@ -399,7 +399,7 @@ return [
         'vendor_code_foundation' => 'V06144',
         // No endowment vendor code given yet.
         'vendor_code_endowment' => NULL,
-        'balancing_account_foundation' => '11250',
+        'balancing_account_foundation' => '11252',
       ],
       'match' => [
         'name',
@@ -421,7 +421,7 @@ return [
         'vendor_code_foundation' => 'V06144',
         // No endowment vendor code given yet.
         'vendor_code_endowment' => NULL,
-        'balancing_account_foundation' => '11250',
+        'balancing_account_foundation' => '11252',
       ],
       'match' => [
         'name',
@@ -443,7 +443,7 @@ return [
         // No vendor code for direct wire transfers.
         'vendor_code_foundation' => NULL,
         'vendor_code_endowment' => NULL,
-        'balancing_account_foundation' => '11250',
+        'balancing_account_foundation' => '11252',
       ],
       'match' => [
         'name',
@@ -465,7 +465,7 @@ return [
         // No vendor code for direct wire transfers.
         'vendor_code_foundation' => NULL,
         'vendor_code_endowment' => NULL,
-        'balancing_account_foundation' => '11250',
+        'balancing_account_foundation' => '11252',
       ],
       'match' => [
         'name',
