@@ -29,6 +29,7 @@ function _civicrm_api3_contact_forget_spec(&$spec) {
  */
 function civicrm_api3_contact_forgetme($params) {
   $result = [];
+  $notFound = [];
 
   // Gather emails to pass on to other actions - we currently only need primary email downstream as we
   // expect to only worry about deleting that in Silverpop but doing filtering in late functions makes sense.
@@ -71,14 +72,20 @@ function civicrm_api3_contact_forgetme($params) {
     }
     $delete = civicrm_api3($entityToDelete, 'showme', $deleteParams);
     if ($delete['count']) {
+      $notFoundIDs = [];
       if ($hasForget) {
-        civicrm_api3($entityToDelete, 'forgetme', [
+        $notFoundIDs = civicrm_api3($entityToDelete, 'forgetme', [
           'contact_id' => ['IN' => $contactIDsToForget],
           'contact' => ['emails' => $emails]]
-        );
+        )['not_found'] ?? [];
       }
       foreach ($delete['showme'] as $id => $string) {
-        $result[$entityToDelete . $id] = $string;
+        if (in_array($id, $notFoundIDs)) {
+          $notFound[$entityToDelete . $id] = $string;
+        }
+        else {
+          $result[$entityToDelete . $id] = $string;
+        }
       }
     }
   }
@@ -93,7 +100,9 @@ function civicrm_api3_contact_forgetme($params) {
     'target_contact_id' => $params['id'],
     'source_contact_id' => ($loggedInUser ? : $params['id']),
   ]);
-  return civicrm_api3_create_success($result, $params);
+  $return = civicrm_api3_create_success($result, $params);
+  $return['not_found'] = $notFound;
+  return $return;
 }
 
 /**
