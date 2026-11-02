@@ -89,7 +89,7 @@ class WMFDonor extends Generic\AbstractEntity {
       'get' => 'view all contacts',
       'create' => 'edit all contacts',
       'update' => 'edit all contacts',
-      'rebuildHistory' => 'access CiviContribute',
+      'rebuildHistory' => ['access CiviContribute', 'edit all contacts'],
       'default' => ['access CiviCRM'],
     ];
   }

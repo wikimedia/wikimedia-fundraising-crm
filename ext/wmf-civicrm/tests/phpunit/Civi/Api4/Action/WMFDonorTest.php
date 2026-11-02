@@ -1285,6 +1285,59 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
+   * rebuildHistory replaces history before the end date, and leaves later rows.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRebuildHistorySavesRows(): void {
+    $contactID = $this->createIndividual([], 'donor');
+    foreach (['2023-03-01', '2023-10-01'] as $index => $receiveDate) {
+      $this->createTestEntity('Contribution', [
+        'contact_id' => $contactID,
+        'receive_date' => $receiveDate,
+        'total_amount' => 10,
+        'financial_type_id:name' => 'Donation',
+      ], 'donor_' . $index);
+    }
+    // A wrong row to be replaced, could use API4 once core bug fixed.
+    \CRM_Core_DAO::executeQuery("INSERT INTO wmf_donor_history (entity_id, donor_segment_overall, changed_fields, log_date) VALUES (%1, 100, %2, '2023-01-01')", [
+      1 => [$contactID, 'Integer'],
+      2 => [\CRM_Utils_Array::implodePadded([1]), 'String'],
+    ]);
+    // Written by the triggers, after the end date.
+    $laterLogIDs = WMFDonorHistory::get(FALSE)
+      ->addWhere('entity_id', '=', $contactID)
+      ->addWhere('log_date', '>=', '2023-09-01')
+      ->execute()->column('log_id');
+    $this->assertNotEmpty($laterLogIDs);
+
+    WMFDonor::rebuildHistory(FALSE)
+      ->setContactIds([$contactID])
+      ->setEndDate('2023-09-01')
+      ->execute();
+
+    $history = WMFDonorHistory::get(FALSE)
+      ->addSelect('log_date', 'donor_segment_overall', 'donor_status_overall', 'donor_status_otg', 'donor_status_recur_overall', 'donor_status_recur_month', 'donor_status_recur_year', 'changed_fields')
+      ->addWhere('entity_id', '=', $contactID)
+      ->addWhere('log_date', '<', '2023-09-01')
+      ->addOrderBy('log_date')
+      ->execute();
+    $savedRows = array_map('array_values', (array) $history);
+    // [log_date, segment, overall, otg, recur overall, recur month, recur year, changed fields]
+    $this->assertEquals([
+      // New, replacing the wrong row
+      ['2023-03-01 00:00:00', 600, 30, 30, 95, 95, 95, [1, 2, 3, 6, 4, 5]],
+      // New last year, on rollover
+      ['2023-07-01 00:00:00', 600, 60, 60, 95, 95, 95, [2, 3]],
+    ], $savedRows);
+    // And the later rows aren't changed.
+    $this->assertEquals($laterLogIDs, WMFDonorHistory::get(FALSE)
+      ->addWhere('entity_id', '=', $contactID)
+      ->addWhere('log_date', '>=', '2023-09-01')
+      ->execute()->column('log_id'));
+  }
+
+  /**
    * Rebuilt up to now, history ends with the values the triggers stored.
    *
    * @throws \CRM_Core_Exception

@@ -10,9 +10,10 @@ use Civi\WMFHook\CalculatedData;
  * Rebuild wmf_donor_history by replaying donor data over time.
  *
  * The logged fields are calculated as of each contribution, recurring change,
- * recurring unpause and financial year rollover, and a row is returned
- * whenever one of them changed. Only the source table that changed is
- * recalculated.
+ * recurring unpause and financial year rollover, with a row whenever one of
+ * them changed. Only the source table that changed is recalculated. Each
+ * contact's history before the end date is replaced with these rows, which are
+ * also returned.
  */
 class RebuildHistory extends AbstractAction {
 
@@ -32,7 +33,7 @@ class RebuildHistory extends AbstractAction {
   protected $contactIds = [];
 
   /**
-   * Rebuild history before this SQL datetime. Defaults to now.
+   * Rebuild history before (not including) this SQL datetime. Defaults to now.
    *
    * @var string
    */
@@ -58,10 +59,39 @@ class RebuildHistory extends AbstractAction {
       $this->loggedFieldsByTable[$tableName] = $processor->getLoggedFields();
     }
     foreach (array_unique(array_diff($this->contactIds, CalculatedData::getExcludedContactIDs())) as $contactID) {
-      foreach ($this->getContactHistory($contactID, $endDate) as $row) {
+      $rows = $this->getContactHistory($contactID, $endDate);
+      $this->saveContactHistory($contactID, $endDate, $rows);
+      foreach ($rows as $row) {
         $result[] = $row;
       }
     }
+  }
+
+  /**
+   * Replace the contact's history rows before the end date.
+   *
+   * @param int $contactID
+   * @param string $endDate
+   * @param array $rows
+   *
+   * @throws \Throwable
+   */
+  private function saveContactHistory(int $contactID, string $endDate, array $rows): void {
+    $transaction = new \CRM_Core_Transaction();
+    try {
+      \CRM_Core_DAO::executeQuery('DELETE FROM wmf_donor_history WHERE entity_id = %1 AND log_date < %2', [
+        1 => [$contactID, 'Integer'],
+        2 => [$endDate, 'String'],
+      ]);
+      if ($rows) {
+        \CRM_Utils_SQL_Insert::into('wmf_donor_history')->rows($rows)->execute();
+      }
+    }
+    catch (\Throwable $e) {
+      $transaction->rollback();
+      throw $e;
+    }
+    $transaction->commit();
   }
 
   /**
