@@ -21,9 +21,11 @@ class RebuildHistory extends AbstractAction {
   /**
    * Events this close together are calculated as one potential segment/status change.
    *
-   * e.g. a recurring payment and the update to its recurring immediately after.
+   * e.g. a recurring payment and the update to its recurring, which is logged
+   * when the payment is processed, nearly always within 20 minutes of its
+   * receive date.
    */
-  private const MERGE_SECONDS = 300;
+  private const MERGE_SECONDS = 1200;
 
   /**
    * IDs of the contacts to rebuild history for.

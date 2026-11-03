@@ -552,6 +552,33 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
+   * Contribution changes are logged as of the receive date, recurring changes as of now.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testWMFDonorHistoryLogDate(): void {
+    $this->createDonor(['receive_date' => '2023-03-01']);
+    $beforeRecur = date('Y-m-d H:i:s');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['donor'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'In Progress',
+      'start_date' => '2023-03-01',
+    ], 'recur');
+
+    // [recurring, contribution]
+    $logDates = WMFDonorHistory::get(FALSE)
+      ->addWhere('entity_id', '=', $this->ids['Contact']['donor'])
+      ->addOrderBy('log_id', 'DESC')
+      ->setLimit(2)
+      ->execute()->column('log_date');
+    $this->assertGreaterThanOrEqual($beforeRecur, $logDates[0]);
+    $this->assertEquals('2023-03-01 00:00:00', $logDates[1]);
+  }
+
+  /**
    * Test donor_segment_overall and years_consecutive across several giving patterns.
    *
    * Each scenario is

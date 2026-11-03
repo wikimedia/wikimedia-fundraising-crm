@@ -5,6 +5,11 @@ namespace Civi\WMFHook;
 class DonorHistoryTrigger extends TriggerHook {
 
   /**
+   * The SQL variable the contribution triggers set the log date in, otherwise it's now.
+   */
+  public const LOG_DATE_VAR = '@receive_log_date';
+
+  /**
    * Log changes to tracked wmf_donor fields into wmf_donor_history.
    *
    * Fires on every insert and on updates that change a tracked field.
@@ -36,7 +41,9 @@ class DonorHistoryTrigger extends TriggerHook {
     $insertChanged = 'CONCAT(CHAR(1), CONCAT_WS(CHAR(1), ' . implode(', ', $insertValues) . '), CHAR(1))';
     $updateChanged = 'CONCAT(CHAR(1), CONCAT_WS(CHAR(1), ' . implode(', ', $updateValues) . '), CHAR(1))';
     $insertPrefix = 'INSERT INTO wmf_donor_history (entity_id, ' . implode(', ', $columns)
-      . ', changed_fields) VALUES (NEW.entity_id, ' . implode(', ', $values) . ', ';
+      . ', log_date, changed_fields) VALUES (NEW.entity_id, ' . implode(', ', $values)
+      // LOG_DATE_VAR is only set for contributions
+      . ', IFNULL(' . self::LOG_DATE_VAR . ', NOW()), ';
     $insertOnInsert = $insertPrefix . $insertChanged . ');';
     $insertOnUpdate = $insertPrefix . $updateChanged . ');';
     return [

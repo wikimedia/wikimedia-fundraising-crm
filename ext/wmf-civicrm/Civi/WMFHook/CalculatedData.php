@@ -433,9 +433,12 @@ class CalculatedData extends TriggerHook {
       $updateClauses[] = "(NEW.contribution_status_id <> $processingID)";
     }
 
-    $sql = $this->getUpdateWMFDonorSql();
+    // If we're setting these based on a contribution, use the receive_date, not now
+    $setLogDate = ($tableName === 'civicrm_contribution') ? "\n      SET " . DonorHistoryTrigger::LOG_DATE_VAR . ' = NEW.receive_date;' : '';
+    $resetLogDate = ($tableName === 'civicrm_contribution') ? "\n      SET " . DonorHistoryTrigger::LOG_DATE_VAR . ' = NULL;' : '';
+    $sql = $setLogDate . $this->getUpdateWMFDonorSql() . $resetLogDate;
     $insertSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' THEN' . $sql . "\nEND IF;\n";
-    $updateSQL = ' IF ' . implode(' AND ', $updateClauses) . ' AND (' . implode(' OR ', $updateConditions) . ' ) THEN' . $this->getUpdateWMFDonorSql(TRUE) . "\nEND IF;\n";
+    $updateSQL = ' IF ' . implode(' AND ', $updateClauses) . ' AND (' . implode(' OR ', $updateConditions) . ' ) THEN' . $setLogDate . $this->getUpdateWMFDonorSql(TRUE) . $resetLogDate . "\nEND IF;\n";
     $requiredClausesForOldClause = str_replace('NEW.', 'OLD.', implode(' AND ', $requiredClauses));
     $oldSql = str_replace('NEW.', 'OLD.', $sql);
     $updateOldSQL = ' IF ' . $requiredClausesForOldClause
