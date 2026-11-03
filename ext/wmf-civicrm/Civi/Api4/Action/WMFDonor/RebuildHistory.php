@@ -25,7 +25,7 @@ class RebuildHistory extends AbstractAction {
    * when the payment is processed, nearly always within 20 minutes of its
    * receive date.
    */
-  private const MERGE_SECONDS = 1200;
+  public const MERGE_SECONDS = 1200;
 
   /**
    * IDs of the contacts to rebuild history for.
@@ -43,7 +43,8 @@ class RebuildHistory extends AbstractAction {
   protected $startDate;
 
   /**
-   * Rebuild history before (not including) this SQL datetime. Defaults to now.
+   * Rebuild history before (not including) this SQL datetime. Defaults to
+   * now, including what's logged this second.
    *
    * @var string
    */
@@ -64,7 +65,7 @@ class RebuildHistory extends AbstractAction {
    */
   public function _run(Result $result): void {
     // Normalised as it's compared as a string.
-    $endDate = date('Y-m-d H:i:s', strtotime($this->endDate ?? 'now'));
+    $endDate = date('Y-m-d H:i:s', strtotime($this->endDate ?? '+1 second'));
     // Events just before the start date may have been merged with ones from it.
     $startDate = $this->startDate ? date('Y-m-d H:i:s', strtotime($this->startDate) - self::MERGE_SECONDS) : NULL;
     foreach (CalculatedData::createForSourceTables() as $tableName => $processor) {

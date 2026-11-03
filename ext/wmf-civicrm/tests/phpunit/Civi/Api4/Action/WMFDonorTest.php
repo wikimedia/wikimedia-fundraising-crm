@@ -6,6 +6,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\Generic\Result;
+use Civi\Api4\QueueItem;
 use Civi\Api4\WMFDonor;
 use Civi\Api4\WMFDonorHistory;
 use Civi\WMFHook\CalculatedData;
@@ -1411,6 +1412,150 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
+   * A refund or un-refund queues a rebuild that corrects the history.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRefundRebuildsHistory(): void {
+    $contactID = $this->createIndividual([], 'donor');
+    foreach (['2023-03-01', '2023-10-01'] as $index => $receiveDate) {
+      $this->createTestEntity('Contribution', [
+        'contact_id' => $contactID,
+        'receive_date' => $receiveDate,
+        'total_amount' => 10,
+        'financial_type_id:name' => 'Donation',
+      ], 'donor_' . $index);
+    }
+    // The gifts' own rebuilds, because they are in the past.
+    $this->runHistoryQueue();
+    Contribution::update(FALSE)
+      ->addWhere('id', '=', $this->ids['Contribution']['donor_1'])
+      ->addValue('contribution_status_id:name', 'Refunded')
+      ->execute();
+
+    $this->runHistoryQueue();
+    $this->assertHistoryMatchesRebuild($contactID);
+
+    Contribution::update(FALSE)
+      ->addWhere('id', '=', $this->ids['Contribution']['donor_1'])
+      ->addValue('contribution_status_id:name', 'Completed')
+      ->execute();
+
+    $this->runHistoryQueue();
+    $this->assertHistoryMatchesRebuild($contactID);
+  }
+
+  /**
+   * A gift from before this financial year, with nothing logged since, queues a rebuild for the rollover it missed.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testEarlierYearGiftRebuildsHistory(): void {
+    $contactID = $this->createIndividual([], 'donor');
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $contactID,
+      'receive_date' => date('Y-m-d', strtotime('-1 year')),
+      'total_amount' => 10,
+      'financial_type_id:name' => 'Donation',
+    ], 'donor');
+
+    $this->runHistoryQueue();
+    $this->assertHistoryMatchesRebuild($contactID);
+  }
+
+  /**
+   * A gift received earlier this year, with nothing logged since, doesn't queue a rebuild (nor does an edit).
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testEarlierGiftNotRebuiltIfNothingLoggedSince(): void {
+    $contactID = $this->createIndividual([], 'donor');
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $contactID,
+      'receive_date' => date('Y-m-d H:i:s', strtotime('-1 hour')),
+      'total_amount' => 10,
+      'financial_type_id:name' => 'Donation',
+    ], 'donor');
+    Contribution::update(FALSE)
+      ->addWhere('id', '=', $this->ids['Contribution']['donor'])
+      ->addValue('thankyou_date', 'now')
+      ->execute();
+    $this->assertEquals(0, QueueItem::get(FALSE)
+      ->addWhere('queue_name', '=', 'wmf_donor_history')
+      ->execute()->count());
+  }
+
+  /**
+   * A zero amount contribution, e.g. an audit fee, doesn't queue a rebuild.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testZeroAmountNotRebuilt(): void {
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->createIndividual([], 'donor'),
+      'receive_date' => '2023-03-01',
+      'total_amount' => 0,
+      'financial_type_id:name' => 'Donation',
+    ], 'donor');
+    $this->assertEquals(0, QueueItem::get(FALSE)
+      ->addWhere('queue_name', '=', 'wmf_donor_history')
+      ->execute()->count());
+  }
+
+  /**
+   * A gift received earlier this year, before something logged since, queues a rebuild.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testEarlierGiftRebuildsHistoryIfLoggedSince(): void {
+    $contactID = $this->createIndividual([], 'donor');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $contactID,
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'In Progress',
+      'start_date' => date('Y-m-d H:i:s'),
+    ], 'donor');
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $contactID,
+      'receive_date' => date('Y-m-d H:i:s', strtotime('-1 hour')),
+      'total_amount' => 10,
+      'financial_type_id:name' => 'Donation',
+    ], 'donor');
+
+    $this->runHistoryQueue();
+    $this->assertHistoryMatchesRebuild($contactID);
+  }
+
+  /**
+   * A recurring's first gift, even if received after its recurring is logged, queues a rebuild that merges the two.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRecurringSignupRebuildsHistory(): void {
+    $contactID = $this->createIndividual([], 'donor');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $contactID,
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'In Progress',
+      'start_date' => date('Y-m-d H:i:s'),
+    ], 'donor');
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $contactID,
+      'contribution_recur_id' => $this->ids['ContributionRecur']['donor'],
+      'receive_date' => date('Y-m-d H:i:s'),
+      'total_amount' => 10,
+      'financial_type_id:name' => 'Donation',
+    ], 'donor');
+
+    $this->runHistoryQueue();
+    $this->assertHistoryMatchesRebuild($contactID);
+  }
+
+  /**
    * After a merge, the merged contact keeps its history and the kept contact's is rebuilt.
    *
    * @throws \CRM_Core_Exception
@@ -1426,6 +1571,8 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
         'financial_type_id:name' => 'Donation',
       ], $key);
     }
+    // The gifts' own rebuilds.
+    $this->runHistoryQueue();
     $duplicateLogIDs = WMFDonorHistory::get(FALSE)
       ->addWhere('entity_id', '=', $duplicateID)
       ->execute()->column('log_id');
@@ -1435,8 +1582,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ->setContactId($contactID)
       ->setDuplicateId($duplicateID)
       ->execute();
-    $runner = new \CRM_Queue_Runner(['queue' => \Civi::queue('wmf_donor_history')]);
-    $this->assertTrue($runner->runAll());
+    $this->runHistoryQueue();
 
     // The merged away contact still has the same log rows.
     $this->assertEquals($duplicateLogIDs, WMFDonorHistory::get(FALSE)
@@ -1502,18 +1648,20 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
-   * Get the contact's history rows before the date, in time order.
+   * Get the contact's history rows, before the date if given, in time order.
    *
    * @return array
    *   [[log_date, segment, overall, otg, recur overall, recur month, recur year, changed fields], ...]
    * @throws \CRM_Core_Exception
    */
-  private function getHistoryRows(int $contactID, string $before): array {
-    $history = WMFDonorHistory::get(FALSE)
+  private function getHistoryRows(int $contactID, ?string $before = NULL): array {
+    $get = WMFDonorHistory::get(FALSE)
       ->addWhere('entity_id', '=', $contactID)
-      ->addWhere('log_date', '<', $before)
-      ->addOrderBy('log_date')
-      ->execute();
+      ->addOrderBy('log_date');
+    if ($before) {
+      $get->addWhere('log_date', '<', $before);
+    }
+    $history = $get->execute();
     $rows = [];
     foreach ($history as $row) {
       $rows[] = [
@@ -1528,6 +1676,26 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ];
     }
     return $rows;
+  }
+
+  /**
+   * Run the queued history rebuilds, after their delay.
+   */
+  private function runHistoryQueue(): void {
+    \CRM_Utils_Time::setTime(date('Y-m-d H:i:s', \CRM_Utils_Time::time() + 3600));
+    $runner = new \CRM_Queue_Runner(['queue' => \Civi::queue('wmf_donor_history')]);
+    $this->assertTrue($runner->runAll());
+  }
+
+  /**
+   * The contact's history is the same as a full rebuild's.
+   */
+  private function assertHistoryMatchesRebuild(int $contactID): void {
+    $rows = $this->getHistoryRows($contactID);
+    WMFDonor::rebuildHistory(FALSE)
+      ->setContactIds([$contactID])
+      ->execute();
+    $this->assertEquals($this->getHistoryRows($contactID), $rows);
   }
 
   /**
