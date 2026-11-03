@@ -862,6 +862,97 @@ class GenerateBatchTest extends BaseAuditTestCase {
   }
 
   /**
+   * A foundation batch's cost centre comes from the gift's major-gift flag -
+   * CC-1004 for a major gift, CC-1005 for everything else.
+   */
+  public function testFoundationBatchSetsCostCentreFromMajorGiftFlag(): void {
+    $prefix = 'adyen_333';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-01-20';
+
+    $this->createQueueContribution([
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 1,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $this->createQueueContribution([
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 20.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $result = $this->runGenerate($batchName, $currency, $settlementDate, 30, 2, $prefix);
+
+    $deptIDs = $this->getDonationRowDeptIDs($result[0]['csv_rows']);
+    // 43485 = Major Gifts - Unrestricted, 43481 = Online Banner Contributions.
+    $this->assertSame('CC-1004', $deptIDs['43485'] ?? NULL, 'Major gift row should use the major gifts cost centre');
+    $this->assertSame('CC-1005', $deptIDs['43481'] ?? NULL, 'Other rows should use the online fundraising cost centre');
+  }
+
+  /**
+   * Endowment journals carry no cost centre at all - even a major gift, which
+   * would be CC-1004 on a foundation batch, comes through with DEPT_ID empty.
+   */
+  public function testEndowmentGatewayLeavesDeptIDEmpty(): void {
+    $prefix = 'endowtest_342';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-01-31';
+
+    $this->createTestEntity('GatewayAccount', [
+      'name' => 'endowtest',
+      'gateway' => 'endowtest',
+      'label' => 'Endowment Test Gateway',
+      'is_endowment' => 1,
+      'vendor_code_foundation' => 'VFOUNDTEST',
+      'vendor_code_endowment' => 'VENDOWTEST',
+      'balancing_account_foundation' => '11250',
+    ]);
+    $this->createQueueContribution([
+      'financial_type_id:name' => 'Endowment Gift',
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 1,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $result = $this->runGenerate($batchName, $currency, $settlementDate, 10, 1, $prefix);
+
+    $deptIDs = $this->getDonationRowDeptIDs($result[0]['csv_rows']);
+    $this->assertNotEmpty($deptIDs, 'Expected a donation row to check DEPT_ID on');
+    foreach ($deptIDs as $accountCode => $deptID) {
+      $this->assertSame('', $deptID, "Endowment batches should have no cost centre - account $accountCode");
+    }
+  }
+
+  /**
+   * DEPT_ID of each donation row in $rows, keyed by its account code. Donation
+   * rows are the only ones getDeptIDClause() feeds - fee, invoice-fee and
+   * adjustment rows all hard-code CC-1014.
+   */
+  private function getDonationRowDeptIDs(array $rows): array {
+    $deptIDs = [];
+    foreach ($rows as $row) {
+      // Endowment donation rows carry a memo suffix after " Donations", so
+      // this can't be an ends-with. "Donation Fees" doesn't match either way.
+      if (str_contains((string) $row['MEMO'], 'Donations')) {
+        $deptIDs[(string) $row['ACCT_NO']] = (string) $row['DEPT_ID'];
+      }
+    }
+    return $deptIDs;
+  }
+
+  /**
    * While something else (e.g. Civi\WMFHook\FinancialDataChange::pre())
    * holds the settlement batch lock, GenerateBatch must not export it this
    * run - otherwise it could race a pending financial-data correction and

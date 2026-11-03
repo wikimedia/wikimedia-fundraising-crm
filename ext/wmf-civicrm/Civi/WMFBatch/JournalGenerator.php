@@ -405,8 +405,11 @@ END";
    * @return string
    */
   private function getDeptIDClause(): string {
-    return "-- cost centre
--- only use if Major Gifts - CC104 else  Online Fundraising - CC-1005
+    // Endowment journals carry no cost centre. This is the SQL empty-string
+    // literal, not a PHP empty string - the clause is interpolated as
+    // "$deptIDClause as DEPT_ID", so dropping it would leave a bare alias.
+    return $this->isEndowmentGateway() ? "''" : "-- cost centre
+-- only use if Major Gifts - CC-1004 else  Online Fundraising - CC-1005
 -- @todo
     IF(is_major_gift, 'CC-1004', 'CC-1005')";
   }
