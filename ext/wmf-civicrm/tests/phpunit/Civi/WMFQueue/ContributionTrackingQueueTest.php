@@ -43,6 +43,20 @@ class ContributionTrackingQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * Ad param name is stored as its option value; ad click identifier is copied as-is.
+   */
+  public function testCanProcessAdClickFields(): void {
+    $message = $this->getContributionTrackingMessage();
+    $message['ad_param'] = 'gclid';
+    $message['ad_click_identifier'] = 'Cj0KCQjw_test-click-id';
+    $this->processMessage($message);
+    $this->validateContributionTracking($message['id'], [
+      'ad_param_id' => \CRM_Core_PseudoConstant::getKey('CRM_Wmf_BAO_ContributionTracking', 'ad_param_id', 'gclid'),
+      'ad_click_identifier' => 'Cj0KCQjw_test-click-id',
+    ]);
+  }
+
+  /**
    * @throws \CRM_Core_Exception
    */
   public function testTruncatesOverlongFields(): void {

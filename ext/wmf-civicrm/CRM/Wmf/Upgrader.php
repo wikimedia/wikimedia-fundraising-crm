@@ -5650,6 +5650,21 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Add ad click tracking fields to contribution_tracking.
+   *
+   * @return bool
+   */
+  public function upgrade_5220(): bool {
+    $fields = (require E::path('schema/ContributionTracking.entityType.php'))['getFields']();
+    foreach (['ad_param_id', 'ad_click_identifier'] as $field) {
+      if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_contribution_tracking', $field, FALSE)) {
+        E::schema()->alterSchemaField('ContributionTracking', $field, $fields[$field]);
+      }
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity

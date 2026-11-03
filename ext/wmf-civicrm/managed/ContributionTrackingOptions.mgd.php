@@ -92,6 +92,24 @@ return [
     ],
   ],
   [
+    'name' => 'contribution_tracking_ad_param',
+    'entity' => 'OptionGroup',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'title' => 'Ad Parameter',
+        'name' => 'ad_param',
+        'description' => 'URL parameter the ad click ID arrived in',
+        'data_type' => 'Integer',
+      ],
+      'match' => [
+        'name',
+      ],
+    ],
+  ],
+  [
     'name' => 'payment_method_cc',
     'entity' => 'OptionValue',
     'cleanup' => 'unused',
@@ -531,6 +549,63 @@ return [
         'value' => 3,
         'name' => 'opt_in_none',
         'description' => 'Opt in option was not presented (generally based on locale data)',
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+      ],
+    ],
+  ],
+  [
+    'name' => 'ad_param_gclid',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'ad_param',
+        'label' => 'Google',
+        'value' => 1,
+        'name' => 'gclid',
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+      ],
+    ],
+  ],
+  [
+    'name' => 'ad_param_fbclid',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'ad_param',
+        'label' => 'Meta',
+        'value' => 2,
+        'name' => 'fbclid',
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+      ],
+    ],
+  ],
+  [
+    'name' => 'ad_param_rdt_cid',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'ad_param',
+        'label' => 'Reddit',
+        'value' => 3,
+        'name' => 'rdt_cid',
       ],
       'match' => [
         'option_group_id',
