@@ -483,21 +483,22 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
-   * The first write to wmf_donor logs a history row flagging every tracked field.
+   * A new contact's wmf_donor row of defaults isn't logged, and their first gift logs only what it changed.
    *
    * @throws \CRM_Core_Exception
    */
-  public function testWMFDonorHistoryLogsInsert(): void {
+  public function testWMFDonorHistoryLogsChangesFromDefaultOnly(): void {
+    $contactID = $this->createIndividual([], 'donor');
+    $this->assertCount(0, WMFDonorHistory::get(FALSE)
+      ->addWhere('entity_id', '=', $contactID)
+      ->execute());
+
     $this->createDonor();
-    $loggedFields = (new CalculatedData())->getLoggedFields();
 
-    $insertRow = WMFDonorHistory::get(FALSE)
-      ->addWhere('entity_id', '=', $this->ids['Contact']['donor'])
-      ->addOrderBy('log_id', 'ASC')
-      ->execute()->first();
-
-    // The insert of the wmf_donor row populates every tracked field, so all are logged.
-    $this->assertEquals(array_values(array_column($loggedFields, 'log_changes')), $insertRow['changed_fields']);
+    // Segment, status and one-time status, not the recurring statuses.
+    $this->assertEquals([1, 2, 3], WMFDonorHistory::get(FALSE)
+      ->addWhere('entity_id', '=', $contactID)
+      ->execute()->single()['changed_fields']);
   }
 
   /**
@@ -1171,7 +1172,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
         'recur' => NULL,
         'expectedRows' => [
           // New
-          ['2022-10-01 00:00:00', 600, 30, 30, 95, 95, 95, [1, 2, 3, 6, 4, 5]],
+          ['2022-10-01 00:00:00', 600, 30, 30, 95, 95, 95, [1, 2, 3]],
           // New last year, on rollover
           ['2023-07-01 00:00:00', 600, 60, 60, 95, 95, 95, [2, 3]],
           // Consecutive this year
@@ -1187,7 +1188,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
         'recur' => NULL,
         'expectedRows' => [
           // New, not merged into the rollover two minutes later
-          ['2023-06-30 23:58:00', 600, 30, 30, 95, 95, 95, [1, 2, 3, 6, 4, 5]],
+          ['2023-06-30 23:58:00', 600, 30, 30, 95, 95, 95, [1, 2, 3]],
           // New last year, on rollover
           ['2023-07-01 00:00:00', 600, 60, 60, 95, 95, 95, [2, 3]],
           // Lapsed, on rollover
@@ -1206,7 +1207,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
         ],
         'expectedRows' => [
           // New recurring
-          ['2022-01-01 09:00:00', 990, 99, 99, 25, 25, 95, [1, 2, 3, 6, 4, 5]],
+          ['2022-01-01 09:00:00', 990, 99, 99, 25, 25, 95, [6, 4]],
           // Active recurring, on rollover
           ['2022-07-01 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
           // Paused, next payment pushed out
@@ -1225,7 +1226,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
         ],
         'expectedRows' => [
           // Paused, as March 31 is more than a month and a day after February 28
-          ['2023-02-28 00:00:00', 990, 99, 99, 35, 35, 95, [1, 2, 3, 6, 4, 5]],
+          ['2023-02-28 00:00:00', 990, 99, 99, 35, 35, 95, [6, 4]],
           // Active again from March 1
           ['2023-03-01 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
         ],
@@ -1238,7 +1239,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
         ],
         'expectedRows' => [
           // Paused
-          ['2023-01-15 00:00:00', 990, 99, 99, 35, 35, 95, [1, 2, 3, 6, 4, 5]],
+          ['2023-01-15 00:00:00', 990, 99, 99, 35, 35, 95, [6, 4]],
           // Active again from January 28, as January 28 to 31 plus a month are all February 28
           ['2023-01-28 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
         ],
@@ -1251,7 +1252,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
         ],
         'expectedRows' => [
           // Paused, as the next payment is more than a year and a day away
-          ['2023-01-15 00:00:00', 990, 99, 99, 35, 95, 35, [1, 2, 3, 6, 4, 5]],
+          ['2023-01-15 00:00:00', 990, 99, 99, 35, 95, 35, [6, 5]],
           // Active again, a year and a day before the next payment
           ['2023-05-31 00:00:00', 990, 99, 99, 15, 95, 15, [6, 5]],
         ],
@@ -1265,7 +1266,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
         ],
         'expectedRows' => [
           // New recurring, from its dates as before the log
-          ['2014-01-01 00:00:00', 990, 99, 99, 25, 25, 95, [1, 2, 3, 6, 4, 5]],
+          ['2014-01-01 00:00:00', 990, 99, 99, 25, 25, 95, [6, 4]],
           // Active recurring, on rollover
           ['2014-07-01 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
           // Cancelled, from its cancel date
@@ -1281,7 +1282,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
         ],
         'expectedRows' => [
           // New recurring, from its dates as before its first log row
-          ['2014-01-01 00:00:00', 990, 99, 99, 25, 25, 95, [1, 2, 3, 6, 4, 5]],
+          ['2014-01-01 00:00:00', 990, 99, 99, 25, 25, 95, [6, 4]],
           // Active recurring, on rollover
           ['2014-07-01 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
           // and unchanged when logging starts and when it's logged
@@ -1300,7 +1301,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
         ],
         'expectedRows' => [
           // One row for the first payment and its recurring's log row 30 seconds later
-          ['2023-04-15 03:00:30', 600, 30, 99, 25, 25, 95, [1, 2, 3, 6, 4, 5]],
+          ['2023-04-15 03:00:30', 600, 30, 99, 25, 25, 95, [1, 2, 6, 4]],
           // No row for the second charge, as nothing logged changes
           // New last year and active recurring, on rollover
           ['2023-07-01 00:00:00', 600, 60, 99, 15, 15, 95, [2, 6, 4]],
@@ -1318,13 +1319,14 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
    */
   public function testRebuildHistorySavesRows(): void {
     $contactID = $this->createIndividual([], 'donor');
-    foreach (['2023-03-01', '2023-10-01'] as $index => $receiveDate) {
+    // The second gift changes the segment, so the triggers log it.
+    foreach (['2023-03-01' => 10, '2023-10-01' => 100] as $receiveDate => $amount) {
       $this->createTestEntity('Contribution', [
         'contact_id' => $contactID,
         'receive_date' => $receiveDate,
-        'total_amount' => 10,
+        'total_amount' => $amount,
         'financial_type_id:name' => 'Donation',
-      ], 'donor_' . $index);
+      ], 'donor_' . $receiveDate);
     }
     // A wrong row to be replaced, could use API4 once core bug fixed.
     \CRM_Core_DAO::executeQuery("INSERT INTO wmf_donor_history (entity_id, donor_segment_overall, changed_fields, log_date) VALUES (%1, 100, %2, '2023-01-01')", [
@@ -1347,7 +1349,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     // [log_date, segment, overall, otg, recur overall, recur month, recur year, changed fields]
     $this->assertEquals([
       // New, replacing the wrong row
-      ['2023-03-01 00:00:00', 600, 30, 30, 95, 95, 95, [1, 2, 3, 6, 4, 5]],
+      ['2023-03-01 00:00:00', 600, 30, 30, 95, 95, 95, [1, 2, 3]],
       // New last year, on rollover
       ['2023-07-01 00:00:00', 600, 60, 60, 95, 95, 95, [2, 3]],
     ], $savedRows);
@@ -1395,7 +1397,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     // [log_date, segment, overall, otg, recur overall, recur month, recur year, changed fields]
     $this->assertEquals([
       // New, from earlier
-      ['2023-03-01 00:00:00', 600, 30, 30, 95, 95, 95, [1, 2, 3, 6, 4, 5]],
+      ['2023-03-01 00:00:00', 600, 30, 30, 95, 95, 95, [1, 2, 3]],
       // New last year, on rollover, from earlier
       ['2023-07-01 00:00:00', 600, 60, 60, 95, 95, 95, [2, 3]],
       // Lapsed, on rollover, as the refunded gift no longer counts, rebuilt
@@ -1444,7 +1446,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     // [log_date, segment, overall, otg, recur overall, recur month, recur year, changed fields]
     $this->assertEquals([
       // New
-      ['2023-03-01 00:00:00', 600, 30, 30, 95, 95, 95, [1, 2, 3, 6, 4, 5]],
+      ['2023-03-01 00:00:00', 600, 30, 30, 95, 95, 95, [1, 2, 3]],
       // New last year, on rollover
       ['2023-07-01 00:00:00', 600, 60, 60, 95, 95, 95, [2, 3]],
       // Consecutive, from the merged contact's gift

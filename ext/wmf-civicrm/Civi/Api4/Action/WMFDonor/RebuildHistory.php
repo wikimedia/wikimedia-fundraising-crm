@@ -124,16 +124,15 @@ class RebuildHistory extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   private function getContactHistory(int $contactID, ?string $startDate, string $endDate): array {
+    // Start from the defaults (though all defaults rows aren't logged initially).
     $currentValues = [];
     foreach ($this->loggedFieldsByTable as $fields) {
       foreach ($fields as $field => $spec) {
-        // Defaults to write into the history table until the field's source
-        // table has an event.
         $currentValues[$field] = (int) $spec['default_value'];
       }
     }
+    $previousValues = $currentValues;
     $rows = [];
-    $previousValues = NULL;
     if ($startDate) {
       $previousRow = WMFDonorHistory::get(FALSE)
         ->addWhere('entity_id', '=', $contactID)
@@ -162,7 +161,7 @@ class RebuildHistory extends AbstractAction {
       $changedFields = [];
       foreach ($this->loggedFieldsByTable as $fields) {
         foreach ($fields as $field => $spec) {
-          if ($previousValues === NULL || $previousValues[$field] !== $currentValues[$field]) {
+          if ($previousValues[$field] !== $currentValues[$field]) {
             $changedFields[] = $spec['log_changes'];
           }
         }
