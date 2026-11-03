@@ -8,7 +8,6 @@ use Brick\Money\Money;
 use Civi\Api4\Batch;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use Civi\Api4\FinanceIntegration;
 use Civi\Api4\GatewayAccount;
 use Civi\WMFBatch\BatchSummaryMailer;
 use Civi\WMFBatch\JournalGLConstants;
@@ -214,113 +213,26 @@ class GenerateBatch extends AbstractAction {
   }
 
   /**
-   * Push each journal row in $csvRows to Intacct for $batch.
+   * Push this batch's generated journals to Intacct.
    *
    * @return array with 'is_uploaded' (bool), 'remote' (per-journal remote
    *   info, keyed by remote_descriptor) and, on failure, 'upload_errors' -
    *   merge these into the caller's $record for this batch.
-   */
-  private function pushJournalsToIntacct(array $batch, array $csvRows): array {
-    $journalsToUpload = [];
-    foreach ($csvRows as $journal) {
-      if ($journal['is_journal']) {
-        $journalsToUpload[] = $journal;
-      }
-    }
-    $outcome = ['is_uploaded' => FALSE, 'remote' => []];
-    $successFullUploads = 0;
-    try {
-      foreach ($journalsToUpload as $journal) {
-        foreach ($this->pushJournalToIntacct($batch, $journal, $successFullUploads, count($journalsToUpload)) as $pushResult) {
-          $successFullUploads++;
-          $outcome['remote'][$pushResult['remote_descriptor']] = $pushResult['remote'];
-          $outcome['is_uploaded'] = $pushResult['is_uploaded'];
-        }
-      }
-    }
-    catch (\Exception $e) {
-      $this->log('failed to upload to Intacct with error ' . $e->getMessage());
-      \Civi::log('wmf')->alert('{subject} {message}', [
-        'subject' => $batch['name'] . ' failed to upload to Intacct',
-        'message' => $e->getMessage(),
-        'batch' => $batch['name'],
-      ]);
-      // Flag the batch that actually failed - not every other batch
-      // already in $result, which is what the pre-extraction code did
-      // (this ran before $record was appended to $result for this batch).
-      $outcome['upload_errors'] = 'journal upload failed';
-    }
-    $journalCount = count($journalsToUpload);
-    if ($journalCount && $successFullUploads > 0 && $successFullUploads < $journalCount) {
-      // Exported to one entity but not the other - a straddling
-      // state that needs manual review before any further export
-      // attempt on this batch.
-      Batch::update(FALSE)
-        ->addWhere('name', '=', $batch['name'])
-        ->addValue('status_id:name', 'Partially Exported')
-        ->execute();
-      $this->log($batch['name'] . ': only exported to ' . $successFullUploads . ' of ' . $journalCount . ' entities - status set to Partially Exported');
-    }
-    return $outcome;
-  }
-
-  /**
-   * Push a single journal to Intacct for $batch.
    *
-   * The push itself records the journal's remote fields on the Batch - all
-   * that is left here is the batch's overall status, which no single push
-   * can decide. $priorSuccessCount is how many of this batch's journals
-   * have already been confirmed by earlier calls for the same batch -
-   * needed, together with $journalCount, to know whether a given
-   * confirmation is the batch's last outstanding one, so the batch can be
-   * marked Exported.
-   *
-   * @return array[] zero or more {remote_descriptor, remote, is_uploaded}
-   *   results - normally one per journal, but pushJournal() can return
-   *   more than one outcome for a single call.
+   * @throws \CRM_Core_Exception
    */
-  private function pushJournalToIntacct(array $batch, array $journal, int $priorSuccessCount, int $journalCount): array {
-    $this->log('Journal being pushed to the staging ' . $journal['instance'] . 'version of Intacct via the api : ' . $batch['name'] . $journal['suffix']);
-    $apiOutcome = FinanceIntegration::pushJournal(FALSE)
-      ->setJournalFile($journal['file'])
-      ->setIsDryRun($this->isDryRun)
-      ->setInstance($journal['instance'])
-      ->setBatchName($batch['name'] . $journal['suffix'])
+  private function pushJournalsToIntacct(array $batch, array $journals): array {
+    $outcome = Batch::pushToFinance(FALSE)
+      ->setName($batch['name'])
+      ->setJournals($journals)
       ->setBatchDescriptionPrefix($batch['batch_data.settlement_gateway'])
-      ->setCiviBatchName($batch['name'])
-      ->setRemoteDescriptor($journal['remote_descriptor'])
-      ->execute();
-    $this->log('Journal ' . $batch['name'] . $journal['suffix'] . ' successfully pushed to Intacct ' . $journal['instance'] . ' instance with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
-    $successCount = $priorSuccessCount;
-    $results = [];
-    foreach ($apiOutcome as $apiBatch) {
-      if ($apiBatch['status'] === 'Valid Remotely') {
-        $successCount++;
-        $isUploaded = $successCount === $journalCount;
-        $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct ' . ($isUploaded ? ' and is now being closed (status set to Exported)' : ''));
-        if ($isUploaded) {
-          Batch::update(FALSE)
-            ->addWhere('name', '=', $batch['name'])
-            ->addValue('status_id:name', 'Exported')
-            ->execute();
-        }
-        $results[] = [
-          'remote_descriptor' => $journal['remote_descriptor'],
-          'remote' => [
-            'url' => $apiBatch['url'],
-            'id' => $apiBatch['remote_journal_id'],
-            'exchange_rate' => $apiBatch['exchange_rate'] ?? 1,
-            'txn_number' => $apiBatch['txn_number'],
-            'usd_journal_total' => $apiBatch['usd_journal_total'] ?? '',
-            'usd_credit' => $apiBatch['usd_credit'] ?? '',
-            'usd_debit' => $apiBatch['usd_debit'] ?? '',
-          ],
-          'is_uploaded' => $isUploaded,
-        ];
-      }
-      $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['txn_number'] . '</a>');
-    }
-    return $results;
+      ->setIsDryRun($this->isDryRun)
+      ->execute()->first();
+    // The action logs as it goes; fold its lines into ours so they still
+    // reach the batch summary email.
+    $this->log = array_merge($this->log, $outcome['log']);
+    unset($outcome['log']);
+    return $outcome;
   }
 
   /**
