@@ -194,7 +194,6 @@ class GenerateBatch extends AbstractAction {
       $result[] = $record;
     }
 
-    $this->log('Account code logic ' . nl2br($this->getAccountClause()));
     $this->sendSummary($result);
   }
 
