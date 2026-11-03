@@ -85,6 +85,7 @@ return [
     'help_text' => '',
     'default' => 7,
     'type' => 'Integer',
+    'html_type' => 'number',
     'is_domain' => 1,
     'is_contact' => 0,
     'settings_pages' => ['wmf-audit' => ['weight' => 236]],

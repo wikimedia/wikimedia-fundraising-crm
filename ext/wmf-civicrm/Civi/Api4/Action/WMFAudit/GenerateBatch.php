@@ -8,10 +8,10 @@ use Brick\Money\Money;
 use Civi\Api4\Batch;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
-use Civi\Api4\FinanceIntegration;
 use Civi\Api4\GatewayAccount;
 use Civi\WMFBatch\BatchSummaryMailer;
 use Civi\WMFBatch\JournalGLConstants;
+use Civi\WMFBatch\JournalGenerator;
 use CRM_Core_DAO;
 use League\Csv\Writer;
 
@@ -27,6 +27,20 @@ use League\Csv\Writer;
  * @method $this setId(int $batch_id)
  */
 class GenerateBatch extends AbstractAction {
+
+  /**
+   * Batch modes this action knows how to export, matching the list in
+   * FinanceBatchReferenceSpecProvider.
+   *
+   * An allow list rather than an exclusion, so a mode added later has to opt
+   * in here before the settlement run touches it. Adjustment Batches are the
+   * first to be left out: their journals come from a FinancialDataAdjustment
+   * row rather than settlement data, so sweeping one up would find no settled
+   * rows, fail validation and flag it needs_attention. mode_id is nullable
+   * and NULL is not IN anything, so a batch with no mode is left alone too -
+   * both of the places that create batches set one.
+   */
+  const EXPORTABLE_BATCH_MODES = ['Automatic Batch', 'Manual Batch'];
 
   /**
    * Is this a dry run (if so do not close batches or push to the api).
@@ -101,7 +115,6 @@ class GenerateBatch extends AbstractAction {
   private array $log = [];
 
   private array $batchSummary = [];
-  private string $endDate = '';
 
   private array $batches;
 
@@ -126,6 +139,22 @@ class GenerateBatch extends AbstractAction {
         ->execute()->indexBy('name');
     }
     return $this->gatewayAccounts;
+  }
+
+  /**
+   * One JournalGenerator per batch, keyed by name - each is built around the
+   * batch it generates for, and both call sites below want the same instance
+   * for a given batch.
+   *
+   * @var JournalGenerator[]
+   */
+  private array $journalGenerators = [];
+
+  private function getJournalGenerator(array $batch): JournalGenerator {
+    if (!isset($this->journalGenerators[$batch['name']])) {
+      $this->journalGenerators[$batch['name']] = new JournalGenerator($batch);
+    }
+    return $this->journalGenerators[$batch['name']];
   }
 
   /**
@@ -175,6 +204,7 @@ class GenerateBatch extends AbstractAction {
           }
           else {
             try {
+              $this->recordAmountsJournaled($batch);
               $record = array_merge($record, $this->pushJournalsToIntacct($batch, $record['csv']));
             }
             finally {
@@ -193,130 +223,65 @@ class GenerateBatch extends AbstractAction {
       $result[] = $record;
     }
 
-    $this->log('Account code logic ' . nl2br($this->getAccountClause()));
     $this->sendSummary($result);
   }
 
   /**
-   * Push each journal row in $csvRows to Intacct for $batch.
+   * Push this batch's generated journals to Intacct.
    *
    * @return array with 'is_uploaded' (bool), 'remote' (per-journal remote
    *   info, keyed by remote_descriptor) and, on failure, 'upload_errors' -
    *   merge these into the caller's $record for this batch.
+   *
+   * @throws \CRM_Core_Exception
    */
-  private function pushJournalsToIntacct(array $batch, array $csvRows): array {
-    $journalsToUpload = [];
-    foreach ($csvRows as $journal) {
-      if ($journal['is_journal']) {
-        $journalsToUpload[] = $journal;
-      }
-    }
-    $outcome = ['is_uploaded' => FALSE, 'remote' => []];
-    $successFullUploads = 0;
-    try {
-      foreach ($journalsToUpload as $journal) {
-        foreach ($this->pushJournalToIntacct($batch, $journal, $successFullUploads, count($journalsToUpload)) as $pushResult) {
-          $successFullUploads++;
-          $outcome['remote'][$pushResult['remote_descriptor']] = $pushResult['remote'];
-          $outcome['is_uploaded'] = $pushResult['is_uploaded'];
-        }
-      }
-    }
-    catch (\Exception $e) {
-      $this->log('failed to upload to Intacct with error ' . $e->getMessage());
-      \Civi::log('wmf')->alert('{subject} {message}', [
-        'subject' => $batch['name'] . ' failed to upload to Intacct',
-        'message' => $e->getMessage(),
-        'batch' => $batch['name'],
-      ]);
-      // Flag the batch that actually failed - not every other batch
-      // already in $result, which is what the pre-extraction code did
-      // (this ran before $record was appended to $result for this batch).
-      $outcome['upload_errors'] = 'journal upload failed';
-    }
-    $journalCount = count($journalsToUpload);
-    if ($journalCount && $successFullUploads > 0 && $successFullUploads < $journalCount) {
-      // Exported to one entity but not the other - a straddling
-      // state that needs manual review before any further export
-      // attempt on this batch.
-      Batch::update(FALSE)
-        ->addWhere('name', '=', $batch['name'])
-        ->addValue('status_id:name', 'Partially Exported')
-        ->execute();
-      $this->log($batch['name'] . ': only exported to ' . $successFullUploads . ' of ' . $journalCount . ' entities - status set to Partially Exported');
-    }
+  private function pushJournalsToIntacct(array $batch, array $journals): array {
+    $outcome = Batch::pushToFinance($this->getCheckPermissions())
+      ->setName($batch['name'])
+      ->setJournals($journals)
+      ->setBatchDescriptionPrefix($batch['batch_data.settlement_gateway'])
+      ->setIsDryRun($this->isDryRun)
+      ->execute()->first();
+    // The action logs as it goes; fold its lines into ours so they still
+    // reach the batch summary email.
+    $this->log = array_merge($this->log, $outcome['log']);
+    unset($outcome['log']);
     return $outcome;
   }
 
   /**
-   * Push a single journal to Intacct for $batch, updating its remote/
-   * status custom fields for any outcome Intacct confirms.
+   * Record how this batch's donation total was split between the two
+   * entities. Worked out here, from the journal we just wrote, so it is
+   * written by the code that knows it rather than threaded through the
+   * push for storage.
    *
-   * $priorSuccessCount is how many of this batch's journals have already
-   * been confirmed by earlier calls for the same batch - needed, together
-   * with $journalCount, to know whether a given confirmation is the
-   * batch's last outstanding one, so the batch can be marked Exported.
-   *
-   * @return array[] zero or more {remote_descriptor, remote, is_uploaded}
-   *   results - normally one per journal, but pushJournal() can return
-   *   more than one outcome for a single call.
+   * @throws \CRM_Core_Exception
    */
-  private function pushJournalToIntacct(array $batch, array $journal, int $priorSuccessCount, int $journalCount): array {
-    $this->log('Journal being pushed to the staging ' . $journal['instance'] . 'version of Intacct via the api : ' . $batch['name'] . $journal['suffix']);
-    $apiOutcome = FinanceIntegration::pushJournal(FALSE)
-      ->setJournalFile($journal['file'])
-      ->setIsDryRun($this->isDryRun)
-      ->setInstance($journal['instance'])
-      ->setBatchName($batch['name'] . $journal['suffix'])
-      ->setBatchDescriptionPrefix($batch['batch_data.settlement_gateway'])
+  private function recordAmountsJournaled(array $batch): void {
+    [$amountJournaledToEndowment, $amountJournaledToFoundation] = $this->getAmountsJournaled($batch);
+    Batch::update(FALSE)
+      ->addWhere('name', '=', $batch['name'])
+      ->setValues([
+        'batch_data.amount_journaled_to_endowment' => (string) $amountJournaledToEndowment->getAmount(),
+        'batch_data.amount_journaled_to_foundation' => (string) $amountJournaledToFoundation->getAmount(),
+      ])
       ->execute();
-    $this->log('Journal ' . $batch['name'] . $journal['suffix'] . ' successfully pushed to Intacct ' . $journal['instance'] . ' instance with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
-    $successCount = $priorSuccessCount;
-    $results = [];
-    foreach ($apiOutcome as $apiBatch) {
-      if ($apiBatch['status'] === 'Valid Remotely') {
-        $successCount++;
-        $isUploaded = $successCount === $journalCount;
-        $statusUpdate = $isUploaded ? ['status_id:name' => 'Exported'] : [];
-        $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct ' . ($isUploaded ? ' and is now being closed (status set to Exported)' : ''));
-        $remote = [
-          'url' => $apiBatch['url'],
-          'id' => $apiBatch['remote_journal_id'],
-          'exchange_rate' => $apiBatch['exchange_rate'] ?? 1,
-          'txn_number' => $apiBatch['txn_number'],
-          'usd_journal_total' => $apiBatch['usd_journal_total'] ?? '',
-          'usd_credit' => $apiBatch['usd_credit'] ?? '',
-          'usd_debit' => $apiBatch['usd_debit'] ?? '',
-        ];
-        $totalDonationAmount = Money::of((string) ($batch['batch_data.settled_donation_amount'] ?? 0), $this->batchSummary[$batch['name']]['currency']);
-        if ($this->batchSummary[$batch['name']]['is_endowment_gateway']) {
-          $amountJournaledToFoundation = $this->batchSummary[$batch['name']]['foundation_transfer'];
-          $amountJournaledToEndowment = $totalDonationAmount->minus($amountJournaledToFoundation);
-        }
-        else {
-          $amountJournaledToEndowment = $this->batchSummary[$batch['name']]['endowment_transfer'];
-          $amountJournaledToFoundation = $totalDonationAmount->minus($amountJournaledToEndowment);
-        }
-        Batch::update(FALSE)
-          ->addWhere('name', '=', $batch['name'])
-          ->setValues([
-            'batch_data.exchange_rate' => $remote['exchange_rate'],
-            'batch_data.exchange_rate_source' => 'Intacct',
-            'batch_data.remote_url_' . $journal['remote_descriptor'] => $remote['url'],
-            'batch_data.remote_identifier_' . $journal['remote_descriptor'] => $remote['txn_number'],
-            'batch_data.amount_journaled_to_endowment' => (string) $amountJournaledToEndowment->getAmount(),
-            'batch_data.amount_journaled_to_foundation' => (string) $amountJournaledToFoundation->getAmount(),
-          ] + $statusUpdate)
-          ->execute();
-        $results[] = [
-          'remote_descriptor' => $journal['remote_descriptor'],
-          'remote' => $remote,
-          'is_uploaded' => $isUploaded,
-        ];
-      }
-      $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['txn_number'] . '</a>');
+  }
+
+  /**
+   * The batch's donation total, split as [endowment, foundation] - whichever
+   * instance the batch's gateway deposits to keeps whatever was not carved
+   * out into a cross-instance transfer by writeJournalToCsv().
+   *
+   * @return Money[]
+   */
+  private function getAmountsJournaled(array $batch): array {
+    $summary = $this->batchSummary[$batch['name']];
+    $totalDonationAmount = Money::of((string) ($batch['batch_data.settled_donation_amount'] ?? 0), $summary['currency']);
+    if ($summary['is_endowment_gateway']) {
+      return [$totalDonationAmount->minus($summary['foundation_transfer']), $summary['foundation_transfer']];
     }
-    return $results;
+    return [$summary['endowment_transfer'], $totalDonationAmount->minus($summary['endowment_transfer'])];
   }
 
   public static function fields(): array {
@@ -595,139 +560,12 @@ class GenerateBatch extends AbstractAction {
   }
 
   /**
-   * @return string
-   */
-  public function getAccountClause(): string {
-    return "
-    -- See GL Account Structure Rules
-    -- Online Recurring Contributions 43480 = channel =  	Recurring Gift
-    -- Online Banner Contributions	43481 = channel = Banner
-    -- Online Email Contributions	43482 = channel = email
-    -- Online Direct Mail Contributions	43483 = channel = Direct Mail
-    -- Online Other Contributions	43484
-    -- Chapter Gifts	43440 = channel =  Chapter Gifts
-    -- Major Gifts - Unrestricted	43485
-    -- Major Gifts - Restricted	43428
-    CASE
-  -- 1) Major gifts first
-  WHEN gift.is_major_gift = 1 AND gift.fund LIKE 'restricted%' THEN 43428  -- Major Gifts - Restricted
-  WHEN gift.is_major_gift = 1 THEN 43485                                   -- Major Gifts - Unrestricted
-
-  -- 2) Specific channels
-  WHEN gift.channel = 'Chapter Gifts'   THEN 43440   -- Chapter Gifts
-  WHEN gift.channel = 'Recurring Gift'  THEN 43480   -- Online Recurring Contributions
-  WHEN gift.channel = 'Mobile Banner'   THEN 43481   -- Online Banner Contributions
-  WHEN gift.channel = 'Desktop Banner'  THEN 43481   -- Online Banner Contributions
-  WHEN gift.channel = 'Other Banner'    THEN 43481   -- Online Banner Contributions
-  WHEN gift.channel = 'Email'           THEN 43482   -- Online Email Contributions
-  WHEN gift.channel = 'Direct Mail'     THEN 43483   -- Online Direct Mail Contributions
-  WHEN gift.channel = 'SMS'             THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Other Online'    THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Portal Banner'   THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Sidebar'         THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Wikipedia App'   THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Wikimedia Portal' THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Other Portal'    THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Social Media'    THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Interest'        THEN 45050   -- Interest (occurs with CCK)
-  -- 3) Everything else -> Online Other Contributions
-  -- remaining = 'Workplace Giving','Direct Solicitation','Planned Giving', 'Events','White Mail','Other Offline'
-  ELSE '' -- default/fallback - this will cause the batch to report errors and not close.
-END";
-  }
-
-  /**
-   * @return string
-   */
-  public function getDeptIDClause(): string {
-    return "-- cost centre
--- only use if Major Gifts - CC104 else  Online Fundraising - CC-1005
--- @todo
-    IF(is_major_gift, 'CC-1004', 'CC-1005')";
-  }
-
-  /**
-   * GL Code for a fee row: generally GL_FEE_DEFAULT except for cck
-   * which has different overrides for foundation & endowment accounts.
-   *
-   * @param string $batchName
-   *
-   * @return string
-   */
-  private function getFeeAccountCode(string $batchName): string {
-    return (string) (JournalGLConstants::GATEWAY_ACCOUNTS_FEE_GL_CODES[$this->getGateway($batchName)] ?? JournalGLConstants::GL_FEE_DEFAULT);
-  }
-
-  /**
-   * @return string
-   */
-  public function getRestrictionsClause(): string {
-    return "-- @todo - this gets restrictions for major gifts transactions.
-    IF('is_major_gift' AND Fund LIKE 'Restricted%', 'Temporarily Restricted', 'Unrestricted')";
-  }
-
-  /**
-   * @param $batchName
-   * @return string
-   * @throws \CRM_Core_Exception
-   */
-  public function getVendorCode($batchName): string {
-    $gateway = $this->getGateway($batchName);
-    $accounts = $this->getGatewayAccounts();
-    if (!isset($accounts[$gateway])) {
-      throw new \CRM_Core_Exception('batch vendor ID missing for ' . $gateway);
-    }
-    $account = $accounts[$gateway];
-    if ($this->isEndowmentGateway($batchName) && !empty($account['vendor_code_endowment'])) {
-      return $account['vendor_code_endowment'];
-    }
-    // Vendor code is optional - e.g. wire & ach have no vendor in Intacct.
-    return (string) ($account['vendor_code_foundation'] ?? '');
-  }
-
-  /**
    * @param string $renderedSql
    * @return array
    * @throws \Civi\Core\Exception\DBQueryException
    */
   public function getDetailData(string $renderedSql, $batchName): array {
-    $detailSQL = str_replace('GROUP BY ', 'GROUP BY c.id, ', $renderedSql);
-    $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
-    $locationID = $this->isEndowmentGateway($batchName) ? JournalGLConstants::LOCATION_ID_ENDOWMENT : JournalGLConstants::LOCATION_ID_WMF;
-    $detailSQL = str_replace('GLDIMFUNDING', 'GLDIMFUNDING,
-        "' . $locationID . '" as LOCATION_ID,
-        "' . $this->getVendorCode($batchName) . '" as GL_VENDOR,
-        IF(s.settlement_batch_reference = "' . $batchName . '", s.settlement_date, "' . $this->batches[$batchName]['batch_data.settlement_date'] . ' 00:00:00") as settlement_date,
-        c.id as contribution_id,
-        c.invoice_id as order_id,
-        t.id as contribution_tracking_id,
-        gift.channel,
-        gift.fund,
-        gift.is_major_gift,
-        IF(c.financial_type_id = ' . $endowmentFinancialType . ', 1, 0) as is_endowment,
-        "' . $this->getGateway($batchName) . '" as gateway,
-        COALESCE(x.backend_processor, x.gateway) as backend_processor,
-        COALESCE(x.backend_processor_txn_id, x.gateway_txn_id) as backend_processor_txn_id,
-        IF(x.gateway = "gravy", "gravy", "") as payment_orchestrator,
-        x.payment_orchestrator_reconciliation_id,
-        x.original_amount,
-        x.original_currency,
-        settled_donation_amount,
-        settled_fee_amount,
-        settled_reversal_amount,
-        settled_fee_reversal_amount ',
-      $detailSQL
-    );
-    $detailSQL = str_replace(
-      ' LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id',
-      ' LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
-        LEFT JOIN wmf_contribution_extra x ON c.id = x.entity_id
-        LEFT JOIN civicrm_contribution_tracking t ON t.contribution_id = c.id
-        ',
-      $detailSQL
-    );
-    $details = CRM_Core_DAO::executeQuery($detailSQL)->fetchAll();
-    return $details;
+    return $this->getJournalGenerator($this->getBatches()[$batchName])->getDetailData($renderedSql);
   }
 
   /**
@@ -814,6 +652,7 @@ END";
     $incompleteBatches = Batch::get(FALSE)
       // Status list will probably grow.
       ->addWhere('status_id:name', 'IN', ['Open', 'needs_attention'])
+      ->addWhere('mode_id:name', 'IN', self::EXPORTABLE_BATCH_MODES)
       ->addSelect('*', 'batch_data.*', 'status_id:label', 'mode_id:name')
       ->execute();
 
@@ -876,6 +715,7 @@ END";
           ]]
         );
 
+        $batchGet->addWhere('mode_id:name', 'IN', self::EXPORTABLE_BATCH_MODES);
         if ($this->batchPrefix) {
           $batchGet->addWhere('name', 'LIKE', '%' . $this->batchPrefix . '_%');
         }
@@ -883,12 +723,6 @@ END";
       }
       if (empty($this->batches)) {
         return [];
-      }
-
-      foreach ($this->batches as $batch) {
-        if (!isset($this->endDate) || strtotime($batch['batch_data.settlement_date']) > strtotime($this->endDate)) {
-          $this->endDate = $batch['batch_data.settlement_date'];
-        }
       }
 
       foreach ($this->batches as $index => $batch) {
@@ -920,212 +754,6 @@ END";
   }
 
   /**
-   * Get the configured vendor codes for each gateway, keyed by GatewayAccount
-   * name, in the ['foundation' => ..., 'endowment' => ...] shape.
-   *
-   * @see https://docs.google.com/spreadsheets/d/1FFIhblreQKSiPBxfatc5XhDdjqoaR7R280r9TTOlQcw/edit?gid=1609952585#gid=1609952585
-   * @return array[]
-   * @throws \CRM_Core_Exception
-   */
-  public function getVendorCodesForGateways(): array {
-    $codes = [];
-    foreach ($this->getGatewayAccounts() as $name => $account) {
-      $codes[$name] = array_filter([
-        'foundation' => $account['vendor_code_foundation'],
-        'endowment' => $account['vendor_code_endowment'],
-      ]);
-    }
-    return $codes;
-  }
-
-  /**
-   * @return string
-   */
-  public function getBatchSql($batchName): string {
-    $accountCodeClause = $this->getAccountClause();
-    $deptIDClause = $this->getDeptIDClause();
-    $restrictionsClause = $this->getRestrictionsClause();
-    $dateDescription = $this->getBatches()[$batchName]['date_description'];
-    $gatewayLevelTrxnExcludeClause = ' AND ' . $this->getGatewayLevelTransactionExcludeClause($batchName) . ' AND ' . $this->getGatewayLevelTransactionExcludeAdjustmentClause($batchName);
-    $gatewayLevelTrxnIncludeClause = ' AND ' . $this->getGatewayLevelTrxnIncludeClause($batchName);
-    $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
-    $feeAccountCodeClause = $this->getFeeAccountCode($batchName);
-
-    return "SELECT
-    CONCAT('Contribution Revenue ', '{$dateDescription}') as DESCRIPTION,
-    $accountCodeClause AS ACCT_NO,
-    $deptIDClause as DEPT_ID,
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Donations', IF(c.financial_type_id = $endowmentFinancialType, ' " . JournalGLConstants::GL_ENDOWMENT_MEMO_SUFFIX . "', '')) as MEMO,
-    IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, 0, -SUM(COALESCE(settled_donation_amount, 0)))  as DEBIT,
-    IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, SUM(COALESCE(settled_donation_amount, 0)), 0) as CREDIT,
-    s.settlement_currency as CURRENCY,
-    '' as GLENTRY_PROJECTID,
-    IF(c.financial_type_id = $endowmentFinancialType , 1, 0) as is_endowment,
-    $restrictionsClause as GLDIMFUNDING
-FROM civicrm_value_contribution_settlement s
-  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
-         LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
-WHERE (%1 = s.settlement_batch_reference)
-  AND (COALESCE(settled_donation_amount, 0) <> 0)
-  AND is_template = 0
-GROUP BY Fund, $accountCodeClause, is_major_gift, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
-
-UNION ALL
-  SELECT
-   CONCAT('Contribution Revenue ', '{$dateDescription}' ) as DESCRIPTION,
-   $accountCodeClause AS ACCT_NO,
-    $deptIDClause as DEPT_ID,
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Refunds', IF(c.financial_type_id = $endowmentFinancialType, '" . JournalGLConstants::GL_ENDOWMENT_MEMO_SUFFIX . "', '')) as MEMO,
-
-    IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, SUM(-COALESCE(settled_reversal_amount, 0)),0) as DEBIT,
-    IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, 0, SUM(-COALESCE(settled_reversal_amount, 0)))  as CREDIT,
-    s.settlement_currency as CURRENCY,
-    '' as GLENTRY_PROJECTID,
-    IF(c.financial_type_id = $endowmentFinancialType , 1, 0) as is_endowment,
-    $restrictionsClause as GLDIMFUNDING
-FROM civicrm_value_contribution_settlement s
-  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
-         LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
-WHERE (%1 = s.settlement_batch_reversal_reference)
-  AND (COALESCE(settled_reversal_amount, 0) <> 0)
-  AND is_template = 0
-GROUP BY Fund, $accountCodeClause, is_major_gift, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
-
-UNION ALL
-
--- Fee transactions part.
-SELECT
--- note GROUP BY here....
-    CONCAT('Contribution Revenue ', '{$dateDescription}' ) as DESCRIPTION,
-    $feeAccountCodeClause as ACCT_NO,
--- cost centre - CC-1014 for all fees
-    'CC-1014' as DEPT_ID,
-    -- @todo - not always donations at the end of memo
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
-    IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_amount, 0)), 0) as DEBIT,
-    IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0))) as CREDIT,
-    s.settlement_currency as CURRENCY,
-    IF(c.financial_type_id =  $endowmentFinancialType , 'FR-EI-EN', '') as GLENTRY_PROJECTID,
-    IF(c.financial_type_id =  $endowmentFinancialType , 1, 0) as is_endowment,
-    'Unrestricted' as GLDIMFUNDING
-FROM civicrm_value_contribution_settlement s
-  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
-  LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
-WHERE (%1 = settlement_batch_reference)
-  AND ( settled_fee_amount <> 0)
-  $gatewayLevelTrxnExcludeClause
-  AND is_template = 0
-GROUP BY s.settlement_batch_reference, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
-
-UNION ALL
-
-SELECT
--- note GROUP BY here....
-    CONCAT('Contribution Revenue ', '{$dateDescription}') as DESCRIPTION,
-    $feeAccountCodeClause as ACCT_NO,
--- cost centre - CC-1014 for all fees
-    'CC-1014' as DEPT_ID,
-    -- @todo - not always donations at the end of memo
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
-    -- @todo obv some cleaup in here
-    IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_reversal_amount, 0)), 0) as DEBIT,
-    IF(SUM(-COALESCE(settled_fee_reversal_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_reversal_amount, 0)))  as CREDIT,
-    s.settlement_currency as CURRENCY,
-    IF(c.financial_type_id =  $endowmentFinancialType , 'FR-EI-EN', '') as GLENTRY_PROJECTID,
-    IF(c.financial_type_id =  $endowmentFinancialType , 1, 0) as is_endowment,
-    'Unrestricted' as GLDIMFUNDING
-FROM civicrm_value_contribution_settlement s
-  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
-  LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
-WHERE (%1 = settlement_batch_reversal_reference)
-  AND ( settled_fee_reversal_amount <> 0)
-  $gatewayLevelTrxnExcludeClause
-  AND is_template = 0
-GROUP BY s.settlement_batch_reversal_reference, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
-
-UNION ALL
--- Fee transactions part.
-SELECT
--- note GROUP BY here....
-    CONCAT('Contribution Revenue ', '{$dateDescription}' ) as DESCRIPTION,
-    60917 as ACCT_NO,
--- cost centre - CC-1014 for all fees
-    'CC-1014' as DEPT_ID,
-    -- @todo - not always donations at the end of memo
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Invoice Fees') as MEMO,
-    -- @todo obv some cleaup in here
-    IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, SUM(COALESCE(-settled_fee_amount, 0)),0) as DEBIT,
-    IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0)))  as CREDIT,
-    s.settlement_currency as CURRENCY,
-    '' as GLENTRY_PROJECTID,
-    0 as is_endowment,
-    'Unrestricted' as GLDIMFUNDING
-FROM civicrm_value_contribution_settlement s
-  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
-  LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
-WHERE (%1 = settlement_batch_reference)
-  AND ( settled_fee_amount <> 0)
-  $gatewayLevelTrxnIncludeClause
-  AND is_template = 0
-GROUP BY s.settlement_batch_reference
-UNION ALL
--- Adjustments part.
--- Deposit Corrections GL code 43495.
--- dept_id based on fees until advised otherwise
-SELECT
--- note GROUP BY here....
-    CONCAT('Contribution Revenue ', '{$dateDescription}' ) as DESCRIPTION,
-    43495 as ACCT_NO,
--- cost centre - CC-1014 for all fees
-    'CC-1014' as DEPT_ID,
-    -- @todo - not always donations at the end of memo
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Adjustment') as MEMO,
-    IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, SUM(COALESCE(-settled_fee_amount, 0)),0) as DEBIT,
-    IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, 0, SUM(COALESCE(settled_fee_amount, 0)))  as CREDIT,
-    s.settlement_currency as CURRENCY,
-    '' as GLENTRY_PROJECTID,
-    0 as is_endowment,
-    'Unrestricted' as GLDIMFUNDING
-FROM civicrm_value_contribution_settlement s
-  LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
-  LEFT JOIN civicrm_value_1_gift_data_7 gift ON c.id = gift.entity_id
-WHERE (%1 = settlement_batch_reference)
-  AND ( settled_fee_amount <> 0)
-  AND trxn_id LIKE 'adyen adjustment%'
-  AND is_template = 0
-GROUP BY s.settlement_batch_reference
-";
-  }
-
-  /**
-   * Get the relevant clause to separate gateway level transactions into separate rows.
-   *
-   * Get the clause that finds the fees imposed that are not tied to transactions, rounding
-   * or adjustments that are not tied to transactions.
-   *
-   * We exclude them from the main select & add them in by union to give the right memo details.
-   * @return void
-   */
-  private function getGatewayLevelTransactionExcludeClause($batchName): string {
-    $gateway = $this->getAuditGateway($batchName);
-    // COALESCE guards against NULL trxn_id, where "NULL NOT LIKE '...'" is
-    // NULL, silently dropping the row from this clause and its inverse below.
-    return "(COALESCE(trxn_id, '') NOT LIKE '{$gateway} transaction%'
-      AND COALESCE(trxn_id, '') NOT LIKE '{$gateway} invoice%'
-      AND COALESCE(trxn_id, '') NOT LIKE '{$gateway} rounding%'
-      AND COALESCE(trxn_id, '') NOT LIKE '{$gateway} fee%'
-      AND COALESCE(trxn_id, '') NOT LIKE '{$gateway} deposit%'
-    )";
-  }
-
-  private function getGatewayLevelTransactionExcludeAdjustmentClause($batchName): string {
-    $gateway = $this->getAuditGateway($batchName);
-    return "(
-      COALESCE(trxn_id, '') NOT LIKE '{$gateway} adjustment%'
-    )";
-  }
-
-  /**
    * Get the gateway name used as the trxn_id prefix by the audit process.
    *
    * This is usually the same as the batch's gateway (per getGateway()), but
@@ -1147,87 +775,17 @@ GROUP BY s.settlement_batch_reference
   /**
    * @param array $batch
    *
-   * @return string
-   * @throws \CRM_Core_Exception
-   */
-  private function getRenderedSql(array $batch): string {
-    $sql = $this->getBatchSql($batch['name']);
-    $renderedSql = CRM_Core_DAO::composeQuery($sql, [
-        1 => [$batch['name'], 'String'],
-      ]
-    );
-    $this->batches[$batch['name']]['sql'] = $renderedSql;
-    return $renderedSql;
-  }
-
-  /**
-   * @param mixed $batch
-   *
    * @return array
    * @throws \Brick\Money\Exception\UnknownCurrencyException
    * @throws \CRM_Core_Exception
    * @throws \Civi\Core\Exception\DBQueryException
    */
   private function getJournalRows(array $batch): array {
-    $isEndowmentGateway = $this->isEndowmentGateway($batch['name']);
-    // Note that not all of these fields are used. They are part of the finance spec but
-    // when we push journals to Accounts we only use a subset. We could probably stop populating them.
-    // Just a bit nervous to alter at this point.
-    $defaults = [
-      'DONOTIMPORT' => '',
-      'JOURNAL' => 'CREV',
-      'DATE' => date('m/d/Y', strtotime($batch['batch_data.settlement_date'])),
-      'REVERSEDATE' => '',
-      'REFERENCE_NO' => '',
-      'LINE_NO' => '',
-      'ACCT_NO' => '',
-      'LOCATION_ID' => $isEndowmentGateway ? JournalGLConstants::LOCATION_ID_ENDOWMENT : JournalGLConstants::LOCATION_ID_WMF,
-      'DEPT_ID' => '',
-      'DOCUMENT' => $batch['name'],
-      'DEBIT' => 0,
-      'CREDIT' => 0,
-      'SOURCEENTITY' => '',
-      'CURRENCY' => $batch['batch_data.settlement_currency'],
-      'EXCH_RATE_DATE' => date('m/d/Y', strtotime($batch['batch_data.settlement_date'])),
-      'EXCH_RATE_TYPE_ID' => '',
-      'EXCHANGE_RATE' => '',
-      'STATE' => 'Draft',
-      'ALLOCATION_ID' => '',
-      'BILLABLE' => '',
-      'GLDIMEVENT_ID' => '',
-      'GLDIMFUNDING' => '',
-      'GLENTRY_PROJECTID' => '',
-      'GLENTRY_CLASSID' => '',
-      'GLENTRY_CUSTOMERID' => '',
-      'GLENTRY_VENDORID' => $this->getVendorCode($batch['name']),
-      'GLENTRY_ITEMID' => '',
-      'GLENTRY_EMPLOYEEID' => '',
-      'DESCRIPTION' => '',
-      'MEMO' => '',
-    ];
-
-    $this->batchSummary[$batch['name']] = [
-      'currency' => $batch['batch_data.settlement_currency'],
-      'annual_fund_fees' => Money::zero($batch['batch_data.settlement_currency']),
-      'endowment_fund_fees' => Money::zero($batch['batch_data.settlement_currency']),
-      'is_endowment_gateway' => $isEndowmentGateway,
-    ];
-    $renderedSql = $this->getRenderedSql($batch);
-    $batchedData = CRM_Core_DAO::executeQuery($renderedSql)->fetchAll();
-    $this->setHeaders($defaults);
-
-    $rowNumber = 1;
-    foreach ($batchedData as $index => $row) {
-      $batchedData[$index] = [...$defaults, ...$row];
-      // This requirement for adding contiguous line numbers is likely defunct.
-      // It was part of the SFTP csv file upload spec and originally multiple
-      // batches were in one file so the line number was per file, not per batch.
-      // When using the api upload line no is not used. However, it might be
-      // that finance still wish to see it in output file so retaining for now.
-      $batchedData[$index]['LINE_NO'] = $rowNumber;
-      $rowNumber+= 2;
-    }
-    return $batchedData;
+    $generated = $this->getJournalGenerator($batch)->getJournalRows();
+    $this->batchSummary[$batch['name']] = $generated['batchSummary'];
+    $this->setHeaders($generated['defaults']);
+    $this->batches[$batch['name']]['sql'] = $generated['sql'];
+    return $generated['rows'];
   }
 
   /**
@@ -1398,29 +956,6 @@ GROUP BY s.settlement_batch_reference
     $parts = explode('_', $batchName);
     $gateway = $parts[0];
     return $gateway;
-  }
-
-  /**
-   * Is this batch's gateway account an Endowment gateway account.
-   *
-   * @param string $batchName
-   *
-   * @return bool
-   * @throws \CRM_Core_Exception
-   */
-  private function isEndowmentGateway(string $batchName): bool {
-    $gateway = $this->getGateway($batchName);
-    return !empty($this->getGatewayAccounts()[$gateway]['is_endowment']);
-  }
-
-  /**
-   * @param $batchName
-   *
-   * @return array|string|string[]|null
-   */
-  public function getGatewayLevelTrxnIncludeClause($batchName): string|array|null {
-    $gatewayLevelTrxnIncludeClause = str_replace('NOT LIKE', 'LIKE', $this->getGatewayLevelTransactionExcludeClause($batchName));
-    return str_replace(' AND ', ' OR ', $gatewayLevelTrxnIncludeClause);
   }
 
   /**
