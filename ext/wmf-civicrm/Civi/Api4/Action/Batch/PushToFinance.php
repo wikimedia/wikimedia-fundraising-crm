@@ -129,7 +129,7 @@ class PushToFinance extends AbstractAction {
    */
   private function pushJournal(array $journal, int $priorSuccessCount, int $journalCount): array {
     $this->log('Journal being pushed to the staging ' . $journal['instance'] . 'version of Intacct via the api : ' . $this->name . $journal['suffix']);
-    $apiOutcome = FinanceIntegration::pushJournal(FALSE)
+    $apiOutcome = FinanceIntegration::pushJournal($this->getCheckPermissions())
       ->setJournalFile($journal['file'])
       ->setIsDryRun($this->isDryRun)
       ->setInstance($journal['instance'])
@@ -179,14 +179,16 @@ class PushToFinance extends AbstractAction {
   }
 
   /**
-   * Inherited from Batch, which declares none of its own and so falls through
-   * to the API4 default - stated here so it's a decision rather than an
-   * accident, given this writes to an external accounting system.
+   * Batch declares no permissions of its own, so this would otherwise fall
+   * through to the API4 default of 'administer CiviCRM'. Named explicitly -
+   * and as the system half, since this writes to an external accounting
+   * system rather than touching CiviCRM data. Note 'administer CiviCRM'
+   * implies this one, so it is no narrower, just clearer.
    *
    * @return array
    */
   public function getPermissions(): array {
-    return ['administer CiviCRM'];
+    return ['administer CiviCRM system'];
   }
 
   private function log(string $string): void {

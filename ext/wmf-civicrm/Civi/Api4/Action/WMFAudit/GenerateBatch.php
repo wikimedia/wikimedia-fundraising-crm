@@ -222,7 +222,7 @@ class GenerateBatch extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   private function pushJournalsToIntacct(array $batch, array $journals): array {
-    $outcome = Batch::pushToFinance(FALSE)
+    $outcome = Batch::pushToFinance($this->getCheckPermissions())
       ->setName($batch['name'])
       ->setJournals($journals)
       ->setBatchDescriptionPrefix($batch['batch_data.settlement_gateway'])
