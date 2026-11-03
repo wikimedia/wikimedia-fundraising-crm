@@ -62,6 +62,7 @@ function wmf_civicrm_civicrm_config(&$config) {
   $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\Data', 'contributionPre'], 20);
   $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\Contribution', 'pre'], 10);
   $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\GiftCoding', 'contributionPre'], -100);
+  $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\FinancialDataChange', 'pre']);
   // TODO: add a isMajorGift listener here, which runs after GiftCoding because that may have changed the appeal
   $dispatcher->addListener('hook_civicrm_pre::Batch', ['Civi\WMFHook\Data', 'batchPre']);
   $dispatcher->addListener('hook_civicrm_pre::ContributionSoft', ['Civi\WMFHook\ContributionSoft', 'pre'], 10);
