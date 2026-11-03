@@ -6,6 +6,7 @@ use Brick\Money\Exception\MoneyMismatchException;
 use Brick\Money\Exception\UnknownCurrencyException;
 use Brick\Money\Money;
 use Brick\Math\RoundingMode;
+use Civi\Api4\Batch;
 use Civi\Api4\FinanceIntegration;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
@@ -21,6 +22,8 @@ use League\Csv\Reader;
  * @method $this setBatchDescriptionPrefix(string $batchDescriptionPrefix)
  * @method $this setInstance(string $instance)
  * @method $this setBatchName(string $instance)
+ * @method $this setCiviBatchName(string $civiBatchName)
+ * @method $this setRemoteDescriptor(string $remoteDescriptor)
  */
 class PushJournal extends AbstractAction {
 
@@ -69,6 +72,26 @@ class PushJournal extends AbstractAction {
    * @var string|null
    */
   protected ?string $batchDescriptionPrefix = NULL;
+
+  /**
+   * The CiviCRM Batch.name to update with this journal's remote fields once
+   * it's confirmed - distinct from $batchName, which is the (possibly
+   * suffixed, e.g. for a cross-instance transfer) Intacct-side name.
+   *
+   * Left NULL to skip updating a Batch entity at all - e.g. a one-off
+   * journal pushed by hand, with no CiviCRM batch behind it.
+   *
+   * @var string|null
+   */
+  protected ?string $civiBatchName = NULL;
+
+  /**
+   * Which of the Batch's batch_data.remote_url_X/remote_identifier_X field
+   * pair this journal's result belongs in - e.g. 'foundation', 'endowment_instance'.
+   *
+   * @var string|null
+   */
+  protected ?string $remoteDescriptor = NULL;
 
   public function getBatchDescriptionPrefix(): ?string {
     return $this->batchDescriptionPrefix;
@@ -518,6 +541,7 @@ class PushJournal extends AbstractAction {
       // already posted and matches -> skip
       $this->batches[$batchName]['status'] = 'Valid Remotely';
       $this->log($batchName . ' exists in Intacct and the total in Intacct is correct - it is ready to close', $batchName);
+      $this->recordBatchResult($batchName);
       return;
     }
 
@@ -533,6 +557,31 @@ class PushJournal extends AbstractAction {
       (string) $intacctTotals['credit']->getAmount() . ' / ' .
       (string) $intacctTotals['net']->getAmount()
     );
+  }
+
+  /**
+   * Write onto its CiviCRM Batch what Intacct told us about this journal,
+   * once it's confirmed valid. Does nothing if setCiviBatchName() wasn't
+   * called. Only fields this call actually learns belong here - deciding
+   * the batch's overall status, and recording what the generator worked
+   * out for itself, are both the caller's job.
+   */
+  private function recordBatchResult(string $batchName): void {
+    if ($this->civiBatchName === NULL) {
+      return;
+    }
+    $values = [
+      'batch_data.exchange_rate' => $this->batches[$batchName]['exchange_rate'] ?? 1,
+      'batch_data.exchange_rate_source' => 'Intacct',
+    ];
+    if ($this->remoteDescriptor !== NULL) {
+      $values['batch_data.remote_url_' . $this->remoteDescriptor] = $this->batches[$batchName]['url'] ?? NULL;
+      $values['batch_data.remote_identifier_' . $this->remoteDescriptor] = $this->batches[$batchName]['txn_number'] ?? NULL;
+    }
+    Batch::update(FALSE)
+      ->addWhere('name', '=', $this->civiBatchName)
+      ->setValues($values)
+      ->execute();
   }
 
   /**

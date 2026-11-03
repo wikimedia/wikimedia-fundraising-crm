@@ -175,6 +175,7 @@ class GenerateBatch extends AbstractAction {
           }
           else {
             try {
+              $this->recordAmountsJournaled($batch);
               $record = array_merge($record, $this->pushJournalsToIntacct($batch, $record['csv']));
             }
             finally {
@@ -249,13 +250,15 @@ class GenerateBatch extends AbstractAction {
   }
 
   /**
-   * Push a single journal to Intacct for $batch, updating its remote/
-   * status custom fields for any outcome Intacct confirms.
+   * Push a single journal to Intacct for $batch.
    *
-   * $priorSuccessCount is how many of this batch's journals have already
-   * been confirmed by earlier calls for the same batch - needed, together
-   * with $journalCount, to know whether a given confirmation is the
-   * batch's last outstanding one, so the batch can be marked Exported.
+   * The push itself records the journal's remote fields on the Batch - all
+   * that is left here is the batch's overall status, which no single push
+   * can decide. $priorSuccessCount is how many of this batch's journals
+   * have already been confirmed by earlier calls for the same batch -
+   * needed, together with $journalCount, to know whether a given
+   * confirmation is the batch's last outstanding one, so the batch can be
+   * marked Exported.
    *
    * @return array[] zero or more {remote_descriptor, remote, is_uploaded}
    *   results - normally one per journal, but pushJournal() can return
@@ -269,6 +272,8 @@ class GenerateBatch extends AbstractAction {
       ->setInstance($journal['instance'])
       ->setBatchName($batch['name'] . $journal['suffix'])
       ->setBatchDescriptionPrefix($batch['batch_data.settlement_gateway'])
+      ->setCiviBatchName($batch['name'])
+      ->setRemoteDescriptor($journal['remote_descriptor'])
       ->execute();
     $this->log('Journal ' . $batch['name'] . $journal['suffix'] . ' successfully pushed to Intacct ' . $journal['instance'] . ' instance with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
     $successCount = $priorSuccessCount;
@@ -277,46 +282,65 @@ class GenerateBatch extends AbstractAction {
       if ($apiBatch['status'] === 'Valid Remotely') {
         $successCount++;
         $isUploaded = $successCount === $journalCount;
-        $statusUpdate = $isUploaded ? ['status_id:name' => 'Exported'] : [];
         $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct ' . ($isUploaded ? ' and is now being closed (status set to Exported)' : ''));
-        $remote = [
-          'url' => $apiBatch['url'],
-          'id' => $apiBatch['remote_journal_id'],
-          'exchange_rate' => $apiBatch['exchange_rate'] ?? 1,
-          'txn_number' => $apiBatch['txn_number'],
-          'usd_journal_total' => $apiBatch['usd_journal_total'] ?? '',
-          'usd_credit' => $apiBatch['usd_credit'] ?? '',
-          'usd_debit' => $apiBatch['usd_debit'] ?? '',
-        ];
-        $totalDonationAmount = Money::of((string) ($batch['batch_data.settled_donation_amount'] ?? 0), $this->batchSummary[$batch['name']]['currency']);
-        if ($this->batchSummary[$batch['name']]['is_endowment_gateway']) {
-          $amountJournaledToFoundation = $this->batchSummary[$batch['name']]['foundation_transfer'];
-          $amountJournaledToEndowment = $totalDonationAmount->minus($amountJournaledToFoundation);
+        if ($isUploaded) {
+          Batch::update(FALSE)
+            ->addWhere('name', '=', $batch['name'])
+            ->addValue('status_id:name', 'Exported')
+            ->execute();
         }
-        else {
-          $amountJournaledToEndowment = $this->batchSummary[$batch['name']]['endowment_transfer'];
-          $amountJournaledToFoundation = $totalDonationAmount->minus($amountJournaledToEndowment);
-        }
-        Batch::update(FALSE)
-          ->addWhere('name', '=', $batch['name'])
-          ->setValues([
-            'batch_data.exchange_rate' => $remote['exchange_rate'],
-            'batch_data.exchange_rate_source' => 'Intacct',
-            'batch_data.remote_url_' . $journal['remote_descriptor'] => $remote['url'],
-            'batch_data.remote_identifier_' . $journal['remote_descriptor'] => $remote['txn_number'],
-            'batch_data.amount_journaled_to_endowment' => (string) $amountJournaledToEndowment->getAmount(),
-            'batch_data.amount_journaled_to_foundation' => (string) $amountJournaledToFoundation->getAmount(),
-          ] + $statusUpdate)
-          ->execute();
         $results[] = [
           'remote_descriptor' => $journal['remote_descriptor'],
-          'remote' => $remote,
+          'remote' => [
+            'url' => $apiBatch['url'],
+            'id' => $apiBatch['remote_journal_id'],
+            'exchange_rate' => $apiBatch['exchange_rate'] ?? 1,
+            'txn_number' => $apiBatch['txn_number'],
+            'usd_journal_total' => $apiBatch['usd_journal_total'] ?? '',
+            'usd_credit' => $apiBatch['usd_credit'] ?? '',
+            'usd_debit' => $apiBatch['usd_debit'] ?? '',
+          ],
           'is_uploaded' => $isUploaded,
         ];
       }
       $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['txn_number'] . '</a>');
     }
     return $results;
+  }
+
+  /**
+   * Record how this batch's donation total was split between the two
+   * entities. Worked out here, from the journal we just wrote, so it is
+   * written by the code that knows it rather than threaded through the
+   * push for storage.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function recordAmountsJournaled(array $batch): void {
+    [$amountJournaledToEndowment, $amountJournaledToFoundation] = $this->getAmountsJournaled($batch);
+    Batch::update(FALSE)
+      ->addWhere('name', '=', $batch['name'])
+      ->setValues([
+        'batch_data.amount_journaled_to_endowment' => (string) $amountJournaledToEndowment->getAmount(),
+        'batch_data.amount_journaled_to_foundation' => (string) $amountJournaledToFoundation->getAmount(),
+      ])
+      ->execute();
+  }
+
+  /**
+   * The batch's donation total, split as [endowment, foundation] - whichever
+   * instance the batch's gateway deposits to keeps whatever was not carved
+   * out into a cross-instance transfer by writeJournalToCsv().
+   *
+   * @return Money[]
+   */
+  private function getAmountsJournaled(array $batch): array {
+    $summary = $this->batchSummary[$batch['name']];
+    $totalDonationAmount = Money::of((string) ($batch['batch_data.settled_donation_amount'] ?? 0), $summary['currency']);
+    if ($summary['is_endowment_gateway']) {
+      return [$totalDonationAmount->minus($summary['foundation_transfer']), $summary['foundation_transfer']];
+    }
+    return [$summary['endowment_transfer'], $totalDonationAmount->minus($summary['endowment_transfer'])];
   }
 
   public static function fields(): array {
