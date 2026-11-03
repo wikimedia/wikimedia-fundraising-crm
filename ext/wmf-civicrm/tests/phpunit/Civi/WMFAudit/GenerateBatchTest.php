@@ -66,6 +66,12 @@ class GenerateBatchTest extends BaseAuditTestCase {
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'adyen_346%')
       ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'adjustment_347%')
+      ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'adyen_348%')
+      ->execute();
     parent::tearDown();
   }
 
@@ -950,6 +956,67 @@ class GenerateBatchTest extends BaseAuditTestCase {
       }
     }
     return $deptIDs;
+  }
+
+  /**
+   * An adjustment batch's journals come from a FinancialDataAdjustment row,
+   * not from settlement data, so the settlement sweep has to leave it alone -
+   * otherwise it finds no settled rows at all, fails validation and flips the
+   * batch to needs_attention behind GenerateAdjustmentBatch's back.
+   */
+  public function testAdjustmentBatchIsNotSweptBySettlementRun(): void {
+    $batchName = 'adjustment_347_USD';
+    $this->createTestEntity('Batch', [
+      'name' => $batchName,
+      'mode_id:name' => 'Adjustment Batch',
+      'status_id:name' => 'total_verified',
+      'item_count' => 1,
+      'batch_data.settlement_currency' => 'USD',
+      'batch_data.settlement_date' => '2026-02-04',
+      'batch_data.settled_donation_amount' => 10.00,
+      'batch_data.settled_net_amount' => 10.00,
+    ], $batchName);
+
+    $result = WMFAudit::generateBatch(FALSE)
+      ->setBatchPrefix('adjustment_347')
+      ->setIsDryRun(TRUE)
+      ->setIsOutputRows(TRUE)
+      ->execute();
+
+    $this->assertCount(0, $result, 'The settlement sweep should not pick up an adjustment batch');
+    $batch = Batch::get(FALSE)
+      ->addWhere('name', '=', $batchName)
+      ->addSelect('status_id:name')
+      ->execute()->single();
+    $this->assertEquals('total_verified', $batch['status_id:name'], 'Its status should be untouched');
+  }
+
+  /**
+   * Consequence of the mode list being an allow list: mode_id is nullable and
+   * NULL is not IN anything, so a batch with no mode set is left alone rather
+   * than exported. Both of the places that create batches set a mode, so this
+   * pins the fail-closed choice rather than a case we expect to meet.
+   */
+  public function testBatchWithNoModeIsNotSwept(): void {
+    $batchName = 'adyen_348_USD';
+    // Deliberately no mode_id.
+    $this->createTestEntity('Batch', [
+      'name' => $batchName,
+      'status_id:name' => 'total_verified',
+      'item_count' => 1,
+      'batch_data.settlement_currency' => 'USD',
+      'batch_data.settlement_date' => '2026-02-04',
+      'batch_data.settled_donation_amount' => 10.00,
+      'batch_data.settled_net_amount' => 10.00,
+    ], $batchName);
+
+    $result = WMFAudit::generateBatch(FALSE)
+      ->setBatchPrefix('adyen_348')
+      ->setIsDryRun(TRUE)
+      ->setIsOutputRows(TRUE)
+      ->execute();
+
+    $this->assertCount(0, $result, 'A batch with no mode set is not one of the exportable modes');
   }
 
   /**

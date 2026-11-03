@@ -29,6 +29,20 @@ use League\Csv\Writer;
 class GenerateBatch extends AbstractAction {
 
   /**
+   * Batch modes this action knows how to export, matching the list in
+   * FinanceBatchReferenceSpecProvider.
+   *
+   * An allow list rather than an exclusion, so a mode added later has to opt
+   * in here before the settlement run touches it. Adjustment Batches are the
+   * first to be left out: their journals come from a FinancialDataAdjustment
+   * row rather than settlement data, so sweeping one up would find no settled
+   * rows, fail validation and flag it needs_attention. mode_id is nullable
+   * and NULL is not IN anything, so a batch with no mode is left alone too -
+   * both of the places that create batches set one.
+   */
+  const EXPORTABLE_BATCH_MODES = ['Automatic Batch', 'Manual Batch'];
+
+  /**
    * Is this a dry run (if so do not close batches or push to the api).
    *
    * @var bool
@@ -638,6 +652,7 @@ class GenerateBatch extends AbstractAction {
     $incompleteBatches = Batch::get(FALSE)
       // Status list will probably grow.
       ->addWhere('status_id:name', 'IN', ['Open', 'needs_attention'])
+      ->addWhere('mode_id:name', 'IN', self::EXPORTABLE_BATCH_MODES)
       ->addSelect('*', 'batch_data.*', 'status_id:label', 'mode_id:name')
       ->execute();
 
@@ -700,6 +715,7 @@ class GenerateBatch extends AbstractAction {
           ]]
         );
 
+        $batchGet->addWhere('mode_id:name', 'IN', self::EXPORTABLE_BATCH_MODES);
         if ($this->batchPrefix) {
           $batchGet->addWhere('name', 'LIKE', '%' . $this->batchPrefix . '_%');
         }
