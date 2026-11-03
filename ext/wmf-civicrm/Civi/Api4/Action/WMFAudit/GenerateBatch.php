@@ -101,7 +101,6 @@ class GenerateBatch extends AbstractAction {
   private array $log = [];
 
   private array $batchSummary = [];
-  private string $endDate = '';
 
   private array $batches;
 
@@ -908,12 +907,6 @@ END";
         return [];
       }
 
-      foreach ($this->batches as $batch) {
-        if (!isset($this->endDate) || strtotime($batch['batch_data.settlement_date']) > strtotime($this->endDate)) {
-          $this->endDate = $batch['batch_data.settlement_date'];
-        }
-      }
-
       foreach ($this->batches as $index => $batch) {
         // Get the settlement date range - this would be when it was settled to, e.g. our adyen account.
         // Fallback is required as we don't have a field for reversal settlement date so if it were only reversals...
@@ -940,25 +933,6 @@ END";
       }
     }
     return $this->batches;
-  }
-
-  /**
-   * Get the configured vendor codes for each gateway, keyed by GatewayAccount
-   * name, in the ['foundation' => ..., 'endowment' => ...] shape.
-   *
-   * @see https://docs.google.com/spreadsheets/d/1FFIhblreQKSiPBxfatc5XhDdjqoaR7R280r9TTOlQcw/edit?gid=1609952585#gid=1609952585
-   * @return array[]
-   * @throws \CRM_Core_Exception
-   */
-  public function getVendorCodesForGateways(): array {
-    $codes = [];
-    foreach ($this->getGatewayAccounts() as $name => $account) {
-      $codes[$name] = array_filter([
-        'foundation' => $account['vendor_code_foundation'],
-        'endowment' => $account['vendor_code_endowment'],
-      ]);
-    }
-    return $codes;
   }
 
   /**
