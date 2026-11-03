@@ -54,7 +54,7 @@ class JournalGenerator {
       'REFERENCE_NO' => '',
       'LINE_NO' => '',
       'ACCT_NO' => '',
-      'LOCATION_ID' => $isEndowmentGateway ? JournalGLConstants::LOCATION_ID_ENDOWMENT : JournalGLConstants::LOCATION_ID_WMF,
+      'LOCATION_ID' => $isEndowmentGateway ? FinanceConstants::LOCATION_ID_ENDOWMENT : FinanceConstants::LOCATION_ID_WMF,
       'DEPT_ID' => '',
       'DOCUMENT' => $this->batch['name'],
       'DEBIT' => 0,
@@ -127,7 +127,7 @@ class JournalGenerator {
   public function getDetailData(string $renderedSql): array {
     $detailSQL = str_replace('GROUP BY ', 'GROUP BY c.id, ', $renderedSql);
     $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
-    $locationID = $this->isEndowmentGateway() ? JournalGLConstants::LOCATION_ID_ENDOWMENT : JournalGLConstants::LOCATION_ID_WMF;
+    $locationID = $this->isEndowmentGateway() ? FinanceConstants::LOCATION_ID_ENDOWMENT : FinanceConstants::LOCATION_ID_WMF;
     $detailSQL = str_replace('GLDIMFUNDING', 'GLDIMFUNDING,
         "' . $locationID . '" as LOCATION_ID,
         "' . $this->getVendorCode() . '" as GL_VENDOR,
@@ -181,7 +181,7 @@ class JournalGenerator {
     CONCAT('Contribution Revenue ', '{$dateDescription}') as DESCRIPTION,
     $accountCodeClause AS ACCT_NO,
     $deptIDClause as DEPT_ID,
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Donations', IF(c.financial_type_id = $endowmentFinancialType, ' " . JournalGLConstants::GL_ENDOWMENT_MEMO_SUFFIX . "', '')) as MEMO,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Donations', IF(c.financial_type_id = $endowmentFinancialType, ' " . FinanceConstants::GL_ENDOWMENT_MEMO_SUFFIX . "', '')) as MEMO,
     IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, 0, -SUM(COALESCE(settled_donation_amount, 0)))  as DEBIT,
     IF(SUM(COALESCE(settled_donation_amount, 0)) >= 0, SUM(COALESCE(settled_donation_amount, 0)), 0) as CREDIT,
     s.settlement_currency as CURRENCY,
@@ -201,7 +201,7 @@ UNION ALL
    CONCAT('Contribution Revenue ', '{$dateDescription}' ) as DESCRIPTION,
    $accountCodeClause AS ACCT_NO,
     $deptIDClause as DEPT_ID,
-    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Refunds', IF(c.financial_type_id = $endowmentFinancialType, '" . JournalGLConstants::GL_ENDOWMENT_MEMO_SUFFIX . "', '')) as MEMO,
+    CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Refunds', IF(c.financial_type_id = $endowmentFinancialType, '" . FinanceConstants::GL_ENDOWMENT_MEMO_SUFFIX . "', '')) as MEMO,
 
     IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, SUM(-COALESCE(settled_reversal_amount, 0)),0) as DEBIT,
     IF (SUM(-COALESCE(settled_reversal_amount, 0)) >=0, 0, SUM(-COALESCE(settled_reversal_amount, 0)))  as CREDIT,
@@ -409,7 +409,7 @@ END";
     // literal, not a PHP empty string - the clause is interpolated as
     // "$deptIDClause as DEPT_ID", so dropping it would leave a bare alias.
     return $this->isEndowmentGateway() ? "''" : "-- cost centre: CC-1004 for major gifts, CC-1005 for online fundraising.
-    IF(" . $this->getAccountClause() . ' IN (' . implode(', ', JournalGLConstants::GL_MAJOR_GIFTS_ACCOUNTS) . "), 'CC-1004', 'CC-1005')";
+    IF(" . $this->getAccountClause() . ' IN (' . implode(', ', FinanceConstants::GL_MAJOR_GIFTS_ACCOUNTS) . "), 'CC-1004', 'CC-1005')";
   }
 
   /**
@@ -421,7 +421,7 @@ END";
     // getAccountClause() reaches it when the gift's fund is restricted -
     // that taking precedence over the unrestricted major gifts codes
     // (T409994).
-    return 'IF(' . $this->getAccountClause() . ' = ' . JournalGLConstants::GL_MAJOR_GIFTS_RESTRICTED . ", 'Temporarily Restricted', 'Unrestricted')";
+    return 'IF(' . $this->getAccountClause() . ' = ' . FinanceConstants::GL_MAJOR_GIFTS_RESTRICTED . ", 'Temporarily Restricted', 'Unrestricted')";
   }
 
   /**
@@ -431,7 +431,7 @@ END";
    * @return string
    */
   private function getFeeAccountCode(): string {
-    return (string) (JournalGLConstants::GATEWAY_ACCOUNTS_FEE_GL_CODES[$this->getGateway()] ?? JournalGLConstants::GL_FEE_DEFAULT);
+    return (string) (FinanceConstants::GATEWAY_ACCOUNTS_FEE_GL_CODES[$this->getGateway()] ?? FinanceConstants::GL_FEE_DEFAULT);
   }
 
   /**

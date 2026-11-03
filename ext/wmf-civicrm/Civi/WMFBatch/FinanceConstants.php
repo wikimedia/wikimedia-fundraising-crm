@@ -3,11 +3,12 @@
 namespace Civi\WMFBatch;
 
 /**
- * GL account/location constants shared by batch journal generation -
- * used by both WMFAudit.GenerateBatch (settlement batches) and
- * WMFAudit.GenerateAdjustmentBatch (single-contribution corrections).
+ * Constants that more than one of the finance batch classes has to agree on.
+ *
+ * GL accounts and locations today - the class is named for that role rather
+ * than for whatever happens to be in it.
  */
-final class JournalGLConstants {
+final class FinanceConstants {
 
   // Balancing accounts for a transfer between the wmf (foundation) and
   // endowment instances - one const per instance per direction, for

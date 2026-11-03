@@ -10,7 +10,7 @@ use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\GatewayAccount;
 use Civi\WMFBatch\BatchSummaryMailer;
-use Civi\WMFBatch\JournalGLConstants;
+use Civi\WMFBatch\FinanceConstants;
 use Civi\WMFBatch\JournalGenerator;
 use CRM_Core_DAO;
 use League\Csv\Writer;
@@ -428,11 +428,11 @@ class GenerateBatch extends AbstractAction {
       'fromDescriptor' => 'to_endowment',
       'toDescriptor' => 'endowment_instance',
       'suffix' => 'e',
-      'toLocationId' => JournalGLConstants::LOCATION_ID_ENDOWMENT,
+      'toLocationId' => FinanceConstants::LOCATION_ID_ENDOWMENT,
       'vendorMapperMethod' => 'mapVendorToEndowmentVendor',
       'remapMajorGiftsToRestricted' => TRUE,
-      'fromBalancingAccount' => JournalGLConstants::GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT,
-      'toBalancingAccount' => JournalGLConstants::GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE,
+      'fromBalancingAccount' => FinanceConstants::GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT,
+      'toBalancingAccount' => FinanceConstants::GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE,
       'summaryKey' => 'endowment_transfer',
     ];
   }
@@ -452,14 +452,14 @@ class GenerateBatch extends AbstractAction {
       'fromDescriptor' => 'to_foundation',
       'toDescriptor' => 'foundation',
       'suffix' => 'f',
-      'toLocationId' => JournalGLConstants::LOCATION_ID_WMF,
+      'toLocationId' => FinanceConstants::LOCATION_ID_WMF,
       'vendorMapperMethod' => 'mapVendorToFoundationVendor',
       // @todo unlike the endowment-bound transfer, this doesn't remap
       // Major Gifts to a restricted account - unconfirmed whether an
       // equivalent un-restricting remap is needed here.
       'remapMajorGiftsToRestricted' => FALSE,
-      'fromBalancingAccount' => JournalGLConstants::GL_BALANCING_ACCOUNT_ENDOWMENT_TO_WMF,
-      'toBalancingAccount' => JournalGLConstants::GL_BALANCING_ACCOUNT_WMF_INSTANCE,
+      'fromBalancingAccount' => FinanceConstants::GL_BALANCING_ACCOUNT_ENDOWMENT_TO_WMF,
+      'toBalancingAccount' => FinanceConstants::GL_BALANCING_ACCOUNT_WMF_INSTANCE,
       'summaryKey' => 'foundation_transfer',
     ];
   }
@@ -596,10 +596,10 @@ class GenerateBatch extends AbstractAction {
 
   private function getReversalAccountCode($currency, string $batchName): int {
     $balancingAccount = $this->getGatewayAccounts()[$this->getGateway($batchName)]['balancing_account_foundation'];
-    if ($balancingAccount === JournalGLConstants::BALANCING_ACCOUNT_HARD_CODED) {
+    if ($balancingAccount === FinanceConstants::BALANCING_ACCOUNT_HARD_CODED) {
       // Varies by currency - not yet representable as a single value on the
       // GatewayAccount record (see GatewayAccount_paypal in GatewayAccount.mgd.php).
-      return JournalGLConstants::PAYPAL_REVERSAL_ACCOUNT_CODES_BY_CURRENCY[$currency];
+      return FinanceConstants::PAYPAL_REVERSAL_ACCOUNT_CODES_BY_CURRENCY[$currency];
     }
     return (int) $balancingAccount;
   }
@@ -967,7 +967,7 @@ class GenerateBatch extends AbstractAction {
     $reordered = [
       'gateway' => $row['gateway'],
       'settlement_date' => $row['settlement_date'],
-      'type' => trim(str_replace(JournalGLConstants::GL_ENDOWMENT_MEMO_SUFFIX, '', substr(strrchr($row['MEMO'], '|'), 1))),
+      'type' => trim(str_replace(FinanceConstants::GL_ENDOWMENT_MEMO_SUFFIX, '', substr(strrchr($row['MEMO'], '|'), 1))),
       'DEBIT' => $row['DEBIT'],
       'CREDIT' => $row['CREDIT'],
     ];
