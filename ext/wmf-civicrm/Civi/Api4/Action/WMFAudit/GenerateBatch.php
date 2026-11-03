@@ -198,7 +198,7 @@ class GenerateBatch extends AbstractAction {
         elseif ($this->outputMethod === 'api') {
           // Locked to prevent race conditions in this code and in the tracking of adjusments
           // per https://wikitech.wikimedia.org/wiki/Fundraising/Data_and_flow/Intacct#Identifying_and_journaling_contribution_changes
-          $lock = \Civi::lockManager()->acquire('data.finance_batch.' . $batch['name']);
+          $lock = \Civi::lockManager()->acquire(FinanceConstants::BATCH_LOCK_PREFIX . $batch['name']);
           if (!$lock->isAcquired()) {
             $this->log('Batch locked by a pending financial data change, skipping this run ' . $batch['name']);
           }

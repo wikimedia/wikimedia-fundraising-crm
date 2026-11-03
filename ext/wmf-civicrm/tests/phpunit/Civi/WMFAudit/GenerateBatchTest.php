@@ -7,6 +7,7 @@ use Civi\Api4\GatewayAccount;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\WMFAudit;
 use Civi\FinanceIntegration\Connection;
+use Civi\WMFBatch\FinanceConstants;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -1088,7 +1089,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     ]);
     $this->addBatchWebResponses();
 
-    $competingLock = $this->acquireCompetingLock('data.finance_batch.' . $batchName);
+    $competingLock = $this->acquireCompetingLock(FinanceConstants::BATCH_LOCK_PREFIX . $batchName);
     $this->runGenerateWithGuzzle($batchName, $currency, $settlementDate, 10, 1, $prefix);
 
     $this->assertEmpty($this->container, 'No Intacct calls should be made while the batch is locked');
@@ -1101,31 +1102,6 @@ class GenerateBatchTest extends BaseAuditTestCase {
     // Release the competing connection's lock now that the assertions
     // above are done with it.
     $competingLock->disconnect();
-  }
-
-  /**
-   * Hold a MySQL named lock on $lockName from a second connection, so
-   * GenerateBatch's own acquire() attempt (on the shared request
-   * connection) fails - simulating a concurrent FinancialDataChange::pre()
-   * holding the lock. Mirrors the scoped lock-name formula in
-   * CRM_Core_Lock::__construct().
-   *
-   * Opens the second connection via DB::connect() on CiviCRM's own DSN,
-   * rather than hand-parsing it into a raw PDO connection - the DSN's
-   * credentials aren't necessarily in a shape a manually-built PDO DSN
-   * can reproduce (e.g. a blank/trust-auth user that only works via the
-   * same driver CiviCRM itself connects with).
-   */
-  private function acquireCompetingLock(string $lockName): \DB_common {
-    $dsn = \CRM_Utils_SQL::autoSwitchDSN(\CRM_Core_Config::singleton()->dsn);
-    $scopedName = \DB::parseDSN($dsn)['database'] . '.' . \CRM_Core_Config::domainID() . '.' . $lockName;
-    $db = \DB::connect($dsn);
-    if (\DB::isError($db)) {
-      $this->fail('Failed to open a competing DB connection: ' . $db->getMessage());
-    }
-    $acquired = $db->getOne('SELECT GET_LOCK(?, 5)', [sha1($scopedName)]);
-    $this->assertEquals(1, (int) $acquired, 'Failed to acquire the competing lock needed to set up this test');
-    return $db;
   }
 
   /**

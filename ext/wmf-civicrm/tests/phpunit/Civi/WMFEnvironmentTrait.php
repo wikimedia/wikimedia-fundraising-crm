@@ -141,6 +141,31 @@ trait WMFEnvironmentTrait {
   }
 
   /**
+   * Hold a MySQL named lock on $lockName from a second connection, so the
+   * hook's own acquire() attempt (on the shared request connection) fails -
+   * simulating a concurrent process (e.g. GenerateBatch) holding the lock.
+   *
+   * Mirrors the scoped lock-name formula in CRM_Core_Lock::__construct().
+   *
+   * Opens the second connection via DB::connect() on CiviCRM's own DSN,
+   * rather than hand-parsing it into a raw PDO connection - the DSN's
+   * credentials aren't necessarily in a shape a manually-built PDO DSN
+   * can reproduce (e.g. a blank/trust-auth user that only works via the
+   * same driver CiviCRM itself connects with).
+   */
+  protected function acquireCompetingLock(string $lockName): \DB_common {
+    $dsn = \CRM_Utils_SQL::autoSwitchDSN(\CRM_Core_Config::singleton()->dsn);
+    $scopedName = \DB::parseDSN($dsn)['database'] . '.' . \CRM_Core_Config::domainID() . '.' . $lockName;
+    $db = \DB::connect($dsn);
+    if (\DB::isError($db)) {
+      $this->fail('Failed to open a competing DB connection: ' . $db->getMessage());
+    }
+    $acquired = $db->getOne('SELECT GET_LOCK(?, 5)', [sha1($scopedName)]);
+    $this->assertEquals(1, (int) $acquired, 'Failed to acquire the competing lock needed to set up this test');
+    return $db;
+  }
+
+  /**
    * Set a CiviCRM setting, storing the original value for tearDown.
    *
    * @param string $name

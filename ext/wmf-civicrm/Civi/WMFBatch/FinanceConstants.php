@@ -10,6 +10,16 @@ namespace Civi\WMFBatch;
  */
 final class FinanceConstants {
 
+  /**
+   * Prefix for the lock keyed on Batch.name.
+   *
+   * Held while a batch is exported, and while a correction to one of its
+   * contributions is recorded, so the two cannot interleave. Lives here
+   * rather than on either of those because the lock only works if they name
+   * it identically.
+   */
+  const BATCH_LOCK_PREFIX = 'data.finance_batch.';
+
   // Balancing accounts for a transfer between the wmf (foundation) and
   // endowment instances - one const per instance per direction, for
   // transparency about which is in play, but the values are shared: each
