@@ -5,6 +5,7 @@ namespace Civi\Api4;
 use Civi\Api4\Action\WMFAudit\Parse;
 use Civi\Api4\Action\WMFAudit\Audit;
 use Civi\Api4\Action\WMFAudit\Settle;
+use Civi\Api4\Action\WMFAudit\ReserveAdjustmentBatches;
 use Civi\Api4\Action\WMFAudit\GenerateBatch;
 use Civi\Api4\Generic\BasicGetFieldsAction;
 
@@ -33,6 +34,18 @@ class WMFAudit extends Generic\AbstractEntity {
    */
   public static function settle(bool $checkPermissions = TRUE): Settle {
     return (new Settle(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
+   * Give every pending FinancialDataAdjustment a batch to be journaled in.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return ReserveAdjustmentBatches
+   */
+  public static function reserveAdjustmentBatches(bool $checkPermissions = TRUE): ReserveAdjustmentBatches {
+    return (new ReserveAdjustmentBatches(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
 

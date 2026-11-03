@@ -1009,7 +1009,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
    * An adjustment batch's journals come from a FinancialDataAdjustment row,
    * not from settlement data, so the settlement sweep has to leave it alone -
    * otherwise it finds no settled rows at all, fails validation and flips the
-   * batch to needs_attention behind GenerateAdjustmentBatch's back.
+   * batch to needs_attention behind ReserveAdjustmentBatches' back.
    */
   public function testAdjustmentBatchIsNotSweptBySettlementRun(): void {
     $batchName = 'adjustment_347_USD';

@@ -82,7 +82,7 @@ class FinancialDataChange {
 
       if ($batchStatus === 'Exported') {
         // original_batch is only populated once we know there is a real
-        // journal to reverse - WMFAudit.generateAdjustmentBatch treats a
+        // journal to reverse - WMFAudit.reserveAdjustmentBatches treats a
         // null original_batch as "no adjustment journal needed".
         self::saveAdjustment($adjustment + [
           'status' => 'pending',

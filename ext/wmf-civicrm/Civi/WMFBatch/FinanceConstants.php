@@ -20,6 +20,14 @@ final class FinanceConstants {
    */
   const BATCH_LOCK_PREFIX = 'data.finance_batch.';
 
+  /**
+   * Prefix for the lock keyed on a FinancialDataAdjustment id.
+   *
+   * Held while an adjustment is given a batch, so two reservation runs
+   * cannot both decide the same adjustment still needs one.
+   */
+  const ADJUSTMENT_LOCK_PREFIX = 'data.finance_adjustment.';
+
   // Balancing accounts for a transfer between the wmf (foundation) and
   // endowment instances - one const per instance per direction, for
   // transparency about which is in play, but the values are shared: each

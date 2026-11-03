@@ -15,7 +15,7 @@ return [
         'name' => 'Adjustment Batch',
         'filter' => 0,
         'is_default' => FALSE,
-        'description' => 'Reverses and re-journals a single contribution whose GL code or endowment flag was corrected after its settlement batch was exported - see WMFAudit.GenerateAdjustmentBatch. Deliberately not a Manual or Automatic Batch, so the settlement export sweep leaves it alone.',
+        'description' => 'Reverses and re-journals a single contribution whose GL code or endowment flag was corrected after its settlement batch was exported - see WMFAudit.ReserveAdjustmentBatches. Deliberately not a Manual or Automatic Batch, so the settlement export sweep leaves it alone.',
         'is_optgroup' => FALSE,
         'is_reserved' => TRUE,
         'is_active' => TRUE,
