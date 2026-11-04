@@ -59,8 +59,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    */
   protected $initialContactCount;
 
-  private \CRM_Core_Permission_Base $originalUserPermissionClass;
-
   /**
    * @return \Civi\Test\CiviEnvBuilder
    * @throws \CRM_Extension_Exception_ParseException
@@ -78,8 +76,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
    */
   public function setUp(): void {
     parent::setUp();
-    // imitateAdminUser() swaps userPermissionClass, so restore it
-    $this->originalUserPermissionClass = \CRM_Core_Config::singleton()->userPermissionClass;
     $this->adminUserID = $this->imitateAdminUser();
     $this->initialContactCount = $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']);
 
@@ -134,7 +130,6 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->callAPISuccess('Contact', 'delete', ['id' => $this->contactID2, 'skip_undelete' => TRUE]);
     $this->doDuckHunt();
     $this->callAPISuccess('Job', 'process_batch_merge', ['mode' => 'safe']);
-    \CRM_Core_Config::singleton()->userPermissionClass = $this->originalUserPermissionClass;
     parent::tearDown();
     $this->assertEquals($this->initialContactCount, $this->callAPISuccessGetCount('Contact', ['is_deleted' => '']), 'contact cleanup incomplete');
   }

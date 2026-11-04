@@ -37,8 +37,6 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   use Test\Api3TestTrait;
   use WMFEnvironmentTrait;
 
-  private \CRM_Core_Permission_Base $originalUserPermissionClass;
-
   /**
    * @var int
    */
@@ -134,8 +132,6 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ->execute();
     $this->setUpWMFEnvironment();
     parent::setUp();
-    // imitateAdminUser() swaps userPermissionClass, so restore it
-    $this->originalUserPermissionClass = \CRM_Core_Config::singleton()->userPermissionClass;
   }
 
   /**
@@ -250,7 +246,6 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     // is preferred - we should migrate the rest over.
     $this->tearDownWMFEnvironment();
     \Civi::settings()->set('debug_enabled', $this->wasDebugEnabled);
-    \CRM_Core_Config::singleton()->userPermissionClass = $this->originalUserPermissionClass;
     parent::tearDown();
     unset(\Civi::$statics['wmf_contact']);
   }

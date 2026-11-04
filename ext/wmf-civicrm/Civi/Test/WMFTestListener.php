@@ -44,6 +44,8 @@ if (interface_exists(\PHPUnit\Framework\TestListener::class)) {
 
     private array $originalSettings;
 
+    private \CRM_Core_Permission_Base $originalUserPermissionClass;
+
     public function endTestSuite(\PHPUnit\Framework\TestSuite $suite): void {}
 
     public function startTest(\PHPUnit\Framework\Test $test): void {
@@ -54,6 +56,7 @@ if (interface_exists(\PHPUnit\Framework\TestListener::class)) {
       // to block it loading the container into statics.
       \CRM_Core_Config::singleton();
       $this->originalStatic = \Civi::$statics;
+      $this->originalUserPermissionClass = \CRM_Core_Config::singleton()->userPermissionClass;
       $GLOBALS['CIVICRM_TEST_CASE'] = $test;
       \CRM_Core_Session::singleton()->set('userID', NULL);
       if ($test instanceof TransactionalInterface) {
@@ -88,6 +91,7 @@ if (interface_exists(\PHPUnit\Framework\TestListener::class)) {
       \CRM_Utils_Time::resetTime();
       unset($GLOBALS['CIVICRM_TEST_CASE']);
       \Civi::$statics = $this->originalStatic;
+      \CRM_Core_Config::singleton()->userPermissionClass = $this->originalUserPermissionClass;
     }
 
   }
