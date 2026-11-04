@@ -40,7 +40,7 @@
     $scope.currentContact = currentContact.values[0];
     $scope.currentContactViewUrl = CRM.url('civicrm/contact/view', 'cid=' + $scope.currentContact['id']);
     $scope.contactMetadata = currentContact.metadata;
-    $scope.forgotten = '';
+    $scope.forgotten = [];
     $scope.notFound = [];
     $scope.formSubmitted = 0;
     $scope.reference = '';
@@ -56,7 +56,7 @@
           id: currentContact.id,
           reference: $scope.reference
         }).then(function (result) {
-          $scope.forgotten = result['values'];
+          $scope.forgotten = _.values(result['values']);
           $scope.notFound = _.values(result['not_found']);
           crmApi('Contact', 'showme', {
             id: currentContact.id,
