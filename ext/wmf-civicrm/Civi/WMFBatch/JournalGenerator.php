@@ -416,8 +416,12 @@ END";
    * @return string
    */
   private function getRestrictionsClause(): string {
-    return "-- @todo - this gets restrictions for major gifts transactions.
-    IF('is_major_gift' AND Fund LIKE 'Restricted%', 'Temporarily Restricted', 'Unrestricted')";
+    // Restricted funding follows the account, the same way the cost centre
+    // does. Major Gifts - Restricted is the only restricted code, and
+    // getAccountClause() reaches it when the gift's fund is restricted -
+    // that taking precedence over the unrestricted major gifts codes
+    // (T409994).
+    return 'IF(' . $this->getAccountClause() . ' = ' . JournalGLConstants::GL_MAJOR_GIFTS_RESTRICTED . ", 'Temporarily Restricted', 'Unrestricted')";
   }
 
   /**

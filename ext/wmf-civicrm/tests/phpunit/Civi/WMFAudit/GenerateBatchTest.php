@@ -67,6 +67,9 @@ class GenerateBatchTest extends BaseAuditTestCase {
       ->addWhere('name', 'LIKE', 'adyen_346%')
       ->execute();
     Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'adyen_352%')
+      ->execute();
+    Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'adjustment_347%')
       ->execute();
     Batch::delete(FALSE)
@@ -309,6 +312,49 @@ class GenerateBatchTest extends BaseAuditTestCase {
     }));
 
     $this->assertCount(2, $matches, 'Expected two donation rows for 43484 because Fund differs (GROUP BY Fund, ACCT_NO, is_major_gift)');
+  }
+
+  /**
+   * A restricted major gift is coded to Major Gifts - Restricted and its
+   * funding dimension follows, while everything else stays Unrestricted.
+   *
+   * The old clause tested a quoted 'is_major_gift' string, which MySQL reads
+   * as 0, so it returned Unrestricted for every row ever generated.
+   */
+  public function testRestrictedMajorGiftGetsRestrictedFunding(): void {
+    $prefix = 'adyen_352';
+    $batchName = "{$prefix}_USD";
+    $settlementDate = '2026-02-06';
+
+    $this->createQueueContribution([
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Restricted - Something',
+      'Gift_Data.is_major_gift' => 1,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settlement_currency' => 'USD',
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $this->createQueueContribution([
+      'Gift_Data.Channel' => 'Mobile Banner',
+      'Gift_Data.Fund' => 'Unrestricted',
+      'Gift_Data.is_major_gift' => 0,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 20.00,
+      'contribution_settlement.settlement_currency' => 'USD',
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $result = $this->runGenerate($batchName, 'USD', $settlementDate, 30, 2, $prefix);
+
+    $funding = [];
+    foreach ($result[0]['csv_rows'] as $row) {
+      if (str_contains((string) $row['MEMO'], 'Donations')) {
+        $funding[(string) $row['ACCT_NO']] = (string) $row['GLDIMFUNDING'];
+      }
+    }
+    // 43428 = Major Gifts - Restricted, 43481 = Online Banner Contributions.
+    $this->assertSame('Temporarily Restricted', $funding['43428'] ?? NULL);
+    $this->assertSame('Unrestricted', $funding['43481'] ?? NULL);
   }
 
   /**
