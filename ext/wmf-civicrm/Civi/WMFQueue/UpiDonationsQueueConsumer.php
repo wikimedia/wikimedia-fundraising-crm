@@ -7,6 +7,7 @@ use Civi\Api4\ContributionRecur;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\PaymentToken;
 use Civi\Api4\WMFContact;
+use Civi\WMFHelper\Database;
 use Civi\WMFHelper\PaymentProcessor;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use CRM_Core_Payment_Scheduler;
@@ -165,7 +166,7 @@ class UpiDonationsQueueConsumer extends QueueConsumer {
         ])->execute()->first();
     }
     catch (\CRM_Core_Exception $e) {
-      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
+      throw new WMFException(Database::isDatabaseContention($e) ? WMFException::DATABASE_CONTENTION : WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
     }
 
     // Create the recurring record

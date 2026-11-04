@@ -2,6 +2,7 @@
 
 namespace Civi\WMFHelper;
 
+use Civi\Core\Exception\DBQueryException;
 use Civi\Core\Transaction\Manager;
 
 class Database {
@@ -53,6 +54,14 @@ class Database {
     }
     $frame = Manager::singleton()->getFrame();
     return $frame && $frame->isRollbackOnly();
+  }
+
+  /**
+   * Constraint violations occur when data is rolled back to resolve a deadlock.
+   */
+  public static function isDatabaseContention(\Throwable $e): bool {
+    return $e instanceof DBQueryException
+      && in_array($e->getDBErrorMessage(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE);
   }
 
 }

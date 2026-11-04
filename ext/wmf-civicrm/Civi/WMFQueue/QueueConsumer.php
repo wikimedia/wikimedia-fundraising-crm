@@ -42,10 +42,9 @@ abstract class QueueConsumer extends BaseQueueConsumer {
         $logId = 'Odd message type';
       }
     }
-    if ($ex instanceof DBQueryException && in_array($ex->getDBErrorMessage(), ['constraint violation'], TRUE)) {
+    if ($ex instanceof DBQueryException && $ex->getDBErrorMessage() === 'constraint violation') {
       // This may or may not be a deadlock....
-      $constraint = substr($ex->getUserInfo(), strpos($ex->getUserInfo(), "[nativecode"));
-      $newException = new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to constraint error, possibly load related ' . $constraint, $ex->getErrorData(), $ex);
+      $newException = new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to constraint error, possibly load related', $ex->getErrorData(), $ex);
       \Civi::log('wmf')->error(
         // In some cases these relate to a partial rollback but they might be another bug.
         'WMFQueue: Message not saved due to db constraint, possibly DB load related: {message} {error}', [
@@ -64,7 +63,7 @@ abstract class QueueConsumer extends BaseQueueConsumer {
         ['message' => $ex->getMessage(), 'error' => $ex->getUserInfo()]
       );
       $this->haltOnRepeatedDatabaseContention($ex);
-      $this->handleWMFException($message, $newException, $logId, $context);
+      $this->handleWMFException($message, $newException, $logId);
       return;
     }
     if ($context && $ex instanceof \CRM_Core_Exception) {

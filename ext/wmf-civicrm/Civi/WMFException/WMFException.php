@@ -189,6 +189,11 @@ class WMFException extends Exception {
     $addToMessage = $this->extra;
     unset($addToMessage['trace'], $addToMessage['exception']);
     $this->message = $this->message . "\nSource: " . var_export($addToMessage, TRUE);
+    $dbError = $this->extra['exception'] ?? NULL;
+    // Only the native error, not the SQL before it, which has whole rows of donor data.
+    if ($dbError instanceof \DB_Error && preg_match('/\[nativecode=.*]/s', (string) $dbError->getUserInfo(), $matches)) {
+      $this->message .= "\nDB error: " . $matches[0];
+    }
   }
 
   /**
@@ -227,26 +232,7 @@ class WMFException extends Exception {
   }
 
   public function isRequeue(): bool {
-    if ($this->getErrorCharacteristic('requeue', FALSE)) {
-      return TRUE;
-    }
-    if ($this->extra) {
-      // The above should have already picked up any deadlocks but
-      // perhaps this legacy check still picks that up?
-      // We want to retry later if the problem was a lock wait timeout
-      // or a deadlock. This string parsing used to be the only way to determine that.
-      $flattened = print_r($this->extra, TRUE);
-      if (
-        preg_match('/\'12(05|13) \*\* /', $flattened) ||
-        preg_match('/Database lock encountered/', $flattened)
-        // @todo not treating constraints as deadlocks here at this stage - doing that
-        // more specifically but something to keep considering.
-        || ( $this->extra['error_code'] ?? null ) === 'deadlock'
-      ) {
-        return TRUE;
-      }
-    }
-    return FALSE;
+    return $this->getErrorCharacteristic('requeue', FALSE);
   }
 
   function isFatal() {

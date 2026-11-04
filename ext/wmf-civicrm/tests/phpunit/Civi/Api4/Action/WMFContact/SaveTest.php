@@ -5,6 +5,11 @@ namespace Civi\Api4\WMFContact;
 use Civi\Api4\Contact;
 use Civi\Api4\Email;
 use Civi\Api4\WMFContact;
+use Civi\Core\Event\PreEvent;
+use Civi\Core\Exception\DBQueryException;
+use Civi\Test\EntityTrait;
+use Civi\WMFEnvironmentTrait;
+use Civi\WMFException\WMFException;
 use Civi\WMFQueueMessage\RecurDonationMessage;
 use Civi\WMFQueueMessage\DonationMessage;
 use Civi\WMFQueueMessage\RecurringModifyMessage;
@@ -16,27 +21,19 @@ use PHPUnit\Framework\TestCase;
  * @covers \Civi\Api4\Action\WMFContact\Save
  */
 class SaveTest extends TestCase {
+  use WMFEnvironmentTrait;
+  use EntityTrait;
 
-  /**
-   * @var array
-   */
-  protected array $ids = [];
+  private ?int $addressSaveErrorCode = NULL;
 
   /**
    * Clean up after test.
    *
-   * @throws \Civi\Core\Exception\DBQueryException
    * @throws \CRM_Core_Exception
    */
   protected function tearDown(): void {
-    if (!empty($this->ids['Contact'])) {
-      Contact::delete(FALSE)
-        ->addWhere('id', 'IN', $this->ids['Contact'])
-        ->setUseTrash(FALSE)->execute();
-    }
-    Contact::delete(FALSE)
-      ->addWhere('last_name', '=', 'Mouse')
-      ->setUseTrash(FALSE)->execute();
+    \Civi::dispatcher()->removeListener('hook_civicrm_pre', [$this, 'throwOnAddressSave']);
+    $this->tearDownWMFEnvironment();
     parent::tearDown();
     unset(\Civi::$statics['wmf_contact']);
   }
@@ -1340,5 +1337,54 @@ class SaveTest extends TestCase {
       ->execute();
 
     $this->assertCount(2, $emails);
+  }
+
+  /**
+   * DB errors saving the address are classified as contention, but only when caused by contention.
+   *
+   * A street address goes through updateAddress(); an empty one goes through
+   * createAddress(), as the contact has no address yet.
+   *
+   * @dataProvider addressDBErrors
+   */
+  public function testAddressDBError(string $streetAddress, int $pearErrorCode, int $expectedCode): void {
+    $contactID = $this->createIndividual();
+    $this->addressSaveErrorCode = $pearErrorCode;
+    \Civi::dispatcher()->addListener('hook_civicrm_pre', [$this, 'throwOnAddressSave']);
+    $message = new DonationMessage([
+      'contact_id' => $contactID,
+      'first_name' => 'Danger',
+      'last_name' => 'Mouse',
+      'street_address' => $streetAddress,
+      'city' => 'Pittsburgh',
+      'postal_code' => '15235-3854',
+      'state_province' => 'PA',
+      'country' => 'US',
+      'gateway' => 'adyen',
+      'payment_method' => 'cc',
+    ]);
+
+    $this->expectException(WMFException::class);
+    $this->expectExceptionCode($expectedCode);
+    $this->expectExceptionMessage("Couldn't store address for the contact");
+    WMFContact::save(FALSE)->setMessage($message->normalize())->execute();
+  }
+
+  public static function addressDBErrors(): array {
+    return [
+      'updateAddress: deadlock' => ['1 Cheese Lane', -31, WMFException::DATABASE_CONTENTION],
+      'updateAddress: lock timeout' => ['1 Cheese Lane', -30, WMFException::DATABASE_CONTENTION],
+      'updateAddress: constraint violation' => ['1 Cheese Lane', -3, WMFException::DATABASE_CONTENTION],
+      'updateAddress: syntax error' => ['1 Cheese Lane', -2, WMFException::IMPORT_CONTACT],
+      'createAddress: deadlock' => ['', -31, WMFException::DATABASE_CONTENTION],
+      'createAddress: syntax error' => ['', -2, WMFException::IMPORT_CONTACT],
+    ];
+  }
+
+  public function throwOnAddressSave(PreEvent $event): void {
+    if ($event->entity === 'Address') {
+      $pearError = new \DB_Error($this->addressSaveErrorCode);
+      throw new DBQueryException($pearError->getMessage(), $pearError->getCode(), ['exception' => $pearError]);
+    }
   }
 }

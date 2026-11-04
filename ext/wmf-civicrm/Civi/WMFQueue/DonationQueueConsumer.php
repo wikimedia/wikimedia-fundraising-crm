@@ -10,6 +10,7 @@ use Civi\Api4\WMFContact;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\Contribution as ContributionHelper;
 use Civi\WMFHelper\ContributionRecur as ContributionRecurHelper;
+use Civi\WMFHelper\Database;
 use Civi\WMFHelper\PaymentProcessor as PaymentProcessorHelper;
 use Civi\WMFQueueMessage\DonationMessage;
 use Civi\WMFQueueMessage\DonationModifyMessage;
@@ -394,7 +395,7 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       $message->setContributionRecurID($recur['id']);
     }
     catch (\CRM_Core_Exception $e) {
-      throw new WMFException(WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
+      throw new WMFException(Database::isDatabaseContention($e) ? WMFException::DATABASE_CONTENTION : WMFException::IMPORT_SUBSCRIPTION, $e->getMessage());
     }
   }
 

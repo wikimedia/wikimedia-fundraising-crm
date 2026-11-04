@@ -53,10 +53,7 @@ class ContributionTrackingQueueConsumer extends QueueConsumer {
       // When setting a contribution ID, we can expect a few constraint violations
       // from messages sent by the donations queue consumer after a contribution
       // insert has been rolled back. Ignore those exceptions, rethrow the rest.
-      $isConstraintViolation = (
-        $ex->getErrorCode() === 'constraint violation' ||
-        $ex->getErrorCode() === DB_ERROR_CONSTRAINT
-      );
+      $isConstraintViolation = $ex->getErrorCode() === DB_ERROR_CONSTRAINT;
       if (!empty($message['contribution_id']) || !$isConstraintViolation) {
         throw $ex;
       }
