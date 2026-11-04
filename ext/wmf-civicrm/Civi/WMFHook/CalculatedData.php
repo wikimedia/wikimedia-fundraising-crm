@@ -21,6 +21,11 @@ class CalculatedData extends TriggerHook {
   protected const WMF_MIN_FINANCIAL_YEAR_START = 2017;
 
   /**
+   * When log_civicrm_contribution_recur starts on prod.
+   */
+  public const RECUR_LOG_START = '2016-05-03 00:07:34';
+
+  /**
    * Is this class is being called in trigger context.
    *
    * The normal context is 'trigger' which will generate sql triggers.
@@ -428,9 +433,12 @@ class CalculatedData extends TriggerHook {
       $updateClauses[] = "(NEW.contribution_status_id <> $processingID)";
     }
 
-    $sql = $this->getUpdateWMFDonorSql();
+    // If we're setting these based on a contribution, use the receive_date, not now
+    $setLogDate = ($tableName === 'civicrm_contribution') ? "\n      SET " . DonorHistoryTrigger::LOG_DATE_VAR . ' = NEW.receive_date;' : '';
+    $resetLogDate = ($tableName === 'civicrm_contribution') ? "\n      SET " . DonorHistoryTrigger::LOG_DATE_VAR . ' = NULL;' : '';
+    $sql = $setLogDate . $this->getUpdateWMFDonorSql() . $resetLogDate;
     $insertSQL = ' IF ' . implode(' AND ', $requiredClauses) . ' THEN' . $sql . "\nEND IF;\n";
-    $updateSQL = ' IF ' . implode(' AND ', $updateClauses) . ' AND (' . implode(' OR ', $updateConditions) . ' ) THEN' . $this->getUpdateWMFDonorSql(TRUE) . "\nEND IF;\n";
+    $updateSQL = ' IF ' . implode(' AND ', $updateClauses) . ' AND (' . implode(' OR ', $updateConditions) . ' ) THEN' . $setLogDate . $this->getUpdateWMFDonorSql(TRUE) . $resetLogDate . "\nEND IF;\n";
     $requiredClausesForOldClause = str_replace('NEW.', 'OLD.', implode(' AND ', $requiredClauses));
     $oldSql = str_replace('NEW.', 'OLD.', $sql);
     $updateOldSQL = ' IF ' . $requiredClausesForOldClause
@@ -1072,14 +1080,15 @@ class CalculatedData extends TriggerHook {
    * to reflect the column order in the table itself for Analytics' convenience.
    *
    * @return array
-   *   Field specs keyed by name, filtered to those marked 'log_changes'.
+   *   Field specs keyed by name, filtered to those marked 'log_changes', for
+   *   the source table if one is set.
    *
    * @throws \CRM_Core_Exception
    */
   public function getLoggedFields(): array {
     // Only int fields with a select (option list) are supported in the history table.
     return array_filter(
-      $this->getWMFDonorFields(),
+      $this->getCalculatedFields(),
       fn($field) => !empty($field['log_changes']) && $field['data_type'] === 'Int' && $field['html_type'] === 'Select'
     );
   }
@@ -1174,7 +1183,7 @@ class CalculatedData extends TriggerHook {
     else {
       // Add c.contact_id manually outside trigger context as we don't have NEW.contact_id to group by
       array_unshift($innerColumns, '        c.contact_id');
-      $from = "FROM civicrm_contribution_recur c
+      $from = 'FROM ' . ($this->asOfDate ? $this->getAsOfRecurringSQL() : 'civicrm_contribution_recur') . " c
         WHERE " . $this->getWhereClause() . "
         GROUP BY c.contact_id";
       $entityID = 'totals.contact_id';
@@ -1186,6 +1195,59 @@ class CalculatedData extends TriggerHook {
         $from
       ) as totals
       GROUP BY $entityID";
+  }
+
+  /**
+   * Get a derived table of recurring contributions as they stood on the as-of date.
+   *
+   * This is each recurring's latest log row at or before that date, ignoring
+   * Processing rows as the trigger doesn't recalculate during processing.
+   * Recurrings that started before logging did (2016) are approximated until
+   * their first log row from the current row: in progress from start_date,
+   * then its current status once cancelled or ended, so never paused or failing.
+   *
+   * @return string
+   */
+  protected function getAsOfRecurringSQL(): string {
+    $where = $this->getWhereClause();
+    $processing = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Processing');
+    $inProgress = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'In Progress');
+    $pending = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Pending');
+    return "(
+          SELECT c.contact_id, l.contribution_status_id, l.frequency_unit, l.start_date, l.next_sched_contribution_date
+          FROM civicrm_contribution_recur c
+          INNER JOIN log_civicrm_contribution_recur l
+            ON l.id = c.id
+            AND l.contribution_status_id <> $processing
+            AND l.log_date = (
+              SELECT MAX(l2.log_date) FROM log_civicrm_contribution_recur l2
+              WHERE l2.id = c.id AND l2.log_date <= '$this->asOfDate' AND l2.contribution_status_id <> $processing
+            )
+            -- In a same-second tie a non-active row comes later and only it counts
+            AND NOT (
+              l.contribution_status_id IN ($pending, $inProgress)
+              AND EXISTS (
+                SELECT 1 FROM log_civicrm_contribution_recur l4
+                WHERE l4.id = l.id AND l4.log_date = l.log_date
+                  AND l4.contribution_status_id NOT IN ($pending, $inProgress, $processing)
+              )
+            )
+          WHERE $where
+          UNION ALL
+          SELECT c.contact_id,
+            IF(c.cancel_date <= '$this->asOfDate' OR c.end_date <= '$this->asOfDate', c.contribution_status_id, $inProgress),
+            -- We don't know what the next payment date is,
+            -- so put in the as-of date because that will never make it paused.
+            c.frequency_unit, c.start_date, CAST('$this->asOfDate' AS DATETIME)
+          FROM civicrm_contribution_recur c
+          WHERE $where
+            AND c.start_date <= '$this->asOfDate'
+            AND c.start_date < '" . self::RECUR_LOG_START . "'
+            AND NOT EXISTS (
+              SELECT 1 FROM log_civicrm_contribution_recur l3
+              WHERE l3.id = c.id AND l3.log_date <= '$this->asOfDate' AND l3.contribution_status_id <> $processing
+            )
+        )";
   }
 
   /**

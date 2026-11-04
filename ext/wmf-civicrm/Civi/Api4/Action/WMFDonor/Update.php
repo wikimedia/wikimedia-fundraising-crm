@@ -13,6 +13,7 @@ namespace Civi\Api4\Action\WMFDonor;
 
 use Civi\Api4\Generic\DAOUpdateAction;
 use Civi\WMFHook\CalculatedData;
+use Civi\WMFHook\DonorHistoryTrigger;
 
 /**
  * Update WMF Donor fields based on calculated data.
@@ -28,6 +29,13 @@ use Civi\WMFHook\CalculatedData;
  */
 class Update extends DAOUpdateAction {
   use SelectTrait;
+
+  /**
+   * Log history changes as of this date rather than now, e.g. the financial year start for the rollover.
+   *
+   * @var string|null
+   */
+  protected $historyLogDate;
 
   /**
    * The parent function would return an array of items.
@@ -62,12 +70,24 @@ class Update extends DAOUpdateAction {
     else {
       $whereClause = $this->getTemporaryTableSelectClause();
     }
-    foreach (CalculatedData::createForSourceTables() as $processor) {
-      $processor->setWhereClause($whereClause);
-      if (!array_key_exists('*', $this->values)) {
-        $processor->filterDonorFields(array_keys($this->values));
+    if ($this->historyLogDate) {
+      \CRM_Core_DAO::executeQuery('SET ' . DonorHistoryTrigger::LOG_DATE_VAR . ' = %1', [
+        1 => [date('Y-m-d H:i:s', strtotime($this->historyLogDate)), 'String'],
+      ]);
+    }
+    try {
+      foreach (CalculatedData::createForSourceTables() as $processor) {
+        $processor->setWhereClause($whereClause);
+        if (!array_key_exists('*', $this->values)) {
+          $processor->filterDonorFields(array_keys($this->values));
+        }
+        $processor->updateWMFDonorData();
       }
-      $processor->updateWMFDonorData();
+    }
+    finally {
+      if ($this->historyLogDate) {
+        \CRM_Core_DAO::executeQuery('SET ' . DonorHistoryTrigger::LOG_DATE_VAR . ' = NULL');
+      }
     }
     return $items;
   }

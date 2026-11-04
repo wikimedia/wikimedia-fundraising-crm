@@ -3,6 +3,7 @@
 namespace Civi\Api4;
 
 use Civi\Api4\Action\WMFDonor\Get;
+use Civi\Api4\Action\WMFDonor\RebuildHistory;
 use Civi\Api4\Action\WMFDonor\UnPauseRecurring;
 use Civi\Api4\Action\WMFDonor\Update;
 use Civi\Api4\Action\WMFDonor\UpdateAnnualDonors;
@@ -67,6 +68,18 @@ class WMFDonor extends Generic\AbstractEntity {
   }
 
   /**
+   * Rebuild wmf_donor_history for the relevant donors.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\WMFDonor\RebuildHistory
+   */
+  public static function rebuildHistory(bool $checkPermissions = TRUE): RebuildHistory {
+    return (new RebuildHistory(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
+  }
+
+  /**
    * Get permissions.
    *
    * @return array
@@ -76,6 +89,7 @@ class WMFDonor extends Generic\AbstractEntity {
       'get' => 'view all contacts',
       'create' => 'edit all contacts',
       'update' => 'edit all contacts',
+      'rebuildHistory' => ['access CiviContribute', 'edit all contacts'],
       'default' => ['access CiviCRM'],
     ];
   }
