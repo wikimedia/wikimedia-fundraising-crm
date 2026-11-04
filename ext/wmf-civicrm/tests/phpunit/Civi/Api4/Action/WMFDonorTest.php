@@ -10,6 +10,7 @@ use Civi\Api4\QueueItem;
 use Civi\Api4\WMFDonor;
 use Civi\Api4\WMFDonorHistory;
 use Civi\WMFHook\CalculatedData;
+use Civi\WMFHook\DonorHistoryTrigger;
 use Civi\Test;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
@@ -578,6 +579,32 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ->execute()->column('log_date');
     $this->assertGreaterThanOrEqual($beforeRecur, $logDates[0]);
     $this->assertEquals('2023-03-01 00:00:00', $logDates[1]);
+  }
+
+  /**
+   * WMFDonor::update can log history changes as of a date, e.g. the financial year start for the rollover.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testUpdateLogsHistoryAsOfDate(): void {
+    $this->createDonor();
+    $contactID = $this->ids['Contact']['donor'];
+    // As if the rollover hasn't been applied yet.
+    \CRM_Core_DAO::executeQuery('UPDATE wmf_donor SET donor_status_overall = 30 WHERE entity_id = %1', [
+      1 => [$contactID, 'Integer'],
+    ]);
+
+    WMFDonor::update(FALSE)
+      ->addValue('donor_status_overall', TRUE)
+      ->addWhere('id', '=', $contactID)
+      ->setHistoryLogDate('2025-07-01')
+      ->execute();
+
+    $this->assertEquals('2025-07-01 00:00:00', WMFDonorHistory::get(FALSE)
+      ->addWhere('entity_id', '=', $contactID)
+      ->addOrderBy('log_id', 'DESC')
+      ->execute()->first()['log_date']);
+    $this->assertNull(\CRM_Core_DAO::singleValueQuery('SELECT ' . DonorHistoryTrigger::LOG_DATE_VAR));
   }
 
   /**
