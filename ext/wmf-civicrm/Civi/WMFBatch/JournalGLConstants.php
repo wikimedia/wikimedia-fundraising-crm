@@ -27,6 +27,39 @@ final class JournalGLConstants {
 
   const GL_ENDOWMENT_MEMO_SUFFIX = 'Earmarked for Endowment from WMF';
 
+  /**
+   * The GL accounts that are major gifts.
+   *
+   * These take the major gifts cost centre rather than the online
+   * fundraising one - see getDeptIDClause(). The account a row is coded to
+   * is what decides that, not the gift's own is_major_gift flag, so that a
+   * row coded to a major gifts account is costed as one however it got
+   * there.
+   */
+  const GL_MAJOR_GIFTS_ACCOUNTS = [
+    // Unrestricted - Large ($10K+) & Assigned.
+    43485,
+    // Unrestricted - Donor Advised Funds <$10K.
+    43486,
+    // Unrestricted - <$10K.
+    43487,
+    // Unrestricted - Workplace Giving.
+    43488,
+    // Unrestricted - Alternative and Other.
+    43489,
+    self::GL_MAJOR_GIFTS_RESTRICTED,
+  ];
+
+  /**
+   * The one major gifts account that is restricted funding.
+   *
+   * getAccountClause() reaches it when the gift's fund is restricted, that
+   * taking precedence over the unrestricted codes (T409994). Endowment
+   * journals also treat every major gift as restricted whatever it was on
+   * the foundation side - see writeCrossInstanceTransfer().
+   */
+  const GL_MAJOR_GIFTS_RESTRICTED = 43428;
+
   const BALANCING_ACCOUNT_HARD_CODED = 'determined_in_code';
 
   /**

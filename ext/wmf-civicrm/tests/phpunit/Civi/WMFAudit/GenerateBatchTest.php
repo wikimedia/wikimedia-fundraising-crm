@@ -868,10 +868,10 @@ class GenerateBatchTest extends BaseAuditTestCase {
   }
 
   /**
-   * A foundation batch's cost centre comes from the gift's major-gift flag -
-   * CC-1004 for a major gift, CC-1005 for everything else.
+   * A foundation batch's cost centre comes from the account the row was
+   * coded to - CC-1004 for a major gifts account, CC-1005 otherwise.
    */
-  public function testFoundationBatchSetsCostCentreFromMajorGiftFlag(): void {
+  public function testFoundationBatchSetsCostCentreFromAccountCode(): void {
     $prefix = 'adyen_333';
     $batchName = "{$prefix}_USD";
     $currency = 'USD';
