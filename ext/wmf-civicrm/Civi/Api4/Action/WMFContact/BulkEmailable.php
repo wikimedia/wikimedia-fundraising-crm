@@ -68,7 +68,7 @@ class BulkEmailable extends AbstractAction {
     }
     $emails = $emailGet->execute();
     if ($emails->count() == 0) {
-      throw new \CRM_Core_Exception('Email not found.');
+      throw new \CRM_Core_Exception('Email not found.', 'not_found');
     }
     $anyPrimary = FALSE;
     foreach ($emails as $email) {

@@ -72,10 +72,19 @@ class Snooze extends AbstractAction {
       throw new \CRM_Core_Exception('Email required.');
     }
     // Acoustic doesn't allow an opted out contact to be snoozed so we don't want to keep trying.
-    $emailable = WMFContact::bulkEmailable(FALSE)
-      ->setEmail($email)
-      ->setCheckSnooze(FALSE)
-      ->execute()->first();
+    try {
+      $emailable = WMFContact::bulkEmailable(FALSE)
+        ->setEmail($email)
+        ->setCheckSnooze(FALSE)
+        ->execute()->first();
+    }
+    catch (\CRM_Core_Exception $e) {
+      if ($e->getErrorCode() !== 'not_found') {
+        throw $e;
+      }
+      // Sometimes the email has changed, skip it and we'll catch it on the next run.
+      return;
+    }
     if (!$emailable) {
       return;
     }
