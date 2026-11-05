@@ -123,6 +123,7 @@ class OmnicontactCreateTest extends OmnimailBaseTestClass {
       ->last();
 
     $this->assertEquals('Completed', $activity['status_id:name']);
+    $this->assertMatchesRegularExpression('#<NAME>snooze_end_date</NAME>\s*<VALUE>09/09/' . ((int) date('Y') + 1) . '</VALUE>#', urldecode($guzzleSentRequests[0]));
     $this->assertEquals(str_replace('--YEAR--', (string) ((int) date('Y') + 1), trim(file_get_contents(__DIR__ . '/Requests/SnoozeRecipient.txt'))), $guzzleSentRequests[1]);
   }
 
