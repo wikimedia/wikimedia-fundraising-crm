@@ -504,17 +504,20 @@ class CalculatedData extends TriggerHook {
    * @throws \CRM_Core_Exception
    */
   public static function getExcludedContactIDs(): array {
-    $matchingGiftDonors = civicrm_api3('Contact', 'get', ['nick_name' => ['IN' => ['Microsoft', 'Google', 'Apple', 'Citi']]])['values'];
-    $excludedContacts = array_keys($matchingGiftDonors);
-    $anonymousContact = civicrm_api3('Contact', 'get', [
-      'first_name' => 'Anonymous',
-      'last_name' => 'Anonymous',
-      'options' => ['limit' => 1, 'sort' => 'id ASC'],
-    ]);
-    if ($anonymousContact['count']) {
-      $excludedContacts[] = $anonymousContact['id'];
+    if (!isset(\Civi::$statics[__CLASS__]['excludedContactIDs'])) {
+      $matchingGiftDonors = civicrm_api3('Contact', 'get', ['nick_name' => ['IN' => ['Microsoft', 'Google', 'Apple', 'Citi']]])['values'];
+      $excludedContacts = array_keys($matchingGiftDonors);
+      $anonymousContact = civicrm_api3('Contact', 'get', [
+        'first_name' => 'Anonymous',
+        'last_name' => 'Anonymous',
+        'options' => ['limit' => 1, 'sort' => 'id ASC'],
+      ]);
+      if ($anonymousContact['count']) {
+        $excludedContacts[] = $anonymousContact['id'];
+      }
+      \Civi::$statics[__CLASS__]['excludedContactIDs'] = $excludedContacts;
     }
-    return $excludedContacts;
+    return \Civi::$statics[__CLASS__]['excludedContactIDs'];
   }
 
   /**
