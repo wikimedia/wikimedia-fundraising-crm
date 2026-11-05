@@ -3,11 +3,30 @@
 namespace Civi\WMFBatch;
 
 /**
- * GL account/location constants shared by batch journal generation -
- * used by both WMFAudit.GenerateBatch (settlement batches) and
- * WMFAudit.GenerateAdjustmentBatch (single-contribution corrections).
+ * Constants that more than one of the finance batch classes has to agree on.
+ *
+ * GL accounts and locations today - the class is named for that role rather
+ * than for whatever happens to be in it.
  */
-final class JournalGLConstants {
+final class FinanceConstants {
+
+  /**
+   * Prefix for the lock keyed on Batch.name.
+   *
+   * Held while a batch is exported, and while a correction to one of its
+   * contributions is recorded, so the two cannot interleave. Lives here
+   * rather than on either of those because the lock only works if they name
+   * it identically.
+   */
+  const BATCH_LOCK_PREFIX = 'data.finance_batch.';
+
+  /**
+   * Prefix for the lock keyed on a FinancialDataAdjustment id.
+   *
+   * Held while an adjustment is given a batch, so two reservation runs
+   * cannot both decide the same adjustment still needs one.
+   */
+  const ADJUSTMENT_LOCK_PREFIX = 'data.finance_adjustment.';
 
   // Balancing accounts for a transfer between the wmf (foundation) and
   // endowment instances - one const per instance per direction, for
@@ -26,6 +45,39 @@ final class JournalGLConstants {
   const GL_FEE_DEFAULT = 60917;
 
   const GL_ENDOWMENT_MEMO_SUFFIX = 'Earmarked for Endowment from WMF';
+
+  /**
+   * The GL accounts that are major gifts.
+   *
+   * These take the major gifts cost centre rather than the online
+   * fundraising one - see getDeptIDClause(). The account a row is coded to
+   * is what decides that, not the gift's own is_major_gift flag, so that a
+   * row coded to a major gifts account is costed as one however it got
+   * there.
+   */
+  const GL_MAJOR_GIFTS_ACCOUNTS = [
+    // Unrestricted - Large ($10K+) & Assigned.
+    43485,
+    // Unrestricted - Donor Advised Funds <$10K.
+    43486,
+    // Unrestricted - <$10K.
+    43487,
+    // Unrestricted - Workplace Giving.
+    43488,
+    // Unrestricted - Alternative and Other.
+    43489,
+    self::GL_MAJOR_GIFTS_RESTRICTED,
+  ];
+
+  /**
+   * The one major gifts account that is restricted funding.
+   *
+   * getAccountClause() reaches it when the gift's fund is restricted, that
+   * taking precedence over the unrestricted codes (T409994). Endowment
+   * journals also treat every major gift as restricted whatever it was on
+   * the foundation side - see writeCrossInstanceTransfer().
+   */
+  const GL_MAJOR_GIFTS_RESTRICTED = 43428;
 
   const BALANCING_ACCOUNT_HARD_CODED = 'determined_in_code';
 

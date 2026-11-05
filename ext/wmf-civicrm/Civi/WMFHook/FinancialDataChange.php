@@ -6,16 +6,9 @@ use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
 use Civi\Api4\CustomValue;
 use Civi\Core\Event\PreEvent;
+use Civi\WMFBatch\FinanceConstants;
 
 class FinancialDataChange {
-
-  /**
-   * Prefix for the lock keyed on a settlement batch reference.
-   *
-   * WMFAudit.GenerateBatch acquires the same lock before exporting a batch,
-   * so this never races with an export in progress.
-   */
-  public const LOCK_PREFIX = 'data.finance_batch.';
 
   /**
    * Implements hook_civicrm_pre().
@@ -74,7 +67,7 @@ class FinancialDataChange {
     // A timeout of 1 (not 0) is used deliberately: CRM_Core_Lock::acquire()
     // treats a falsy timeout as "use the 3-second default", so 0 would not
     // give the quick, non-blocking attempt it looks like it would.
-    $lock = \Civi::lockManager()->acquire(self::LOCK_PREFIX . $batchReference);
+    $lock = \Civi::lockManager()->acquire(FinanceConstants::BATCH_LOCK_PREFIX . $batchReference);
     if (!$lock->isAcquired()) {
       self::saveAdjustment($adjustment + ['status' => 'needs_attention']);
       self::alertFrTech($event->id, $batchReference, 'could not acquire the settlement batch lock');
@@ -89,7 +82,7 @@ class FinancialDataChange {
 
       if ($batchStatus === 'Exported') {
         // original_batch is only populated once we know there is a real
-        // journal to reverse - WMFAudit.generateAdjustmentBatch treats a
+        // journal to reverse - WMFAudit.reserveAdjustmentBatches treats a
         // null original_batch as "no adjustment journal needed".
         self::saveAdjustment($adjustment + [
           'status' => 'pending',

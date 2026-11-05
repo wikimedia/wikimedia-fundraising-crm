@@ -322,5 +322,22 @@ return [
       'input_type' => 'Text',
       'description' => E::ts('Wikipedia App install ID.'),
     ],
+    'ad_param_id' => [
+      'title' => E::ts('Ad Click Param'),
+      'sql_type' => 'int',
+      'input_type' => 'Select',
+      'readonly' => TRUE,
+      'description' => E::ts('URL parameter the ad click ID arrived in'),
+      'pseudoconstant' => [
+        'option_group_name' => 'ad_param',
+      ],
+    ],
+    'ad_click_identifier' => [
+      'title' => E::ts('Ad Click ID'),
+      'sql_type' => 'varchar(512)',
+      'input_type' => 'Text',
+      'readonly' => TRUE,
+      'description' => E::ts('Ad platform click ID'),
+    ],
   ],
 ];

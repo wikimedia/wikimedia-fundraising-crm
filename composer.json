@@ -112,7 +112,7 @@
     },
     "config": {
         "platform": {
-            "php": "8.2.26"
+            "php": "8.4.27"
         },
         "allow-plugins": {
             "wikimedia/composer-merge-plugin": true,

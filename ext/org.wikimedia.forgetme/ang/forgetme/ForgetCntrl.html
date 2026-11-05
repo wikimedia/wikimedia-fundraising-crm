@@ -28,7 +28,15 @@
     <div>
       <button ng-click="forget()" ng-disabled="formSubmitted || hasActiveRecurring">{{ts('Forget')}}</button>
     </div>
-    <div ng-show="(forgotten)">
+    <div ng-show="notFound.length" class="messages warning">
+      <div>{{ts('The following contributions were not found at the payment processor, most likely because they are old and have already been purged.')}}</div>
+      <div class='crm-grid-table'>
+        <div ng-repeat="missing in notFound" class="crm-grid-row">
+          <div class="crm-grid-cell">{{missing}}</div>
+        </div>
+      </div>
+    </div>
+    <div ng-show="forgotten.length">
       <div>{{ts('The following data has been forgotten')}}</div>
       <div class='crm-grid-table'>
         <div ng-repeat="forgot in forgotten" class="crm-grid-row">

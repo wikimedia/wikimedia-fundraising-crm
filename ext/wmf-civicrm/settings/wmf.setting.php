@@ -66,6 +66,18 @@ return [
     ],
     'settings_pages' => ['wmf-civicrm' => ['weight' => 36]],
   ],
+  'wmf_donor_portal_checksum_ttl' => [
+    'group_name' => 'wmf Settings',
+    'group' => 'wmf',
+    'name' => 'wmf_donor_portal_checksum_ttl',
+    'type' => 'Integer',
+    'default' => 337,
+    'title' => E::ts('Donor portal checksum ttl (hours)'),
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts('This must match the magic value in Donor Portal that validates the checksum ttl to allow access to donor portal.'),
+    'help_text' => '',
+  ],
   'wmf_confirm_primary_email_url' => [
     'group_name' => 'wmf Settings',
     'group' => 'wmf',

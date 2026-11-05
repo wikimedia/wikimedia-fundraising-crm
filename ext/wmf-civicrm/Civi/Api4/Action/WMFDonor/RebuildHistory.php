@@ -61,6 +61,13 @@ class RebuildHistory extends AbstractAction {
   private array $loggedFieldsByTable = [];
 
   /**
+   * Whether the contact being rebuilt has recurrings that started before logging did.
+   *
+   * @var bool
+   */
+  private bool $hasPreLogRecurrings = FALSE;
+
+  /**
    * @throws \CRM_Core_Exception
    */
   public function _run(Result $result): void {
@@ -225,6 +232,7 @@ class RebuildHistory extends AbstractAction {
       FROM civicrm_contribution_recur c
       WHERE c.contact_id = %1 AND c.start_date < %3
     ", $params)->fetchAll();
+    $this->hasPreLogRecurrings = (bool) $recurs;
     foreach ($recurs as $recur) {
       foreach ([$recur['start_date'], $recur['cancel_date'], $recur['end_date']] as $date) {
         if ($date && $date >= $recur['start_date'] && $date < $endDate && ($date < $recur['first_log_date'] || !$recur['first_log_date'])) {
@@ -320,6 +328,7 @@ class RebuildHistory extends AbstractAction {
     $processor = CalculatedData::createForSourceTables($tableName)[$tableName];
     $processor->setTriggerContext(FALSE)
       ->setAsOfDate($asOfDate)
+      ->setIncludePreLogRecurrings($this->hasPreLogRecurrings)
       ->setWhereClause("c.contact_id = $contactID");
     $processor->filterDonorFields(array_keys($this->loggedFieldsByTable[$tableName]));
     return \CRM_Core_DAO::executeQuery($processor->getSelectSQL())->fetchAll()[0] ?? [];

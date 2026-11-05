@@ -100,6 +100,7 @@ class ContributionTracking {
     $contributionTracking = ['id' => $rawData['id']];
 
     $fieldsToCopy = [
+      'ad_click_identifier',
       'amount',
       'appeal',
       'browser',
@@ -144,6 +145,9 @@ class ContributionTracking {
         'payment_submethod_id',
         FinanceInstrument::getPaymentInstrument( $rawData )
       );
+    }
+    if (!empty($rawData['ad_param'])) {
+      $contributionTracking['ad_param_id:name'] = $rawData['ad_param'];
     }
     if (!empty($rawData['utm_source'])) {
       $contributionTracking['is_test_variant'] = (strpos($rawData['utm_source'] ?? '', '_cnt_') === FALSE) && (strpos($rawData['utm_source'] ?? '', '_cnt.') === FALSE);

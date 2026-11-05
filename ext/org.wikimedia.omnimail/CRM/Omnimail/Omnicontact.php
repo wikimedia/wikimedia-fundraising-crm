@@ -45,7 +45,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
         'email' => $email,
         'recipientIdentifier' => $params['recipient_id'],
         'databaseID' => $params['database_id'],
-        'fields' => $this->mapFields($params['values']) + ($snoozeEndDate ? ['snooze_end_date' => date('Y-m-d H:i:s', strtotime($snoozeEndDate))] : []),
+        'fields' => $this->mapFields($params['values']) + ($snoozeEndDate ? ['snooze_end_date' => date('m/d/Y', strtotime($snoozeEndDate))] : []),
         'snoozeTimeStamp' => empty($snoozeEndDate) ? NULL : strtotime($snoozeEndDate),
         'syncFields' => $email ? ['Email' => $email] : ['RECIPIENT_ID' => $params['recipient_id']],
       ]);
@@ -189,7 +189,7 @@ class CRM_Omnimail_Omnicontact extends CRM_Omnimail_Omnimail{
         $return['sms_consent_timestamp'] = NULL;
         $return['sms_consent_datetime'] = NULL;
       }
-      $return['snooze_fields_match'] = ($return['snooze_end_date'] ?: FALSE) === ($return['internal_system_snooze_end_date'] ?: FALSE);
+      $return['snooze_fields_match'] = strtotime($return['snooze_end_date'] ?? '') === strtotime($return['internal_system_snooze_end_date'] ?? '');
       return $return;
     }
     catch (Exception $e) {

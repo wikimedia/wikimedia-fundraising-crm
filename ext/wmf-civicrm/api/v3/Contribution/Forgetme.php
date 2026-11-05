@@ -2,6 +2,7 @@
 
 use Civi\Api4\CustomField;
 use SmashPig\Core\ConfigurationKeyException;
+use SmashPig\PaymentData\ErrorCode;
 use SmashPig\PaymentProviders\IDeleteDataProvider;
 use SmashPig\PaymentProviders\IPaymentProvider;
 use SmashPig\PaymentProviders\PaymentProviderFactory;
@@ -43,6 +44,7 @@ function civicrm_api3_contribution_forgetme(array $params): array {
   $contributions = civicrm_api3('Contribution', 'get', $getParams)['values'];
 
   $deleted = [];
+  $notFound = [];
   $failures = [];
   foreach ($contributions as $contribution) {
     $gatewayTxnId = $contribution[$customFieldMap['gateway_txn_id']];
@@ -61,6 +63,10 @@ function civicrm_api3_contribution_forgetme(array $params): array {
         $response = $provider->deleteDataForPayment($txnIdToForget);
         if ($response->isSuccessful()) {
           $deleted[] = $contribution;
+        }
+        elseif ($response->getErrors()[0]->getErrorCode() === ErrorCode::TRANSACTION_NOT_FOUND) {
+          // Old payments might have been purged by the processor, so no failmail, just show in the results.
+          $notFound[] = $contribution['id'];
         }
         else {
           $errors = [];
@@ -82,7 +88,9 @@ function civicrm_api3_contribution_forgetme(array $params): array {
     ]);
   }
 
-  return civicrm_api3_create_success($deleted, $params);
+  $result = civicrm_api3_create_success($deleted, $params);
+  $result['not_found'] = $notFound;
+  return $result;
 }
 
 function _civicrm_api3_contribution_forgetme_getcustomfields(): array {
