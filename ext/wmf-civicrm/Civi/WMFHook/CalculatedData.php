@@ -47,6 +47,13 @@ class CalculatedData extends TriggerHook {
   protected ?string $asOfDate = NULL;
 
   /**
+   * Whether the as-of recurring statuses include recurrings that started before logging did.
+   *
+   * @var bool
+   */
+  protected bool $includePreLogRecurrings = TRUE;
+
+  /**
    * SQL for the segment selects.
    *
    * @var string
@@ -203,6 +210,18 @@ class CalculatedData extends TriggerHook {
     }
     // Reformatted as it goes straight into the SQL.
     $this->asOfDate = date('Y-m-d H:i:s', $timestamp);
+    return $this;
+  }
+
+  /**
+   * Leave out recurrings that started before logging did when there aren't any, as approximating them is slow.
+   *
+   * @param bool $includePreLogRecurrings
+   *
+   * @return \Civi\WMFHook\CalculatedData
+   */
+  public function setIncludePreLogRecurrings(bool $includePreLogRecurrings): self {
+    $this->includePreLogRecurrings = $includePreLogRecurrings;
     return $this;
   }
 
@@ -1213,7 +1232,7 @@ class CalculatedData extends TriggerHook {
     $processing = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Processing');
     $inProgress = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'In Progress');
     $pending = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Pending');
-    return "(
+    $sql = "(
           SELECT c.contact_id, l.contribution_status_id, l.frequency_unit, l.start_date, l.next_sched_contribution_date
           FROM civicrm_contribution_recur c
           INNER JOIN log_civicrm_contribution_recur l
@@ -1232,7 +1251,9 @@ class CalculatedData extends TriggerHook {
                   AND l4.contribution_status_id NOT IN ($pending, $inProgress, $processing)
               )
             )
-          WHERE $where
+          WHERE $where";
+    if ($this->includePreLogRecurrings) {
+      $sql .= "
           UNION ALL
           SELECT c.contact_id,
             IF(c.cancel_date <= '$this->asOfDate' OR c.end_date <= '$this->asOfDate', c.contribution_status_id, $inProgress),
@@ -1246,7 +1267,9 @@ class CalculatedData extends TriggerHook {
             AND NOT EXISTS (
               SELECT 1 FROM log_civicrm_contribution_recur l3
               WHERE l3.id = c.id AND l3.log_date <= '$this->asOfDate' AND l3.contribution_status_id <> $processing
-            )
+            )";
+    }
+    return $sql . "
         )";
   }
 
