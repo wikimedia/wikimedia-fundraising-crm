@@ -9,6 +9,7 @@ use Civi\Api4\OptionGroup;
 use Civi\Api4\OptionValue;
 use Civi\Api4\LocationType;
 use Civi\Api4\WMFConfig;
+use Civi\Api4\WMFContact;
 use Civi\Api4\Email;
 use Civi\Api4\Contact;
 use Civi\Api4\Activity;
@@ -5660,6 +5661,44 @@ v.channel IS NULL AND c.id = 131486342;",
       if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists('civicrm_contribution_tracking', $field, FALSE)) {
         E::schema()->alterSchemaField('ContributionTracking', $field, $fields[$field]);
       }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Re-push active snoozes so Acoustic's snooze_end_date is stored as mm/dd/yyyy.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5225(): bool {
+    $queue = \Civi::queue('omni-snooze', [
+      'type' => 'Sql',
+      'runner' => 'task',
+      'retry_limit' => 3,
+      'retry_interval' => 60,
+      'error' => 'abort',
+    ]);
+    $snoozedEmails = Email::get(FALSE)
+      ->addSelect('email', 'email_settings.snooze_date')
+      ->addWhere('email_settings.snooze_date', '>', 'now')
+      ->addWhere('is_primary', '=', TRUE)
+      ->addChain('emailable', WMFContact::bulkEmailable(FALSE)->setEmail('$email')->setCheckSnooze(FALSE))
+      ->execute();
+    foreach ($snoozedEmails as $snoozedEmail) {
+      if (!$snoozedEmail['emailable'][0]) {
+        continue;
+      }
+      $queue->createItem(new \CRM_Queue_Task('civicrm_api4_queue', [
+        'Omnicontact',
+        'create',
+        [
+          'email' => $snoozedEmail['email'],
+          'checkPermissions' => FALSE,
+          // create formats correctly
+          'values' => ['snooze_end_date' => $snoozedEmail['email_settings.snooze_date']],
+        ],
+      ], 'Re-push snooze end date'), ['weight' => 200]);
     }
     return TRUE;
   }
