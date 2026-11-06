@@ -1224,6 +1224,8 @@ class CalculatedData extends TriggerHook {
    *
    * This is each recurring's latest log row at or before that date, ignoring
    * Processing rows as the trigger doesn't recalculate during processing.
+   * Completed without an end or cancel date counts as In Progress, as
+   * Completed used to mean active (until ~2021).
    * Recurrings that started before logging did (2016) are approximated until
    * their first log row from the current row: in progress from start_date,
    * then its current status once cancelled or ended, so never paused or failing.
@@ -1235,8 +1237,11 @@ class CalculatedData extends TriggerHook {
     $processing = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Processing');
     $inProgress = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'In Progress');
     $pending = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Pending');
+    $completed = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Completed');
     $sql = "(
-          SELECT c.contact_id, l.contribution_status_id, l.frequency_unit, l.start_date, l.next_sched_contribution_date
+          SELECT c.contact_id,
+            IF(l.contribution_status_id = $completed AND l.end_date IS NULL AND l.cancel_date IS NULL, $inProgress, l.contribution_status_id) AS contribution_status_id,
+            l.frequency_unit, l.start_date, l.next_sched_contribution_date
           FROM civicrm_contribution_recur c
           INNER JOIN log_civicrm_contribution_recur l
             ON l.id = c.id

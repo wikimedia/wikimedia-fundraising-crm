@@ -248,7 +248,7 @@ class RebuildHistory extends AbstractAction {
 
     // Get the log rows for each change to the contact's recurrings.
     $logRows = \CRM_Core_DAO::executeQuery("
-      SELECT l.id, l.log_date, l.contribution_status_id, l.next_sched_contribution_date, l.frequency_unit, l.start_date
+      SELECT l.id, l.log_date, l.contribution_status_id, l.next_sched_contribution_date, l.frequency_unit, l.start_date, l.end_date, l.cancel_date
       FROM civicrm_contribution_recur c
       INNER JOIN log_civicrm_contribution_recur l ON l.id = c.id
       WHERE c.contact_id = %1 AND l.log_date < %2
@@ -261,6 +261,10 @@ class RebuildHistory extends AbstractAction {
       $logRow['status'] = \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $logRow['contribution_status_id']);
       if ($logRow['status'] === 'Processing') {
         continue;
+      }
+      // Completed just meant in progress up to ~2021.
+      if ($logRow['status'] === 'Completed' && !$logRow['end_date'] && !$logRow['cancel_date']) {
+        $logRow['status'] = 'In Progress';
       }
       // For a paused recurring, add an event when it's no longer paused,
       // because nothing is logged for that.
