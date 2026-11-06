@@ -202,10 +202,6 @@ class RebuildHistory extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   private function getCalculationTimes(int $contactID, string $endDate): array {
-    $activeStatuses = [];
-    foreach (['Pending', 'In Progress', 'Processing'] as $statusName) {
-      $activeStatuses[] = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $statusName);
-    }
     $params = [
       1 => [$contactID, 'Integer'],
       2 => [$endDate, 'String'],
@@ -243,33 +239,40 @@ class RebuildHistory extends AbstractAction {
 
     // Get the log rows for each change to the contact's recurrings.
     $logRows = \CRM_Core_DAO::executeQuery("
-      SELECT l.log_date, l.contribution_status_id, l.next_sched_contribution_date, l.frequency_unit
+      SELECT l.id, l.log_date, l.contribution_status_id, l.next_sched_contribution_date, l.frequency_unit, l.start_date
       FROM civicrm_contribution_recur c
       INNER JOIN log_civicrm_contribution_recur l ON l.id = c.id
       WHERE c.contact_id = %1 AND l.log_date < %2
+      ORDER BY l.id, l.log_date
     ", $params)->fetchAll();
+
+    $previousRow = NULL;
+    $isAfterTie = FALSE;
     foreach ($logRows as $logRow) {
-      // Add each change
-      $events[] = ['time' => $logRow['log_date'], 'tables' => ['civicrm_contribution_recur']];
-      // For a paused recurring, add an additional event when its next payment
-      // is back within a frequency unit (plus a day), because nothing is
-      // logged for pause / unpause.
-      if ($logRow['next_sched_contribution_date'] && in_array($logRow['contribution_status_id'], $activeStatuses)) {
-        // Ugly date math: The earliest time CalculatedData no longer sees this
-        // as paused: when the time plus one unit (MySQL clamps month ends)
-        // reaches the day before next_sched.
-        $unit = $logRow['frequency_unit'] === 'year' ? 'year' : 'month';
-        $dayBefore = strtotime("{$logRow['next_sched_contribution_date']} -1 day");
-        $unpauseTimestamp = strtotime("-1 $unit", $dayBefore);
-        if (date('j', $unpauseTimestamp) !== date('j', $dayBefore)) {
-          // No such day in the earlier month, so the switch is at the start of the next.
-          $unpauseTimestamp = strtotime(date('Y-m-01 00:00:00', $unpauseTimestamp));
-        }
-        $unpauseTime = date('Y-m-d H:i:s', $unpauseTimestamp);
-        if ($unpauseTime > $logRow['log_date'] && $unpauseTime < $endDate) {
-          $events[] = ['time' => $unpauseTime, 'tables' => ['civicrm_contribution_recur']];
-        }
+      $logRow['status'] = \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', $logRow['contribution_status_id']);
+      if ($logRow['status'] === 'Processing') {
+        continue;
       }
+      // For a paused recurring, add an event when it's no longer paused,
+      // because nothing is logged for that.
+      $logRow['unpause_date'] = $this->getUnpauseDate($logRow);
+      if ($logRow['unpause_date'] && $logRow['unpause_date'] > $logRow['log_date'] && $logRow['unpause_date'] < $endDate) {
+        $events[] = ['time' => $logRow['unpause_date'], 'tables' => ['civicrm_contribution_recur']];
+      }
+      // Skip if recurring hasn't changed, e.g. moving the next sched payment
+      // date, only if we have a previous row from the same recurring id.
+      if (
+        !($previousRow) ||
+        $previousRow['id'] !== $logRow['id'] ||
+        $isAfterTie ||
+        $this->getRecurringState($previousRow, $logRow['log_date']) !== $this->getRecurringState($logRow, $logRow['log_date'])
+      ) {
+        $events[] = ['time' => $logRow['log_date'], 'tables' => ['civicrm_contribution_recur']];
+      }
+      // We shouldn't skip if immediately after two rows that happened at the
+      // same second as we don't know which will be counted
+      $isAfterTie = $previousRow && $previousRow['id'] === $logRow['id'] && $previousRow['log_date'] === $logRow['log_date'];
+      $previousRow = $logRow;
     }
     if ($events) {
       // A rollover only recalculates the tables the contact has had an event
@@ -312,6 +315,56 @@ class RebuildHistory extends AbstractAction {
       }
     }
     return $calculationTimes;
+  }
+
+  /**
+   * Get what a recurring log row means for the recurring statuses at the time.
+   *
+   * Returns the four things that matter: status (TRUE/active, FALSE/inactive),
+   * frequency_unit, start_date, if paused.
+   *
+   * @param array $logRow
+   *   With its status name and unpause_date.
+   * @param string $date
+   *
+   * @return array
+   */
+  private function getRecurringState(array $logRow, string $date): array {
+    $status = $logRow['status'];
+    if (in_array($status, ['Pending', 'In Progress', 'Processing'], TRUE)) {
+      $status = TRUE;
+    }
+    elseif (in_array($status, ['Cancelled', 'Completed'], TRUE)) {
+      $status = FALSE;
+    }
+    // Paused is NULL without a next payment, which CalculatedData leaves out, rather than not paused.
+    return [$status, $logRow['frequency_unit'], $logRow['start_date'], $logRow['unpause_date'] === NULL ? NULL : $logRow['unpause_date'] > $date];
+  }
+
+  /**
+   * Get when an active recurring's log row stops being paused, as CalculatedData calculates it.
+   *
+   * Ugly date math: when the time plus one unit (MySQL clamps month ends)
+   * reaches the day before the next payment.
+   *
+   * @param array $logRow
+   *   With its status name.
+   *
+   * @return string|null
+   *   NULL if it isn't active or has no next payment.
+   */
+  private function getUnpauseDate(array $logRow): ?string {
+    if (!$logRow['next_sched_contribution_date'] || !in_array($logRow['status'], ['Pending', 'In Progress', 'Processing'], TRUE)) {
+      return NULL;
+    }
+    $unit = $logRow['frequency_unit'] === 'year' ? 'year' : 'month';
+    $dayBefore = strtotime("{$logRow['next_sched_contribution_date']} -1 day");
+    $unpauseTimestamp = strtotime("-1 $unit", $dayBefore);
+    if (date('j', $unpauseTimestamp) !== date('j', $dayBefore)) {
+      // No such day in the earlier month, so the switch is at the start of the next.
+      $unpauseTimestamp = strtotime(date('Y-m-01 00:00:00', $unpauseTimestamp));
+    }
+    return date('Y-m-d H:i:s', $unpauseTimestamp);
   }
 
   /**

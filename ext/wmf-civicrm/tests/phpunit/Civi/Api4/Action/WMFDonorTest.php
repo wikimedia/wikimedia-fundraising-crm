@@ -1158,10 +1158,13 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     if ($recur) {
       $this->setRecurLogDate('donor', $recur['logDate']);
       foreach ($recur['changes'] ?? [] as $logDate => $values) {
-        ContributionRecur::update(FALSE)
-          ->addWhere('id', '=', $this->ids['ContributionRecur']['donor'])
-          ->setValues($values)
-          ->execute();
+        // A list of changes is logged in the same second.
+        foreach (isset($values[0]) ? $values : [$values] as $change) {
+          ContributionRecur::update(FALSE)
+            ->addWhere('id', '=', $this->ids['ContributionRecur']['donor'])
+            ->setValues($change)
+            ->execute();
+        }
         $this->setRecurLogDate('donor', $logDate);
       }
     }
@@ -1244,6 +1247,48 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
           ['2023-03-14 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
           // Cancelled
           ['2024-02-15 00:00:00', 990, 99, 99, 65, 65, 95, [6, 4]],
+        ],
+      ],
+      'monthly charges, a pause and a cancel' => [
+        'contributions' => [],
+        'recur' => [
+          'params' => ['start_date' => '2022-01-01', 'next_sched_contribution_date' => '2022-02-01'],
+          'logDate' => '2022-01-01 09:00:00',
+          'changes' => [
+            '2022-02-01 03:00:00' => ['contribution_status_id:name' => 'Processing'],
+            '2022-02-01 03:01:00' => ['contribution_status_id:name' => 'In Progress', 'next_sched_contribution_date' => '2022-03-01'],
+            '2022-03-01 03:00:00' => ['contribution_status_id:name' => 'Processing'],
+            '2022-03-01 03:01:00' => ['contribution_status_id:name' => 'In Progress', 'next_sched_contribution_date' => '2022-04-01'],
+            '2022-03-15 00:00:00' => ['next_sched_contribution_date' => '2022-07-01'],
+            // Pushed further out while still paused.
+            '2022-04-10 00:00:00' => ['next_sched_contribution_date' => '2022-07-20'],
+            '2022-07-01 03:00:00' => ['contribution_status_id:name' => 'Processing'],
+            '2022-07-01 03:01:00' => ['contribution_status_id:name' => 'In Progress', 'next_sched_contribution_date' => '2022-08-01'],
+            '2022-08-01 03:00:00' => ['contribution_status_id:name' => 'Processing'],
+            // Failing and in progress in the same second, so failing counts.
+            '2022-08-01 03:01:00' => [
+              ['contribution_status_id:name' => 'Failing', 'next_sched_contribution_date' => '2022-08-03'],
+              ['contribution_status_id:name' => 'In Progress', 'next_sched_contribution_date' => '2022-09-01'],
+            ],
+            '2022-08-20 00:00:00' => ['amount' => 20],
+            '2022-09-10 00:00:00' => ['contribution_status_id:name' => 'Cancelled', 'cancel_date' => '2022-09-10'],
+          ],
+        ],
+        'expectedRows' => [
+          // New recurring
+          ['2022-01-01 09:00:00', 990, 99, 99, 25, 25, 95, [6, 4]],
+          // Paused, next payment pushed out
+          ['2022-03-15 00:00:00', 990, 99, 99, 35, 35, 95, [6, 4]],
+          // Active again, a month and a day before the pushed out next payment
+          ['2022-06-19 00:00:00', 990, 99, 99, 25, 25, 95, [6, 4]],
+          // Active recurring, on rollover
+          ['2022-07-01 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
+          // Failing
+          ['2022-08-01 03:01:00', 990, 99, 99, 45, 45, 95, [6, 4]],
+          // In progress counts once there's a later row
+          ['2022-08-20 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
+          // Cancelled
+          ['2022-09-10 00:00:00', 990, 99, 99, 65, 65, 95, [6, 4]],
         ],
       ],
       'unpause before a month end payment' => [
