@@ -68,6 +68,15 @@ class RebuildHistory extends AbstractAction {
   private bool $hasPreLogRecurrings = FALSE;
 
   /**
+   * Each source table's select SQL for a financial year, with placeholders for the as-of date and contact.
+   *
+   * Within a financial year only the as-of date differs.
+   *
+   * @var string[]
+   */
+  private array $selectSQL = [];
+
+  /**
    * @throws \CRM_Core_Exception
    */
   public function _run(Result $result): void {
@@ -378,13 +387,20 @@ class RebuildHistory extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   private function getValuesAsOf(string $tableName, int $contactID, string $asOfDate): array {
-    $processor = CalculatedData::createForSourceTables($tableName)[$tableName];
-    $processor->setTriggerContext(FALSE)
-      ->setAsOfDate($asOfDate)
-      ->setIncludePreLogRecurrings($this->hasPreLogRecurrings)
-      ->setWhereClause("c.contact_id = $contactID");
-    $processor->filterDonorFields(array_keys($this->loggedFieldsByTable[$tableName]));
-    return \CRM_Core_DAO::executeQuery($processor->getSelectSQL())->fetchAll()[0] ?? [];
+    $financialYear = $this->getFinancialYear($asOfDate);
+    $placeholderDate = "$financialYear-07-01 23:59:59";
+    $key = $tableName . '_' . $financialYear . '_' . (int) $this->hasPreLogRecurrings;
+    if (!isset($this->selectSQL[$key])) {
+      $processor = CalculatedData::createForSourceTables($tableName)[$tableName];
+      $processor->setTriggerContext(FALSE)
+        ->setAsOfDate($placeholderDate)
+        ->setIncludePreLogRecurrings($this->hasPreLogRecurrings)
+        ->setWhereClause('c.contact_id = {contact_id}');
+      $processor->filterDonorFields(array_keys($this->loggedFieldsByTable[$tableName]));
+      $this->selectSQL[$key] = $processor->getSelectSQL();
+    }
+    $sql = str_replace([$placeholderDate, '{contact_id}'], [$asOfDate, $contactID], $this->selectSQL[$key]);
+    return \CRM_Core_DAO::executeQuery($sql)->fetchAll()[0] ?? [];
   }
 
   /**
