@@ -1291,6 +1291,25 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
           ['2022-09-10 00:00:00', 990, 99, 99, 65, 65, 95, [6, 4]],
         ],
       ],
+      'recurring cancelled, then changed to failed' => [
+        'contributions' => [],
+        'recur' => [
+          'params' => ['start_date' => '2022-01-01', 'next_sched_contribution_date' => '2022-02-01'],
+          'logDate' => '2022-01-01 09:00:00',
+          'changes' => [
+            '2022-09-10 00:00:00' => ['contribution_status_id:name' => 'Cancelled', 'cancel_date' => '2022-09-10'],
+            '2023-01-10 00:00:00' => ['contribution_status_id:name' => 'Failed'],
+          ],
+        ],
+        'expectedRows' => [
+          // New recurring
+          ['2022-01-01 09:00:00', 990, 99, 99, 25, 25, 95, [6, 4]],
+          // Active recurring, on rollover
+          ['2022-07-01 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
+          // Failed, as it is now, with no change when it was set to failed
+          ['2022-09-10 00:00:00', 990, 99, 99, 55, 55, 95, [6, 4]],
+        ],
+      ],
       'recurring completed without an end date, then with one' => [
         'contributions' => [],
         'recur' => [

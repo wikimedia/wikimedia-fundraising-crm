@@ -1225,7 +1225,8 @@ class CalculatedData extends TriggerHook {
    * This is each recurring's latest log row at or before that date, ignoring
    * Processing rows as the trigger doesn't recalculate during processing.
    * Completed without an end or cancel date counts as In Progress, as
-   * Completed used to mean active (until ~2021).
+   * Completed used to mean active (until ~2021). Cancelled counts as Failed
+   * if the recurring is Failed now, as some failures were Cancelled until 2026.
    * Recurrings that started before logging did (2016) are approximated until
    * their first log row from the current row: in progress from start_date,
    * then its current status once cancelled or ended, so never paused or failing.
@@ -1238,9 +1239,15 @@ class CalculatedData extends TriggerHook {
     $inProgress = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'In Progress');
     $pending = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Pending');
     $completed = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Completed');
+    $cancelled = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Cancelled');
+    $failed = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionRecur', 'contribution_status_id', 'Failed');
     $sql = "(
           SELECT c.contact_id,
-            IF(l.contribution_status_id = $completed AND l.end_date IS NULL AND l.cancel_date IS NULL, $inProgress, l.contribution_status_id) AS contribution_status_id,
+            CASE
+              WHEN l.contribution_status_id = $completed AND l.end_date IS NULL AND l.cancel_date IS NULL THEN $inProgress
+              WHEN l.contribution_status_id = $cancelled AND c.contribution_status_id = $failed THEN $failed
+              ELSE l.contribution_status_id
+            END AS contribution_status_id,
             l.frequency_unit, l.start_date, l.next_sched_contribution_date
           FROM civicrm_contribution_recur c
           INNER JOIN log_civicrm_contribution_recur l
