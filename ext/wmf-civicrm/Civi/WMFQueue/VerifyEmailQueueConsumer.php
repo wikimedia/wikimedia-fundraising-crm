@@ -63,12 +63,9 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
     if (!isset($params['email'], $params['contact_id'], $params['checksum'])) {
       throw new \CRM_Core_Exception('Missing parameters in set primary email message.');
     }
-    // check parameter formats
-    if (
-      !filter_var($params['email'], FILTER_VALIDATE_EMAIL) ||
-      !preg_match('/^[0-9a-f]+_[0-9]+_inf$/', $params['checksum'])
-    ) {
-      throw new \CRM_Core_Exception('Invalid parameter types in set primary email message.');
+    // check email format
+    if (!filter_var($params['email'], FILTER_VALIDATE_EMAIL)) {
+      throw new \CRM_Core_Exception('Invalid email in set primary email message.');
     }
     // check if the non-expired checksum validates
     if (!\CRM_Contact_BAO_Contact_Utils::validChecksum($params['contact_id'], $params['checksum'])) {

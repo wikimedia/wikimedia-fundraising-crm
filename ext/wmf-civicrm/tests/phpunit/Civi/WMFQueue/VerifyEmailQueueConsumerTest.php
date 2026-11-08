@@ -51,28 +51,12 @@ class VerifyEmailQueueConsumerTest extends BaseQueueTestCase {
    */
   public function testValidationRejectsInvalidEmail(): void {
     $this->expectException(\CRM_Core_Exception::class);
-    $this->expectExceptionMessage('Invalid parameter types in set primary email message');
+    $this->expectExceptionMessage('Invalid email in set primary email message');
 
     $message = [
       'contact_id' => $this->getContactID(),
       'email' => 'not-an-email',
       'checksum' => 'fake_checksum_abc123_inf',
-    ];
-
-    $this->processMessageWithoutQueuing($message);
-  }
-
-  /**
-   * Test that message validation rejects invalid checksum format.
-   */
-  public function testValidationRejectsInvalidChecksumFormat(): void {
-    $this->expectException(\CRM_Core_Exception::class);
-    $this->expectExceptionMessage('Invalid parameter types in set primary email message');
-
-    $message = [
-      'contact_id' => $this->getContactID(),
-      'email' => $this->newEmail,
-      'checksum' => 'invalid-format',
     ];
 
     $this->processMessageWithoutQueuing($message);
@@ -616,7 +600,7 @@ class VerifyEmailQueueConsumerTest extends BaseQueueTestCase {
    * @return string
    */
   protected function generateValidChecksum(int $contactID): string {
-    return \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID, NULL, 'inf');
+    return \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID);
   }
 
 }
