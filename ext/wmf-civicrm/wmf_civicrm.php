@@ -885,6 +885,18 @@ function wmf_civicrm_civicrm_queueTaskError(\CRM_Queue_Queue $queue, $item, &$ou
 }
 
 /**
+ * Implements hook_civicrm_invalidateChecksum().
+ *
+ * Reject checksums that never expire, which we used to send for primary email
+ * change verification until Nov 2026.
+ */
+function wmf_civicrm_civicrm_invalidateChecksum($contactID, $checksum, &$invalid): void {
+  if (str_ends_with((string) $checksum, '_inf')) {
+    $invalid = TRUE;
+  }
+}
+
+/**
  * Listener for hook defined in CRM_SmashPig_Hook::smashpigOutputStats
  * @param array $stats
  */

@@ -72,7 +72,23 @@ class VerifyEmailQueueConsumerTest extends BaseQueueTestCase {
     $message = [
       'contact_id' => $this->getContactID(),
       'email' => $this->newEmail,
-      'checksum' => 'aabbccdd_123456_inf',
+      'checksum' => 'aabbccdd_123456_168',
+    ];
+
+    $this->processMessageWithoutQueuing($message);
+  }
+
+  /**
+   * Test that message validation rejects an infinite ttl checksum.
+   */
+  public function testValidationRejectsInfChecksum(): void {
+    $this->expectException(\CRM_Core_Exception::class);
+    $this->expectExceptionMessage('Checksum mismatch');
+
+    $message = [
+      'contact_id' => $this->getContactID(),
+      'email' => $this->newEmail,
+      'checksum' => \CRM_Contact_BAO_Contact_Utils::generateChecksum($this->getContactID(), NULL, 'inf'),
     ];
 
     $this->processMessageWithoutQueuing($message);
