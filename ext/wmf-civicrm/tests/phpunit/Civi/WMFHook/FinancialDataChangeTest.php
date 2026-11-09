@@ -54,6 +54,9 @@ class FinancialDataChangeTest extends TestCase implements HeadlessInterface {
     $this->assertEquals('GL43485', $adjustment['gl_code_after']);
     $this->assertFalse((bool) $adjustment['is_endowment_before']);
     $this->assertFalse((bool) $adjustment['is_endowment_after']);
+    // Filled by apiPrepare, not the hook.
+    $this->assertNotEmpty($adjustment['created_date']);
+    $this->assertNotEmpty($adjustment['modified_date']);
   }
 
   /**
@@ -245,6 +248,58 @@ class FinancialDataChangeTest extends TestCase implements HeadlessInterface {
       'item_count' => 1,
     ], $identifier);
     return $batchName;
+  }
+
+  /**
+   * Adjustments written directly via apiv4 get created/modified defaults.
+   */
+  public function testApiCreateFillsCreatedDefaults(): void {
+    $contributionID = $this->createSettledContribution(NULL, []);
+    $userID = $this->createIndividual([], 'logged_in');
+    \CRM_Core_Session::singleton()->set('userID', $userID);
+    $start = time();
+    CustomValue::create('FinancialDataAdjustment', FALSE)
+      ->setValues(['entity_id' => $contributionID, 'status' => 'pending'])
+      ->execute();
+    $adjustment = $this->getAdjustment($contributionID);
+    $this->assertGreaterThanOrEqual($start, strtotime($adjustment['created_date']));
+    $this->assertGreaterThanOrEqual($start, strtotime($adjustment['modified_date']));
+    $this->assertEquals($userID, $adjustment['created_id']);
+    \CRM_Core_Session::singleton()->set('userID', NULL);
+  }
+
+  /**
+   * A save with match only gives created defaults to the records it inserts.
+   */
+  public function testApiSaveWithMatchFillsCreatedDefaultsOnlyForNewRecords(): void {
+    $existingContributionID = $this->createSettledContribution(NULL, []);
+    $newContributionID = $this->createSettledContribution(NULL, []);
+    $originalCreatorID = $this->createIndividual([], 'creator');
+    CustomValue::create('FinancialDataAdjustment', FALSE)
+      ->setValues(['entity_id' => $existingContributionID, 'status' => 'pending', 'created_date' => '2020-01-01 00:00:00', 'created_id' => $originalCreatorID])
+      ->execute();
+
+    $userID = $this->createIndividual([], 'logged_in');
+    \CRM_Core_Session::singleton()->set('userID', $userID);
+    $start = time();
+    CustomValue::save('FinancialDataAdjustment', FALSE)
+      ->setMatch(['entity_id'])
+      ->setRecords([
+        ['entity_id' => $existingContributionID, 'status' => 'complete'],
+        ['entity_id' => $newContributionID, 'status' => 'pending'],
+      ])
+      ->execute();
+    \CRM_Core_Session::singleton()->set('userID', NULL);
+
+    $existing = $this->getAdjustment($existingContributionID);
+    $this->assertEquals('complete', $existing['status']);
+    $this->assertEquals('2020-01-01 00:00:00', $existing['created_date']);
+    $this->assertEquals($originalCreatorID, $existing['created_id']);
+    $this->assertGreaterThanOrEqual($start, strtotime($existing['modified_date']));
+
+    $new = $this->getAdjustment($newContributionID);
+    $this->assertGreaterThanOrEqual($start, strtotime($new['created_date']));
+    $this->assertEquals($userID, $new['created_id']);
   }
 
   private function createSettledContribution(?string $batchName, array $values): int {
