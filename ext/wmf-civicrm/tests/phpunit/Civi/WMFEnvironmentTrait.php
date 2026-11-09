@@ -137,7 +137,7 @@ trait WMFEnvironmentTrait {
     foreach ($this->originalSettings as $key => $value) {
       \Civi::settings()->set($key, $value);
     }
-    QueueItem::delete(FALSE)->addWhere('queue_name', 'IN', ['email', 'wmf_donor_history'])->execute();
+    QueueItem::delete(FALSE)->addWhere('queue_name', 'IN', ['email', 'wmf_donor_history', 'wmf_donor_history_merge'])->execute();
   }
 
   /**

@@ -1537,13 +1537,13 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ], 'donor_' . $index);
     }
     // The gifts' own rebuilds, because they are in the past.
-    $this->runHistoryQueue();
+    $this->runHistoryQueue('wmf_donor_history');
     Contribution::update(FALSE)
       ->addWhere('id', '=', $this->ids['Contribution']['donor_1'])
       ->addValue('contribution_status_id:name', 'Refunded')
       ->execute();
 
-    $this->runHistoryQueue();
+    $this->runHistoryQueue('wmf_donor_history');
     $this->assertHistoryMatchesRebuild($contactID);
 
     Contribution::update(FALSE)
@@ -1551,7 +1551,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ->addValue('contribution_status_id:name', 'Completed')
       ->execute();
 
-    $this->runHistoryQueue();
+    $this->runHistoryQueue('wmf_donor_history');
     $this->assertHistoryMatchesRebuild($contactID);
   }
 
@@ -1569,7 +1569,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       'financial_type_id:name' => 'Donation',
     ], 'donor');
 
-    $this->runHistoryQueue();
+    $this->runHistoryQueue('wmf_donor_history');
     $this->assertHistoryMatchesRebuild($contactID);
   }
 
@@ -1634,7 +1634,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       'financial_type_id:name' => 'Donation',
     ], 'donor');
 
-    $this->runHistoryQueue();
+    $this->runHistoryQueue('wmf_donor_history');
     $this->assertHistoryMatchesRebuild($contactID);
   }
 
@@ -1661,7 +1661,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       'financial_type_id:name' => 'Donation',
     ], 'donor');
 
-    $this->runHistoryQueue();
+    $this->runHistoryQueue('wmf_donor_history');
     $this->assertHistoryMatchesRebuild($contactID);
   }
 
@@ -1682,7 +1682,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ], $key);
     }
     // The gifts' own rebuilds.
-    $this->runHistoryQueue();
+    $this->runHistoryQueue('wmf_donor_history');
     $duplicateLogIDs = WMFDonorHistory::get(FALSE)
       ->addWhere('entity_id', '=', $duplicateID)
       ->execute()->column('log_id');
@@ -1692,7 +1692,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ->setContactId($contactID)
       ->setDuplicateId($duplicateID)
       ->execute();
-    $this->runHistoryQueue();
+    $this->runHistoryQueue('wmf_donor_history_merge');
 
     // The merged away contact still has the same log rows.
     $this->assertEquals($duplicateLogIDs, WMFDonorHistory::get(FALSE)
@@ -1791,9 +1791,9 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   /**
    * Run the queued history rebuilds, after their delay.
    */
-  private function runHistoryQueue(): void {
+  private function runHistoryQueue(string $queueName): void {
     \CRM_Utils_Time::setTime(date('Y-m-d H:i:s', \CRM_Utils_Time::time() + 3600));
-    $runner = new \CRM_Queue_Runner(['queue' => \Civi::queue('wmf_donor_history')]);
+    $runner = new \CRM_Queue_Runner(['queue' => \Civi::queue($queueName)]);
     $this->assertTrue($runner->runAll());
   }
 
