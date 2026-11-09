@@ -834,7 +834,7 @@ function wmf_civicrm_civicrm_queueTaskError(\CRM_Queue_Queue $queue, $item, &$ou
   if ($outcome === 'abort' || !$itemID || ((int) $item->run_count) === 1) {
     $message = "Queue item from {$queue->getName()} with id={$itemID} failed with exception=\"{$exception->getMessage()}\"";
     $subject = 'Fail Mail from coworker queue ' . $queue->getName() . ' item ' . $itemID . ': ' . gethostname();
-    $mailableDetails = $message . ", aborted and moved to the dedicated damaged queue";
+    $mailableDetails = $message . ($outcome === 'abort' ? ', aborted and moved to the dedicated damaged queue' : ', will be retried');
 
     \Civi::log('wmf')->alert(
       $subject,
