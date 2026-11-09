@@ -34,7 +34,7 @@ class GenerateAdjustmentJournalsTest extends BaseAuditTestCase {
 
     $this->assertEquals(['foundation'], array_keys($journals['csv']));
     $journal = $journals['csv']['foundation'];
-    $this->assertEquals('wmf', $journal['instance']);
+    $this->assertEquals('foundation', $journal['instance']);
     $this->assertEquals('', $journal['suffix']);
 
     $rows = $this->readRows($journal['file']);
@@ -63,7 +63,7 @@ class GenerateAdjustmentJournalsTest extends BaseAuditTestCase {
     $journals = Batch::generateAdjustmentJournals(FALSE)->setName($batchName)->execute()->first();
 
     $this->assertEquals(['to_endowment', 'endowment_instance'], array_keys($journals['csv']));
-    $this->assertEquals('wmf', $journals['csv']['to_endowment']['instance']);
+    $this->assertEquals('foundation', $journals['csv']['to_endowment']['instance']);
     $this->assertEquals('endowment', $journals['csv']['endowment_instance']['instance']);
 
     $from = $this->readRows($journals['csv']['to_endowment']['file']);

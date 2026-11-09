@@ -5,6 +5,7 @@ namespace Civi\WMFBatch;
 use Brick\Money\Money;
 use Civi\Api4\GatewayAccount;
 use CRM_Core_DAO;
+use League\Csv\Writer;
 
 /**
  * Builds the journal rows for one settlement batch: runs the big UNION ALL
@@ -25,6 +26,12 @@ class JournalGenerator {
    * @var array
    */
   private array $batch;
+
+  /**
+   * Array of csv Writer objects to use.
+   * @var array
+   */
+  private array $writers = [];
 
   public function __construct(array $batch) {
     $this->batch = $batch;
@@ -527,6 +534,59 @@ END";
         ->execute()->indexBy('name');
     }
     return $this->gatewayAccounts;
+  }
+
+  /**
+   * Get the appropriate csv writer.
+   *
+   * The writer is specific to the file and on instantiation creates the header.
+   *
+   * It WILL overwrite an existing file.
+   *
+   * @param array $headers
+   * @param string $type
+   * @param string $sourceInstance
+   * @param string $destinationInstance
+   *
+   * @return Writer
+   * @throws \League\Csv\UnavailableStream
+   */
+  public function getWriter(array $headers, string $type, string $sourceInstance, string $destinationInstance): Writer {
+    if ($type === 'source') {
+      $fromTo = "_{$destinationInstance}_from_{$sourceInstance}";
+    }
+    else {
+      $fromTo = "_{$sourceInstance}_to_{$destinationInstance}";
+    }
+    if (!isset($this->writers[$fromTo])) {
+      $fileName = $this->getSafeFileName($this->batch['name']) . $fromTo . '.csv';
+      $this->writers[$fromTo] = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $fileName, 'w');
+      $this->writers[$fromTo]->insertOne($headers);
+    }
+    return $this->writers[$fromTo];
+  }
+
+  /**
+   * Batch names follow gateway_middle_currency (e.g adyen_1128_USD), but the
+   * middle piece of a Manual Batch can be free text (e.g a wire description)
+   * containing characters - "/" in particular - that aren't safe as part of
+   * a path. Sanitize only that middle piece, replacing anything that isn't
+   * alphanumeric (including any "_" already in there) with "-", so the
+   * gateway_..._currency structure (relied on elsewhere, e.g. getGateway())
+   * stays intact and the only underscores left are the two delimiters.
+   *
+   * e.g "wire_WIRE FROM 1/MICHAEL BERNARD_USD" becomes
+   * "wire_WIRE-FROM-1-MICHAEL-BERNARD_USD".
+   */
+  private function getSafeFileName(string $batchName): string {
+    $parts = explode('_', $batchName);
+    if (count($parts) < 3) {
+      return preg_replace('/[^a-zA-Z0-9_-]+/', '-', $batchName);
+    }
+    $gateway = array_shift($parts);
+    $currency = array_pop($parts);
+    $middle = preg_replace('/[^a-zA-Z0-9-]+/', '-', implode('_', $parts));
+    return $gateway . '_' . $middle . '_' . $currency;
   }
 
 }

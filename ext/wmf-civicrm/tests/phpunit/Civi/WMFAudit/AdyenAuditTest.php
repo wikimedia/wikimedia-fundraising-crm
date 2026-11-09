@@ -1041,7 +1041,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $this->runAuditBatch('batch_1', 'settlement_detail_report_batch_1128.csv', 'adyen_1128');
     $path = \Civi::settings()->get('wmf_audit_intact_files') . '/adyen_1128_USD';
     $rows = iterator_to_array(
-      Reader::from($path . '_wmf_to_endowment.csv')
+      Reader::from($path . '_endowment_from_foundation.csv')
         ->setHeaderOffset(0)
         ->getRecords(),
       false
@@ -1050,7 +1050,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
     $row1 = $rows[0];
     $row2 = $rows[1];
     [$row3, $row4] = iterator_to_array(
-      Reader::from($path . '_endowment_from_wmf.csv')
+      Reader::from($path . '_foundation_to_endowment.csv')
         ->setHeaderOffset(0)
         ->getRecords(),
       false

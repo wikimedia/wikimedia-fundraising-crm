@@ -180,7 +180,7 @@ class GenerateBatch extends AbstractAction {
       $record += $this->validateBatch($batch, $batchedData);
       if ($this->getBatchValue($batch['name'], 'is_valid')) {
         try {
-          [$record['csv'], $isComplete] = $this->writeJournalToCsv($this->getRowsWithReversals($batchedData, $batch['name']), $batch['name']);
+          [$record['csv'], $isComplete] = $this->writeJournalToCsv($this->getRowsWithReversals($batchedData, $batch['name']), $batch);
         }
         catch (\Exception $e) {
           $this->log('Batch ' . $batch['name'] . ' failed to generate journal: ' . $e->getMessage());
@@ -290,21 +290,27 @@ class GenerateBatch extends AbstractAction {
 
   /**
    * @param array $csv_rows
-   * @param string $batchName
+   * @param array $batch
    *
    * @return array
    * @throws \Brick\Money\Exception\UnknownCurrencyException
    * @throws \Civi\Core\Exception\DBQueryException
    * @throws \League\Csv\CannotInsertRecord
    * @throws \League\Csv\Exception
+   * @throws \CRM_Core_Exception
    */
-  private function writeJournalToCsv(array $csv_rows, string $batchName): array {
+  private function writeJournalToCsv(array $csv_rows, array $batch): array {
+    $batchName = $batch['name'];
     $renderedSql = $this->getBatchValue($batchName, 'sql');
     $isEndowmentGateway = $this->batchSummary[$batchName]['is_endowment_gateway'];
     $this->batchSummary[$batchName]['endowment_transfer'] = Money::zero($this->batchSummary[$batchName]['currency']);
     $this->batchSummary[$batchName]['foundation_transfer'] = Money::zero($this->batchSummary[$batchName]['currency']);
 
     if ($this->isOutputCsv) {
+      if (!$csv_rows) {
+        throw new \CRM_Core_Exception('No journal rows for batch ' . $batchName);
+      }
+      $headers = array_keys(reset($csv_rows));
       $batchJournalWriter = $this->getBatchJournalWriter($batchName);
       $batchJournalWriter->insertAll($csv_rows);
       $detailedData = $this->getDetailData($renderedSql, $batchName);
@@ -341,7 +347,7 @@ class GenerateBatch extends AbstractAction {
         }
         $detailWriter->insertOne($formattedRow);
       }
-      $primaryInstance = $isEndowmentGateway ? 'endowment' : 'wmf';
+      $primaryInstance = $isEndowmentGateway ? 'endowment' : 'foundation';
       $primaryDescriptor = $isEndowmentGateway ? 'endowment_instance' : 'foundation';
       $csvFiles = [
         'journal_file' => ['file' => $batchJournalWriter->getPathname(), 'is_journal' => TRUE, 'instance' => $primaryInstance, 'suffix' => '', 'remote_descriptor' => $primaryDescriptor],
@@ -350,12 +356,16 @@ class GenerateBatch extends AbstractAction {
       if (empty($this->incompleteRows[$batchName])) {
         foreach ($csv_rows as $row) {
           if (!$isEndowmentGateway && $row['is_endowment'] && !str_ends_with(trim($row['MEMO']), 'Fees') && ($row['ACCT_NO'] != $this->getReversalAccountCode($row['CURRENCY'], $batchName))) {
+            $endowmentWriterFrom = $this->getJournalGenerator($batch)->getWriter($headers, 'source', 'foundation', 'endowment');
+            $endowmentWriterTo = $this->getJournalGenerator($batch)->getWriter($headers, 'destination', 'foundation', 'endowment');
             $csvFiles += $this->writeCrossInstanceTransfer($row, $batchName, $endowmentWriterFrom, $endowmentWriterTo, $this->getEndowmentTransferConfig());
           }
           elseif ($isEndowmentGateway && !$row['is_endowment'] && !str_ends_with(trim($row['MEMO']), 'Fees') && ($row['ACCT_NO'] != $this->getReversalAccountCode($row['CURRENCY'], $batchName))) {
             // Reverse of the block above: an endowment-gateway batch whose
             // rows are earmarked for the annual (foundation) fund get
             // carved out and journaled over to the wmf/foundation instance.
+            $foundationWriterFrom = $this->getJournalGenerator($batch)->getWriter($headers, 'source', 'endowment', 'foundation');
+            $foundationWriterTo = $this->getJournalGenerator($batch)->getWriter($headers, 'destination', 'endowment', 'foundation');
             $csvFiles += $this->writeCrossInstanceTransfer($row, $batchName, $foundationWriterFrom, $foundationWriterTo, $this->getFoundationTransferConfig());
           }
         }
@@ -374,23 +384,20 @@ class GenerateBatch extends AbstractAction {
    *
    * @param array $row
    * @param string $batchName
-   * @param Writer|null $writerFrom
-   * @param Writer|null $writerTo
+   * @param \League\Csv\Writer $writerFrom
+   * @param \League\Csv\Writer $writerTo
    * @param array $config
    *
    * @return array
    *
-   * @throws \CRM_Core_Exception
    * @throws \League\Csv\CannotInsertRecord
+   * @throws \League\Csv\Exception
    */
-  private function writeCrossInstanceTransfer(array $row, string $batchName, ?Writer &$writerFrom, ?Writer &$writerTo, array $config): array {
-    $csvFiles = [];
-    if (!isset($writerFrom) || !isset($writerTo)) {
-      $writerFrom = $this->{$config['writerMethod']}(array_keys($row), $batchName, $config['fromInstance']);
-      $csvFiles[$config['fromKey']] = ['file' => $writerFrom->getPathname(), 'is_journal' => TRUE, 'instance' => $config['fromInstance'], 'suffix' => $config['suffix'], 'remote_descriptor' => $config['fromDescriptor']];
-      $writerTo = $this->{$config['writerMethod']}(array_keys($row), $batchName, $config['toInstance']);
-      $csvFiles[$config['toKey']] = ['file' => $writerTo->getPathname(), 'is_journal' => TRUE, 'instance' => $config['toInstance'], 'suffix' => $config['suffix'], 'remote_descriptor' => $config['toDescriptor']];
-    }
+  private function writeCrossInstanceTransfer(array $row, string $batchName, Writer $writerFrom, Writer $writerTo, array $config): array {
+    $csvFiles = [
+      $config['fromKey'] => ['file' => $writerFrom->getPathname(), 'is_journal' => TRUE, 'instance' => $config['fromInstance'], 'suffix' => $config['suffix'], 'remote_descriptor' => $config['fromDescriptor']],
+      $config['toKey'] => ['file' => $writerTo->getPathname(), 'is_journal' => TRUE, 'instance' => $config['toInstance'], 'suffix' => $config['suffix'], 'remote_descriptor' => $config['toDescriptor']],
+    ];
 
     $fromRow = $fromBalancingRow = $row;
     $toValues = [
@@ -423,11 +430,10 @@ class GenerateBatch extends AbstractAction {
    */
   private function getEndowmentTransferConfig(): array {
     return [
-      'writerMethod' => 'getEndowmentWriter',
-      'fromInstance' => 'wmf',
+      'fromInstance' => 'foundation',
       'toInstance' => 'endowment',
-      'fromKey' => 'journal_endowment_from_wmf',
-      'toKey' => 'journal_wmf_to_endowment',
+      'fromKey' => 'journal_endowment_from_foundation',
+      'toKey' => 'journal_foundation_to_endowment',
       'fromDescriptor' => 'to_endowment',
       'toDescriptor' => 'endowment_instance',
       'suffix' => 'e',
@@ -441,15 +447,14 @@ class GenerateBatch extends AbstractAction {
   }
 
   /**
-   * Config for the endowment->wmf transfer (endowment-first gateways,
+   * Config for the endowment->foundation transfer (endowment-first gateways,
    * rows earmarked for the annual/foundation fund) - the reverse of
    * getEndowmentTransferConfig() - see writeCrossInstanceTransfer().
    */
   private function getFoundationTransferConfig(): array {
     return [
-      'writerMethod' => 'getFoundationWriter',
       'fromInstance' => 'endowment',
-      'toInstance' => 'wmf',
+      'toInstance' => 'foundation',
       'fromKey' => 'journal_foundation_from_endowment',
       'toKey' => 'journal_endowment_to_foundation',
       'fromDescriptor' => 'to_foundation',
@@ -484,28 +489,6 @@ class GenerateBatch extends AbstractAction {
    */
   public function getDetailsWriter(array $headers, $batchName): Writer {
     $detailWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $this->getSafeFileName($batchName) . '_details.csv', 'w');
-    $detailWriter->insertOne($headers);
-    return $detailWriter;
-  }
-
-  /**
-   * @return Writer
-   */
-  public function getEndowmentWriter(array $headers, string $batchName, string $instance): Writer {
-    $fromTo = $instance === 'endowment' ? '_endowment_from_wmf' : '_wmf_to_endowment';
-    $fileName = $this->getSafeFileName($batchName) . $fromTo . '.csv';
-    $detailWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $fileName, 'w');
-    $detailWriter->insertOne($headers);
-    return $detailWriter;
-  }
-
-  /**
-   * @return Writer
-   */
-  public function getFoundationWriter(array $headers, string $batchName, string $instance): Writer {
-    $fromTo = $instance === 'wmf' ? '_wmf_from_endowment' : '_endowment_to_wmf';
-    $fileName = $this->getSafeFileName($batchName) . $fromTo . '.csv';
-    $detailWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $fileName, 'w');
     $detailWriter->insertOne($headers);
     return $detailWriter;
   }
