@@ -350,13 +350,13 @@ class GenerateBatch extends AbstractAction {
       if (empty($this->incompleteRows[$batchName])) {
         foreach ($csv_rows as $row) {
           if (!$isEndowmentGateway && $row['is_endowment'] && !str_ends_with(trim($row['MEMO']), 'Fees') && ($row['ACCT_NO'] != $this->getReversalAccountCode($row['CURRENCY'], $batchName))) {
-            $this->writeCrossInstanceTransfer($row, $batchName, $csvFiles, $endowmentWriterFrom, $endowmentWriterTo, $this->getEndowmentTransferConfig());
+            $csvFiles += $this->writeCrossInstanceTransfer($row, $batchName, $endowmentWriterFrom, $endowmentWriterTo, $this->getEndowmentTransferConfig());
           }
           elseif ($isEndowmentGateway && !$row['is_endowment'] && !str_ends_with(trim($row['MEMO']), 'Fees') && ($row['ACCT_NO'] != $this->getReversalAccountCode($row['CURRENCY'], $batchName))) {
             // Reverse of the block above: an endowment-gateway batch whose
             // rows are earmarked for the annual (foundation) fund get
             // carved out and journaled over to the wmf/foundation instance.
-            $this->writeCrossInstanceTransfer($row, $batchName, $csvFiles, $foundationWriterFrom, $foundationWriterTo, $this->getFoundationTransferConfig());
+            $csvFiles += $this->writeCrossInstanceTransfer($row, $batchName, $foundationWriterFrom, $foundationWriterTo, $this->getFoundationTransferConfig());
           }
         }
       }
@@ -374,15 +374,17 @@ class GenerateBatch extends AbstractAction {
    *
    * @param array $row
    * @param string $batchName
-   * @param array $csvFiles
    * @param Writer|null $writerFrom
    * @param Writer|null $writerTo
    * @param array $config
    *
+   * @return array
+   *
    * @throws \CRM_Core_Exception
    * @throws \League\Csv\CannotInsertRecord
    */
-  private function writeCrossInstanceTransfer(array $row, string $batchName, array &$csvFiles, ?Writer &$writerFrom, ?Writer &$writerTo, array $config): void {
+  private function writeCrossInstanceTransfer(array $row, string $batchName, ?Writer &$writerFrom, ?Writer &$writerTo, array $config): array {
+    $csvFiles = [];
     if (!isset($writerFrom) || !isset($writerTo)) {
       $writerFrom = $this->{$config['writerMethod']}(array_keys($row), $batchName, $config['fromInstance']);
       $csvFiles[$config['fromKey']] = ['file' => $writerFrom->getPathname(), 'is_journal' => TRUE, 'instance' => $config['fromInstance'], 'suffix' => $config['suffix'], 'remote_descriptor' => $config['fromDescriptor']];
@@ -412,6 +414,7 @@ class GenerateBatch extends AbstractAction {
     $writerFrom->insertOne($fromBalancingRow);
     $writerTo->insertOne($toRow);
     $writerTo->insertOne($toBalancingRow);
+    return $csvFiles;
   }
 
   /**
