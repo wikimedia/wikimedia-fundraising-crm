@@ -817,13 +817,14 @@ class DonationQueueTest extends BaseQueueTestCase {
    */
   public function testPhoneWithSmsOptin(): void {
     $phoneNumber = '3151234567';
+    $email = 'sms.optin.mouse@wikimedia.org';
     $this->setSetting('omnimail_sms_campaign_id', '99887766');
     $this->mockAcoustic($requests);
     $msg = [
       'currency' => 'USD',
       'country' => 'US',
       'date' => time(),
-      'email' => 'mouse@wikimedia.org',
+      'email' => $email,
       'gateway' => 'test_gateway',
       'gateway_txn_id' => mt_rand(),
       'gross' => '1.23',
@@ -860,7 +861,7 @@ class DonationQueueTest extends BaseQueueTestCase {
     // not opted out of email so they are sent up as mailable.
     $addRecipient = $this->getAcousticRequestBody($requests, 0);
     $this->assertStringContainsString('<UPDATE_IF_FOUND>TRUE</UPDATE_IF_FOUND>', $addRecipient);
-    $this->assertStringContainsString('<NAME>Email</NAME><VALUE>mouse@wikimedia.org</VALUE>', $addRecipient);
+    $this->assertStringContainsString('<NAME>Email</NAME><VALUE>' . $email . '</VALUE>', $addRecipient);
     $this->assertStringContainsString('<NAME>mobile_phone</NAME><VALUE>1' . $phoneNumber . '</VALUE>', $addRecipient);
     // We don't specify opt in or status explicitly, just the implicit opt in
     $this->assertStringNotContainsString('OPT_OUT', $addRecipient);
