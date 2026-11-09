@@ -5895,6 +5895,14 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Create BatchAccount table from entityType.
+   */
+  public function upgrade_5260(): bool {
+    E::schema()->createEntityTable('schema/BatchAccount.entityType.php');
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
