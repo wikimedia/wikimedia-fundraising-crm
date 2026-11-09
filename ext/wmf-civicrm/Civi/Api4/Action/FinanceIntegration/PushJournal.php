@@ -506,7 +506,7 @@ class PushJournal extends AbstractAction {
   }
 
   private function log(string $string, $batchName): void {
-    $this->log[$batchName][] = date('Y-m-d-m-Y-H-i-s') . ' ' . $string;
+    $this->log[$batchName][] = date('Y-m-d-H-i-s') . ' ' . $string;
     \Civi::log('finance_integration')->info($string);
   }
 

@@ -670,7 +670,7 @@ class GenerateBatch extends AbstractAction {
   }
 
   private function log(string $string): void {
-    $this->log[] = date('Y-m-d-m-Y-H-i-s') . ' ' . $string;
+    $this->log[] = date('Y-m-d-H-i-s') . ' ' . $string;
     \Civi::log('finance_integration')->info($string);
   }
 
