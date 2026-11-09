@@ -176,6 +176,7 @@ class JournalGenerator {
   private function getBatchSql(): string {
     $accountCodeClause = $this->getGLCodeClause();
     $deptIDClause = $this->getDeptIDClause();
+    $feeDeptIDClause = $this->getFeeDeptIDClause();
     $restrictionsClause = $this->getRestrictionsClause();
     $dateDescription = $this->batch['date_description'];
     $gatewayLevelTrxnExcludeClause = ' AND ' . $this->getGatewayLevelTransactionExcludeClause() . ' AND ' . $this->getGatewayLevelTransactionExcludeAdjustmentClause();
@@ -230,8 +231,7 @@ SELECT
 -- note GROUP BY here....
     CONCAT('Contribution Revenue ', '{$dateDescription}' ) as DESCRIPTION,
     $feeAccountCodeClause as ACCT_NO,
--- cost centre - CC-1014 for all fees
-    'CC-1014' as DEPT_ID,
+    $feeDeptIDClause as DEPT_ID,
     -- @todo - not always donations at the end of memo
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
     IF (SUM(-COALESCE(settled_fee_amount, 0)) >= 0, SUM(-COALESCE(settled_fee_amount, 0)), 0) as DEBIT,
@@ -255,8 +255,7 @@ SELECT
 -- note GROUP BY here....
     CONCAT('Contribution Revenue ', '{$dateDescription}') as DESCRIPTION,
     $feeAccountCodeClause as ACCT_NO,
--- cost centre - CC-1014 for all fees
-    'CC-1014' as DEPT_ID,
+    $feeDeptIDClause as DEPT_ID,
     -- @todo - not always donations at the end of memo
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Donation Fees') as MEMO,
     -- @todo obv some cleaup in here
@@ -281,8 +280,7 @@ SELECT
 -- note GROUP BY here....
     CONCAT('Contribution Revenue ', '{$dateDescription}' ) as DESCRIPTION,
     60917 as ACCT_NO,
--- cost centre - CC-1014 for all fees
-    'CC-1014' as DEPT_ID,
+    $feeDeptIDClause as DEPT_ID,
     -- @todo - not always donations at the end of memo
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Invoice Fees') as MEMO,
     -- @todo obv some cleaup in here
@@ -308,8 +306,7 @@ SELECT
 -- note GROUP BY here....
     CONCAT('Contribution Revenue ', '{$dateDescription}' ) as DESCRIPTION,
     43495 as ACCT_NO,
--- cost centre - CC-1014 for all fees
-    'CC-1014' as DEPT_ID,
+    $feeDeptIDClause as DEPT_ID,
     -- @todo - not always donations at the end of memo
     CONCAT(SUBSTRING_INDEX(%1, '_', 1) , ' | ', s.settlement_currency, ' | $dateDescription | ', COUNT(*), ' | ', ' Adjustment') as MEMO,
     IF(SUM(COALESCE(-settled_fee_amount, 0)) >= 0, SUM(COALESCE(-settled_fee_amount, 0)),0) as DEBIT,
@@ -439,6 +436,14 @@ END";
     // "$deptIDClause as DEPT_ID", so dropping it would leave a bare alias.
     return $this->isEndowmentGateway() ? "''" : "-- cost centre: CC-1004 for major gifts, CC-1005 for online fundraising.
     IF(" . $this->getIsMajorGift() . ", 'CC-1004', 'CC-1005')";
+  }
+
+  /**
+   * Cost centre for fee, invoice-fee & adjustment rows: CC-1014, or none on
+   * endowment journals (CC-1014 is not a valid department there - T444243).
+   */
+  private function getFeeDeptIDClause(): string {
+    return $this->isEndowmentGateway() ? "''" : "'CC-1014'";
   }
 
   /**

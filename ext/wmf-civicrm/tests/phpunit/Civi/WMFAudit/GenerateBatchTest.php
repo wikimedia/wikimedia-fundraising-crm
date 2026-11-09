@@ -976,16 +976,26 @@ class GenerateBatchTest extends BaseAuditTestCase {
       'Gift_Data.is_major_gift' => 1,
       'contribution_settlement.settlement_batch_reference' => $batchName,
       'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settled_fee_amount' => -0.50,
       'contribution_settlement.settlement_currency' => $currency,
       'contribution_settlement.settlement_date' => $settlementDate,
     ]);
-    $result = $this->runGenerate($batchName, $currency, $settlementDate, 10, 1, $prefix);
+    $result = $this->runGenerate($batchName, $currency, $settlementDate, 9.50, 1, $prefix);
 
     $deptIDs = $this->getDonationRowDeptIDs($result[0]['csv_rows']);
     $this->assertNotEmpty($deptIDs, 'Expected a donation row to check DEPT_ID on');
     foreach ($deptIDs as $accountCode => $deptID) {
       $this->assertSame('', $deptID, "Endowment batches should have no cost centre - account $accountCode");
     }
+    // Fee rows too - CC-1014 is rejected by the endowment instance (T444243).
+    $feeRows = 0;
+    foreach ($result[0]['csv_rows'] as $row) {
+      if (str_contains((string) $row['MEMO'], 'Fees')) {
+        $feeRows++;
+        $this->assertSame('', (string) $row['DEPT_ID'], 'Endowment fee rows should have no cost centre');
+      }
+    }
+    $this->assertSame(1, $feeRows, 'Expected one fee row');
   }
 
   /**
