@@ -330,6 +330,12 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
    * mailing provider data table
    */
   public function testOmnirecipientLoadWithRemap(): void {
+    $this->ids['Contact']['bob'] = Contact::create(FALSE)
+      ->setValues([
+        'first_name' => 'bob',
+      ])
+      ->execute()
+      ->first()['id'];
     $this->ids['Contact']['mergeTo'] = Contact::create(FALSE)
       ->setValues([
         'first_name' => 'bloop',
@@ -357,7 +363,11 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
     $fileContents = file_get_contents(
       __DIR__ . '/Responses/Raw Recipient Data Export Jul 03 2017 00-47-42 AM 1295-placeholdercontacts.csv'
     );
-    $replaced = preg_replace('/%mergedContactId%/', $this->ids['Contact']['mergeFrom'], $fileContents);
+    $replaced = str_replace(
+      ['%contactId%', '%mergedContactId%'],
+      [$this->ids['Contact']['bob'], $this->ids['Contact']['mergeFrom']],
+      $fileContents
+    );
     file_put_contents(__DIR__ . '/Responses/' . $this->tempFileName, $replaced);
     $client = $this->setupSuccessfulDownloadClient('omnimail_omnirecipient_load', TRUE, $this->tempFileName);
 
@@ -370,7 +380,7 @@ class OmnirecipientLoadTest extends OmnimailBaseTestClass {
         'email' => 'bob@example.com',
         'event_type' => 'Open',
         'recipient_action_datetime' => '2017-06-30 23:32:00',
-        'contact_id' => '123',
+        'contact_id' => $this->ids['Contact']['bob'],
         'is_civicrm_updated' => '0',
         'click_name' => '',
         'click_url' => '',
