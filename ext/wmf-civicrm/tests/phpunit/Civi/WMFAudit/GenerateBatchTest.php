@@ -3,6 +3,7 @@
 namespace Civi\WMFAudit;
 
 use Civi\Api4\Batch;
+use Civi\Api4\BatchFinancialBreakdown;
 use Civi\Api4\Contribution;
 use Civi\Api4\GatewayAccount;
 use Civi\Api4\Generic\Result;
@@ -291,6 +292,14 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $this->assertEquals('https://example.org', $batch['batch_data.remote_url_foundation']);
     $this->assertEquals(10, $batch['batch_data.amount_journaled_to_endowment']);
     $this->assertEquals(20, $batch['batch_data.amount_journaled_to_foundation']);
+
+    $breakdown = (array) BatchFinancialBreakdown::get(FALSE)
+      ->addWhere('batch_id', '=', $batch['id'])
+      ->addOrderBy('is_endowment')
+      ->execute();
+    $this->assertCount(2, $breakdown);
+    $this->assertEquals(['43481', FALSE, 20, 1], [$breakdown[0]['gl_code'], $breakdown[0]['is_endowment'], $breakdown[0]['amount'], $breakdown[0]['item_count']]);
+    $this->assertEquals(['43481', TRUE, 10, 1], [$breakdown[1]['gl_code'], $breakdown[1]['is_endowment'], $breakdown[1]['amount'], $breakdown[1]['item_count']]);
   }
 
   /**
@@ -325,6 +334,38 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $accounts = array_column(iterator_to_array($reader), 'ACCT_NO');
     $this->assertContains('43428', $accounts);
     $this->assertNotContains('43487', $accounts);
+  }
+
+  /**
+   * The breakdown is donations less refunds, counting both.
+   */
+  public function testFinancialBreakdownNetsRefunds(): void {
+    $prefix = 'adyen_344';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-01-31';
+
+    $this->createQueueContribution([
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 30.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $this->createQueueContribution([
+      'contribution_settlement.settlement_batch_reversal_reference' => $batchName,
+      'contribution_settlement.settled_reversal_amount' => -10.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $this->createBatch($batchName, $currency, $settlementDate, 20, 2, -10);
+    // The journal's debits & credits each total 40 - the donation & refund plus their balancing rows.
+    $this->addBatchWebResponses('40.00');
+    $this->generateWithGuzzle($prefix);
+
+    $breakdown = BatchFinancialBreakdown::get(FALSE)
+      ->addWhere('batch_id', '=', $this->ids['Batch'][$batchName])
+      ->execute()->single();
+    $this->assertEquals(['43481', FALSE, 20, 2], [$breakdown['gl_code'], $breakdown['is_endowment'], $breakdown['amount'], $breakdown['item_count']]);
   }
 
   /**
@@ -785,7 +826,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
   /**
    * Create a total_verified Automatic Batch with the minimal batch_data fields.
    */
-  private function createBatch(string $batchName, string $currency, string $settlementDate, float $net, int $itemCount): void {
+  private function createBatch(string $batchName, string $currency, string $settlementDate, float $net, int $itemCount, float $reversal = 0): void {
     $this->createTestEntity('Batch', [
       'name' => $batchName,
       // Not single() - testGenerateBatchFailedNoGatewayAccount uses a gateway with no account.
@@ -797,8 +838,8 @@ class GenerateBatchTest extends BaseAuditTestCase {
       // Totals used in GenerateBatch expected/validation:
       'batch_data.settlement_currency' => $currency,
       'batch_data.settlement_date' => $settlementDate,
-      'batch_data.settled_donation_amount' => $net,
-      'batch_data.settled_reversal_amount' => 0,
+      'batch_data.settled_donation_amount' => $net - $reversal,
+      'batch_data.settled_reversal_amount' => $reversal,
       'batch_data.settled_fee_amount' => 0,
       'batch_data.settled_net_amount' => $net,
     ], $batchName);

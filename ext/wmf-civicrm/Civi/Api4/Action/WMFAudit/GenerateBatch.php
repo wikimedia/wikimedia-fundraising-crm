@@ -6,6 +6,7 @@ use Brick\Money\Exception\MoneyMismatchException;
 use Brick\Money\Exception\UnknownCurrencyException;
 use Brick\Money\Money;
 use Civi\Api4\Batch;
+use Civi\Api4\BatchFinancialBreakdown;
 use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
@@ -303,6 +304,7 @@ class GenerateBatch extends AbstractAction {
     try {
       if ($isRecordAmounts) {
         $this->recordAmountsJournaled($batch);
+        $this->recordFinancialBreakdown($batch);
       }
       return $this->pushJournalsToIntacct($batch, $csvFiles);
     }
@@ -406,6 +408,33 @@ class GenerateBatch extends AbstractAction {
   }
 
   /**
+   * Record the donation total (less refunds) journaled per GL code & fund.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function recordFinancialBreakdown(array $batch): void {
+    $records = [];
+    foreach ($this->batchSummary[$batch['name']]['accounts'] ?? [] as $account => $totals) {
+      foreach (['annual_fund' => FALSE, 'endowment_fund' => TRUE] as $fund => $isEndowment) {
+        if ($totals['item_count'][$fund]) {
+          $records[] = [
+            'batch_id' => $batch['id'],
+            'gl_code' => (string) $account,
+            'is_endowment' => $isEndowment,
+            'amount' => (string) $totals[$fund]->getAmount(),
+            'item_count' => $totals['item_count'][$fund],
+          ];
+        }
+      }
+    }
+    // Replace rather than merge - a re-export may no longer have every combination.
+    BatchFinancialBreakdown::delete(FALSE)->addWhere('batch_id', '=', $batch['id'])->execute();
+    if ($records) {
+      BatchFinancialBreakdown::save(FALSE)->setRecords($records)->execute();
+    }
+  }
+
+  /**
    * The batch's donation total, split as [endowment, foundation] - whichever
    * instance the batch's gateway deposits to keeps whatever was not carved
    * out into a cross-instance transfer by writeJournalToCsv().
@@ -449,6 +478,7 @@ class GenerateBatch extends AbstractAction {
       }
       $batchJournalWriter = $this->getBatchJournalWriter($batchName);
       $batchJournalWriter->insertAll($csv_rows);
+      $this->batchSummary[$batchName]['accounts'] = $this->getJournalGenerator($batch)->getAccountTotals($csv_rows);
       $detailedData = $this->getDetailData($renderedSql, $batchName);
 
       foreach ($detailedData as $row) {
@@ -456,25 +486,12 @@ class GenerateBatch extends AbstractAction {
           $this->incompleteRows[$batchName][] = $row;
           $this->log("Account number not found for id {$row['contribution_id']} in channel . {$row['channel']}");
         }
-        else {
-          if (empty($this->batchSummary[$batchName]['accounts'][$row['ACCT_NO']])) {
-            $this->batchSummary[$batchName]['accounts'][$row['ACCT_NO']] = [
-              'annual_fund' => Money::zero($this->batchSummary[$batchName]['currency']),
-              'endowment_fund' => Money::zero($this->batchSummary[$batchName]['currency']),
-            ];
-          }
+        elseif ($this->isFee($row)) {
           $fund = $row['is_endowment'] ? 'endowment_fund' : 'annual_fund';
-          if ($this->isFee($row)) {
-            $fee = $this->batchSummary[$batchName][$fund . '_fees'];
-            $fee = $fee->plus($row['settled_fee_amount'] ?: 0);
-            $fee = $fee->plus($row['settled_fee_reversal_amount'] ?: 0);
-            $this->batchSummary[$batchName][$fund . '_fees'] = $fee;
-          }
-          else {
-            $amount = $this->batchSummary[$batchName]['accounts'][$row['ACCT_NO']][$fund];
-            $amount = $amount->plus($row['settled_donation_amount'] ?: 0);
-            $this->batchSummary[$batchName]['accounts'][$row['ACCT_NO']][$fund] = $amount;
-          }
+          $fee = $this->batchSummary[$batchName][$fund . '_fees'];
+          $fee = $fee->plus($row['settled_fee_amount'] ?: 0);
+          $fee = $fee->plus($row['settled_fee_reversal_amount'] ?: 0);
+          $this->batchSummary[$batchName][$fund . '_fees'] = $fee;
         }
 
         $formattedRow = $this->reOrderFields($row);
@@ -693,14 +710,7 @@ class GenerateBatch extends AbstractAction {
    * @return bool
    */
   public function isFee($row): bool {
-    return !$this->isRevenue($row);
-  }
-
-  /**
-   * Is the row donations or refunds, rather than fees, adjustments or balancing.
-   */
-  private function isRevenue(array $row): bool {
-    return in_array($row['row_type'], ['donation', 'refund'], TRUE);
+    return !JournalGenerator::isRevenue($row);
   }
 
   /**

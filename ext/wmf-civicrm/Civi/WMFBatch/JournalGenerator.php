@@ -90,6 +90,41 @@ class JournalGenerator {
   }
 
   /**
+   * Get the donations less refunds journaled, & how many, per account & fund.
+   *
+   * @param array $journalRows
+   *
+   * @return array
+   *   e.g. [43481 => ['annual_fund' => Money, 'endowment_fund' => Money,
+   *   'item_count' => ['annual_fund' => 3, 'endowment_fund' => 0]]]
+   */
+  public function getAccountTotals(array $journalRows): array {
+    $currency = $this->batch['batch_data.settlement_currency'];
+    $accounts = [];
+    foreach ($journalRows as $row) {
+      if (!self::isRevenue($row) || empty($row['ACCT_NO'])) {
+        continue;
+      }
+      $fund = $row['is_endowment'] ? 'endowment_fund' : 'annual_fund';
+      $accounts[$row['ACCT_NO']] ??= [
+        'annual_fund' => Money::zero($currency),
+        'endowment_fund' => Money::zero($currency),
+        'item_count' => ['annual_fund' => 0, 'endowment_fund' => 0],
+      ];
+      $accounts[$row['ACCT_NO']][$fund] = $accounts[$row['ACCT_NO']][$fund]->plus($row['CREDIT'] ?: 0)->minus($row['DEBIT'] ?: 0);
+      $accounts[$row['ACCT_NO']]['item_count'][$fund] += (int) $row['item_count'];
+    }
+    return $accounts;
+  }
+
+  /**
+   * Is the row donations or refunds, rather than fees, adjustments or balancing.
+   */
+  public static function isRevenue(array $row): bool {
+    return in_array($row['row_type'], ['donation', 'refund'], TRUE);
+  }
+
+  /**
    * @return string
    * @throws \CRM_Core_Exception
    */
