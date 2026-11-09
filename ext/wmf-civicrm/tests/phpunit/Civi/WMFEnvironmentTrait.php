@@ -7,6 +7,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
+use Civi\Api4\GatewayAccount;
 use Civi\Api4\OptionValue;
 use Civi\Api4\PaymentProcessor;
 use Civi\Api4\PaymentToken;
@@ -422,6 +423,13 @@ trait WMFEnvironmentTrait {
    */
   protected function getMostRecentEmail(): array {
     return \CRM_Core_DAO::executeQuery('SELECT headers, body FROM civicrm_mailing_spool ORDER BY id DESC LIMIT 1')->fetchAll()[0];
+  }
+
+  /**
+   * GatewayAccount.id for the given name - for batch_data.settlement_gateway_account_id.
+   */
+  protected function getGatewayAccountID(string $name): int {
+    return GatewayAccount::get(FALSE)->addWhere('name', '=', $name)->execute()->single()['id'];
   }
 
 }

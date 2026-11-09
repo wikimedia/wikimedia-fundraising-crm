@@ -64,6 +64,7 @@ class ValidateTest extends BaseAuditTestCase {
   private function createBatchEntity(string $batchName, string $currency, string $settlementDate, float $net, int $itemCount, string $status): int {
     return $this->createTestEntity('Batch', [
       'name' => $batchName,
+      'batch_data.settlement_gateway_account_id' => $this->getGatewayAccountID('adyen'),
       'mode_id:name' => 'Automatic Batch',
       'status_id:name' => $status,
       'item_count' => $itemCount,

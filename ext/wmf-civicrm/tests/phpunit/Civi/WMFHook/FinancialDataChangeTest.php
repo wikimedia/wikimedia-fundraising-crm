@@ -195,6 +195,7 @@ class FinancialDataChangeTest extends TestCase implements HeadlessInterface {
     $batchName = 'adyen_' . $identifier . '_' . 'USD';
     $this->createTestEntity('Batch', [
       'name' => $batchName,
+      'batch_data.settlement_gateway_account_id' => $this->getGatewayAccountID('adyen'),
       'mode_id:name' => 'Automatic Batch',
       'status_id:name' => $status,
       'item_count' => 1,

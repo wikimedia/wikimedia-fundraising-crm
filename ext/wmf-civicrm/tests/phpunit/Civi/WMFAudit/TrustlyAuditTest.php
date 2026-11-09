@@ -92,6 +92,7 @@ class TrustlyAuditTest extends BaseAuditTestCase {
   public function testNeedsAttentionBatchIsReVerifiedWhenTotalsMatch(): void {
     $this->createTestEntity('Batch', [
       'name' => 'trustly_999_USD',
+      'batch_data.settlement_gateway_account_id' => $this->getGatewayAccountID('trustly'),
       'mode_id:name' => 'Automatic Batch',
       'type_id:name' => 'Contribution',
       'status_id:name' => 'needs_attention',

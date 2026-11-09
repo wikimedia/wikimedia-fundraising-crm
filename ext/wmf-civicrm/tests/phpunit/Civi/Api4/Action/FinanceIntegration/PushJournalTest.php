@@ -119,6 +119,7 @@ class PushJournalTest extends TestCase implements HeadlessInterface {
   private function createBatch(array $values = []): void {
     $this->createTestEntity('Batch', $values + [
       'name' => self::BATCH_NAME,
+      'batch_data.settlement_gateway_account_id' => $this->getGatewayAccountID('adyen'),
       'mode_id:name' => 'Automatic Batch',
       'status_id:name' => 'total_verified',
       'item_count' => 1,

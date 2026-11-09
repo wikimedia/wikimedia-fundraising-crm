@@ -110,6 +110,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     ]);
     $this->createTestEntity('Batch', [
       'name' => $batchName,
+      'batch_data.settlement_gateway_account_id' => $this->getGatewayAccountID('adyen'),
       'mode_id:name' => 'Automatic Batch',
       'status_id:name' => 'needs_attention',
       'item_count' => 1,
@@ -154,6 +155,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     ]);
     $this->createTestEntity('Batch', [
       'name' => $batchName,
+      'batch_data.settlement_gateway_account_id' => $this->getGatewayAccountID('adyen'),
       'mode_id:name' => 'Automatic Batch',
       'status_id:name' => 'needs_attention',
       'item_count' => 1,
@@ -434,6 +436,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     ]);
     $this->createTestEntity('Batch', [
       'name' => $batchName,
+      'batch_data.settlement_gateway_account_id' => $this->getGatewayAccountID('cck'),
       'mode_id:name' => 'Automatic Batch',
       'status_id:name' => 'total_verified',
       'item_count' => 2,
@@ -487,6 +490,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     ]);
     $this->createTestEntity('Batch', [
       'name' => $batchName,
+      'batch_data.settlement_gateway_account_id' => $this->getGatewayAccountID('cckendowment'),
       'mode_id:name' => 'Automatic Batch',
       'status_id:name' => 'total_verified',
       'item_count' => 1,
@@ -604,6 +608,8 @@ class GenerateBatchTest extends BaseAuditTestCase {
   private function createBatch(string $batchName, string $currency, string $settlementDate, float $net, int $itemCount): void {
     $this->createTestEntity('Batch', [
       'name' => $batchName,
+      // Not single() - testGenerateBatchFailedRetrieveVendorID uses a gateway with no account.
+      'batch_data.settlement_gateway_account_id' => GatewayAccount::get(FALSE)->addWhere('name', '=', explode('_', $batchName)[0])->execute()->first()['id'] ?? NULL,
       'mode_id:name' => 'Automatic Batch',
       'status_id:name' => 'total_verified',
       'item_count' => $itemCount,
@@ -742,6 +748,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
 
     $this->createTestEntity('Batch', [
       'name' => $batchName,
+      'batch_data.settlement_gateway_account_id' => $this->getGatewayAccountID('stripemg'),
       'mode_id:name' => 'Automatic Batch',
       'status_id:name' => 'total_verified',
       // The donation row and the gateway-level fee row each count as one item.
@@ -1037,6 +1044,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $batchName = 'adjustment_347_USD';
     $this->createTestEntity('Batch', [
       'name' => $batchName,
+      'batch_data.settlement_gateway_account_id' => $this->getGatewayAccountID('adyen'),
       'mode_id:name' => 'Adjustment Batch',
       'status_id:name' => 'total_verified',
       'item_count' => 1,
@@ -1071,6 +1079,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     // Deliberately no mode_id.
     $this->createTestEntity('Batch', [
       'name' => $batchName,
+      'batch_data.settlement_gateway_account_id' => $this->getGatewayAccountID('adyen'),
       'status_id:name' => 'total_verified',
       'item_count' => 1,
       'batch_data.settlement_currency' => 'USD',
