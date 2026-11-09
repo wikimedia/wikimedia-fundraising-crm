@@ -132,13 +132,14 @@ class DonorHistoryRebuild extends AutoSubscriber {
    * Queue rebuilding the contact's history.
    *
    * Rebuilds from a date run after the merge window, so related changes should
-   * all be processed.
+   * all be processed. Full rebuilds, after a contact merge, run straight away
+   * from their own queue, as they'd otherwise wait behind delayed ones.
    *
    * @param int $contactID
    * @param string|null $startDate
    */
   private function queueRebuild(int $contactID, ?string $startDate = NULL): void {
-    \Civi::queue('wmf_donor_history', [
+    \Civi::queue($startDate ? 'wmf_donor_history' : 'wmf_donor_history_merge', [
       'type' => 'Sql',
       'runner' => 'task',
       'retry_limit' => 3,

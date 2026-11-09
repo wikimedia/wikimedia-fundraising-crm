@@ -118,7 +118,12 @@ class RebuildHistory extends AbstractAction {
         $where .= ' AND log_date >= %3';
         $params[3] = [$startDate, 'String'];
       }
-      \CRM_Core_DAO::executeQuery("DELETE FROM wmf_donor_history WHERE $where", $params);
+      // Delete by primary key, as deleting by entity_id also locks the gap its
+      // rows would be in, which could deadlock with other inserts into that gap.
+      $logIDs = \CRM_Core_DAO::executeQuery("SELECT log_id FROM wmf_donor_history WHERE $where", $params)->fetchMap('log_id', 'log_id');
+      if ($logIDs) {
+        \CRM_Core_DAO::executeQuery('DELETE FROM wmf_donor_history WHERE log_id IN (' . implode(', ', $logIDs) . ')');
+      }
       if ($rows) {
         \CRM_Utils_SQL_Insert::into('wmf_donor_history')->rows($rows)->execute();
       }

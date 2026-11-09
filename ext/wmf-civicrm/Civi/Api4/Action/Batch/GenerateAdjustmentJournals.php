@@ -103,7 +103,7 @@ class GenerateAdjustmentJournals extends AbstractAction {
       // Same entity - reverse the old coding and book the new, nothing else.
       // No contra line: the cash is where it always was.
       return [[
-        'instance' => $fromIsEndowment ? 'endowment' : 'wmf',
+        'instance' => $fromIsEndowment ? 'endowment' : 'foundation',
         'suffix' => '',
         'remote_descriptor' => $fromIsEndowment ? 'endowment_instance' : 'foundation',
         'rows' => [
@@ -122,7 +122,7 @@ class GenerateAdjustmentJournals extends AbstractAction {
     }
     return [
       [
-        'instance' => $fromIsEndowment ? 'endowment' : 'wmf',
+        'instance' => $fromIsEndowment ? 'endowment' : 'foundation',
         'suffix' => $toIsEndowment ? 'e' : 'f',
         'remote_descriptor' => $toIsEndowment ? 'to_endowment' : 'to_foundation',
         'rows' => [
@@ -131,7 +131,7 @@ class GenerateAdjustmentJournals extends AbstractAction {
         ],
       ],
       [
-        'instance' => $toIsEndowment ? 'endowment' : 'wmf',
+        'instance' => $toIsEndowment ? 'endowment' : 'foundation',
         'suffix' => $toIsEndowment ? 'e' : 'f',
         'remote_descriptor' => $toIsEndowment ? 'endowment_instance' : 'foundation',
         'rows' => [

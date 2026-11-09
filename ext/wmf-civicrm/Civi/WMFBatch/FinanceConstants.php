@@ -79,6 +79,17 @@ final class FinanceConstants {
    */
   const GL_MAJOR_GIFTS_RESTRICTED = 43428;
 
+  /**
+   * Intacct nsp::funding dimension keys, by GLDIMFUNDING label.
+   *
+   * Same in both instances - see FinanceIntegration.getFields.
+   */
+  const FUNDING_DIMENSION_KEYS = [
+    'Temporarily Restricted' => 10002,
+    'Permanently Restricted' => 10003,
+    'Unrestricted' => 10004,
+  ];
+
   const BALANCING_ACCOUNT_HARD_CODED = 'determined_in_code';
 
   /**

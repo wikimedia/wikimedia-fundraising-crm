@@ -448,10 +448,9 @@ class UpdateCommunicationsPreferences extends AbstractAction {
       \Civi::log('wmf')->warning("Attempt to update contact $this->contactID's email from $oldEmail to $this->email, while missing required checksum in queue message. Skipping verification email.");
       return;
     }
-    // unique checksum for validation
-    $unexpiredChecksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($this->contactID, null, 'inf');
+    $checksum = \CRM_Contact_BAO_Contact_Utils::generateChecksum($this->contactID);
     $primaryEmailUrl = \Civi::settings()->get('wmf_confirm_primary_email_url') .
-      '&contact_id='. $this->contactID . '&checksum=' . $unexpiredChecksum .
+      '&contact_id='. $this->contactID . '&checksum=' . $checksum .
       '&email_checksum=' . $this->emailChecksum .
       '&email=' . urlencode($this->email);
 

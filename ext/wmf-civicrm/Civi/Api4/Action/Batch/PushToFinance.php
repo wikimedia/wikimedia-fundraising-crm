@@ -138,11 +138,11 @@ class PushToFinance extends AbstractAction {
       ->setCiviBatchName($this->name)
       ->setRemoteDescriptor($journal['remote_descriptor'])
       ->execute();
-    $this->log('Journal ' . $this->name . $journal['suffix'] . ' successfully pushed to Intacct ' . $journal['instance'] . ' instance with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
+    $this->log('Journal ' . $this->name . $journal['suffix'] . ($this->isDryRun ? ' dry run checked against' : ' successfully pushed to') . ' Intacct ' . $journal['instance'] . ' instance with result ' . json_encode($apiOutcome, JSON_PRETTY_PRINT));
     $successCount = $priorSuccessCount;
     $results = [];
     foreach ($apiOutcome as $apiBatch) {
-      if ($apiBatch['status'] === 'Valid Remotely') {
+      if (($apiBatch['status'] ?? '') === 'Valid Remotely') {
         $successCount++;
         $isUploaded = $successCount === $journalCount;
         $this->log($apiBatch['name'] . ': Batch has been verified against the batch in Intacct ' . ($isUploaded ? ' and is now being closed (status set to Exported)' : ''));
@@ -163,7 +163,9 @@ class PushToFinance extends AbstractAction {
           'is_uploaded' => $isUploaded,
         ];
       }
-      $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . $apiBatch['txn_number'] . '</a>');
+      if (isset($apiBatch['url'])) {
+        $this->log('Remote batch url is <a href="' . $apiBatch['url'] . '">Intacct ' . ($apiBatch['txn_number'] ?? '') . '</a>');
+      }
     }
     return $results;
   }
@@ -192,7 +194,7 @@ class PushToFinance extends AbstractAction {
   }
 
   private function log(string $string): void {
-    $this->log[] = date('Y-m-d-m-Y-H-i-s') . ' ' . $string;
+    $this->log[] = date('Y-m-d-H-i-s') . ' ' . $string;
     \Civi::log('finance_integration')->info($string);
   }
 

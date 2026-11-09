@@ -11,6 +11,7 @@ use Civi\Api4\FinanceIntegration;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\FinanceIntegration\Connection;
+use Civi\WMFBatch\FinanceConstants;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use League\Csv\Exception;
@@ -295,7 +296,7 @@ class PushJournal extends AbstractAction {
             'department' => !empty($row['DEPT_ID'])     ? ['id' => $row['DEPT_ID']]     : null,
             'vendor'     => !empty($row['GLENTRY_VENDORID']) ? ['id' => $row['GLENTRY_VENDORID']] : null,
             'project'    => !empty($row['GLENTRY_PROJECTID']) ? ['id' => $row['GLENTRY_PROJECTID']] : null,
-            'nsp::funding' => ['key' => (string) ($row['GLDIMFUNDING'] === 'Unrestricted' ? 10004 : 10005)],
+            'nsp::funding' => ['key' => $this->getFundingKey((string) ($row['GLDIMFUNDING'] ?? ''), $batchName)],
           ]),
         ];
 
@@ -309,6 +310,18 @@ class PushJournal extends AbstractAction {
 
       $this->batches[$batchName]['journal_entry'] = $entry;
     }
+  }
+
+  /**
+   * Get the Intacct funding dimension key for a GLDIMFUNDING label.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function getFundingKey(string $funding, string $batchName): string {
+    if (!isset(FinanceConstants::FUNDING_DIMENSION_KEYS[$funding])) {
+      throw new \CRM_Core_Exception("Batch {$batchName} has unknown GLDIMFUNDING '{$funding}'");
+    }
+    return (string) FinanceConstants::FUNDING_DIMENSION_KEYS[$funding];
   }
 
   /**
@@ -506,7 +519,7 @@ class PushJournal extends AbstractAction {
   }
 
   private function log(string $string, $batchName): void {
-    $this->log[$batchName][] = date('Y-m-d-m-Y-H-i-s') . ' ' . $string;
+    $this->log[$batchName][] = date('Y-m-d-H-i-s') . ' ' . $string;
     \Civi::log('finance_integration')->info($string);
   }
 
