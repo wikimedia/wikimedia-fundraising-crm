@@ -20,8 +20,7 @@ use CRM_Core_DAO;
 class JournalGenerator {
 
   /**
-   * The batch to generate journals for - enriched per GenerateBatch::getBatches(),
-   * so it carries date_description alongside its own batch_data fields.
+   * The batch to generate journals for.
    *
    * @var array
    */
@@ -168,7 +167,7 @@ class JournalGenerator {
    * @return string
    */
   private function getBatchSql(): string {
-    $accountCodeClause = $this->getAccountClause();
+    $accountCodeClause = $this->getGLCodeClause();
     $deptIDClause = $this->getDeptIDClause();
     $restrictionsClause = $this->getRestrictionsClause();
     $dateDescription = $this->batch['date_description'];
@@ -360,9 +359,11 @@ GROUP BY s.settlement_batch_reference
   }
 
   /**
+   * GLCode is currently calculated in sql but once Gift_Data.gl_code is populated we will use that instead.
+   *
    * @return string
    */
-  private function getAccountClause(): string {
+  private function getGLCodeClause(): string {
     return "
     -- See GL Account Structure Rules
     -- Online Recurring Contributions 43480 = channel =  	Recurring Gift
@@ -402,6 +403,27 @@ END";
   }
 
   /**
+   * Is the row coded to a major gifts account?
+   *
+   * Note getGLCodeClause()
+   */
+  private function getIsMajorGift(): string {
+    return $this->getGLCodeClause() . ' IN (' . implode(', ', FinanceConstants::GL_MAJOR_GIFTS_ACCOUNTS) . ')';
+  }
+
+  /**
+   * Is the row's revenue restricted funding?
+   *
+   * We calculate this off a combination of the gl_code and whether it is intended
+   * for the endowment. (The gl_code is currently calculated in sql but we plan to move
+   * that to a calculated field)
+   */
+  private function getIsRestrictedGift(): string {
+    $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
+    return '(c.financial_type_id = ' . $endowmentFinancialType . ' OR ' . $this->getGLCodeClause() . ' = ' . FinanceConstants::GL_MAJOR_GIFTS_RESTRICTED . ')';
+  }
+
+  /**
    * @return string
    */
   private function getDeptIDClause(): string {
@@ -409,19 +431,14 @@ END";
     // literal, not a PHP empty string - the clause is interpolated as
     // "$deptIDClause as DEPT_ID", so dropping it would leave a bare alias.
     return $this->isEndowmentGateway() ? "''" : "-- cost centre: CC-1004 for major gifts, CC-1005 for online fundraising.
-    IF(" . $this->getAccountClause() . ' IN (' . implode(', ', FinanceConstants::GL_MAJOR_GIFTS_ACCOUNTS) . "), 'CC-1004', 'CC-1005')";
+    IF(" . $this->getIsMajorGift() . ", 'CC-1004', 'CC-1005')";
   }
 
   /**
    * @return string
    */
   private function getRestrictionsClause(): string {
-    // Restricted funding follows the account, the same way the cost centre
-    // does. Major Gifts - Restricted is the only restricted code, and
-    // getAccountClause() reaches it when the gift's fund is restricted -
-    // that taking precedence over the unrestricted major gifts codes
-    // (T409994).
-    return 'IF(' . $this->getAccountClause() . ' = ' . FinanceConstants::GL_MAJOR_GIFTS_RESTRICTED . ", 'Temporarily Restricted', 'Unrestricted')";
+    return 'IF(' . $this->getIsRestrictedGift() . ", 'Temporarily Restricted', 'Unrestricted')";
   }
 
   /**

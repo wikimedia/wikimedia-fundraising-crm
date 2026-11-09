@@ -334,4 +334,32 @@ abstract class CRM_Deduper_BAO_Resolver {
   protected function getFieldsToResolveOnPreferredContact(): array {
     return $this->mergeHandler->getFieldsToResolveOnPreferredContact();
   }
+
+  /**
+   *  * Count the number of capital letters in a string.
+   *
+   * @param $string
+   *
+   * @return int
+   */
+  protected function countCapitalLetters($string): int {
+    return strlen(preg_replace('/[^A-Z]+/', '', $string));
+  }
+
+  /**
+   * Is word 2 better than word 1 from a capitalisation point of view.
+   *
+   * We define 'better' as the least capital letters, but more than zero.
+   *
+   * @param string $word1
+   * @param string $word2
+   *
+   * @return bool
+   *   Word 2 is better
+   */
+  protected function isBetterCapitalization($word1, $word2): bool {
+    return $this->countCapitalLetters($word1) === 0
+      || ($this->countCapitalLetters($word2) > 0 && $this->countCapitalLetters($word2) < $this->countCapitalLetters($word1)
+    );
+  }
 }
