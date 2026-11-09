@@ -1250,7 +1250,9 @@ class CalculatedData extends TriggerHook {
             END AS contribution_status_id,
             l.frequency_unit, l.start_date, l.next_sched_contribution_date
           FROM civicrm_contribution_recur c
-          INNER JOIN log_civicrm_contribution_recur l
+          -- Bulk updates logged a million rows in the same second, so an exact
+          -- log date can be far less selective than the recurring id.
+          INNER JOIN log_civicrm_contribution_recur l IGNORE INDEX (index_log_date)
             ON l.id = c.id
             AND l.contribution_status_id <> $processing
             AND l.log_date = (
@@ -1261,7 +1263,7 @@ class CalculatedData extends TriggerHook {
             AND NOT (
               l.contribution_status_id IN ($pending, $inProgress)
               AND EXISTS (
-                SELECT 1 FROM log_civicrm_contribution_recur l4
+                SELECT 1 FROM log_civicrm_contribution_recur l4 IGNORE INDEX (index_log_date)
                 WHERE l4.id = l.id AND l4.log_date = l.log_date
                   AND l4.contribution_status_id NOT IN ($pending, $inProgress, $processing)
               )
