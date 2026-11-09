@@ -4,6 +4,7 @@ namespace Civi\Api4\Action\Batch;
 
 use Brick\Money\Money;
 use Civi\Api4\Batch;
+use Civi\Api4\BatchFinancialBreakdown;
 use Civi\Api4\CustomValue;
 use Civi\Api4\GatewayAccount;
 use Civi\Api4\Generic\AbstractAction;
@@ -78,7 +79,27 @@ class GenerateAdjustmentJournals extends AbstractAction {
         'remote_descriptor' => $journal['remote_descriptor'],
       ];
     }
+    $this->recordFinancialBreakdown($batch, $adjustment);
     $result[] = ['csv' => $csvFiles, 'rows' => $journals];
+  }
+
+  /**
+   * Record the move as BatchFinancialBreakdown rows - the old GL code & fund
+   * reversed, the new one booked - so the original batch's rows plus these
+   * give the current split.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function recordFinancialBreakdown(array $batch, array $adjustment): void {
+    $amount = Money::of((string) $batch['batch_data.settled_donation_amount'], $batch['batch_data.settlement_currency']);
+    BatchFinancialBreakdown::delete(FALSE)->addWhere('batch_id', '=', $batch['id'])->execute();
+    BatchFinancialBreakdown::save(FALSE)
+      ->setRecords([
+        ['gl_code' => (string) $adjustment['gl_code_before'], 'is_endowment' => !empty($adjustment['is_endowment_before']), 'amount' => (string) $amount->negated()->getAmount(), 'item_count' => 1],
+        ['gl_code' => (string) $adjustment['gl_code_after'], 'is_endowment' => !empty($adjustment['is_endowment_after']), 'amount' => (string) $amount->getAmount(), 'item_count' => 1],
+      ])
+      ->setDefaults(['batch_id' => $batch['id']])
+      ->execute();
   }
 
   /**

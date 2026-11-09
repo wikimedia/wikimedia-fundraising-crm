@@ -3,6 +3,7 @@
 namespace Civi\WMFAudit;
 
 use Civi\Api4\Batch;
+use Civi\Api4\BatchFinancialBreakdown;
 use Civi\Api4\CustomValue;
 use Civi\Api4\WMFAudit;
 use League\Csv\Reader;
@@ -78,6 +79,14 @@ class GenerateAdjustmentJournalsTest extends BaseAuditTestCase {
     // 11110 = GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE.
     $this->assertRow($to[1], '11110', '10.00', '0.00', '300-END', '');
     $this->assertBalances($to);
+
+    $breakdown = (array) BatchFinancialBreakdown::get(FALSE)
+      ->addWhere('batch_id.name', '=', $batchName)
+      ->addOrderBy('amount')
+      ->execute();
+    $this->assertCount(2, $breakdown);
+    $this->assertEquals(['43481', FALSE, -10, 1], [$breakdown[0]['gl_code'], $breakdown[0]['is_endowment'], $breakdown[0]['amount'], $breakdown[0]['item_count']]);
+    $this->assertEquals(['43481', TRUE, 10, 1], [$breakdown[1]['gl_code'], $breakdown[1]['is_endowment'], $breakdown[1]['amount'], $breakdown[1]['item_count']]);
   }
 
   /**

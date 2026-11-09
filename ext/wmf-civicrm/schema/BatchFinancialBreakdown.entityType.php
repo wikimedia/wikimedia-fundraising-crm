@@ -60,7 +60,7 @@ return [
       'default' => 0,
       'input_type' => 'Number',
       'title' => E::ts('Item Count'),
-      'description' => E::ts('Number of donations & refunds. Negative on the reversed side of an adjustment batch.'),
+      'description' => E::ts('Number of donations & refunds.'),
     ],
   ],
   'getIndices' => fn() => [
