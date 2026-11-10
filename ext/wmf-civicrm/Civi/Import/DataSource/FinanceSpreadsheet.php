@@ -315,7 +315,9 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
    * @return bool
    */
   private function isEndowmentFile(string $fileName): bool {
-    return str_contains($fileName, self::ENDOWMENT_FILENAME_MARKER);
+    return str_contains($fileName, self::ENDOWMENT_FILENAME_MARKER)
+      // Also permit endowment, this one not case-sensitive.
+      || str_contains(strtolower($fileName), 'endowment');
   }
 
   /**
