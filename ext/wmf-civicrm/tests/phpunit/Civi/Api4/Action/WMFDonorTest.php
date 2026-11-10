@@ -1146,12 +1146,10 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
         'contribution_status_id:name' => 'In Progress',
       ], 'donor');
     }
-    foreach ($contributions as $index => [$receiveDate, $amount]) {
-      $this->createTestEntity('Contribution', [
+    foreach ($contributions as $index => $contribution) {
+      $this->createTestEntity('Contribution', $contribution + [
         'contact_id' => $contactID,
         'contribution_recur_id' => $this->ids['ContributionRecur']['donor'] ?? NULL,
-        'receive_date' => $receiveDate,
-        'total_amount' => $amount,
         'financial_type_id:name' => 'Donation',
       ], 'donor_' . $index);
     }
@@ -1191,7 +1189,8 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   }
 
   /**
-   * Contributions are payments on the recurring, if there is one.
+   * Contributions are payments on the recurring, if there is one, unless their
+   * params say otherwise.
    *
    * Expected rows are [log_date, segment, overall, otg, recur overall,
    * recur month, recur year, changed fields].
@@ -1199,7 +1198,11 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   public static function rebuildHistoryScenarios(): array {
     return [
       'one-time gifts and rollovers' => [
-        'contributions' => [['2022-10-01', 10], ['2023-10-01', 10], ['2023-10-01 12:00:00', 100]],
+        'contributions' => [
+          ['receive_date' => '2022-10-01', 'total_amount' => 10],
+          ['receive_date' => '2023-10-01', 'total_amount' => 10],
+          ['receive_date' => '2023-10-01 12:00:00', 'total_amount' => 100],
+        ],
         'recur' => NULL,
         'expectedRows' => [
           // New
@@ -1215,7 +1218,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
         ],
       ],
       'gift just before a rollover' => [
-        'contributions' => [['2023-06-30 23:58:00', 10]],
+        'contributions' => [['receive_date' => '2023-06-30 23:58:00', 'total_amount' => 10]],
         'recur' => NULL,
         'expectedRows' => [
           // New, not merged into the rollover two minutes later
@@ -1224,6 +1227,38 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
           ['2023-07-01 00:00:00', 600, 60, 60, 95, 95, 95, [2, 3]],
           // Lapsed, on rollover
           ['2024-07-01 00:00:00', 600, 70, 70, 95, 95, 95, [2, 3]],
+        ],
+      ],
+      'two gifts within the merge window' => [
+        'contributions' => [
+          ['receive_date' => '2023-10-01 12:00:00', 'total_amount' => 10],
+          ['receive_date' => '2023-10-01 12:10:00', 'total_amount' => 100],
+        ],
+        'recur' => NULL,
+        'expectedRows' => [
+          // New
+          ['2023-10-01 12:00:00', 600, 30, 30, 95, 95, 95, [1, 2, 3]],
+          // Grassroots plus, not merged with the first gift
+          ['2023-10-01 12:10:00', 500, 30, 30, 95, 95, 95, [1]],
+          // New last year, on rollover
+          ['2024-07-01 00:00:00', 500, 60, 60, 95, 95, 95, [2, 3]],
+        ],
+      ],
+      'gift just after a rollover' => [
+        'contributions' => [
+          ['receive_date' => '2022-10-01', 'total_amount' => 10],
+          ['receive_date' => '2023-07-01 00:05:00', 'total_amount' => 10],
+        ],
+        'recur' => NULL,
+        'expectedRows' => [
+          // New
+          ['2022-10-01 00:00:00', 600, 30, 30, 95, 95, 95, [1, 2, 3]],
+          // New last year, on rollover
+          ['2023-07-01 00:00:00', 600, 60, 60, 95, 95, 95, [2, 3]],
+          // Consecutive this year, not merged into the rollover five minutes before
+          ['2023-07-01 00:05:00', 600, 10, 10, 95, 95, 95, [2, 3]],
+          // Consecutive last year, on rollover
+          ['2024-07-01 00:00:00', 600, 40, 40, 95, 95, 95, [2, 3]],
         ],
       ],
       'recurring paused, unpaused and cancelled' => [
@@ -1400,7 +1435,10 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
         ],
       ],
       'recurring payments and their log rows within the merge window' => [
-        'contributions' => [['2023-04-15 03:00:00', 10], ['2023-05-15 03:00:10', 10]],
+        'contributions' => [
+          ['receive_date' => '2023-04-15 03:00:00', 'total_amount' => 10],
+          ['receive_date' => '2023-05-15 03:00:10', 'total_amount' => 10],
+        ],
         'recur' => [
           'params' => ['start_date' => '2023-04-15 03:00:00', 'next_sched_contribution_date' => '2023-05-15'],
           'logDate' => '2023-04-15 03:00:30',
@@ -1418,6 +1456,71 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
           ['2023-07-01 00:00:00', 600, 60, 99, 15, 15, 95, [2, 6, 4]],
           // Lapsed, on rollover
           ['2024-07-01 00:00:00', 600, 70, 99, 15, 15, 95, [2]],
+        ],
+      ],
+      'gift converted post-payment to a recurring' => [
+        'contributions' => [['receive_date' => '2023-04-15 03:00:00', 'total_amount' => 10, 'contribution_recur_id' => NULL, 'invoice_id' => 'converted']],
+        'recur' => [
+          'params' => ['contribution_status_id:name' => 'Pending', 'start_date' => '2023-05-15', 'next_sched_contribution_date' => '2023-05-15', 'invoice_id' => 'converted'],
+          'logDate' => '2023-04-15 03:05:00',
+        ],
+        'expectedRows' => [
+          // One row for the gift and the recurring with its invoice ID five minutes later
+          ['2023-04-15 03:05:00', 600, 30, 30, 25, 25, 95, [1, 2, 3, 6, 4]],
+          // New last year and active recurring, on rollover
+          ['2023-07-01 00:00:00', 600, 60, 60, 15, 15, 95, [2, 3, 6, 4]],
+          // Lapsed, on rollover
+          ['2024-07-01 00:00:00', 600, 70, 70, 15, 15, 95, [2, 3]],
+        ],
+      ],
+      'gift and an unrelated recurring within the merge window' => [
+        'contributions' => [['receive_date' => '2023-04-15 03:00:00', 'total_amount' => 10, 'contribution_recur_id' => NULL]],
+        'recur' => [
+          'params' => ['start_date' => '2023-05-15', 'next_sched_contribution_date' => '2023-05-15'],
+          'logDate' => '2023-04-15 03:05:00',
+        ],
+        'expectedRows' => [
+          // New
+          ['2023-04-15 03:00:00', 600, 30, 30, 95, 95, 95, [1, 2, 3]],
+          // New recurring, not merged with the gift
+          ['2023-04-15 03:05:00', 600, 30, 30, 25, 25, 95, [6, 4]],
+          // New last year and active recurring, on rollover
+          ['2023-07-01 00:00:00', 600, 60, 60, 15, 15, 95, [2, 3, 6, 4]],
+          // Lapsed, on rollover
+          ['2024-07-01 00:00:00', 600, 70, 70, 15, 15, 95, [2, 3]],
+        ],
+      ],
+      'gift in the same second as a rollover' => [
+        'contributions' => [['receive_date' => '2023-07-01', 'total_amount' => 10, 'contribution_recur_id' => NULL]],
+        'recur' => [
+          'params' => ['start_date' => '2023-01-01', 'next_sched_contribution_date' => '2023-02-01'],
+          'logDate' => '2023-01-01 09:00:00',
+        ],
+        'expectedRows' => [
+          // New recurring
+          ['2023-01-01 09:00:00', 990, 99, 99, 25, 25, 95, [6, 4]],
+          // New, and active recurring on rollover, in one row
+          ['2023-07-01 00:00:00', 600, 30, 30, 15, 15, 95, [1, 2, 3, 6, 4]],
+          // New last year, on rollover
+          ['2024-07-01 00:00:00', 600, 60, 60, 15, 15, 95, [2, 3]],
+        ],
+      ],
+      'recurring changed in the same second as a rollover' => [
+        'contributions' => [['receive_date' => '2023-06-30 23:55:00', 'total_amount' => 10]],
+        'recur' => [
+          'params' => ['start_date' => '2023-06-30', 'next_sched_contribution_date' => '2023-07-30'],
+          'logDate' => '2023-06-30 23:56:00',
+          'changes' => [
+            '2023-07-01 00:00:00' => ['contribution_status_id:name' => 'Cancelled', 'cancel_date' => '2023-07-01'],
+          ],
+        ],
+        'expectedRows' => [
+          // New, with a new recurring
+          ['2023-06-30 23:56:00', 600, 30, 99, 25, 25, 95, [1, 2, 6, 4]],
+          // New last year, and cancelled, on rollover: not merged into the year before
+          ['2023-07-01 00:00:00', 600, 60, 99, 65, 65, 95, [2, 6, 4]],
+          // Lapsed, on rollover
+          ['2024-07-01 00:00:00', 600, 70, 99, 65, 65, 95, [2]],
         ],
       ],
     ];
