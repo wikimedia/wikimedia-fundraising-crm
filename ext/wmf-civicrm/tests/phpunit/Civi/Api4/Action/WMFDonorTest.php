@@ -1467,12 +1467,30 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
           'logDate' => '2023-04-15 03:05:00',
         ],
         'expectedRows' => [
-          // One row for the gift and the recurring with its invoice ID five minutes later
-          ['2023-04-15 03:05:00', 600, 30, 30, 25, 25, 95, [1, 2, 3, 6, 4]],
+          // One row for the gift and the recurring with its invoice ID five minutes later, at the gift's time
+          ['2023-04-15 03:00:00', 600, 30, 30, 25, 25, 95, [1, 2, 3, 6, 4]],
           // New last year and active recurring, on rollover
           ['2023-07-01 00:00:00', 600, 60, 60, 15, 15, 95, [2, 3, 6, 4]],
           // Lapsed, on rollover
           ['2024-07-01 00:00:00', 600, 70, 70, 15, 15, 95, [2, 3]],
+        ],
+      ],
+      'gift converted post-payment to a recurring days later, then cancelled' => [
+        'contributions' => [['receive_date' => '2023-04-15 03:00:00', 'total_amount' => 10, 'contribution_recur_id' => NULL, 'invoice_id' => 'converted']],
+        'recur' => [
+          'params' => ['contribution_status_id:name' => 'Pending', 'start_date' => '2023-05-17', 'next_sched_contribution_date' => '2023-05-17', 'invoice_id' => 'converted'],
+          'logDate' => '2023-04-17 02:00:00',
+          'changes' => ['2023-04-18 02:00:00' => ['contribution_status_id:name' => 'Cancelled', 'cancel_date' => '2023-04-18 02:00:00']],
+        ],
+        'expectedRows' => [
+          // One row for the gift and the 2 days later recurring with its invoice ID, at the contribution time
+          ['2023-04-15 03:00:00', 600, 30, 30, 25, 25, 95, [1, 2, 3, 6, 4]],
+          // Cancelled, not merged as it's not the recurring's creation
+          ['2023-04-18 02:00:00', 600, 30, 30, 65, 65, 95, [6, 4]],
+          // New last year, on rollover
+          ['2023-07-01 00:00:00', 600, 60, 60, 65, 65, 95, [2, 3]],
+          // Lapsed, on rollover
+          ['2024-07-01 00:00:00', 600, 70, 70, 65, 65, 95, [2, 3]],
         ],
       ],
       'gift and an unrelated recurring within the merge window' => [
@@ -1764,6 +1782,36 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       'receive_date' => date('Y-m-d H:i:s'),
       'total_amount' => 10,
       'financial_type_id:name' => 'Donation',
+    ], 'donor');
+
+    $this->runHistoryQueue('wmf_donor_history');
+    $this->assertHistoryMatchesRebuild($contactID);
+  }
+
+  /**
+   * A recurring post-payment converted from a gift days earlier queues a rebuild that merges the two.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testConvertRebuildsHistory(): void {
+    $contactID = $this->createIndividual([], 'donor');
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $contactID,
+      'receive_date' => date('Y-m-d H:i:s', strtotime('-2 days')),
+      'total_amount' => 10,
+      'financial_type_id:name' => 'Donation',
+      'invoice_id' => 'converted',
+    ], 'donor');
+    // The gift's row, as when it was processed.
+    WMFDonor::rebuildHistory(FALSE)->setContactIds([$contactID])->execute();
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $contactID,
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'Pending',
+      'start_date' => date('Y-m-d H:i:s', strtotime('+1 month')),
+      'invoice_id' => 'converted',
     ], 'donor');
 
     $this->runHistoryQueue('wmf_donor_history');
