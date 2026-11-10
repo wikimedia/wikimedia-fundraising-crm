@@ -53,6 +53,12 @@ class GenerateBatchTest extends BaseAuditTestCase {
       ->addWhere('name', 'LIKE', 'engage_341%')
       ->execute();
     Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'ach_341%')
+      ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'wire_341%')
+      ->execute();
+    Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'endowtest_342%')
       ->execute();
     GatewayAccount::delete(FALSE)
@@ -508,16 +514,22 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $this->assertSame('60932', (string) $feeRows[0]['ACCT_NO'], 'CCK fees on the endowment gateway account should use GL 60932');
   }
 
+  public static function manualBatchGatewayProvider(): array {
+    return [
+      'engage' => ['engage_341'],
+      'ach' => ['ach_341'],
+      'wire' => ['wire_341'],
+    ];
+  }
+
   /**
-   * Engage's item_count comes from the "Checks" column of their deposit
-   * summary report, not from CiviCRM's own data (see EngageSummary
-   * skipRowsWithoutChecks()), so it can drift out of sync with the actual
-   * number of settled rows. When the dollar totals already reconcile,
-   * GenerateBatch should correct item_count and validate rather than
-   * failing the batch over the count mismatch alone.
+   * Manually entered item counts (e.g. Engage's "Checks" column, or an ach/wire
+   * transfer split into several contributions) can drift from the settled rows.
+   * When the dollar totals reconcile, item_count is corrected rather than failing.
+   *
+   * @dataProvider manualBatchGatewayProvider
    */
-  public function testEngageItemCountMismatchCorrectedWhenTotalsMatch(): void {
-    $prefix = 'engage_341';
+  public function testManualItemCountMismatchCorrectedWhenTotalsMatch(string $prefix): void {
     $batchName = "{$prefix}_USD";
     $currency = 'USD';
     $settlementDate = '2026-01-28';
@@ -532,7 +544,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
       'contribution_settlement.settlement_date' => $settlementDate,
     ]);
     // item_count (2) deliberately wrong vs. the single settled row above,
-    // but the dollar total (25.00) matches - this is the Engage scenario.
+    // but the dollar total (25.00) matches.
     $result = $this->runGenerate($batchName, $currency, $settlementDate, 25.00, 2, $prefix);
 
     $this->assertEquals(0, array_sum($result[0]['validation']), 'Batch should validate once item_count is self-corrected: ' . print_r($result[0]['validation'], TRUE));
