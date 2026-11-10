@@ -3,6 +3,7 @@
 
 namespace Civi\WMFHook;
 
+use Civi\Api4\Batch;
 use Civi\Api4\ExchangeRate;
 use Civi\Api4\GatewayAccount;
 use Civi\Api4\GroupContact;
@@ -516,7 +517,7 @@ class Import {
    * @throws \CRM_Core_Exception
    */
   public function isFidelity(): bool {
-    return $this->getGateway() === 'fidelity';
+    return $this->getGateway() === 'fidelity' || strtolower($this->mappedRow['Contribution']['contribution_extra.backend_processor'] ?? '') === 'fidelity';
   }
 
   /**
@@ -716,8 +717,29 @@ class Import {
     // If it didn't settle in USD they will need to fill it in as we can't rely on original currency.
     $currency = $this->mappedRow['Contribution']['contribution_settlement.settlement_currency'] ?? 'USD';
     $this->mappedRow['Contribution']['contribution_settlement.settlement_currency'] = $currency;
-    $this->mappedRow['Contribution']['contribution_settlement.settlement_batch_reference'] = implode('_', [$gatewayAccountName, $inputReference, $currency]);
+    $this->mappedRow['Contribution']['contribution_settlement.settlement_batch_reference'] = ($this->isFidelity() ? $this->getFidelityBatchName($gatewayAccountName, $inputReference, $currency) : NULL)
+      ?? implode('_', [$gatewayAccountName, $inputReference, $currency]);
     $this->fillSettledAmounts();
+  }
+
+  /**
+   * Find the ACH settlement batch for a Fidelity row.
+   *
+   * Batches imported from the Finance Spreadsheet are named after the bank
+   * description - e.g. achendowment_ACH-FIDELITY INVESTMGrantPaymt1014264210946 2026-10-14 0_USD
+   * - which contains the ACH Group Id (4210946) from the Fidelity file.
+   *
+   * @return string|null
+   *   The batch name, if exactly one batch matches.
+   */
+  private function getFidelityBatchName(string $gatewayAccountName, string $achGroupID, string $currency): ?string {
+    $batches = Batch::get(FALSE)
+      // Escape '_' so the 'ach' account does not also match 'achendowment' batches.
+      ->addWhere('name', 'LIKE', $gatewayAccountName . '\_%' . $achGroupID . '%\_' . $currency)
+      ->addSelect('name')
+      ->setLimit(2)
+      ->execute();
+    return $batches->count() === 1 ? $batches->first()['name'] : NULL;
   }
 
   /**

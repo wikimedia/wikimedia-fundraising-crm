@@ -210,6 +210,10 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       UserJob::delete(FALSE)->addWhere('id', '=', $this->userJobID)->execute();
     }
     Batch::delete(FALSE)->addWhere('name', 'LIKE', '%wire_batch_%')->execute();
+    Batch::delete(FALSE)->addWhere('name', 'LIKE', '%FIDELITY INVESTMGrantPaymt%')->execute();
+    $this->cleanupContact(['organization_name' => 'Endowmouse Family Fund']);
+    $this->cleanupContact(['organization_name' => 'Endowduck Fund']);
+    $this->cleanupContact(['display_name' => 'Patty Endowmouse']);
     $this->cleanupContact(['organization_name' => 'Nice Family Fund']);
     $this->cleanupContact(['organization_name' => 'Kind Family Charitable Fund']);
     $this->cleanupContact(['organization_name' => 'Generous Family Fund']);
@@ -1465,6 +1469,51 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ->addWhere('soft_credit_type_id:name', '!=', 'Banking Institution')
       ->execute();
     $this->assertCount(0, $softCredit);
+  }
+
+  /**
+   * Fidelity Endowment rows link to the ACH batch from the Finance Spreadsheet.
+   *
+   * The batch name holds the bank description, which contains the ACH Group Id.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testImportFidelityEndowmentLinksToAchBatch(): void {
+    $batchNames = [
+      '4210946' => 'achendowment_ACH-FIDELITY INVESTMGrantPaymt1014264210946 2026-10-14 0_USD',
+      '4214908' => 'achendowment_ACH-FIDELITY INVESTMGrantPaymt1015264214908 2026-10-15 0_USD',
+    ];
+    foreach ($batchNames as $batchName) {
+      $this->createTestEntity('Batch', ['name' => $batchName, 'title' => $batchName, 'mode_id:name' => 'Manual Batch', 'status_id:name' => 'total_verified'], $batchName);
+    }
+    // Same group id but a different gateway account - should not be matched.
+    $this->createTestEntity('Batch', ['name' => 'ach_ACH-FIDELITY INVESTMGrantPaymt1015264214908 2026-10-15 0_USD', 'mode_id:name' => 'Manual Batch', 'status_id:name' => 'total_verified']);
+
+    $template = (require __DIR__ . '/../../../../managed/UserJobFidelityEndowment.mgd.php')[0]['params']['values']['metadata'];
+    $this->importCSV('fidelity_endowment.csv', $template['import_mappings'], [
+      'dateFormats' => \CRM_Utils_Date::DATE_mm_dd_yyyy,
+    ], $template['entity_configuration']);
+
+    $contributions = (array) Contribution::get(FALSE)
+      ->addWhere('contribution_extra.gateway_txn_id', 'IN', ['29848064', '29854393', '29859367', '29899682'])
+      ->addSelect('contribution_extra.gateway_txn_id', 'contribution_extra.gateway', 'contribution_extra.backend_processor', 'contribution_settlement.settlement_batch_reference', 'contact_id.display_name')
+      ->execute()->indexBy('contribution_extra.gateway_txn_id');
+    $this->assertCount(4, $contributions);
+    $this->assertEquals('Fidelity', $contributions['29848064']['contribution_extra.backend_processor']);
+    $this->assertEquals('Anonymous Fidelity Donor Advised Fund', $contributions['29899682']['contact_id.display_name']);
+    $this->assertCount(1, Batch::get(FALSE)->addWhere('name', 'LIKE', 'achendowment\_%4210946%\_USD')->execute());
+    $this->assertEquals($batchNames['4210946'], $contributions['29848064']['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals($batchNames['4210946'], $contributions['29854393']['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals($batchNames['4214908'], $contributions['29859367']['contribution_settlement.settlement_batch_reference']);
+    // No batch imported for this group, so we fall back to the composite reference.
+    $this->assertEquals('achendowment_4227728_USD', $contributions['29899682']['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals('ach', $contributions['29848064']['contribution_extra.gateway']);
+
+    $this->assertCount(4, ContributionSoft::get(FALSE)
+      ->addWhere('contribution_id', 'IN', array_column($contributions, 'id'))
+      ->addWhere('soft_credit_type_id:name', '=', 'Banking Institution')
+      ->addWhere('contact_id.display_name', '=', 'Fidelity Charitable Gift Fund')
+      ->execute());
   }
 
   /**
