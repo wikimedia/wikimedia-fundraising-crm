@@ -1,5 +1,15 @@
 <?php
 
+// paratest workers share /tmp, so give each its own to keep fixed-name temp
+// files (e.g. Acoustic downloads) apart. Must run before sys_get_temp_dir().
+if (getenv('TEST_TOKEN')) {
+  $workerTmpDir = (getenv('TMPDIR') ?: '/tmp') . '/paratest-' . getenv('TEST_TOKEN');
+  if (!is_dir($workerTmpDir)) {
+    mkdir($workerTmpDir);
+  }
+  putenv('TMPDIR=' . $workerTmpDir);
+}
+
 $templateDir = tempnam(sys_get_temp_dir(), 'crmunit');
 unlink($templateDir);
 mkdir($templateDir);
