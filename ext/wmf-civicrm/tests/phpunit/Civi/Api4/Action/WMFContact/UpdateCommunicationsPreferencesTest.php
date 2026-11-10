@@ -7,6 +7,8 @@ use Civi\Api4\Activity;
 use Civi\Api4\QueueItem;
 use Civi\Api4\WMFContact;
 use Civi\Api4\Email;
+use Civi\Api4\MessageTemplate;
+use Civi\Api4\Translation;
 use PHPUnit\Framework\TestCase;
 use Civi\Api4\Address;
 use Civi\Api4\Contact;
@@ -27,6 +29,9 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
     QueueItem::delete(FALSE)
       ->addWhere('queue_name', '=', 'omni-snooze')
       ->execute();
+    if (!empty($this->ids['Translation'])) {
+      Translation::delete(FALSE)->addWhere('id', 'IN', $this->ids['Translation'])->execute();
+    }
     parent::tearDown();
   }
 
@@ -608,6 +613,37 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
       ->addSelect('Email.Workflow')
       ->execute()->single();
     $this->assertEquals('double_opt_in', $sentEmail['Email.Workflow']);
+  }
+
+  /**
+   * Verification email uses the language submitted with the email change.
+   */
+  public function testVerificationEmailUsesSubmittedLanguage(): void {
+    $this->createTestEntity('Translation', [
+      'entity_table' => 'civicrm_msg_template',
+      'entity_id' => MessageTemplate::get(FALSE)
+        ->addWhere('workflow_name', '=', 'set_primary_email')
+        ->addWhere('is_default', '=', TRUE)
+        ->execute()->single()['id'],
+      'entity_field' => 'msg_subject',
+      'language' => 'es_ES',
+      'string' => 'Verifica tu correo',
+      'status_id:name' => 'active',
+    ]);
+    $contactID = $this->createIndividual([
+      'preferred_language' => 'fr_CA',
+      'email_primary.email' => 'old@example.org',
+    ]);
+
+    WMFContact::updateCommunicationsPreferences()
+      ->setEmail('new@example.org')
+      ->setContactID($contactID)
+      ->setChecksum(\CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID))
+      ->setEmailChecksum(hash('sha256', $contactID))
+      ->setLanguage('es_MX')
+      ->execute();
+
+    $this->assertStringContainsString('Subject: Verifica tu correo', $this->getMostRecentEmail()['headers']);
   }
 
   private function optInViaPreferenceCenter(int $contactID, string $email): void {
