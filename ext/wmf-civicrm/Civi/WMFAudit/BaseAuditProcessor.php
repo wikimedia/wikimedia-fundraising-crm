@@ -797,8 +797,7 @@ abstract class BaseAuditProcessor {
               // For when gravy is the gateway txn ID but, we don't know it...
               // This is only for logging output.
               $transaction['gateway_txn_id'] = $transaction['gateway_txn_id'] ?: 'BE-' . $transaction['backend_processor_txn_id'];
-              $wrap_up .= "\t" . WMFTransaction::from_message($transaction)
-                  ->get_unique_id() . "\n";
+              $wrap_up .= "\t" . WMFTransaction::from_message($transaction)->get_unique_id() . $this->getMissingTransactionDetail($transaction) . "\n";
             }
             catch (WMFException $e) {
               \Civi::log('wmf')->warning($e->getMessage() . "\n {transaction}", ['transaction' => $transaction]);
@@ -812,6 +811,22 @@ abstract class BaseAuditProcessor {
     }
 
     $this->echo($wrap_up);
+  }
+
+  /**
+   * Get the other ids for a missing transaction, to help track it down.
+   *
+   * e.g. ' gateway_parent_id: 7UE0604858585801J, invoice_id: 123.1, contribution_tracking_id: 123'
+   */
+  private function getMissingTransactionDetail(array $transaction): string {
+    $keys = ['gateway_parent_id', 'gateway_refund_id', 'invoice_id', 'order_id', 'contribution_tracking_id', 'backend_processor_txn_id'];
+    $details = [];
+    foreach ($keys as $key) {
+      if (!empty($transaction[$key]) && ($key !== 'order_id' || ($transaction['invoice_id'] ?? NULL) !== $transaction['order_id'])) {
+        $details[] = $key . ': ' . $transaction[$key];
+      }
+    }
+    return $details ? ' ' . implode(', ', $details) : '';
   }
 
   protected function handleNegatives(&$remaining) {
