@@ -206,16 +206,6 @@ class RebuildHistory extends AbstractAction {
   /**
    * Get the times to calculate for, with the source tables that may have changed.
    *
-   * Events are contributions, recurring log rows and unpauses, recurring start,
-   * cancel and end dates before the first log row of recurrings that started
-   * before logging did, and each financial year rollover after the first of the
-   * aforementioned events. Consecutive events for the same recurring within
-   * MERGE_SECONDS of each other, other than two contributions, and events in
-   * the same second are calculated together. So is a gift and the recurring
-   * post-payment converted from it, within the longer CONVERT_MERGE_SECONDS.
-   * They're calculated and logged as of the latest, except a converted gift is
-   * logged at its time, as if converted when given.
-   *
    * @param int $contactID
    * @param string $endDate
    *
@@ -225,6 +215,27 @@ class RebuildHistory extends AbstractAction {
    * @throws \CRM_Core_Exception
    */
   private function getCalculationTimes(int $contactID, string $endDate): array {
+    $events = $this->getEvents($contactID, $endDate);
+    $events = array_merge($events, $this->getRollovers($events, $endDate));
+    array_multisort(array_column($events, 'time'), SORT_ASC, $events);
+    return $this->mergeEvents($events);
+  }
+
+  /**
+   * Get the contact's events before the end date.
+   *
+   * Events are contributions, recurring log rows and unpauses, and for
+   * recurrings that started before logging began, recurring start, cancel and
+   * end dates.
+   *
+   * @param int $contactID
+   * @param string $endDate
+   *
+   * @return array
+   *   [['time' => SQL datetime, 'tables' => [tableName, ...], 'recurID' => ?string, 'isConvert' => bool], ...]
+   * @throws \CRM_Core_Exception
+   */
+  private function getEvents(int $contactID, string $endDate): array {
     $params = [
       1 => [$contactID, 'Integer'],
       2 => [$endDate, 'String'],
@@ -302,35 +313,64 @@ class RebuildHistory extends AbstractAction {
       $isAfterTie = $previousRow && $previousRow['id'] === $logRow['id'] && $previousRow['log_date'] === $logRow['log_date'];
       $previousRow = $logRow;
     }
-    if ($events) {
-      // A rollover only recalculates the tables the contact has had an event
-      // for by then, otherwise it's all defaults.
-      $firstEventTimes = [];
-      foreach ($events as $event) {
-        foreach ($event['tables'] as $tableName) {
-          $firstEventTimes[$tableName] = min($firstEventTimes[$tableName] ?? $endDate, $event['time']);
-        }
-      }
-      for ($year = (int) substr(min($firstEventTimes), 0, 4); "$year-07-01 00:00:00" < $endDate; $year++) {
-        $rollover = "$year-07-01 00:00:00";
-        $tables = [];
-        foreach ($firstEventTimes as $tableName => $firstEventTime) {
-          if ($firstEventTime <= $rollover) {
-            $tables[] = $tableName;
-          }
-        }
-        if ($tables) {
-          $events[] = ['time' => $rollover, 'tables' => $tables, 'recurID' => NULL, 'isConvert' => FALSE];
-        }
+    return $events;
+  }
+
+  /**
+   * Get each financial year rollover after the first of the events.
+   *
+   * @param array $events
+   * @param string $endDate
+   *
+   * @return array
+   *   Events, as from getEvents().
+   */
+  private function getRollovers(array $events, string $endDate): array {
+    if (!$events) {
+      return [];
+    }
+    // A rollover only recalculates the tables the contact has had an event
+    // for by then, otherwise it's all defaults.
+    $firstEventTimes = [];
+    foreach ($events as $event) {
+      foreach ($event['tables'] as $tableName) {
+        $firstEventTimes[$tableName] = min($firstEventTimes[$tableName] ?? $endDate, $event['time']);
       }
     }
-    array_multisort(array_column($events, 'time'), SORT_ASC, $events);
+    $rollovers = [];
+    for ($year = (int) substr(min($firstEventTimes), 0, 4); "$year-07-01 00:00:00" < $endDate; $year++) {
+      $rollover = "$year-07-01 00:00:00";
+      $tables = [];
+      foreach ($firstEventTimes as $tableName => $firstEventTime) {
+        if ($firstEventTime <= $rollover) {
+          $tables[] = $tableName;
+        }
+      }
+      if ($tables) {
+        $rollovers[] = ['time' => $rollover, 'tables' => $tables, 'recurID' => NULL, 'isConvert' => FALSE];
+      }
+    }
+    return $rollovers;
+  }
 
-    // Events in the same second are merged, as the as-of SQL can't tell them
-    // apart. Otherwise, if the previous calculation time is for the same
-    // recurring, an event less than MERGE_SECONDS (CONVERT_MERGE_SECONDS after
-    // a converted gift) after it is merged unless both are contributions or they
-    // cross a financial year end, so we keep the end of year values.
+  /**
+   * Merge events into the times to calculate for.
+   *
+   * Consecutive events for the same recurring within MERGE_SECONDS of each
+   * other, other than two contributions, and events in the same second are
+   * calculated together. So is a gift and the recurring post-payment converted
+   * from it, within the longer CONVERT_MERGE_SECONDS. They're calculated and
+   * logged as of the latest, except a donation post-payment converted to
+   * recurring is logged at the original contribution time. We don't merge over
+   * a fiscal year end, so we keep the end of year values.
+   *
+   * @param array $events
+   *   As from getEvents(), in ascending time order.
+   *
+   * @return array
+   *   As from getCalculationTimes().
+   */
+  private function mergeEvents(array $events): array {
     $calculationTimes = [];
     foreach ($events as $event) {
       $previous = array_key_last($calculationTimes);
