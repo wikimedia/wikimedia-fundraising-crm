@@ -608,7 +608,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
   private function createBatch(string $batchName, string $currency, string $settlementDate, float $net, int $itemCount): void {
     $this->createTestEntity('Batch', [
       'name' => $batchName,
-      // Not single() - testGenerateBatchFailedRetrieveVendorID uses a gateway with no account.
+      // Not single() - testGenerateBatchFailedNoGatewayAccount uses a gateway with no account.
       'batch_data.settlement_gateway_account_id' => GatewayAccount::get(FALSE)->addWhere('name', '=', explode('_', $batchName)[0])->execute()->first()['id'] ?? NULL,
       'mode_id:name' => 'Automatic Batch',
       'status_id:name' => 'total_verified',
@@ -692,9 +692,10 @@ class GenerateBatchTest extends BaseAuditTestCase {
     }
   }
 
-  public function testGenerateBatchFailedRetrieveVendorID() {
-    // If the gateway (prefix) is not present in getVendorCodesForGateways(),
-    // GenerateBatch::getVendorCode() should throw a CRM_Core_Exception.
+  /**
+   * A batch with no matching GatewayAccount can't be journaled.
+   */
+  public function testGenerateBatchFailedNoGatewayAccount(): void {
     $prefix = 'wronggateway';
     $batchName = "{$prefix}_USD";
     $currency = 'USD';
@@ -705,9 +706,8 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $this->createBatch($batchName, $currency, $settlementDate, 0.0, 0);
 
     $this->expectException(\CRM_Core_Exception::class);
-    $this->expectExceptionMessage('batch vendor ID missing for ' . $prefix);
+    $this->expectExceptionMessage('No gateway account set for batch ' . $batchName);
 
-    // Trigger the generation which should call getVendorCode() and raise.
     WMFAudit::generateBatch(FALSE)
       ->setBatchPrefix($prefix)
       ->setIsDryRun(TRUE)
