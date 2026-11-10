@@ -749,19 +749,21 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
   /**
    * donor_status_otg only counts one-time gifts, donor_status_overall counts all.
    *
-   * Both donors give a mix of recurring and one-time gifts across the same three
-   * financial years, so each is a consecutive overall donor. Their one-time-gift
-   * status differs by which of those gifts were recurring: when the recent gifts
-   * are recurring the donor is otg lapsed, when the recent gifts are one-time the
-   * donor is otg consecutive.
+   * The first two donors give a mix of recurring and one-time gifts across the
+   * same three financial years, so each is a consecutive overall donor. Their
+   * one-time-gift status differs by which of those gifts were recurring: when the
+   * recent gifts are recurring the donor is otg lapsed, when the recent gifts are
+   * one-time the donor is otg consecutive. A first one-time gift after recurring
+   * gifts is otg new.
    *
    * @throws \CRM_Core_Exception
    */
   public function testWMFDonorStatusOTG(): void {
-    // [expected overall, expected otg, [[year offset, is recurring], ...]]
+    // [expected overall, expected otg, [[year ago, is recurring], ...]]
     $scenarios = [
       'recurring_recent' => [10, 70, [[0, TRUE], [1, TRUE], [2, FALSE]]],
       'onetime_recent' => [10, 10, [[0, FALSE], [1, FALSE], [2, TRUE]]],
+      'onetime_after_recurring' => [20, 30, [[0, FALSE], [2, TRUE]]],
     ];
     foreach ($scenarios as $name => [, , $gifts]) {
       $this->createIndividual([], $name);

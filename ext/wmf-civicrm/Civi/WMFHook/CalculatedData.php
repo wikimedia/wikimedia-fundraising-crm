@@ -1598,8 +1598,8 @@ $groupBy
         'value' => 30,
         'name' => 'new',
         'criteria' => [
-          // can't we just fall through here instead?
-          'first_donation' => [
+          // Consecutive and reactivated come first, so we already know that earlier years had no gifts.
+          'range' => [
             ['from' => $this->getFinancialYearStartDateTime(), 'to' => $this->getFinancialYearEndDateTime()],
           ],
         ],
