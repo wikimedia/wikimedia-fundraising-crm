@@ -450,7 +450,9 @@ class AuditMessage extends DonationMessage {
         if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getPaymentOrchestratorReconciliationReference()) {
           $this->existingContribution = $this->lookupByPaymentOrchestratorReconciliationId() ?? [];
         }
-        if (empty($this->existingContribution) && $this->getBackendProcessorTxnID() && $this->getBackEndProcessor()) {
+        if (empty($this->existingContribution) && $this->getBackEndProcessor()
+          && ($this->getBackendProcessorTxnID() || ($this->isNegative() && $this->getBackendProcessorParentTxnID()))
+        ) {
           // We are moving towards this being our preferred way of identifying transactions as it
           // reliably matches (famous last words) the settlement file, where populated.
           // Ideally move above the lookupByPaymentOrchestratorReconciliationId in a follow-up.
@@ -1116,13 +1118,30 @@ class AuditMessage extends DonationMessage {
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   private function lookupByBackendProcessorTrxnId(): ?array {
-    return Contribution::get(FALSE)
+    // Try the parent ID, if provided (e.g. refund) or the backend processor txn ID.
+    $backendTxnID = $this->getBackendProcessorParentTxnID() ?: $this->getBackendProcessorTxnID();
+    $contribution = Contribution::get(FALSE)
       ->setSelect($this->getContributionSelectFields())
       ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
-      // Try the parent ID, if provided (e.g. refund) or the backend processor txn ID.
-      ->addWhere('contribution_extra.backend_processor_txn_id', '=', $this->getBackendProcessorParentTxnID() ?: $this->getBackendProcessorTxnID())
+      ->addWhere('contribution_extra.backend_processor_txn_id', '=', $backendTxnID)
       ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
       ->execute()->first();
+    if ($contribution) {
+      return $contribution;
+    }
+
+    if ($this->isNegative() && $this->getBackendProcessorParentTxnID()) {
+      // A reversal's parent may be the capture while backend_processor_txn_id
+      // holds the auth - e.g. PayPal STL refunds of Braintree PayPal donations.
+      // @see https://phabricator.wikimedia.org/T444253
+      return Contribution::get(FALSE)
+        ->setSelect($this->getContributionSelectFields())
+        ->addWhere('contribution_extra.backend_processor', '=', $this->getBackendProcessor())
+        ->addWhere('contribution_extra.capture_id', '=', $this->getBackendProcessorParentTxnID())
+        ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
+        ->execute()->first();
+    }
+    return NULL;
   }
 
   /**

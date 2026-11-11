@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6adaeadde5d91e503b4faae7aa6eb709",
+    "content-hash": "9635be438ac597747fa08f0706a6aa8d",
     "packages": [
         {
             "name": "adrienrn/php-mimetyper",
@@ -9224,16 +9224,16 @@
         },
         {
             "name": "wikimedia/smash-pig",
-            "version": "v1.2.7.4",
+            "version": "v1.2.7.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig.git",
-                "reference": "f2ef5a6917b6681bddabcf92555343a2794a7123"
+                "reference": "bee4df5ad26d8d8fa5ed7ba550d636c26fc3b694"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/f2ef5a6917b6681bddabcf92555343a2794a7123",
-                "reference": "f2ef5a6917b6681bddabcf92555343a2794a7123",
+                "url": "https://api.github.com/repos/wikimedia/wikimedia-fundraising-SmashPig/zipball/bee4df5ad26d8d8fa5ed7ba550d636c26fc3b694",
+                "reference": "bee4df5ad26d8d8fa5ed7ba550d636c26fc3b694",
                 "shasum": ""
             },
             "require": {
@@ -9322,9 +9322,10 @@
                 "payments"
             ],
             "support": {
-                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.2.7.4"
+                "source": "https://github.com/wikimedia/wikimedia-fundraising-SmashPig/tree/v1.2.7.7"
             },
-            "time": "2026-10-21T01:16:54+00:00"
+            "time": "2026-11-11T03:11:15+00:00",
+            "published-time": "2026-11-11T05:26:01+00:00"
         },
         {
             "name": "willdurand/geocoder",
@@ -11894,5 +11895,5 @@
     "platform-overrides": {
         "php": "8.4.27"
     },
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.11.0"
 }
