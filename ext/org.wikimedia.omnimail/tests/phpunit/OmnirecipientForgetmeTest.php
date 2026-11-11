@@ -46,7 +46,7 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass {
     // Check the job has retrieval parameters to try again later.
     $omniJobParams = ['job' => 'omnimail_privacy_erase', 'job_identifier' => '["charlie@example.com"]', 'mailing_provider' => 'Silverpop'];
     $omniJob = $this->callAPISuccessGetSingle('OmnimailJobProgress', $omniJobParams);
-    $this->assertEquals('{"fetch_url":"https:\/\/api4.ibmmarketingcloud.com\/rest\/gdpr_jobs\/662\/status","database_id":"50"}', $omniJob['retrieval_parameters']);
+    $this->assertEquals('{"fetch_url":"https:\/\/api-campaign-us-4.goacoustic.com\/rest\/gdpr_jobs\/662\/status","database_id":"50"}', $omniJob['retrieval_parameters']);
 
     $this->setUpForEraseFollowUpSuccess();
     $this->addTestClientToRestSingleton();
@@ -56,7 +56,7 @@ class OmnirecipientForgetmeTest extends OmnimailBaseTestClass {
 
     // Check the request retried our url
     $requests = $this->getRequestUrls();
-    $this->assertEquals('https://api4.ibmmarketingcloud.com/rest/gdpr_jobs/662/status', $requests[1]);
+    $this->assertEquals('https://api-campaign-us-4.goacoustic.com/rest/gdpr_jobs/662/status', $requests[1]);
     // The job should be deleted due to having succeeded
     $this->callAPISuccessGetCount('OmnimailJobProgress', $omniJobParams, 0);
     Civi::settings()->set('omnimail_credentials', $settings);
