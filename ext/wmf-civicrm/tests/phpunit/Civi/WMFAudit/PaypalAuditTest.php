@@ -427,6 +427,59 @@ class PaypalAuditTest extends BaseAuditTestCase {
   }
 
   /**
+   * Braintree PayPal donation refunded via PayPal's STL file.
+   *
+   * The contribution is gateway=braintree with the PayPal auth ID as
+   * backend_processor_txn_id. The T1107 refund row references the PayPal
+   * capture, so it is matched via capture_id and actioned via the refund queue.
+   *
+   * The audit is run twice - the second run should find the contribution
+   * already refunded and not create anything further.
+   *
+   * @see https://phabricator.wikimedia.org/T444253
+   */
+  public function testSTLBraintreePaypalRefund(): void {
+    $contributionID = $this->createTestEntity('Contribution', [
+      'contact_id' => $this->createIndividual([], 'donor'),
+      'financial_type_id:name' => 'Cash',
+      'total_amount' => 1.81,
+      'currency' => 'USD',
+      'source' => 'USD 1.81',
+      'receive_date' => '2026-11-06 15:22:24',
+      'invoice_id' => '254999860.1',
+      'trxn_id' => 'BRAINTREE dHJhbnNhY3Rpb25fa2ozcmIyZnA',
+      'contribution_extra.gateway' => 'braintree',
+      'contribution_extra.gateway_txn_id' => 'dHJhbnNhY3Rpb25fa2ozcmIyZnA',
+      'contribution_extra.original_currency' => 'USD',
+      'contribution_extra.original_amount' => 1.81,
+      'contribution_extra.backend_processor' => 'paypal',
+      'contribution_extra.backend_processor_txn_id' => '89C82974XN013664S',
+      'contribution_extra.capture_id' => '2PP23694K2023181B',
+    ], 'braintree_paypal')['id'];
+
+    $this->runAuditBatch('stl_braintree_paypal_refund', 'STL-20261106.01.009.csv');
+    $this->runAuditBatch('stl_braintree_paypal_refund', 'STL-20261106.01.009.csv');
+
+    $contributions = Contribution::get(FALSE)
+      ->addWhere('contact_id', '=', $this->ids['Contact']['donor'])
+      ->addSelect('contribution_status_id:name', 'contribution_settlement.*', 'contribution_extra.*')
+      ->execute();
+    $this->assertCount(1, $contributions, 'refund should update the original, not create a new contribution');
+    $contribution = $contributions->first();
+    $this->assertEquals($contributionID, $contribution['id']);
+    $this->assertEquals('Refunded', $contribution['contribution_status_id:name']);
+    $this->assertEquals('7UE0604858585801J', $contribution['contribution_extra.backend_processor_reversal_id']);
+    // Gateway details of the original are untouched.
+    $this->assertEquals('braintree', $contribution['contribution_extra.gateway']);
+    $this->assertEquals('89C82974XN013664S', $contribution['contribution_extra.backend_processor_txn_id']);
+    // Both the donation and the refund settle in the PayPal batch.
+    $this->assertEquals('paypal_20261106_USD', $contribution['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals('paypal_20261106_USD', $contribution['contribution_settlement.settlement_batch_reversal_reference']);
+    $this->assertEquals(-1.81, $contribution['contribution_settlement.settled_reversal_amount']);
+    $this->assertEquals(0.28, $contribution['contribution_settlement.settled_fee_reversal_amount']);
+  }
+
+  /**
    * Test batch of BRL transactions converted to USD creates a BRL not USD batch.
    *
    * https://phabricator.wikimedia.org/T418556#11683676

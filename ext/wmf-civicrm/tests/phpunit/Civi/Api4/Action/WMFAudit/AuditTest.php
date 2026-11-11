@@ -255,4 +255,49 @@ class AuditTest extends TestCase {
     $this->assertEquals($contributionID, $audit['message']['contribution_id']);
   }
 
+  /**
+   * A PayPal STL refund of a Braintree PayPal donation references the PayPal
+   * capture ID, while the contribution's backend_processor_txn_id holds the
+   * authorization ID - so it should be matched via capture_id.
+   *
+   * @see https://phabricator.wikimedia.org/T444253
+   */
+  public function testAuditBraintreePaypalRefundMatchesOnCaptureId(): void {
+    $contributionID = $this->createTestEntity('Contribution', [
+      'contact_id' => $this->createIndividual(),
+      'financial_type_id:name' => 'Cash',
+      'contribution_status_id:name' => 'Refunded',
+      'total_amount' => 1.81,
+      'invoice_id' => '254999860.1',
+      'trxn_id' => 'BRAINTREE dHJhbnNhY3Rpb25fa2ozcmIyZnA',
+      'contribution_extra.gateway' => 'braintree',
+      'contribution_extra.gateway_txn_id' => 'dHJhbnNhY3Rpb25fa2ozcmIyZnA',
+      'contribution_extra.backend_processor' => 'paypal',
+      'contribution_extra.backend_processor_txn_id' => '89C82974XN013664S',
+      'contribution_extra.capture_id' => '2PP23694K2023181B',
+    ])['id'];
+
+    $message = [
+      'gateway' => 'paypal_ec',
+      'audit_file_gateway' => 'paypal',
+      'type' => 'refund',
+      'gateway_txn_id' => '7UE0604858585801J',
+      'gateway_refund_id' => '7UE0604858585801J',
+      'gateway_parent_id' => '2PP23694K2023181B',
+      'backend_processor' => 'paypal',
+      'backend_processor_parent_id' => '2PP23694K2023181B',
+      'backend_processor_reversal_id' => '7UE0604858585801J',
+      'invoice_id' => '254999860.1',
+      'order_id' => '254999860.1',
+      'currency' => 'USD',
+      'gross' => '1.81',
+      'gross_currency' => 'USD',
+      'date' => time(),
+    ];
+
+    $audit = WMFAudit::audit(FALSE)->setValues($message)->execute()->first();
+    $this->assertFalse($audit['is_missing']);
+    $this->assertEquals($contributionID, $audit['message']['contribution_id']);
+  }
+
 }
