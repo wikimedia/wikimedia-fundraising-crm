@@ -61,6 +61,43 @@ class EngageSummaryTest extends TestCase {
   }
 
   /**
+   * A "CREDIT CARDS - WF" label prefixes its block's batch ids with WF.
+   */
+  public function testCardBlockLabelPrefixesBatchId(): void {
+    $sheetRows = [
+      $this->row(['A' => 'CREDIT CARDS - WF']),
+      $this->row(['A' => '10/8/2026 12:00:30 PM']),
+      $this->header(),
+      $this->row(['A' => 'Credit Cards', 'C' => '900012', 'E' => '10/08/2026', 'G' => '4', 'I' => '0', 'K' => '4', 'L' => '400.00']),
+      $this->row(['A' => 'NS Credit Cards', 'C' => '910003', 'E' => '10/08/2026', 'G' => '2', 'I' => '0', 'K' => '2', 'L' => '50.00']),
+      $this->row(['C' => 'Total', 'G' => '6', 'I' => '0', 'K' => '6', 'L' => '450.00']),
+    ];
+
+    [, $dataRows] = $this->extractDataRows($sheetRows);
+
+    $this->assertSame(['WF900012', 'WF910003'], array_column($dataRows, 2));
+  }
+
+  /**
+   * Card rows get Docs as their Checks count so they aren't skipped.
+   */
+  public function testCardRowsUseDocsAsChecks(): void {
+    $headers = ['Batch Type', 'Group Value', 'Batch', 'Batch Date', 'Docs', 'Checks', 'Total Item', 'Amount'];
+    $rows = [
+      ['Credit Cards', '', 'WF900012', '10/08/2026', '4', '0', '4', '400.00'],
+      ['NS Credit Cards', '', 'WF910003', '10/08/2026', '2', '0', '2', '50.00'],
+      ['Clean', '', '300110', '10/08/2026', '97', '97', '194', '9539.00'],
+      ['Flag', '', '300111', '10/08/2026', '3', '0', '3', '10.00'],
+    ];
+
+    $rows = $this->invoke('useDocsAsChecksForCardRows', $headers, $rows);
+    $rows = $this->invoke('skipRowsWithoutChecks', $headers, $rows);
+
+    $this->assertSame(['WF900012', 'WF910003', '300110'], array_column($rows, 2));
+    $this->assertSame(['4', '2', '97'], array_column($rows, 5));
+  }
+
+  /**
    * @param string[] $overrides column letter => value
    * @return string[]
    */
@@ -83,9 +120,13 @@ class EngageSummaryTest extends TestCase {
   }
 
   private function extractDataRows(array $sheetRows): array {
-    $method = new \ReflectionMethod(EngageSummary::class, 'extractDataRows');
+    return $this->invoke('extractDataRows', $sheetRows);
+  }
+
+  private function invoke(string $methodName, ...$args): array {
+    $method = new \ReflectionMethod(EngageSummary::class, $methodName);
     $method->setAccessible(TRUE);
-    return $method->invoke(new EngageSummary(), $sheetRows);
+    return $method->invoke(new EngageSummary(), ...$args);
   }
 
 }

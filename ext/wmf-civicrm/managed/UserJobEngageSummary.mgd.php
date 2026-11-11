@@ -7,7 +7,9 @@
  *
  * Docs (column 4) isn't mapped. Checks (column 5) feeds item_count rather
  * than Total Item (column 6, Docs+Checks combined) - item_count should
- * reflect actual check items, not doc images. Batch Type (payment
+ * reflect actual check items, not doc images. Card rows (Credit Cards /
+ * NS Credit Cards) have no checks, so the datasource copies their Docs
+ * count into Checks. Batch Type (payment
  * instrument, column 0) isn't mapped either: Batch.payment_instrument_id
  * has no 'import' usage in core's own Batch.entityType.php, so it isn't
  * importable without a core fix.
