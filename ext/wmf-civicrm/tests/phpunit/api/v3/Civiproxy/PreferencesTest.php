@@ -1,14 +1,13 @@
 <?php
 
-use Civi\Api4\Address;
-use Civi\Api4\Email;
 use Civi\Test\Api3TestTrait;
 use Civi\Test\CiviEnvBuilder;
+use Civi\Test\EntityTrait;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Api4\Contribution;
 use Civi\Api4\ContributionRecur;
-use Civi\Api4\Contact;
+use Civi\WMFEnvironmentTrait;
 
 /**
  * Civiproxy.Preferences API Test Case
@@ -17,8 +16,8 @@ use Civi\Api4\Contact;
  */
 class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface {
   use Api3TestTrait;
-
-  protected $contactID;
+  use EntityTrait;
+  use WMFEnvironmentTrait;
 
   /**
    * Set up for headless tests.
@@ -34,21 +33,6 @@ class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase imple
     return \Civi\Test::headless()
       ->installMe(__DIR__)
       ->apply();
-  }
-
-  /**
-   * Post test cleanup.
-   *
-   * @throws \CRM_Core_Exception
-   */
-  public function tearDown(): void {
-    if ($this->contactID) {
-      // A contact with contributions cannot be deleted permanently.
-      Contribution::delete(FALSE)->addWhere('contact_id', '=', $this->contactID)->execute();
-      ContributionRecur::delete(FALSE)->addWhere('contact_id', '=', $this->contactID)->execute();
-      Contact::delete(FALSE)->addWhere('id', '=', $this->contactID)->setUseTrash(FALSE)->execute();
-    }
-    parent::tearDown();
   }
 
   /**
@@ -115,24 +99,13 @@ class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase imple
   }
 
   public function createContact(): int {
-    $contact = Contact::create(FALSE)->setValues([
+    return $this->createIndividual([
       'first_name' => 'Bob',
-      'last_name' => 'Roberto',
       'Communication.opt_in' => 0,
-      'contact_type' => 'Individual',
       'preferred_language' => 'en_US',
-    ]) ->addChain('address', Address::create(FALSE)
-      ->addValue('contact_id', '$id')
-      ->addValue('country_id:label', 'Canada')
-      ->addValue('location_type_id:name', 'Home')
-    ) ->addChain('email', Email::create(FALSE)
-      ->addValue('contact_id', '$id')
-      ->addValue('email', 'bob.roberto@test.com')
-      ->addValue('location_type_id:name', 'Home')
-    )->execute()->first();
-    // tearDown() deletes this contact.
-    $this->contactID = $contact['id'];
-    return $contact['id'];
+      'address_primary.country_id:label' => 'Canada',
+      'email_primary.email' => 'bob.roberto@test.com',
+    ]);
   }
 
 }

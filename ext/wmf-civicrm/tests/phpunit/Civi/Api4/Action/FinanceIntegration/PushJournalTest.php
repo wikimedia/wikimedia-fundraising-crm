@@ -29,7 +29,6 @@ class PushJournalTest extends TestCase implements HeadlessInterface {
   private string $journalFile = '';
 
   public function setUp(): void {
-    $this->setUpWMFEnvironment();
     $this->setSetting('intacct_allowed_upload_folders', [sys_get_temp_dir()]);
     $this->journalFile = sys_get_temp_dir() . '/' . self::BATCH_NAME . '_push_journal_test.csv';
     file_put_contents($this->journalFile, "LINE_NO,ACCT_NO,CURRENCY,DEBIT,CREDIT,GLDIMFUNDING\n1,43481,USD,0.00,30.00,Unrestricted\n2,11250,USD,30.00,0.00,Unrestricted\n");
@@ -43,7 +42,6 @@ class PushJournalTest extends TestCase implements HeadlessInterface {
       unlink($this->journalFile);
     }
     Batch::delete(FALSE)->addWhere('name', '=', self::BATCH_NAME)->execute();
-    $this->tearDownWMFEnvironment();
     parent::tearDown();
   }
 

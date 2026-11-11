@@ -17,7 +17,6 @@ class BulkEmailableTest extends TestCase {
   use EntityTrait;
 
   protected function setUp(): void {
-    $this->setUpWMFEnvironment();
     parent::setUp();
     // Setting batch mode disables the snooze API call to Acoustic, preventing issues.
     \Civi::$statics['omnimail']['is_batch_snooze_update'] = TRUE;
@@ -214,7 +213,6 @@ class BulkEmailableTest extends TestCase {
 
   protected function tearDown(): void {
     unset(\Civi::$statics['omnimail']['is_batch_snooze_update']);
-    $this->tearDownWMFEnvironment();
     parent::tearDown();
   }
 

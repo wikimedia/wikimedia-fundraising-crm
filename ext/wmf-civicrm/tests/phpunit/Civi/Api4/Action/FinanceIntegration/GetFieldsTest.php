@@ -22,14 +22,8 @@ class GetFieldsTest extends TestCase implements HeadlessInterface {
 
   private array $requests = [];
 
-  public function setUp(): void {
-    $this->setUpWMFEnvironment();
-    parent::setUp();
-  }
-
   public function tearDown(): void {
     Connection::resetTestClient();
-    $this->tearDownWMFEnvironment();
     parent::tearDown();
   }
 

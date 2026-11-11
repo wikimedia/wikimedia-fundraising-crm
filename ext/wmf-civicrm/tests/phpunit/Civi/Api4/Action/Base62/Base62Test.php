@@ -16,16 +16,6 @@ class Base62Test extends TestCase {
   private const TRANSACTION_ID = '3f9c958c-ee57-4121-a79e-408946b27077';
   private const RECONCILIATION_ID = '1w24hGOdCSFLtsgBQr2jKh';
 
-  public function setUp(): void {
-    $this->setUpWMFEnvironment();
-    parent::setUp();
-  }
-
-  public function tearDown(): void {
-    $this->tearDownWMFEnvironment();
-    parent::tearDown();
-  }
-
   public function testConvertReconciliationIdToTransactionId(): void {
     $result = Base62::convert(FALSE)
       ->setReconciliationId(self::RECONCILIATION_ID)

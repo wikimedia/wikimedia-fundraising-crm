@@ -21,7 +21,6 @@ class OptInTest extends TestCase {
   private string $snoozeDate;
 
   public function setUp(): void {
-    $this->setUpWMFEnvironment();
     parent::setUp();
     // Setting batch mode disables the snooze API call to Acoustic.
     \Civi::$statics['omnimail']['is_batch_snooze_update'] = TRUE;
@@ -30,7 +29,6 @@ class OptInTest extends TestCase {
 
   public function tearDown(): void {
     unset(\Civi::$statics['omnimail']['is_batch_snooze_update']);
-    $this->tearDownWMFEnvironment();
     parent::tearDown();
   }
 

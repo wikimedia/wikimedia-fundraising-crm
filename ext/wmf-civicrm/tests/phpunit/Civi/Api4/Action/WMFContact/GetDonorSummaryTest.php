@@ -15,15 +15,9 @@ class GetDonorSummaryTest extends TestCase {
   use EntityTrait;
 
   public function setUp(): void {
-    $this->setUpWMFEnvironment();
     parent::setUp();
     \CRM_Core_Config::singleton()->userPermissionClass = new \CRM_Core_Permission_UnitTests();
     \CRM_Core_Config::singleton()->userPermissionClass->permissions = ['access CiviContribute'];
-  }
-
-  public function tearDown(): void {
-    $this->tearDownWMFEnvironment();
-    parent::tearDown();
   }
 
   /**

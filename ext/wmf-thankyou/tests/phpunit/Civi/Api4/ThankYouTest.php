@@ -40,21 +40,10 @@ class ThankYouTest extends TestCase {
    * @throws \CRM_Core_Exception
    */
   public function setUp(): void {
-    $this->setUpWMFEnvironment();
     $this->createTestEntity('Contact', $this->testContact);
     // Set all existing rows to no thank you so we can predict which are sent.
     \CRM_Core_DAO::executeQuery('UPDATE wmf_contribution_extra SET no_thank_you = 1');
     parent::setUp();
-  }
-
-  /**
-   * Post test cleanup.
-   *
-   * @throws \CRM_Core_Exception
-   */
-  public function tearDown(): void {
-    $this->tearDownWMFEnvironment();
-    parent::tearDown();
   }
 
   /**

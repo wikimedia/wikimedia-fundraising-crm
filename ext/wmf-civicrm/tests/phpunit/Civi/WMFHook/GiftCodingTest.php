@@ -28,7 +28,6 @@ class GiftCodingTest extends TestCase {
 
   public function setUp(): void {
     parent::setUp();
-    $this->setUpWMFEnvironment();
     $this->resetQueue(self::NOTIFICATION_QUEUE_NAME);
     $this->donorID = $this->createIndividual();
     $this->setSetting('wmf_relationship_types_for_donation_attribution', ['Spouse of', 'Holds a Donor Advised Fund of', 'Donates via']);
@@ -38,7 +37,6 @@ class GiftCodingTest extends TestCase {
     // Mailing & MailingProviderData aren't cleaned up by contact deletion.
     \CRM_Core_DAO::executeQuery("DELETE FROM civicrm_mailing_provider_data WHERE contact_identifier LIKE 'gift-coding-test-%'");
     \CRM_Core_DAO::executeQuery("DELETE FROM civicrm_mailing WHERE name LIKE 'GiftCoding Test Mailing%'");
-    $this->tearDownWMFEnvironment();
     parent::tearDown();
   }
 

@@ -22,7 +22,6 @@ class LargeDonationTest extends TestCase {
 
   public function setUp(): void {
     parent::setUp();
-    $this->setUpWMFEnvironment();
 
     $this->threshold = 100;
     $this->threshold_high = 1000;
@@ -54,7 +53,6 @@ class LargeDonationTest extends TestCase {
   }
 
   public function tearDown(): void {
-    $this->tearDownWMFEnvironment();
     \Civi::settings()->set('large_donation_notifications', []);
     parent::tearDown();
   }

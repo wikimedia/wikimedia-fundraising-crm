@@ -24,7 +24,6 @@ class PushProcessLogTest extends TestCase implements HeadlessInterface {
 
   public function tearDown(): void {
     Connection::resetTestXmlClient();
-    $this->tearDownWMFEnvironment();
     parent::tearDown();
   }
 

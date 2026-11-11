@@ -32,7 +32,6 @@ class BaseAuditTestCase extends TestCase {
   protected bool $useIncomingDirectory = TRUE;
 
   public function setUp(): void {
-    $this->setUpWMFEnvironment();
     // This sets the working log directory to the CiviCRM upload directory.
     // It is found under sites/default/files/civicrm/upload & is web-writable,
     // outside of git, and somewhat durable.
@@ -44,7 +43,6 @@ class BaseAuditTestCase extends TestCase {
 
   public function tearDown(): void {
     $this->restoreMovedReconFiles();
-    $this->tearDownWMFEnvironment();
     parent::tearDown();
   }
 

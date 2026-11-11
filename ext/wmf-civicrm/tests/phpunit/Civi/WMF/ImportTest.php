@@ -130,7 +130,6 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ])
       ->setMatch(['dedupe_rule_group_id', 'rule_table', 'rule_field'])
       ->execute();
-    $this->setUpWMFEnvironment();
     parent::setUp();
   }
 
@@ -248,7 +247,6 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ->setUseTrash(FALSE)->execute();
     // Registering them all in ids['Contact'] is where the core helpers are going so
     // is preferred - we should migrate the rest over.
-    $this->tearDownWMFEnvironment();
     \Civi::settings()->set('debug_enabled', $this->wasDebugEnabled);
     parent::tearDown();
     unset(\Civi::$statics['wmf_contact']);

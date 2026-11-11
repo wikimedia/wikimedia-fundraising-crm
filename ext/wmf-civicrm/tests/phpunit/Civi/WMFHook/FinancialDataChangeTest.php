@@ -28,7 +28,6 @@ class FinancialDataChangeTest extends TestCase implements HeadlessInterface {
         ->addWhere('id', 'IN', array_values($this->ids['Batch']))
         ->execute();
     }
-    $this->tearDownWMFEnvironment();
     parent::tearDown();
   }
 

@@ -42,22 +42,10 @@ trait WMFEnvironmentTrait {
   private array $originalSettings = [];
 
   /**
-   * @throws \CRM_Core_Exception
-   */
-  public function setUp(): void {
-    $this->setUpWMFEnvironment();
-    parent::setUp();
-  }
-
-  /**
-   * @throws \CRM_Core_Exception
-   */
-  public function tearDown(): void {
-    $this->tearDownWMFEnvironment();
-    parent::tearDown();
-  }
-
-  /**
+   * Runs before setUp(), so a class overriding setUp() cannot skip it.
+   *
+   * @before
+   *
    * @throws \CRM_Core_Exception
    */
   protected function setUpWMFEnvironment(): void {
@@ -80,6 +68,10 @@ trait WMFEnvironmentTrait {
 
   /**
    * Do generic cleanup.
+   *
+   * Runs after tearDown(), so a class overriding tearDown() cannot skip it.
+   *
+   * @after
    *
    * @throws \CRM_Core_Exception
    */

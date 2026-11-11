@@ -26,7 +26,6 @@ class CancelInactivesTest extends TestCase {
    */
   public function tearDown(): void {
     Contact::delete(FALSE)->addWhere('display_name', '=', 'Walter White')->setUseTrash(FALSE)->execute();
-    $this->tearDownWMFEnvironment();
     parent::tearDown();
   }
 
