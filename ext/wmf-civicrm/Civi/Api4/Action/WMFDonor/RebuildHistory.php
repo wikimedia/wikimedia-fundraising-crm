@@ -425,27 +425,18 @@ class RebuildHistory extends AbstractAction {
   /**
    * Get when an active recurring's log row stops being paused, as CalculatedData calculates it.
    *
-   * Ugly date math: when the time plus one unit (MySQL clamps month ends)
-   * reaches the day before the next payment.
-   *
    * @param array $logRow
    *   With its status name.
    *
    * @return string|null
-   *   NULL if it isn't active or has no next payment.
+   *   NULL if it isn't active, has no next payment or isn't monthly or yearly.
    */
   private function getUnpauseDate(array $logRow): ?string {
-    if (!$logRow['next_sched_contribution_date'] || !in_array($logRow['status'], ['Pending', 'In Progress', 'Processing'], TRUE)) {
+    $days = CalculatedData::PAUSED_DAYS[$logRow['frequency_unit']] ?? NULL;
+    if (!$days || !$logRow['next_sched_contribution_date'] || !in_array($logRow['status'], ['Pending', 'In Progress', 'Processing'], TRUE)) {
       return NULL;
     }
-    $unit = $logRow['frequency_unit'] === 'year' ? 'year' : 'month';
-    $dayBefore = strtotime("{$logRow['next_sched_contribution_date']} -1 day");
-    $unpauseTimestamp = strtotime("-1 $unit", $dayBefore);
-    if (date('j', $unpauseTimestamp) !== date('j', $dayBefore)) {
-      // No such day in the earlier month, so the switch is at the start of the next.
-      $unpauseTimestamp = strtotime(date('Y-m-01 00:00:00', $unpauseTimestamp));
-    }
-    return date('Y-m-d H:i:s', $unpauseTimestamp);
+    return date('Y-m-d H:i:s', strtotime("{$logRow['next_sched_contribution_date']} -$days days"));
   }
 
   /**

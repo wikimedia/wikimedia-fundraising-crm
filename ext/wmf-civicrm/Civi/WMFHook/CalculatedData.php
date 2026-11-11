@@ -26,6 +26,14 @@ class CalculatedData extends TriggerHook {
   public const RECUR_LOG_START = '2016-05-03 00:07:34';
 
   /**
+   * An active recurring is paused if its next payment is more than this many days away.
+   *
+   * Longer than the longest gap between charges, e.g. Feb 28 to Mar 31 for a
+   * recurring charged on the 31st.
+   */
+  public const PAUSED_DAYS = ['month' => 32, 'year' => 367];
+
+  /**
    * Is this class is being called in trigger context.
    *
    * The normal context is 'trigger' which will generate sql triggers.
@@ -1770,16 +1778,16 @@ $groupBy
     $asOf = $this->asOfDate ? "'$this->asOfDate'" : 'NOW()';
     if ($frequencyUnit === 'overall') {
       $pausedUntil = 'CASE c.frequency_unit';
-      foreach (['month', 'year'] as $unit) {
-        $pausedUntil .= " WHEN '$unit' THEN $asOf + INTERVAL 1 $unit + INTERVAL 1 DAY";
+      foreach (self::PAUSED_DAYS as $unit => $days) {
+        $pausedUntil .= " WHEN '$unit' THEN $asOf + INTERVAL $days DAY";
       }
       $pausedUntil .= ' END';
     }
     else {
-      $pausedUntil = "$asOf + INTERVAL 1 $frequencyUnit + INTERVAL 1 DAY";
+      $pausedUntil = "$asOf + INTERVAL " . self::PAUSED_DAYS[$frequencyUnit] . ' DAY';
     }
     return "CASE
-      -- Paused status (35), no scheduled payments within the recurring's frequency unit
+      -- Paused status (35), no scheduled payments within PAUSED_DAYS
       WHEN MIN(CASE WHEN c.contribution_status_id IN ({$s['Pending']},{$s['In Progress']},{$s['Processing']})$frequencyFilter
               THEN c.next_sched_contribution_date > $pausedUntil
          END) = 1 THEN 35

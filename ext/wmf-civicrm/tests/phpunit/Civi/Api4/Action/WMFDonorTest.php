@@ -963,8 +963,13 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
     $thisFinancialYear = $this->currentDate;
     $soon = date('Y-m-d', strtotime('+1 week', strtotime($this->currentDate)));
     $paused = date('Y-m-d', strtotime('+6 months', strtotime($this->currentDate)));
+    $withinPausedDays = date('Y-m-d', strtotime('+32 days', strtotime($this->currentDate)));
+    $beyondPausedDays = date('Y-m-d', strtotime('+33 days', strtotime($this->currentDate)));
 
     $scenarios = [
+      // Not paused with the next payment just within PAUSED_DAYS, paused just after.
+      'due_in_32_days' => [15, [['In Progress', $beforeFinancialYear, $withinPausedDays]]],
+      'due_in_33_days' => [35, [['In Progress', $beforeFinancialYear, $beyondPausedDays]]],
       // Active status, started before this financial year.
       'active' => [15, [['In Progress', $beforeFinancialYear, $soon]]],
       // Active status, but only started this financial year.
@@ -1280,7 +1285,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
           ['2022-07-01 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
           // Paused, next payment pushed out
           ['2023-01-15 00:00:00', 990, 99, 99, 35, 35, 95, [6, 4]],
-          // Active again, a month and a day before the next payment
+          // Active again, 32 days before the next payment
           ['2023-03-14 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
           // Cancelled
           ['2024-02-15 00:00:00', 990, 99, 99, 65, 65, 95, [6, 4]],
@@ -1316,8 +1321,8 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
           ['2022-01-01 09:00:00', 990, 99, 99, 25, 25, 95, [6, 4]],
           // Paused, next payment pushed out
           ['2022-03-15 00:00:00', 990, 99, 99, 35, 35, 95, [6, 4]],
-          // Active again, a month and a day before the pushed out next payment
-          ['2022-06-19 00:00:00', 990, 99, 99, 25, 25, 95, [6, 4]],
+          // Active again, 32 days before the pushed out next payment
+          ['2022-06-18 00:00:00', 990, 99, 99, 25, 25, 95, [6, 4]],
           // Active recurring, on rollover
           ['2022-07-01 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
           // Failing
@@ -1366,17 +1371,15 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
           ['2022-09-10 00:00:00', 990, 99, 99, 65, 65, 95, [6, 4]],
         ],
       ],
-      'unpause before a month end payment' => [
+      'charged on the 31st, on February 28' => [
         'contributions' => [],
         'recur' => [
           'params' => ['start_date' => '2021-12-31', 'next_sched_contribution_date' => '2023-03-31'],
           'logDate' => '2023-02-28',
         ],
         'expectedRows' => [
-          // Paused, as March 31 is more than a month and a day after February 28
-          ['2023-02-28 00:00:00', 990, 99, 99, 35, 35, 95, [6, 4]],
-          // Active again from March 1
-          ['2023-03-01 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
+          // Active, not paused, as March 31 is within 32 days
+          ['2023-02-28 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
         ],
       ],
       'unpause before a month start payment' => [
@@ -1388,7 +1391,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
         'expectedRows' => [
           // Paused
           ['2023-01-15 00:00:00', 990, 99, 99, 35, 35, 95, [6, 4]],
-          // Active again from January 28, as January 28 to 31 plus a month are all February 28
+          // Active again from January 28, 32 days before
           ['2023-01-28 00:00:00', 990, 99, 99, 15, 15, 95, [6, 4]],
         ],
       ],
@@ -1399,9 +1402,9 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
           'logDate' => '2023-01-15',
         ],
         'expectedRows' => [
-          // Paused, as the next payment is more than a year and a day away
+          // Paused, as the next payment is more than 367 days away
           ['2023-01-15 00:00:00', 990, 99, 99, 35, 95, 35, [6, 5]],
-          // Active again, a year and a day before the next payment
+          // Active again, 367 days before the next payment
           ['2023-05-31 00:00:00', 990, 99, 99, 15, 95, 15, [6, 5]],
         ],
       ],
@@ -2049,7 +2052,8 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
    */
   public function testWMFDonorUnPauseRecurring(): void {
     $beforeFinancialYear = date('Y-m-d', strtotime('-2 years', strtotime($this->currentDate)));
-    $withinWindow = date('Y-m-d', strtotime('+1 week', strtotime($this->currentDate)));
+    $withinWindow = date('Y-m-d', strtotime('+32 days', strtotime($this->currentDate)));
+    $outsideWindow = date('Y-m-d', strtotime('+33 days', strtotime($this->currentDate)));
     $yearOut = date('Y-m-d', strtotime('+18 months', strtotime($this->currentDate)));
 
     // An active monthly recurring due within the window, so no longer
@@ -2100,6 +2104,24 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
       ->addValue('wmf_donor.donor_status_recur_overall', 35)
       ->execute();
 
+    // Paused monthly, due just outside the window, so also excluded.
+    $this->createIndividual([], 'paused_monthly');
+    $this->createTestEntity('ContributionRecur', [
+      'contact_id' => $this->ids['Contact']['paused_monthly'],
+      'frequency_unit' => 'month',
+      'frequency_interval' => 1,
+      'amount' => 10,
+      'contribution_status_id:name' => 'In Progress',
+      'start_date' => $beforeFinancialYear,
+      'next_sched_contribution_date' => $outsideWindow,
+    ], 'paused_monthly');
+    // A wrong yearly sentinel a recompute would overwrite if the donor were touched.
+    Contact::update(FALSE)
+      ->addWhere('id', '=', $this->ids['Contact']['paused_monthly'])
+      ->addValue('wmf_donor.donor_status_recur_month', 35)
+      ->addValue('wmf_donor.donor_status_recur_year', 65)
+      ->execute();
+
     // Month should be unpaused, year should stay paused.
     $this->createIndividual([], 'mixed');
     $this->createTestEntity('ContributionRecur', [
@@ -2136,6 +2158,7 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
 
     // The genuinely paused donor is excluded, so its sentinel is left untouched.
     $this->assertEquals(65, $this->getStoredRecurStatus('paused')['donor_status_recur_month']);
+    $this->assertEquals(65, $this->getStoredRecurStatus('paused_monthly')['donor_status_recur_year']);
 
     // Month recalculated, year unchanged.
     $mixed = $this->getStoredRecurStatus('mixed');
