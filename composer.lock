@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9635be438ac597747fa08f0706a6aa8d",
+    "content-hash": "a2a08fdf903053d370956238fa6675ea",
     "packages": [
         {
             "name": "adrienrn/php-mimetyper",
@@ -5611,16 +5611,16 @@
         },
         {
             "name": "predis/predis",
-            "version": "v3.7.1",
+            "version": "v3.6.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/predis/predis.git",
-                "reference": "2496e6d91ba4e137b47a6b802dc7e088ebf31df4"
+                "reference": "e2db96312ecf57a01a3477bf192d1ebc0ad7e9fb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/predis/predis/zipball/2496e6d91ba4e137b47a6b802dc7e088ebf31df4",
-                "reference": "2496e6d91ba4e137b47a6b802dc7e088ebf31df4",
+                "url": "https://api.github.com/repos/predis/predis/zipball/e2db96312ecf57a01a3477bf192d1ebc0ad7e9fb",
+                "reference": "e2db96312ecf57a01a3477bf192d1ebc0ad7e9fb",
                 "shasum": ""
             },
             "require": {
@@ -5662,7 +5662,7 @@
             ],
             "support": {
                 "issues": "https://github.com/predis/predis/issues",
-                "source": "https://github.com/predis/predis/tree/v3.7.1"
+                "source": "https://github.com/predis/predis/tree/v3.6.1"
             },
             "funding": [
                 {
@@ -5670,7 +5670,8 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-11-03T17:55:20+00:00"
+            "time": "2026-09-17T20:41:00+00:00",
+            "published-time": "2026-09-17T20:42:59+00:00"
         },
         {
             "name": "psr/cache",

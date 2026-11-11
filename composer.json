@@ -25,6 +25,7 @@
     },
     "require": {
         "coderkungfu/php-queue": "^1.0",
+        "predis/predis": "3.6.1",
         "ext-intl": "*",
         "wikimedia/smash-pig": "v1.2.7.7",
         "phpmailer/phpmailer": "^6",
