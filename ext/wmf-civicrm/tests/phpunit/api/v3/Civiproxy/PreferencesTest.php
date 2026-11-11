@@ -42,7 +42,12 @@ class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase imple
    * @throws \CRM_Core_Exception
    */
   public function tearDown(): void {
-    Contact::delete(FALSE)->addWhere('id', '=', $this->contactID)->setUseTrash(FALSE)->execute();
+    if ($this->contactID) {
+      // A contact with contributions cannot be deleted permanently.
+      Contribution::delete(FALSE)->addWhere('contact_id', '=', $this->contactID)->execute();
+      ContributionRecur::delete(FALSE)->addWhere('contact_id', '=', $this->contactID)->execute();
+      Contact::delete(FALSE)->addWhere('id', '=', $this->contactID)->setUseTrash(FALSE)->execute();
+    }
     parent::tearDown();
   }
 
@@ -125,6 +130,8 @@ class api_v3_Civiproxy_PreferencesTest extends \PHPUnit\Framework\TestCase imple
       ->addValue('email', 'bob.roberto@test.com')
       ->addValue('location_type_id:name', 'Home')
     )->execute()->first();
+    // tearDown() deletes this contact.
+    $this->contactID = $contact['id'];
     return $contact['id'];
   }
 

@@ -27,6 +27,7 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
     QueueItem::delete(FALSE)
       ->addWhere('queue_name', '=', 'omni-snooze')
       ->execute();
+    $this->tearDownWMFEnvironment();
     parent::tearDown();
   }
 

@@ -17,6 +17,7 @@ class BulkEmailableTest extends TestCase {
   use EntityTrait;
 
   protected function setUp(): void {
+    $this->setUpWMFEnvironment();
     parent::setUp();
     // Setting batch mode disables the snooze API call to Acoustic, preventing issues.
     \Civi::$statics['omnimail']['is_batch_snooze_update'] = TRUE;
@@ -86,12 +87,12 @@ class BulkEmailableTest extends TestCase {
     $contact = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'is_opt_out' => 1,
-    ]);
+    ], 'opted_out');
     $this->createTestEntity('Email', [
       'contact_id' => $contact['id'],
       'email' => 'optout@example.com',
       'is_primary' => 1,
-    ]);
+    ], 'opted_out');
 
     $result = WMFContact::bulkEmailable()
       ->setEmail('optout@example.com')
@@ -103,12 +104,12 @@ class BulkEmailableTest extends TestCase {
     $contact2 = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'is_opt_out' => 0,
-    ]);
+    ], 'not_opted_out');
     $this->createTestEntity('Email', [
       'contact_id' => $contact2['id'],
       'email' => 'optout@example.com',
       'is_primary' => 1,
-    ]);
+    ], 'not_opted_out');
 
     $resultWithDuplicate = WMFContact::bulkEmailable()
       ->setEmail('optout@example.com')
@@ -193,12 +194,12 @@ class BulkEmailableTest extends TestCase {
     // Test when the email is primary for another contact, but the contact is deleted
     $contact2 = $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
-    ]);
+    ], 'deleted');
     $this->createTestEntity('Email', [
       'contact_id' => $contact2['id'],
       'email' => 'nonprimary@example.com',
       'is_primary' => 1,
-    ]);
+    ], 'deleted');
 
     Contact::delete(FALSE)
       ->addWhere('id', '=', $contact2['id'])
@@ -213,6 +214,7 @@ class BulkEmailableTest extends TestCase {
 
   protected function tearDown(): void {
     unset(\Civi::$statics['omnimail']['is_batch_snooze_update']);
+    $this->tearDownWMFEnvironment();
     parent::tearDown();
   }
 

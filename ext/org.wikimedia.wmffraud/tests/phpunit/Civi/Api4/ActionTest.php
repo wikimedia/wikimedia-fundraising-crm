@@ -28,6 +28,8 @@ class ActionTest extends TestCase implements HeadlessInterface {
       ->addWhere('gateway', '=', '123-pay-me')->execute();
     PaymentsFraudBreakdown::delete(FALSE)
       ->addWhere('filter_name', '=', '123-pay-me')->execute();
+    $this->tearDownWMFEnvironment();
+    parent::tearDown();
   }
 
   /**
