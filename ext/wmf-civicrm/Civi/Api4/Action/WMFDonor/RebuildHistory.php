@@ -22,11 +22,14 @@ class RebuildHistory extends AbstractAction {
    * Events for the same recurring this close together are calculated as one
    * potential segment/status change.
    *
-   * e.g. a recurring payment and the update to its recurring, which is logged
-   * when the payment is processed, nearly always within 20 minutes of its
-   * receive date, or a gift and the post-payment recurring convert following it.
+   * 30 minutes captures most queue delay.
    */
-  public const MERGE_SECONDS = 1200;
+  public const MERGE_SECONDS = 1800;
+
+  /**
+   * How long after an OTG a post-payment recurring convert is calculated together with.
+   */
+  public const CONVERT_MERGE_SECONDS = 3 * 86400;
 
   /**
    * IDs of the contacts to rebuild history for.
@@ -83,8 +86,8 @@ class RebuildHistory extends AbstractAction {
   public function _run(Result $result): void {
     // Normalised as it's compared as a string.
     $endDate = date('Y-m-d H:i:s', strtotime($this->endDate ?? '+1 second'));
-    // Events just before the start date may have been merged with ones from it.
-    $startDate = $this->startDate ? date('Y-m-d H:i:s', strtotime($this->startDate) - self::MERGE_SECONDS) : NULL;
+    // Events before the start date should perhaps be merged with events up to the PPMC merge time before it.
+    $startDate = $this->startDate ? date('Y-m-d H:i:s', strtotime($this->startDate) - self::CONVERT_MERGE_SECONDS) : NULL;
     foreach (CalculatedData::createForSourceTables() as $tableName => $processor) {
       $this->loggedFieldsByTable[$tableName] = $processor->getLoggedFields();
     }
@@ -171,7 +174,7 @@ class RebuildHistory extends AbstractAction {
         $previousValues = $currentValues;
       }
     }
-    foreach ($this->getCalculationTimes($contactID, $endDate) as ['time' => $asOfDate, 'tables' => $tables]) {
+    foreach ($this->getCalculationTimes($contactID, $endDate) as ['time' => $asOfDate, 'logDate' => $logDate, 'tables' => $tables]) {
       if ($startDate && $asOfDate < $startDate) {
         continue;
       }
@@ -193,7 +196,7 @@ class RebuildHistory extends AbstractAction {
         $previousValues = $currentValues;
         $rows[] = ['entity_id' => $contactID] + $currentValues + [
           'changed_fields' => \CRM_Utils_Array::implodePadded($changedFields),
-          'log_date' => $asOfDate,
+          'log_date' => $logDate ?? $asOfDate,
         ];
       }
     }
@@ -203,21 +206,36 @@ class RebuildHistory extends AbstractAction {
   /**
    * Get the times to calculate for, with the source tables that may have changed.
    *
-   * Events are contributions, recurring log rows and unpauses, recurring start,
-   * cancel and end dates before the first log row of recurrings that started
-   * before logging did, and each financial year rollover after the first of the
-   * aforementioned events. Consecutive events for the same recurring within
-   * MERGE_SECONDS of each other, other than two contributions, and events in
-   * the same second are calculated together.
+   * @param int $contactID
+   * @param string $endDate
+   *
+   * @return array
+   *   [['time' => SQL datetime, 'logDate' => ?SQL datetime, 'tables' => [tableName, ...], 'recurID' => ?string, 'isConvert' => bool], ...], in ascending time order.
+   *   A NULL logDate means logged at the time.
+   * @throws \CRM_Core_Exception
+   */
+  private function getCalculationTimes(int $contactID, string $endDate): array {
+    $events = $this->getEvents($contactID, $endDate);
+    $events = array_merge($events, $this->getRollovers($events, $endDate));
+    array_multisort(array_column($events, 'time'), SORT_ASC, $events);
+    return $this->mergeEvents($events);
+  }
+
+  /**
+   * Get the contact's events before the end date.
+   *
+   * Events are contributions, recurring log rows and unpauses, and for
+   * recurrings that started before logging began, recurring start, cancel and
+   * end dates.
    *
    * @param int $contactID
    * @param string $endDate
    *
    * @return array
-   *   [['time' => SQL datetime, 'tables' => [tableName, ...], 'recurID' => ?string], ...], in ascending time order.
+   *   [['time' => SQL datetime, 'tables' => [tableName, ...], 'recurID' => ?string, 'isConvert' => bool], ...]
    * @throws \CRM_Core_Exception
    */
-  private function getCalculationTimes(int $contactID, string $endDate): array {
+  private function getEvents(int $contactID, string $endDate): array {
     $params = [
       1 => [$contactID, 'Integer'],
       2 => [$endDate, 'String'],
@@ -227,14 +245,14 @@ class RebuildHistory extends AbstractAction {
 
     // Get the times contributions were received, join to post-payment convert recurring if there is one.
     $receiveDates = \CRM_Core_DAO::executeQuery("
-      SELECT c.receive_date, IFNULL(c.contribution_recur_id, r.id) AS recur_id
+      SELECT c.receive_date, IFNULL(c.contribution_recur_id, r.id) AS recur_id, r.id IS NOT NULL AS is_convert
       FROM civicrm_contribution c
       LEFT JOIN civicrm_contribution_recur r ON c.contribution_recur_id IS NULL AND r.invoice_id = c.invoice_id
       WHERE c.contact_id = %1 AND c.contribution_status_id = 1 AND c.receive_date < %2
         AND (c.trxn_id NOT LIKE 'RFD %' OR c.trxn_id IS NULL)
     ", $params)->fetchAll();
     foreach ($receiveDates as $receiveDate) {
-      $events[] = ['time' => $receiveDate['receive_date'], 'tables' => ['civicrm_contribution'], 'recurID' => $receiveDate['recur_id']];
+      $events[] = ['time' => $receiveDate['receive_date'], 'tables' => ['civicrm_contribution'], 'recurID' => $receiveDate['recur_id'], 'isConvert' => (bool) $receiveDate['is_convert']];
     }
 
     // For recurrings that started before logging did, get their start, cancel
@@ -249,7 +267,7 @@ class RebuildHistory extends AbstractAction {
     foreach ($recurs as $recur) {
       foreach ([$recur['start_date'], $recur['cancel_date'], $recur['end_date']] as $date) {
         if ($date && $date >= $recur['start_date'] && $date < $endDate && ($date < $recur['first_log_date'] || !$recur['first_log_date'])) {
-          $events[] = ['time' => $date, 'tables' => ['civicrm_contribution_recur'], 'recurID' => $recur['id']];
+          $events[] = ['time' => $date, 'tables' => ['civicrm_contribution_recur'], 'recurID' => $recur['id'], 'isConvert' => FALSE];
         }
       }
     }
@@ -278,7 +296,7 @@ class RebuildHistory extends AbstractAction {
       // because nothing is logged for that.
       $logRow['unpause_date'] = $this->getUnpauseDate($logRow);
       if ($logRow['unpause_date'] && $logRow['unpause_date'] > $logRow['log_date'] && $logRow['unpause_date'] < $endDate) {
-        $events[] = ['time' => $logRow['unpause_date'], 'tables' => ['civicrm_contribution_recur'], 'recurID' => $logRow['id']];
+        $events[] = ['time' => $logRow['unpause_date'], 'tables' => ['civicrm_contribution_recur'], 'recurID' => $logRow['id'], 'isConvert' => FALSE];
       }
       // Skip if recurring hasn't changed, e.g. moving the next sched payment
       // date, only if we have a previous row from the same recurring id.
@@ -288,57 +306,93 @@ class RebuildHistory extends AbstractAction {
         $isAfterTie ||
         $this->getRecurringState($previousRow, $logRow['log_date']) !== $this->getRecurringState($logRow, $logRow['log_date'])
       ) {
-        $events[] = ['time' => $logRow['log_date'], 'tables' => ['civicrm_contribution_recur'], 'recurID' => $logRow['id']];
+        $events[] = ['time' => $logRow['log_date'], 'tables' => ['civicrm_contribution_recur'], 'recurID' => $logRow['id'], 'isConvert' => FALSE];
       }
       // We shouldn't skip if immediately after two rows that happened at the
       // same second as we don't know which will be counted
       $isAfterTie = $previousRow && $previousRow['id'] === $logRow['id'] && $previousRow['log_date'] === $logRow['log_date'];
       $previousRow = $logRow;
     }
-    if ($events) {
-      // A rollover only recalculates the tables the contact has had an event
-      // for by then, otherwise it's all defaults.
-      $firstEventTimes = [];
-      foreach ($events as $event) {
-        foreach ($event['tables'] as $tableName) {
-          $firstEventTimes[$tableName] = min($firstEventTimes[$tableName] ?? $endDate, $event['time']);
-        }
-      }
-      for ($year = (int) substr(min($firstEventTimes), 0, 4); "$year-07-01 00:00:00" < $endDate; $year++) {
-        $rollover = "$year-07-01 00:00:00";
-        $tables = [];
-        foreach ($firstEventTimes as $tableName => $firstEventTime) {
-          if ($firstEventTime <= $rollover) {
-            $tables[] = $tableName;
-          }
-        }
-        if ($tables) {
-          $events[] = ['time' => $rollover, 'tables' => $tables, 'recurID' => NULL];
-        }
+    return $events;
+  }
+
+  /**
+   * Get each financial year rollover after the first of the events.
+   *
+   * @param array $events
+   * @param string $endDate
+   *
+   * @return array
+   *   Events, as from getEvents().
+   */
+  private function getRollovers(array $events, string $endDate): array {
+    if (!$events) {
+      return [];
+    }
+    // A rollover only recalculates the tables the contact has had an event
+    // for by then, otherwise it's all defaults.
+    $firstEventTimes = [];
+    foreach ($events as $event) {
+      foreach ($event['tables'] as $tableName) {
+        $firstEventTimes[$tableName] = min($firstEventTimes[$tableName] ?? $endDate, $event['time']);
       }
     }
-    array_multisort(array_column($events, 'time'), SORT_ASC, $events);
+    $rollovers = [];
+    for ($year = (int) substr(min($firstEventTimes), 0, 4); "$year-07-01 00:00:00" < $endDate; $year++) {
+      $rollover = "$year-07-01 00:00:00";
+      $tables = [];
+      foreach ($firstEventTimes as $tableName => $firstEventTime) {
+        if ($firstEventTime <= $rollover) {
+          $tables[] = $tableName;
+        }
+      }
+      if ($tables) {
+        $rollovers[] = ['time' => $rollover, 'tables' => $tables, 'recurID' => NULL, 'isConvert' => FALSE];
+      }
+    }
+    return $rollovers;
+  }
 
-    // Events in the same second are merged, as the as-of SQL can't tell them
-    // apart. Otherwise, if the previous calculation time is for the same
-    // recurring, an event less than MERGE_SECONDS after it is merged and takes
-    // the later time, unless both are contributions, and not across a
-    // financial year end, so the values just before a rollover keep their row.
+  /**
+   * Merge events into the times to calculate for.
+   *
+   * Consecutive events for the same recurring within MERGE_SECONDS of each
+   * other, other than two contributions, and events in the same second are
+   * calculated together. So is a gift and the recurring post-payment converted
+   * from it, within the longer CONVERT_MERGE_SECONDS. They're calculated and
+   * logged as of the latest, except a donation post-payment converted to
+   * recurring is logged at the original contribution time. We don't merge over
+   * a fiscal year end, so we keep the end of year values.
+   *
+   * @param array $events
+   *   As from getEvents(), in ascending time order.
+   *
+   * @return array
+   *   As from getCalculationTimes().
+   */
+  private function mergeEvents(array $events): array {
     $calculationTimes = [];
     foreach ($events as $event) {
       $previous = array_key_last($calculationTimes);
+      $mergeSeconds = ($previous !== NULL && $calculationTimes[$previous]['isConvert']) ? self::CONVERT_MERGE_SECONDS : self::MERGE_SECONDS;
       if ($previous !== NULL && (
         $event['time'] === $calculationTimes[$previous]['time']
         || ($event['recurID'] && $event['recurID'] === $calculationTimes[$previous]['recurID']
           && !(in_array('civicrm_contribution', $event['tables'], TRUE) && in_array('civicrm_contribution', $calculationTimes[$previous]['tables'], TRUE))
-          && strtotime($event['time']) - strtotime($calculationTimes[$previous]['time']) < self::MERGE_SECONDS
+          && strtotime($event['time']) - strtotime($calculationTimes[$previous]['time']) < $mergeSeconds
           && $this->getFinancialYear($event['time']) === $this->getFinancialYear($calculationTimes[$previous]['time']))
       )) {
+        // A converted gift is logged at the initial contribution time, even with later changes merged in.
+        // Only the first merge for a PPMC gets the longer window and the gift's time.
+        if ($calculationTimes[$previous]['isConvert']) {
+          $calculationTimes[$previous]['logDate'] = $calculationTimes[$previous]['time'];
+          $calculationTimes[$previous]['isConvert'] = FALSE;
+        }
         $calculationTimes[$previous]['time'] = $event['time'];
         $calculationTimes[$previous]['tables'] = array_unique(array_merge($calculationTimes[$previous]['tables'], $event['tables']));
       }
       else {
-        $calculationTimes[] = $event;
+        $calculationTimes[] = $event + ['logDate' => NULL];
       }
     }
     return $calculationTimes;
@@ -371,27 +425,18 @@ class RebuildHistory extends AbstractAction {
   /**
    * Get when an active recurring's log row stops being paused, as CalculatedData calculates it.
    *
-   * Ugly date math: when the time plus one unit (MySQL clamps month ends)
-   * reaches the day before the next payment.
-   *
    * @param array $logRow
    *   With its status name.
    *
    * @return string|null
-   *   NULL if it isn't active or has no next payment.
+   *   NULL if it isn't active, has no next payment or isn't monthly or yearly.
    */
   private function getUnpauseDate(array $logRow): ?string {
-    if (!$logRow['next_sched_contribution_date'] || !in_array($logRow['status'], ['Pending', 'In Progress', 'Processing'], TRUE)) {
+    $days = CalculatedData::PAUSED_DAYS[$logRow['frequency_unit']] ?? NULL;
+    if (!$days || !$logRow['next_sched_contribution_date'] || !in_array($logRow['status'], ['Pending', 'In Progress', 'Processing'], TRUE)) {
       return NULL;
     }
-    $unit = $logRow['frequency_unit'] === 'year' ? 'year' : 'month';
-    $dayBefore = strtotime("{$logRow['next_sched_contribution_date']} -1 day");
-    $unpauseTimestamp = strtotime("-1 $unit", $dayBefore);
-    if (date('j', $unpauseTimestamp) !== date('j', $dayBefore)) {
-      // No such day in the earlier month, so the switch is at the start of the next.
-      $unpauseTimestamp = strtotime(date('Y-m-01 00:00:00', $unpauseTimestamp));
-    }
-    return date('Y-m-d H:i:s', $unpauseTimestamp);
+    return date('Y-m-d H:i:s', strtotime("{$logRow['next_sched_contribution_date']} -$days days"));
   }
 
   /**

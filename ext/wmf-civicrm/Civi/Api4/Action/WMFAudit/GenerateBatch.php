@@ -881,14 +881,14 @@ class GenerateBatch extends AbstractAction {
   }
 
   /**
-   * For engage and ach, trust our per-contribution count/fee/donation breakdown over
-   * the batch's entered figures whenever the net settled amount (and
-   * reversals) already reconcile.
+   * For engage, ach and wire, trust our per-contribution count/fee/donation
+   * breakdown over the batch's entered figures whenever the net settled amount
+   * (and reversals) already reconcile.
    *
-   * Engage's entered item count and fee/donation split can drift from
-   * CiviCRM's per-contribution data - e.g. staff split one check into
-   * several contributions. For ach or engage we can see a fee entered per-contribution but not
-   * at the batch level because it is not known at that point.
+   * The entered item count and fee/donation split can drift from CiviCRM's
+   * per-contribution data - e.g. staff split one check or transfer into
+   * several contributions, or a fee is entered per-contribution but not at
+   * the batch level because it is not known at that point.
    *
    * @param array $batch
    * @param array $result modified in place - 'expected'/'validation' are
@@ -906,16 +906,11 @@ class GenerateBatch extends AbstractAction {
       'debit' => $result['validation']['debit'],
       'settled' => $result['validation']['settled'],
     ]);
-    $toCorrect = [
+    $toCorrect = array_filter([
+      'count' => $result['validation']['count'],
       'credit' => $result['validation']['credit'],
       'fee' => $result['validation']['fee'],
-    ];
-    if ($auditGateway === 'engage') {
-      // At this stage we think ach & wire WILL not need flexibility on count - but we will see.
-      // just engage for now.
-      $toCorrect['count'] = $result['validation']['count'];
-    }
-    $toCorrect = array_filter($toCorrect);
+    ]);
     if (empty($mustBalance) && !empty($toCorrect)) {
       Batch::update(FALSE)
         ->addValue('item_count', $result['totals']['count'])

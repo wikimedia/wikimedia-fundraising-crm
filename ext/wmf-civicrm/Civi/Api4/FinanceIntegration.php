@@ -2,10 +2,10 @@
 
 namespace Civi\Api4;
 
+use Civi\Api4\Action\FinanceIntegration\GetFields;
 use Civi\Api4\Action\FinanceIntegration\Ping;
 use Civi\Api4\Action\FinanceIntegration\PushJournal;
 use Civi\Api4\Action\FinanceIntegration\PushProcessLog;
-use Civi\Api4\Generic\BasicGetFieldsAction;
 
 class FinanceIntegration extends Generic\AbstractEntity {
 
@@ -48,9 +48,15 @@ class FinanceIntegration extends Generic\AbstractEntity {
       ->setCheckPermissions($checkPermissions);
   }
 
-  public static function getFields(): BasicGetFieldsAction {
-    return new BasicGetFieldsAction(__CLASS__, __FUNCTION__, function() {
-      return [];
-    });
+  /**
+   * Intacct dimensions (and GL account) as fields - use loadOptions for their values.
+   *
+   * @param bool $checkPermissions
+   *
+   * @return \Civi\Api4\Action\FinanceIntegration\GetFields
+   */
+  public static function getFields(bool $checkPermissions = FALSE): GetFields {
+    return (new GetFields(__CLASS__, __FUNCTION__))
+      ->setCheckPermissions($checkPermissions);
   }
 }

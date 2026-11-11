@@ -145,7 +145,7 @@ class JournalGenerator {
         gift.fund,
         gift.is_major_gift,
         IF(c.financial_type_id = ' . $endowmentFinancialType . ', 1, 0) as is_endowment,
-        "' . $this->getGateway() . '" as gateway,
+        "' . $this->getGatewayAccountIdentifier() . '" as gateway,
         COALESCE(x.backend_processor, x.gateway) as backend_processor,
         COALESCE(x.backend_processor_txn_id, x.gateway_txn_id) as backend_processor_txn_id,
         IF(x.gateway = "gravy", "gravy", "") as payment_orchestrator,
@@ -460,7 +460,7 @@ END";
    * @return string
    */
   private function getFeeAccountCode(): string {
-    return (string) (FinanceConstants::GATEWAY_ACCOUNTS_FEE_GL_CODES[$this->getGateway()] ?? FinanceConstants::GL_FEE_DEFAULT);
+    return (string) (FinanceConstants::GATEWAY_ACCOUNTS_FEE_GL_CODES[$this->getGatewayAccountIdentifier()] ?? FinanceConstants::GL_FEE_DEFAULT);
   }
 
   /**
@@ -468,12 +468,7 @@ END";
    * @throws \CRM_Core_Exception
    */
   private function getVendorCode(): string {
-    $gateway = $this->getGateway();
-    $accounts = $this->getGatewayAccounts();
-    if (!isset($accounts[$gateway])) {
-      throw new \CRM_Core_Exception('batch vendor ID missing for ' . $gateway);
-    }
-    $account = $accounts[$gateway];
+    $account = $this->getGatewayAccount();
     if ($this->isEndowmentGateway() && !empty($account['vendor_code_endowment'])) {
       return $account['vendor_code_endowment'];
     }
@@ -488,8 +483,7 @@ END";
    * @throws \CRM_Core_Exception
    */
   private function isEndowmentGateway(): bool {
-    $gateway = $this->getGateway();
-    return !empty($this->getGatewayAccounts()[$gateway]['is_endowment']);
+    return (bool) $this->getGatewayAccountValue('is_endowment');
   }
 
   /**
@@ -504,7 +498,7 @@ END";
    * @throws \CRM_Core_Exception
    */
   private function getAuditGateway(): string {
-    $gateway = $this->getGateway();
+    $gateway = $this->getGatewayAccountIdentifier();
     $accounts = $this->getGatewayAccounts();
     return $accounts[$gateway]['gateway'] ?? $gateway;
   }
@@ -512,10 +506,8 @@ END";
   /**
    * @return string
    */
-  private function getGateway(): string {
-    $parts = explode('_', $this->batch['name']);
-    $gateway = $parts[0];
-    return $gateway;
+  private function getGatewayAccountIdentifier(): string {
+    return $this->getGatewayAccountValue('name');
   }
 
   /**
@@ -592,6 +584,27 @@ END";
     $currency = array_pop($parts);
     $middle = preg_replace('/[^a-zA-Z0-9-]+/', '-', implode('_', $parts));
     return $gateway . '_' . $middle . '_' . $currency;
+  }
+
+  /**
+   * @return mixed
+   * @throws \CRM_Core_Exception
+   */
+  private function getGatewayAccount(): array {
+    $accountID = $this->batch['batch_data.settlement_gateway_account_id'] ?? NULL;
+    if (!$accountID) {
+      throw new \CRM_Core_Exception(ts('No gateway account set for batch %1', [1 => $this->batch['name']]));
+    }
+    foreach ($this->getGatewayAccounts() as $gatewayAccount) {
+      if ($gatewayAccount['id'] === $accountID) {
+        return $gatewayAccount;
+      }
+    }
+    throw new \CRM_Core_Exception(ts('Gateway account %1 not found for batch %2', [1 => $accountID, 2 => $this->batch['name']]));
+  }
+
+  private function getGatewayAccountValue(string $value): mixed {
+    return $this->getGatewayAccount()[$value];
   }
 
 }

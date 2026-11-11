@@ -6,18 +6,19 @@ use Civi\Api4\Contact;
 use Civi\Api4\WMFDonor;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
+use Civi\WMFHook\CalculatedData;
 
 /**
  * Update recurring donor status for donors whose recurring donations are
  * no longer paused.
  *
  * Our definition of paused is that the donor's next recurring is further in
- * the future than one frequency unit plus a day (so a month and a day or a year
- * and a day). The donor pauses their recurring contribution for a set number of
+ * the future than CalculatedData::PAUSED_DAYS (32 days for monthly, 367
+ * for yearly). The donor pauses their recurring contribution for a set number of
  * days (30, 60 or 90) via Donor Portal or DR, but we don't consider it paused for
- * that number of days and we don't have a real paused status in CiviCRM;
- * we consider it paused until one period (plus a day) before it will be charged
- * again (when it is back on the regular schedule). So we need this action scheduled
+ * that number of days as we don't have a real paused status in CiviCRM;
+ * we consider it paused until 32/367 days before it will be charged again
+ * (when it is back on the regular schedule). So we need this action scheduled
  * daily to update the recurring statuses from paused to active, after they are
  * "back on the schedule" as there is no update to the ContributionRecur to trigger
  * the update.
@@ -33,9 +34,8 @@ class UnPauseRecurring extends AbstractAction {
    */
   public function _run(Result $result): void {
     $contacts = [];
-    foreach (['month', 'year'] as $unit) {
-      // Using the SQL matches exactly how we actually calculate in Update.
-      $pausedUntil = \CRM_Core_DAO::singleValueQuery("SELECT NOW() + INTERVAL 1 $unit + INTERVAL 1 DAY");
+    foreach (CalculatedData::PAUSED_DAYS as $unit => $days) {
+      $pausedUntil = date('Y-m-d H:i:s', strtotime("+$days days"));
       $contacts += (array) Contact::get(FALSE)
         ->addSelect('id')
         ->addJoin('ContributionRecur AS recur', 'EXCLUDE',
