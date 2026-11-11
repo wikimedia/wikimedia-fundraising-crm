@@ -29,6 +29,7 @@ return [
             'item_count',
             'status_id:label',
             'created_date',
+            'batch_data.last_discrepancy',
           ],
           'orderBy' => [],
           'where' => [
@@ -119,6 +120,12 @@ return [
             ],
             [
               'type' => 'field',
+              'key' => 'batch_data.last_discrepancy',
+              'label' => E::ts('Batch Data: Discrepancy on net total on last attempt'),
+              'sortable' => TRUE,
+            ],
+            [
+              'type' => 'field',
               'key' => 'batch_data.settlement_currency',
               'label' => E::ts('Settlement Currency'),
               'sortable' => TRUE,
@@ -140,6 +147,12 @@ return [
               'type' => 'field',
               'key' => 'status_id:label',
               'label' => E::ts('Batch Status'),
+              'sortable' => TRUE,
+            ],
+            [
+              'type' => 'field',
+              'key' => 'batch_data.net_amount_mismatch',
+              'label' => E::ts('Net Amount Mismatch'),
               'sortable' => TRUE,
             ],
             [
