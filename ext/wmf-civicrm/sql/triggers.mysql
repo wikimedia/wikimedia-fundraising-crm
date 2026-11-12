@@ -340,6 +340,12 @@ DROP TRIGGER IF EXISTS civicrm_financial_account_before_delete //
 DROP TRIGGER IF EXISTS civicrm_financial_account_after_insert //
 DROP TRIGGER IF EXISTS civicrm_financial_account_after_update //
 DROP TRIGGER IF EXISTS civicrm_financial_account_after_delete //
+DROP TRIGGER IF EXISTS civicrm_financial_data_adjustment_before_insert //
+DROP TRIGGER IF EXISTS civicrm_financial_data_adjustment_before_update //
+DROP TRIGGER IF EXISTS civicrm_financial_data_adjustment_before_delete //
+DROP TRIGGER IF EXISTS civicrm_financial_data_adjustment_after_insert //
+DROP TRIGGER IF EXISTS civicrm_financial_data_adjustment_after_update //
+DROP TRIGGER IF EXISTS civicrm_financial_data_adjustment_after_delete //
 DROP TRIGGER IF EXISTS civicrm_financial_type_before_insert //
 DROP TRIGGER IF EXISTS civicrm_financial_type_before_update //
 DROP TRIGGER IF EXISTS civicrm_financial_type_before_delete //
@@ -1494,6 +1500,7 @@ END //
 CREATE TRIGGER civicrm_contribution_after_insert after insert ON civicrm_contribution FOR EACH ROW BEGIN
 IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_contribution (`id`, `contact_id`, `financial_type_id`, `contribution_page_id`, `payment_instrument_id`, `receive_date`, `non_deductible_amount`, `total_amount`, `fee_amount`, `net_amount`, `trxn_id`, `invoice_id`, `currency`, `cancel_date`, `cancel_reason`, `receipt_date`, `thankyou_date`, `source`, `amount_level`, `contribution_recur_id`, `is_test`, `is_pay_later`, `contribution_status_id`, `note`, `address_id`, `check_number`, `campaign_id`, `tax_amount`, `creditnote_id`, `revenue_recognition_date`, `invoice_number`, `is_template`, `created_date`, `modified_date`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`contact_id`, NEW.`financial_type_id`, NEW.`contribution_page_id`, NEW.`payment_instrument_id`, NEW.`receive_date`, NEW.`non_deductible_amount`, NEW.`total_amount`, NEW.`fee_amount`, NEW.`net_amount`, NEW.`trxn_id`, NEW.`invoice_id`, NEW.`currency`, NEW.`cancel_date`, NEW.`cancel_reason`, NEW.`receipt_date`, NEW.`thankyou_date`, NEW.`source`, NEW.`amount_level`, NEW.`contribution_recur_id`, NEW.`is_test`, NEW.`is_pay_later`, NEW.`contribution_status_id`, NEW.`note`, NEW.`address_id`, NEW.`check_number`, NEW.`campaign_id`, NEW.`tax_amount`, NEW.`creditnote_id`, NEW.`revenue_recognition_date`, NEW.`invoice_number`, NEW.`is_template`, NEW.`created_date`, NEW.`modified_date`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
  IF 1 AND (NEW.contact_id NOT IN (2123835,19855599,12513,31398010,72)) THEN
+      SET @receive_log_date = NEW.receive_date;
       INSERT INTO wmf_donor (
         entity_id,
         donor_segment_overall,
@@ -1606,7 +1613,7 @@ IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INS
 
          WHEN (
          --  New this year: First donation this year
-         MIN(COALESCE( IF( receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
+         SUM(COALESCE( IF( receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
         ) THEN 30
 
 
@@ -1668,7 +1675,7 @@ IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INS
 
          WHEN (
          --  New this year: First donation this year
-         MIN(COALESCE( IF(contribution_recur_id IS NULL AND  receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
+         SUM(COALESCE( IF(contribution_recur_id IS NULL AND  receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
         ) THEN 30
 
 
@@ -2050,12 +2057,14 @@ IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INS
      all_funds_total_2026_2027 = VALUES(all_funds_total_2026_2027),
      all_funds_total_2026 = VALUES(all_funds_total_2026),
      all_funds_change_2026_2027 = VALUES(all_funds_change_2026_2027);
+      SET @receive_log_date = NULL;
 END IF;
 END //
 
 CREATE TRIGGER civicrm_contribution_after_update after update ON civicrm_contribution FOR EACH ROW BEGIN
 IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`contact_id`,'') <> IFNULL(NEW.`contact_id`,'') OR IFNULL(OLD.`financial_type_id`,'') <> IFNULL(NEW.`financial_type_id`,'') OR IFNULL(OLD.`contribution_page_id`,'') <> IFNULL(NEW.`contribution_page_id`,'') OR IFNULL(OLD.`payment_instrument_id`,'') <> IFNULL(NEW.`payment_instrument_id`,'') OR IFNULL(OLD.`receive_date`,'') <> IFNULL(NEW.`receive_date`,'') OR IFNULL(OLD.`non_deductible_amount`,'') <> IFNULL(NEW.`non_deductible_amount`,'') OR IFNULL(OLD.`total_amount`,'') <> IFNULL(NEW.`total_amount`,'') OR IFNULL(OLD.`fee_amount`,'') <> IFNULL(NEW.`fee_amount`,'') OR IFNULL(OLD.`net_amount`,'') <> IFNULL(NEW.`net_amount`,'') OR IFNULL(OLD.`trxn_id`,'') <> IFNULL(NEW.`trxn_id`,'') OR IFNULL(OLD.`invoice_id`,'') <> IFNULL(NEW.`invoice_id`,'') OR IFNULL(OLD.`currency`,'') <> IFNULL(NEW.`currency`,'') OR IFNULL(OLD.`cancel_date`,'') <> IFNULL(NEW.`cancel_date`,'') OR IFNULL(OLD.`cancel_reason`,'') <> IFNULL(NEW.`cancel_reason`,'') OR IFNULL(OLD.`receipt_date`,'') <> IFNULL(NEW.`receipt_date`,'') OR IFNULL(OLD.`thankyou_date`,'') <> IFNULL(NEW.`thankyou_date`,'') OR IFNULL(OLD.`source`,'') <> IFNULL(NEW.`source`,'') OR IFNULL(OLD.`amount_level`,'') <> IFNULL(NEW.`amount_level`,'') OR IFNULL(OLD.`contribution_recur_id`,'') <> IFNULL(NEW.`contribution_recur_id`,'') OR IFNULL(OLD.`is_test`,'') <> IFNULL(NEW.`is_test`,'') OR IFNULL(OLD.`is_pay_later`,'') <> IFNULL(NEW.`is_pay_later`,'') OR IFNULL(OLD.`contribution_status_id`,'') <> IFNULL(NEW.`contribution_status_id`,'') OR IFNULL(OLD.`note`,'') <> IFNULL(NEW.`note`,'') OR IFNULL(OLD.`address_id`,'') <> IFNULL(NEW.`address_id`,'') OR IFNULL(OLD.`check_number`,'') <> IFNULL(NEW.`check_number`,'') OR IFNULL(OLD.`campaign_id`,'') <> IFNULL(NEW.`campaign_id`,'') OR IFNULL(OLD.`tax_amount`,'') <> IFNULL(NEW.`tax_amount`,'') OR IFNULL(OLD.`creditnote_id`,'') <> IFNULL(NEW.`creditnote_id`,'') OR IFNULL(OLD.`revenue_recognition_date`,'') <> IFNULL(NEW.`revenue_recognition_date`,'') OR IFNULL(OLD.`invoice_number`,'') <> IFNULL(NEW.`invoice_number`,'') OR IFNULL(OLD.`is_template`,'') <> IFNULL(NEW.`is_template`,'') OR IFNULL(OLD.`created_date`,'') <> IFNULL(NEW.`created_date`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_contribution (`id`, `contact_id`, `financial_type_id`, `contribution_page_id`, `payment_instrument_id`, `receive_date`, `non_deductible_amount`, `total_amount`, `fee_amount`, `net_amount`, `trxn_id`, `invoice_id`, `currency`, `cancel_date`, `cancel_reason`, `receipt_date`, `thankyou_date`, `source`, `amount_level`, `contribution_recur_id`, `is_test`, `is_pay_later`, `contribution_status_id`, `note`, `address_id`, `check_number`, `campaign_id`, `tax_amount`, `creditnote_id`, `revenue_recognition_date`, `invoice_number`, `is_template`, `created_date`, `modified_date`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`contact_id`, NEW.`financial_type_id`, NEW.`contribution_page_id`, NEW.`payment_instrument_id`, NEW.`receive_date`, NEW.`non_deductible_amount`, NEW.`total_amount`, NEW.`fee_amount`, NEW.`net_amount`, NEW.`trxn_id`, NEW.`invoice_id`, NEW.`currency`, NEW.`cancel_date`, NEW.`cancel_reason`, NEW.`receipt_date`, NEW.`thankyou_date`, NEW.`source`, NEW.`amount_level`, NEW.`contribution_recur_id`, NEW.`is_test`, NEW.`is_pay_later`, NEW.`contribution_status_id`, NEW.`note`, NEW.`address_id`, NEW.`check_number`, NEW.`campaign_id`, NEW.`tax_amount`, NEW.`creditnote_id`, NEW.`revenue_recognition_date`, NEW.`invoice_number`, NEW.`is_template`, NEW.`created_date`, NEW.`modified_date`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF;
  IF 1 AND (NEW.contact_id NOT IN (2123835,19855599,12513,31398010,72)) AND ((NEW.contribution_status_id != OLD.contribution_status_id) OR (NEW.total_amount != OLD.total_amount) OR (NEW.contact_id != OLD.contact_id) OR (NEW.receive_date != OLD.receive_date) OR (NEW.currency != OLD.currency) OR (NEW.financial_type_id != OLD.financial_type_id) ) THEN
+      SET @receive_log_date = NEW.receive_date;
       INSERT INTO wmf_donor (
         entity_id,
         donor_segment_overall,
@@ -2168,7 +2177,7 @@ IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`contact_id`,'') 
 
          WHEN (
          --  New this year: First donation this year
-         MIN(COALESCE( IF( receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
+         SUM(COALESCE( IF( receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
         ) THEN 30
 
 
@@ -2230,7 +2239,7 @@ IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`contact_id`,'') 
 
          WHEN (
          --  New this year: First donation this year
-         MIN(COALESCE( IF(contribution_recur_id IS NULL AND  receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
+         SUM(COALESCE( IF(contribution_recur_id IS NULL AND  receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
         ) THEN 30
 
 
@@ -2612,9 +2621,11 @@ IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`contact_id`,'') 
      all_funds_total_2026_2027 = VALUES(all_funds_total_2026_2027),
      all_funds_total_2026 = VALUES(all_funds_total_2026),
      all_funds_change_2026_2027 = VALUES(all_funds_change_2026_2027);
+      SET @receive_log_date = NULL;
 END IF;
 
  IF 1 AND (OLD.contact_id NOT IN (2123835,19855599,12513,31398010,72)) AND (NEW.contact_id <> OLD.contact_id) THEN
+      SET @receive_log_date = OLD.receive_date;
       INSERT INTO wmf_donor (
         entity_id,
         donor_segment_overall,
@@ -2727,7 +2738,7 @@ END IF;
 
          WHEN (
          --  New this year: First donation this year
-         MIN(COALESCE( IF( receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
+         SUM(COALESCE( IF( receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
         ) THEN 30
 
 
@@ -2789,7 +2800,7 @@ END IF;
 
          WHEN (
          --  New this year: First donation this year
-         MIN(COALESCE( IF(contribution_recur_id IS NULL AND  receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
+         SUM(COALESCE( IF(contribution_recur_id IS NULL AND  receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
         ) THEN 30
 
 
@@ -3171,12 +3182,14 @@ END IF;
      all_funds_total_2026_2027 = VALUES(all_funds_total_2026_2027),
      all_funds_total_2026 = VALUES(all_funds_total_2026),
      all_funds_change_2026_2027 = VALUES(all_funds_change_2026_2027);
+      SET @receive_log_date = NULL;
 END IF;
 END //
 
 CREATE TRIGGER civicrm_contribution_after_delete after delete ON civicrm_contribution FOR EACH ROW BEGIN
 IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_contribution (`id`, `contact_id`, `financial_type_id`, `contribution_page_id`, `payment_instrument_id`, `receive_date`, `non_deductible_amount`, `total_amount`, `fee_amount`, `net_amount`, `trxn_id`, `invoice_id`, `currency`, `cancel_date`, `cancel_reason`, `receipt_date`, `thankyou_date`, `source`, `amount_level`, `contribution_recur_id`, `is_test`, `is_pay_later`, `contribution_status_id`, `note`, `address_id`, `check_number`, `campaign_id`, `tax_amount`, `creditnote_id`, `revenue_recognition_date`, `invoice_number`, `is_template`, `created_date`, `modified_date`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`contact_id`, OLD.`financial_type_id`, OLD.`contribution_page_id`, OLD.`payment_instrument_id`, OLD.`receive_date`, OLD.`non_deductible_amount`, OLD.`total_amount`, OLD.`fee_amount`, OLD.`net_amount`, OLD.`trxn_id`, OLD.`invoice_id`, OLD.`currency`, OLD.`cancel_date`, OLD.`cancel_reason`, OLD.`receipt_date`, OLD.`thankyou_date`, OLD.`source`, OLD.`amount_level`, OLD.`contribution_recur_id`, OLD.`is_test`, OLD.`is_pay_later`, OLD.`contribution_status_id`, OLD.`note`, OLD.`address_id`, OLD.`check_number`, OLD.`campaign_id`, OLD.`tax_amount`, OLD.`creditnote_id`, OLD.`revenue_recognition_date`, OLD.`invoice_number`, OLD.`is_template`, OLD.`created_date`, OLD.`modified_date`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
  IF 1 AND (OLD.contact_id NOT IN (2123835,19855599,12513,31398010,72)) THEN
+      SET @receive_log_date = OLD.receive_date;
       INSERT INTO wmf_donor (
         entity_id,
         donor_segment_overall,
@@ -3289,7 +3302,7 @@ IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INS
 
          WHEN (
          --  New this year: First donation this year
-         MIN(COALESCE( IF( receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
+         SUM(COALESCE( IF( receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
         ) THEN 30
 
 
@@ -3351,7 +3364,7 @@ IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INS
 
          WHEN (
          --  New this year: First donation this year
-         MIN(COALESCE( IF(contribution_recur_id IS NULL AND  receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
+         SUM(COALESCE( IF(contribution_recur_id IS NULL AND  receive_date BETWEEN ('2026-07-01 00:00:00') AND ('2027-06-30 23:59:59.9999'), total_amount, 0), 0)) >= 0.01
         ) THEN 30
 
 
@@ -3733,6 +3746,7 @@ IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INS
      all_funds_total_2026_2027 = VALUES(all_funds_total_2026_2027),
      all_funds_total_2026 = VALUES(all_funds_total_2026),
      all_funds_change_2026_2027 = VALUES(all_funds_change_2026_2027);
+      SET @receive_log_date = NULL;
 END IF;
 END //
 
@@ -3776,9 +3790,9 @@ IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INS
       FROM (
         SELECT
         CASE
-      -- Paused status (35), no scheduled payments within the recurring's frequency unit
+      -- Paused status (35), no scheduled payments within PAUSED_DAYS
       WHEN MIN(CASE WHEN c.contribution_status_id IN (2,5,14)
-              THEN c.next_sched_contribution_date > CASE c.frequency_unit WHEN 'month' THEN NOW() + INTERVAL 1 month + INTERVAL 1 DAY WHEN 'year' THEN NOW() + INTERVAL 1 year + INTERVAL 1 DAY END
+              THEN c.next_sched_contribution_date > CASE c.frequency_unit WHEN 'month' THEN NOW() + INTERVAL 32 DAY WHEN 'year' THEN NOW() + INTERVAL 367 DAY END
          END) = 1 THEN 35
       -- Active Status (15) Has an active recurring and was already a recurring donor prior to this financial year
       WHEN MAX(c.contribution_status_id IN (2,5,14)) = 1
@@ -3791,9 +3805,9 @@ IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INS
       ELSE 95
       END AS donor_status_recur_overall,
         CASE
-      -- Paused status (35), no scheduled payments within the recurring's frequency unit
+      -- Paused status (35), no scheduled payments within PAUSED_DAYS
       WHEN MIN(CASE WHEN c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'month'
-              THEN c.next_sched_contribution_date > NOW() + INTERVAL 1 month + INTERVAL 1 DAY
+              THEN c.next_sched_contribution_date > NOW() + INTERVAL 32 DAY
          END) = 1 THEN 35
       -- Active Status (15) Has an active recurring and was already a recurring donor prior to this financial year
       WHEN MAX(c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'month') = 1
@@ -3806,9 +3820,9 @@ IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INS
       ELSE 95
       END AS donor_status_recur_month,
         CASE
-      -- Paused status (35), no scheduled payments within the recurring's frequency unit
+      -- Paused status (35), no scheduled payments within PAUSED_DAYS
       WHEN MIN(CASE WHEN c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'year'
-              THEN c.next_sched_contribution_date > NOW() + INTERVAL 1 year + INTERVAL 1 DAY
+              THEN c.next_sched_contribution_date > NOW() + INTERVAL 367 DAY
          END) = 1 THEN 35
       -- Active Status (15) Has an active recurring and was already a recurring donor prior to this financial year
       WHEN MAX(c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'year') = 1
@@ -3851,9 +3865,9 @@ IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`contact_id`,'') 
       FROM (
         SELECT
         CASE
-      -- Paused status (35), no scheduled payments within the recurring's frequency unit
+      -- Paused status (35), no scheduled payments within PAUSED_DAYS
       WHEN MIN(CASE WHEN c.contribution_status_id IN (2,5,14)
-              THEN c.next_sched_contribution_date > CASE c.frequency_unit WHEN 'month' THEN NOW() + INTERVAL 1 month + INTERVAL 1 DAY WHEN 'year' THEN NOW() + INTERVAL 1 year + INTERVAL 1 DAY END
+              THEN c.next_sched_contribution_date > CASE c.frequency_unit WHEN 'month' THEN NOW() + INTERVAL 32 DAY WHEN 'year' THEN NOW() + INTERVAL 367 DAY END
          END) = 1 THEN 35
       -- Active Status (15) Has an active recurring and was already a recurring donor prior to this financial year
       WHEN MAX(c.contribution_status_id IN (2,5,14)) = 1
@@ -3866,9 +3880,9 @@ IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`contact_id`,'') 
       ELSE 95
       END AS donor_status_recur_overall,
         CASE
-      -- Paused status (35), no scheduled payments within the recurring's frequency unit
+      -- Paused status (35), no scheduled payments within PAUSED_DAYS
       WHEN MIN(CASE WHEN c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'month'
-              THEN c.next_sched_contribution_date > NOW() + INTERVAL 1 month + INTERVAL 1 DAY
+              THEN c.next_sched_contribution_date > NOW() + INTERVAL 32 DAY
          END) = 1 THEN 35
       -- Active Status (15) Has an active recurring and was already a recurring donor prior to this financial year
       WHEN MAX(c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'month') = 1
@@ -3881,9 +3895,9 @@ IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`contact_id`,'') 
       ELSE 95
       END AS donor_status_recur_month,
         CASE
-      -- Paused status (35), no scheduled payments within the recurring's frequency unit
+      -- Paused status (35), no scheduled payments within PAUSED_DAYS
       WHEN MIN(CASE WHEN c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'year'
-              THEN c.next_sched_contribution_date > NOW() + INTERVAL 1 year + INTERVAL 1 DAY
+              THEN c.next_sched_contribution_date > NOW() + INTERVAL 367 DAY
          END) = 1 THEN 35
       -- Active Status (15) Has an active recurring and was already a recurring donor prior to this financial year
       WHEN MAX(c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'year') = 1
@@ -3921,9 +3935,9 @@ END IF;
       FROM (
         SELECT
         CASE
-      -- Paused status (35), no scheduled payments within the recurring's frequency unit
+      -- Paused status (35), no scheduled payments within PAUSED_DAYS
       WHEN MIN(CASE WHEN c.contribution_status_id IN (2,5,14)
-              THEN c.next_sched_contribution_date > CASE c.frequency_unit WHEN 'month' THEN NOW() + INTERVAL 1 month + INTERVAL 1 DAY WHEN 'year' THEN NOW() + INTERVAL 1 year + INTERVAL 1 DAY END
+              THEN c.next_sched_contribution_date > CASE c.frequency_unit WHEN 'month' THEN NOW() + INTERVAL 32 DAY WHEN 'year' THEN NOW() + INTERVAL 367 DAY END
          END) = 1 THEN 35
       -- Active Status (15) Has an active recurring and was already a recurring donor prior to this financial year
       WHEN MAX(c.contribution_status_id IN (2,5,14)) = 1
@@ -3936,9 +3950,9 @@ END IF;
       ELSE 95
       END AS donor_status_recur_overall,
         CASE
-      -- Paused status (35), no scheduled payments within the recurring's frequency unit
+      -- Paused status (35), no scheduled payments within PAUSED_DAYS
       WHEN MIN(CASE WHEN c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'month'
-              THEN c.next_sched_contribution_date > NOW() + INTERVAL 1 month + INTERVAL 1 DAY
+              THEN c.next_sched_contribution_date > NOW() + INTERVAL 32 DAY
          END) = 1 THEN 35
       -- Active Status (15) Has an active recurring and was already a recurring donor prior to this financial year
       WHEN MAX(c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'month') = 1
@@ -3951,9 +3965,9 @@ END IF;
       ELSE 95
       END AS donor_status_recur_month,
         CASE
-      -- Paused status (35), no scheduled payments within the recurring's frequency unit
+      -- Paused status (35), no scheduled payments within PAUSED_DAYS
       WHEN MIN(CASE WHEN c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'year'
-              THEN c.next_sched_contribution_date > NOW() + INTERVAL 1 year + INTERVAL 1 DAY
+              THEN c.next_sched_contribution_date > NOW() + INTERVAL 367 DAY
          END) = 1 THEN 35
       -- Active Status (15) Has an active recurring and was already a recurring donor prior to this financial year
       WHEN MAX(c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'year') = 1
@@ -3994,9 +4008,9 @@ IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INS
       FROM (
         SELECT
         CASE
-      -- Paused status (35), no scheduled payments within the recurring's frequency unit
+      -- Paused status (35), no scheduled payments within PAUSED_DAYS
       WHEN MIN(CASE WHEN c.contribution_status_id IN (2,5,14)
-              THEN c.next_sched_contribution_date > CASE c.frequency_unit WHEN 'month' THEN NOW() + INTERVAL 1 month + INTERVAL 1 DAY WHEN 'year' THEN NOW() + INTERVAL 1 year + INTERVAL 1 DAY END
+              THEN c.next_sched_contribution_date > CASE c.frequency_unit WHEN 'month' THEN NOW() + INTERVAL 32 DAY WHEN 'year' THEN NOW() + INTERVAL 367 DAY END
          END) = 1 THEN 35
       -- Active Status (15) Has an active recurring and was already a recurring donor prior to this financial year
       WHEN MAX(c.contribution_status_id IN (2,5,14)) = 1
@@ -4009,9 +4023,9 @@ IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INS
       ELSE 95
       END AS donor_status_recur_overall,
         CASE
-      -- Paused status (35), no scheduled payments within the recurring's frequency unit
+      -- Paused status (35), no scheduled payments within PAUSED_DAYS
       WHEN MIN(CASE WHEN c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'month'
-              THEN c.next_sched_contribution_date > NOW() + INTERVAL 1 month + INTERVAL 1 DAY
+              THEN c.next_sched_contribution_date > NOW() + INTERVAL 32 DAY
          END) = 1 THEN 35
       -- Active Status (15) Has an active recurring and was already a recurring donor prior to this financial year
       WHEN MAX(c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'month') = 1
@@ -4024,9 +4038,9 @@ IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INS
       ELSE 95
       END AS donor_status_recur_month,
         CASE
-      -- Paused status (35), no scheduled payments within the recurring's frequency unit
+      -- Paused status (35), no scheduled payments within PAUSED_DAYS
       WHEN MIN(CASE WHEN c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'year'
-              THEN c.next_sched_contribution_date > NOW() + INTERVAL 1 year + INTERVAL 1 DAY
+              THEN c.next_sched_contribution_date > NOW() + INTERVAL 367 DAY
          END) = 1 THEN 35
       -- Active Status (15) Has an active recurring and was already a recurring donor prior to this financial year
       WHEN MAX(c.contribution_status_id IN (2,5,14) AND c.frequency_unit = 'year') = 1
@@ -4376,6 +4390,18 @@ END //
 
 CREATE TRIGGER civicrm_financial_account_after_delete after delete ON civicrm_financial_account FOR EACH ROW BEGIN
 IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_financial_account (`id`, `contact_id`, `name`, `label`, `financial_account_type_id`, `description`, `parent_id`, `is_header_account`, `accounting_code`, `account_type_code`, `is_deductible`, `is_tax`, `tax_rate`, `is_reserved`, `is_active`, `is_default`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`contact_id`, OLD.`name`, OLD.`label`, OLD.`financial_account_type_id`, OLD.`description`, OLD.`parent_id`, OLD.`is_header_account`, OLD.`accounting_code`, OLD.`account_type_code`, OLD.`is_deductible`, OLD.`is_tax`, OLD.`tax_rate`, OLD.`is_reserved`, OLD.`is_active`, OLD.`is_default`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
+END //
+
+CREATE TRIGGER civicrm_financial_data_adjustment_after_insert after insert ON civicrm_financial_data_adjustment FOR EACH ROW BEGIN
+IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_financial_data_adjustment (`id`, `entity_id`, `gl_code_before`, `gl_code_after`, `is_endowment_before`, `is_endowment_after`, `status`, `status_note`, `created_date`, `modified_date`, `created_id`, `original_batch`, `adjustment_batch_reference`, `adjustment_reversal_batch_reference`, log_conn_id, log_user_id, log_action) VALUES ( NEW.`id`, NEW.`entity_id`, NEW.`gl_code_before`, NEW.`gl_code_after`, NEW.`is_endowment_before`, NEW.`is_endowment_after`, NEW.`status`, NEW.`status_note`, NEW.`created_date`, NEW.`modified_date`, NEW.`created_id`, NEW.`original_batch`, NEW.`adjustment_batch_reference`, NEW.`adjustment_reversal_batch_reference`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'insert'); END IF;
+END //
+
+CREATE TRIGGER civicrm_financial_data_adjustment_after_update after update ON civicrm_financial_data_adjustment FOR EACH ROW BEGIN
+IF ( (IFNULL(OLD.`id`,'') <> IFNULL(NEW.`id`,'') OR IFNULL(OLD.`entity_id`,'') <> IFNULL(NEW.`entity_id`,'') OR IFNULL(OLD.`gl_code_before`,'') <> IFNULL(NEW.`gl_code_before`,'') OR IFNULL(OLD.`gl_code_after`,'') <> IFNULL(NEW.`gl_code_after`,'') OR IFNULL(OLD.`is_endowment_before`,'') <> IFNULL(NEW.`is_endowment_before`,'') OR IFNULL(OLD.`is_endowment_after`,'') <> IFNULL(NEW.`is_endowment_after`,'') OR IFNULL(OLD.`status`,'') <> IFNULL(NEW.`status`,'') OR IFNULL(OLD.`status_note`,'') <> IFNULL(NEW.`status_note`,'') OR IFNULL(OLD.`created_date`,'') <> IFNULL(NEW.`created_date`,'') OR IFNULL(OLD.`created_id`,'') <> IFNULL(NEW.`created_id`,'') OR IFNULL(OLD.`original_batch`,'') <> IFNULL(NEW.`original_batch`,'') OR IFNULL(OLD.`adjustment_batch_reference`,'') <> IFNULL(NEW.`adjustment_batch_reference`,'') OR IFNULL(OLD.`adjustment_reversal_batch_reference`,'') <> IFNULL(NEW.`adjustment_reversal_batch_reference`,'')) AND ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) ) THEN INSERT INTO log_civicrm_financial_data_adjustment (`id`, `entity_id`, `gl_code_before`, `gl_code_after`, `is_endowment_before`, `is_endowment_after`, `status`, `status_note`, `created_date`, `modified_date`, `created_id`, `original_batch`, `adjustment_batch_reference`, `adjustment_reversal_batch_reference`, log_conn_id, log_user_id, log_action) VALUES (NEW.`id`, NEW.`entity_id`, NEW.`gl_code_before`, NEW.`gl_code_after`, NEW.`is_endowment_before`, NEW.`is_endowment_after`, NEW.`status`, NEW.`status_note`, NEW.`created_date`, NEW.`modified_date`, NEW.`created_id`, NEW.`original_batch`, NEW.`adjustment_batch_reference`, NEW.`adjustment_reversal_batch_reference`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'update'); END IF;
+END //
+
+CREATE TRIGGER civicrm_financial_data_adjustment_after_delete after delete ON civicrm_financial_data_adjustment FOR EACH ROW BEGIN
+IF ( @civicrm_disable_logging IS NULL OR @civicrm_disable_logging = 0 ) THEN INSERT INTO log_civicrm_financial_data_adjustment (`id`, `entity_id`, `gl_code_before`, `gl_code_after`, `is_endowment_before`, `is_endowment_after`, `status`, `status_note`, `created_date`, `modified_date`, `created_id`, `original_batch`, `adjustment_batch_reference`, `adjustment_reversal_batch_reference`, log_conn_id, log_user_id, log_action) VALUES ( OLD.`id`, OLD.`entity_id`, OLD.`gl_code_before`, OLD.`gl_code_after`, OLD.`is_endowment_before`, OLD.`is_endowment_after`, OLD.`status`, OLD.`status_note`, OLD.`created_date`, OLD.`modified_date`, OLD.`created_id`, OLD.`original_batch`, OLD.`adjustment_batch_reference`, OLD.`adjustment_reversal_batch_reference`, COALESCE(@uniqueID, LEFT(CONCAT('c_', unix_timestamp()/3600, CONNECTION_ID()), 17)), @civicrm_user_id, 'delete'); END IF;
 END //
 
 CREATE TRIGGER civicrm_financial_type_after_insert after insert ON civicrm_financial_type FOR EACH ROW BEGIN
@@ -6254,14 +6280,16 @@ DROP TRIGGER IF EXISTS wmf_donor_after_insert //
 
 CREATE TRIGGER wmf_donor_after_insert after insert ON wmf_donor FOR EACH ROW BEGIN
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
-INSERT INTO wmf_donor_history (entity_id, donor_segment_overall, donor_status_overall, donor_status_otg, donor_status_recur_overall, donor_status_recur_month, donor_status_recur_year, changed_fields) VALUES (NEW.entity_id, NEW.donor_segment_overall, NEW.donor_status_overall, NEW.donor_status_otg, NEW.donor_status_recur_overall, NEW.donor_status_recur_month, NEW.donor_status_recur_year, CONCAT(CHAR(1), CONCAT_WS(CHAR(1), IF(IFNULL(NEW.donor_segment_overall,'') <> '', '1', NULL), IF(IFNULL(NEW.donor_status_overall,'') <> '', '2', NULL), IF(IFNULL(NEW.donor_status_otg,'') <> '', '3', NULL), IF(IFNULL(NEW.donor_status_recur_overall,'') <> '', '6', NULL), IF(IFNULL(NEW.donor_status_recur_month,'') <> '', '4', NULL), IF(IFNULL(NEW.donor_status_recur_year,'') <> '', '5', NULL)), CHAR(1)));
+IF (IFNULL(NEW.donor_segment_overall,'') <> '990' OR IFNULL(NEW.donor_status_overall,'') <> '99' OR IFNULL(NEW.donor_status_otg,'') <> '99' OR IFNULL(NEW.donor_status_recur_overall,'') <> '95' OR IFNULL(NEW.donor_status_recur_month,'') <> '95' OR IFNULL(NEW.donor_status_recur_year,'') <> '95') THEN
+INSERT INTO wmf_donor_history (entity_id, donor_segment_overall, donor_status_overall, donor_status_otg, donor_status_recur_overall, donor_status_recur_month, donor_status_recur_year, log_date, changed_fields) VALUES (NEW.entity_id, NEW.donor_segment_overall, NEW.donor_status_overall, NEW.donor_status_otg, NEW.donor_status_recur_overall, NEW.donor_status_recur_month, NEW.donor_status_recur_year, IFNULL(@receive_log_date, NOW()), CONCAT(CHAR(1), CONCAT_WS(CHAR(1), IF(IFNULL(NEW.donor_segment_overall,'') <> '990', '1', NULL), IF(IFNULL(NEW.donor_status_overall,'') <> '99', '2', NULL), IF(IFNULL(NEW.donor_status_otg,'') <> '99', '3', NULL), IF(IFNULL(NEW.donor_status_recur_overall,'') <> '95', '6', NULL), IF(IFNULL(NEW.donor_status_recur_month,'') <> '95', '4', NULL), IF(IFNULL(NEW.donor_status_recur_year,'') <> '95', '5', NULL)), CHAR(1)));
+END IF;
 END //
 DROP TRIGGER IF EXISTS wmf_donor_after_update //
 
 CREATE TRIGGER wmf_donor_after_update after update ON wmf_donor FOR EACH ROW BEGIN
 UPDATE civicrm_contact SET modified_date = CURRENT_TIMESTAMP WHERE id = NEW.entity_id;
 IF (IFNULL(OLD.donor_segment_overall,'') <> IFNULL(NEW.donor_segment_overall,'') OR IFNULL(OLD.donor_status_overall,'') <> IFNULL(NEW.donor_status_overall,'') OR IFNULL(OLD.donor_status_otg,'') <> IFNULL(NEW.donor_status_otg,'') OR IFNULL(OLD.donor_status_recur_overall,'') <> IFNULL(NEW.donor_status_recur_overall,'') OR IFNULL(OLD.donor_status_recur_month,'') <> IFNULL(NEW.donor_status_recur_month,'') OR IFNULL(OLD.donor_status_recur_year,'') <> IFNULL(NEW.donor_status_recur_year,'')) THEN
-INSERT INTO wmf_donor_history (entity_id, donor_segment_overall, donor_status_overall, donor_status_otg, donor_status_recur_overall, donor_status_recur_month, donor_status_recur_year, changed_fields) VALUES (NEW.entity_id, NEW.donor_segment_overall, NEW.donor_status_overall, NEW.donor_status_otg, NEW.donor_status_recur_overall, NEW.donor_status_recur_month, NEW.donor_status_recur_year, CONCAT(CHAR(1), CONCAT_WS(CHAR(1), IF(IFNULL(OLD.donor_segment_overall,'') <> IFNULL(NEW.donor_segment_overall,''), '1', NULL), IF(IFNULL(OLD.donor_status_overall,'') <> IFNULL(NEW.donor_status_overall,''), '2', NULL), IF(IFNULL(OLD.donor_status_otg,'') <> IFNULL(NEW.donor_status_otg,''), '3', NULL), IF(IFNULL(OLD.donor_status_recur_overall,'') <> IFNULL(NEW.donor_status_recur_overall,''), '6', NULL), IF(IFNULL(OLD.donor_status_recur_month,'') <> IFNULL(NEW.donor_status_recur_month,''), '4', NULL), IF(IFNULL(OLD.donor_status_recur_year,'') <> IFNULL(NEW.donor_status_recur_year,''), '5', NULL)), CHAR(1)));
+INSERT INTO wmf_donor_history (entity_id, donor_segment_overall, donor_status_overall, donor_status_otg, donor_status_recur_overall, donor_status_recur_month, donor_status_recur_year, log_date, changed_fields) VALUES (NEW.entity_id, NEW.donor_segment_overall, NEW.donor_status_overall, NEW.donor_status_otg, NEW.donor_status_recur_overall, NEW.donor_status_recur_month, NEW.donor_status_recur_year, IFNULL(@receive_log_date, NOW()), CONCAT(CHAR(1), CONCAT_WS(CHAR(1), IF(IFNULL(OLD.donor_segment_overall,'') <> IFNULL(NEW.donor_segment_overall,''), '1', NULL), IF(IFNULL(OLD.donor_status_overall,'') <> IFNULL(NEW.donor_status_overall,''), '2', NULL), IF(IFNULL(OLD.donor_status_otg,'') <> IFNULL(NEW.donor_status_otg,''), '3', NULL), IF(IFNULL(OLD.donor_status_recur_overall,'') <> IFNULL(NEW.donor_status_recur_overall,''), '6', NULL), IF(IFNULL(OLD.donor_status_recur_month,'') <> IFNULL(NEW.donor_status_recur_month,''), '4', NULL), IF(IFNULL(OLD.donor_status_recur_year,'') <> IFNULL(NEW.donor_status_recur_year,''), '5', NULL)), CHAR(1)));
 END IF;
 END //
 DROP TRIGGER IF EXISTS wmf_donor_after_delete //

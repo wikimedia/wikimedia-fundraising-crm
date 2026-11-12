@@ -68,9 +68,11 @@ class Upload extends AbstractAction {
   /**
    * Timeout.
    *
+   * Increased to 3 minutes for debugging purposes Nov 2026
+   *
    * @var float
    */
-  protected float $timeout = 30.0;
+  protected float $timeout = 180.0;
 
   /**
    * Folder containing CSV files. If not explicitly specifying a single file with $csvFile,
@@ -243,6 +245,12 @@ class Upload extends AbstractAction {
     $omniObject = new \CRM_Omnimail_Omnicontact([
       'mail_provider' => $this->getMailProvider(),
     ]);
+    // For debugging purposes Nov 2026
+    \Civi::log($this->getMailProvider())
+      ->debug('Uploading {csv} with timeout {timeout}s', [
+        'csv' => basename($this->getCsvFile()),
+        'timeout' => $this->getTimeout(),
+      ]);
     $response = $omniObject->upload([
       'client' => $this->getClient(),
       'mail_provider' => $this->getMailProvider(),

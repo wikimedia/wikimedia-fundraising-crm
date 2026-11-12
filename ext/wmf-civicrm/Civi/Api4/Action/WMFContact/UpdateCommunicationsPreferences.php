@@ -456,7 +456,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
 
     // Render email template
     $emailTemplate = WorkflowMessage::render(FALSE)
-      ->setLanguage($contact['preferred_language'])
+      ->setLanguage($this->language ?: $contact['preferred_language'])
       ->setWorkflow(SetPrimaryEmailMessage::WORKFLOW)
       ->setValues([
         'contact' => $contact,

@@ -2219,7 +2219,9 @@ abstract class BaseAuditProcessor {
         else {
           $this->invalidBatches[$batchName] = TRUE;
           $difference = $expectedAmount->minus($settledNetAmount, RoundingMode::HalfUp)->getAmount();
-          \Civi::log('wmf')->alert('Batch total mismatch. {currency} is out by {difference}. Expected {expected} vs Actual {actual}', [
+          // A partial parse (offset / row limit) can't total correctly so don't alert.
+          $isPartialParse = $this->get_runtime_options('row_offset') || $this->get_runtime_options('row_limit');
+          \Civi::log('wmf')->log($isPartialParse ? 'info' : 'alert', 'Batch total mismatch. {currency} is out by {difference}. Expected {expected} vs Actual {actual}', [
             'subject' => $batchName . ' batch total mismatch of ' . $difference,
             'difference' => $difference,
             'expected' => $expectedAmount->getAmount(),

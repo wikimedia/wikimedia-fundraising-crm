@@ -196,7 +196,7 @@ class RebuildHistory extends AbstractAction {
         $previousValues = $currentValues;
         $rows[] = ['entity_id' => $contactID] + $currentValues + [
           'changed_fields' => \CRM_Utils_Array::implodePadded($changedFields),
-          'log_date' => $logDate ?? $asOfDate,
+          'log_date' => $logDate,
         ];
       }
     }
@@ -210,8 +210,7 @@ class RebuildHistory extends AbstractAction {
    * @param string $endDate
    *
    * @return array
-   *   [['time' => SQL datetime, 'logDate' => ?SQL datetime, 'tables' => [tableName, ...], 'recurID' => ?string, 'isConvert' => bool], ...], in ascending time order.
-   *   A NULL logDate means logged at the time.
+   *   [['time' => SQL datetime, 'logDate' => SQL datetime, 'tables' => [tableName, ...], 'recurID' => ?string, 'isConvert' => bool], ...], in ascending time order.
    * @throws \CRM_Core_Exception
    */
   private function getCalculationTimes(int $contactID, string $endDate): array {
@@ -359,10 +358,10 @@ class RebuildHistory extends AbstractAction {
    * Consecutive events for the same recurring within MERGE_SECONDS of each
    * other, other than two contributions, and events in the same second are
    * calculated together. So is a gift and the recurring post-payment converted
-   * from it, within the longer CONVERT_MERGE_SECONDS. They're calculated and
-   * logged as of the latest, except a donation post-payment converted to
-   * recurring is logged at the original contribution time. We don't merge over
-   * a fiscal year end, so we keep the end of year values.
+   * from it, within the longer CONVERT_MERGE_SECONDS. They're calculated as of
+   * the latest event but logged at the contribution's time or the first if
+   * there are two recurring changes. We don't merge over a fiscal year end,
+   * to keep the end of year values.
    *
    * @param array $events
    *   As from getEvents(), in ascending time order.
@@ -382,17 +381,16 @@ class RebuildHistory extends AbstractAction {
           && strtotime($event['time']) - strtotime($calculationTimes[$previous]['time']) < $mergeSeconds
           && $this->getFinancialYear($event['time']) === $this->getFinancialYear($calculationTimes[$previous]['time']))
       )) {
-        // A converted gift is logged at the initial contribution time, even with later changes merged in.
-        // Only the first merge for a PPMC gets the longer window and the gift's time.
-        if ($calculationTimes[$previous]['isConvert']) {
-          $calculationTimes[$previous]['logDate'] = $calculationTimes[$previous]['time'];
-          $calculationTimes[$previous]['isConvert'] = FALSE;
+        if (in_array('civicrm_contribution', $event['tables'], TRUE)) {
+          $calculationTimes[$previous]['logDate'] = $event['time'];
         }
         $calculationTimes[$previous]['time'] = $event['time'];
         $calculationTimes[$previous]['tables'] = array_unique(array_merge($calculationTimes[$previous]['tables'], $event['tables']));
+        // Only the first merge for a PPMC, its recurring's creation, gets the longer window.
+        $calculationTimes[$previous]['isConvert'] = FALSE;
       }
       else {
-        $calculationTimes[] = $event + ['logDate' => NULL];
+        $calculationTimes[] = $event + ['logDate' => $event['time']];
       }
     }
     return $calculationTimes;
