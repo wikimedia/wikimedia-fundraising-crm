@@ -20,6 +20,9 @@ class Validate extends BasicBatchAction {
    * to be misplaced - e.g. a donation was added to CiviCRM after the batch
    * was exported (T419097).
    *
+   * @see https://wikitech.wikimedia.org/wiki/Fundraising/Data_and_flow/Intacct#Validation
+   * @see https://wikitech.wikimedia.org/wiki/Fundraising/Data_and_flow/Intacct#Exported_batches
+   *
    * @inheritDoc
    *
    * @throws \CRM_Core_Exception
@@ -43,6 +46,7 @@ class Validate extends BasicBatchAction {
         'batch' => $item['name'],
         'previous_status' => $statusBefore,
         'validation' => $record['validation'] ?? [],
+        'changes_since_export' => $record['changes_since_export'] ?? [],
       ]);
     }
 

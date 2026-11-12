@@ -13,10 +13,13 @@ use Civi\WMFBatch\BatchSummaryMailer;
 use Civi\WMFBatch\FinanceConstants;
 use Civi\WMFBatch\JournalGenerator;
 use CRM_Core_DAO;
+use League\Csv\Reader;
 use League\Csv\Writer;
 
 /**
  * Validate the batch adds up.
+ *
+ * @see https://wikitech.wikimedia.org/wiki/Fundraising/Data_and_flow/Intacct#Intacct_Journal_Generation_&_Upload
  *
  * @method $this setBatchPrefix(string $batchPrefix)
  * @method $this setIsOutputCsv(bool $isOutputCsv)
@@ -178,7 +181,10 @@ class GenerateBatch extends AbstractAction {
       ]);
 
       $record += $this->validateBatch($batch, $batchedData);
-      if ($this->getBatchValue($batch['name'], 'is_valid')) {
+      if ($this->isExportLocked($batch)) {
+        $this->handleExportLockedBatch($batch, $record);
+      }
+      elseif ($this->getBatchValue($batch['name'], 'is_valid')) {
         try {
           [$record['csv'], $isComplete] = $this->writeJournalToCsv($this->getRowsWithReversals($batchedData, $batch['name']), $batch);
         }
@@ -196,21 +202,7 @@ class GenerateBatch extends AbstractAction {
           $this->log('Batch has missing GL data & hence not closed ' . $batch['name']);
         }
         elseif ($this->outputMethod === 'api') {
-          // Locked to prevent race conditions in this code and in the tracking of adjusments
-          // per https://wikitech.wikimedia.org/wiki/Fundraising/Data_and_flow/Intacct#Identifying_and_journaling_contribution_changes
-          $lock = \Civi::lockManager()->acquire(FinanceConstants::BATCH_LOCK_PREFIX . $batch['name']);
-          if (!$lock->isAcquired()) {
-            $this->log('Batch locked by a pending financial data change, skipping this run ' . $batch['name']);
-          }
-          else {
-            try {
-              $this->recordAmountsJournaled($batch);
-              $record = array_merge($record, $this->pushJournalsToIntacct($batch, $record['csv']));
-            }
-            finally {
-              $lock->release();
-            }
-          }
+          $record = array_merge($record, $this->pushWithLock($batch, $record['csv'], TRUE));
         }
       }
       else {
@@ -224,6 +216,157 @@ class GenerateBatch extends AbstractAction {
     }
 
     $this->sendSummary($result);
+  }
+
+  /**
+   * Has any of this batch's journals been pushed to Intacct?
+   */
+  private function isPushed(array $batch): bool {
+    foreach ($batch as $key => $value) {
+      if (str_starts_with($key, 'batch_data.remote_identifier_') && !empty($value)) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  /**
+   * Once pushed, the batch's files are the record of what went to Intacct, so
+   * they are not regenerated.
+   *
+   * @see https://wikitech.wikimedia.org/wiki/Fundraising/Data_and_flow/Intacct#Exported_batches
+   */
+  private function isExportLocked(array $batch): bool {
+    return $this->isPushed($batch) && file_exists($this->getFilePath($batch['name'], 'journals'));
+  }
+
+  /**
+   * Still valid: re-push the existing files - journals already in Intacct
+   * with matching totals are confirmed rather than re-posted, so this
+   * re-closes an Exported batch or completes a Partially Exported one.
+   * Not valid: report what changed since the export.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   */
+  private function handleExportLockedBatch(array $batch, array &$record): void {
+    if ($this->getBatchValue($batch['name'], 'is_valid')) {
+      $record['csv'] = $this->getExportedJournalFiles($batch);
+      $this->log($batch['name'] . ' was already exported - re-pushing the existing files rather than regenerating them');
+      if ($this->outputMethod === 'api') {
+        $record = array_merge($record, $this->pushWithLock($batch, $record['csv'], FALSE));
+      }
+      return;
+    }
+    $record['changes_since_export'] = $this->getChangesSinceExport($batch);
+    $this->log($batch['name'] . ' was already exported but no longer validates - contributions changed since export: ' . (implode(', ', array_keys($record['changes_since_export'])) ?: 'none found'));
+  }
+
+  /**
+   * The journal files written at export, in the shape writeJournalToCsv() returns.
+   *
+   * Transfer files are only included if the export recorded a transfer, in
+   * case one is left over from an earlier, pre-export generation.
+   */
+  private function getExportedJournalFiles(array $batch): array {
+    $isEndowmentGateway = $this->batchSummary[$batch['name']]['is_endowment_gateway'];
+    $csvFiles = ['journal_file' => $this->getPrimaryJournalFile($batch['name'])];
+    $transferAmount = $batch[$isEndowmentGateway ? 'batch_data.amount_journaled_to_foundation' : 'batch_data.amount_journaled_to_endowment'] ?? 0;
+    if (!(float) $transferAmount) {
+      return $csvFiles;
+    }
+    $config = $isEndowmentGateway ? $this->getFoundationTransferConfig() : $this->getEndowmentTransferConfig();
+    foreach (['from', 'to'] as $direction) {
+      $key = $config[$direction . 'Key'];
+      $csvFiles[$key] = ['file' => $this->getFilePath($batch['name'], substr($key, strlen('journal_'))), 'is_journal' => TRUE, 'instance' => $config[$direction . 'Instance'], 'suffix' => $config['suffix'], 'remote_descriptor' => $config[$direction . 'Descriptor']];
+    }
+    return $csvFiles;
+  }
+
+  private function getPrimaryJournalFile(string $batchName): array {
+    $isEndowmentGateway = $this->batchSummary[$batchName]['is_endowment_gateway'];
+    return [
+      'file' => $this->getFilePath($batchName, 'journals'),
+      'is_journal' => TRUE,
+      'instance' => $isEndowmentGateway ? 'endowment' : 'foundation',
+      'suffix' => '',
+      'remote_descriptor' => $isEndowmentGateway ? 'endowment_instance' : 'foundation',
+    ];
+  }
+
+  /**
+   * Push under the batch lock, to avoid racing this code & adjustment tracking
+   * per https://wikitech.wikimedia.org/wiki/Fundraising/Data_and_flow/Intacct#Identifying_and_journaling_contribution_changes
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function pushWithLock(array $batch, array $csvFiles, bool $isRecordAmounts): array {
+    $lock = \Civi::lockManager()->acquire(FinanceConstants::BATCH_LOCK_PREFIX . $batch['name']);
+    if (!$lock->isAcquired()) {
+      $this->log('Batch locked by a pending financial data change, skipping this run ' . $batch['name']);
+      return [];
+    }
+    try {
+      if ($isRecordAmounts) {
+        $this->recordAmountsJournaled($batch);
+      }
+      return $this->pushJournalsToIntacct($batch, $csvFiles);
+    }
+    finally {
+      $lock->release();
+    }
+  }
+
+  /**
+   * Compare the current detail rows with the exported details csv.
+   *
+   * @return array
+   *   Keyed by contribution_id, each with its 'exported' & 'current' rows.
+   *
+   * @throws \League\Csv\Exception
+   * @throws \Civi\Core\Exception\DBQueryException
+   */
+  private function getChangesSinceExport(array $batch): array {
+    $file = $this->getFilePath($batch['name'], 'details');
+    if (!file_exists($file)) {
+      return [];
+    }
+    $reader = Reader::from($file);
+    $reader->setHeaderOffset(0);
+    $exported = $this->getComparableRowsByContribution(iterator_to_array($reader->getRecords(), FALSE));
+    $currentRows = [];
+    foreach ($this->getDetailData($this->getBatchValue($batch['name'], 'sql'), $batch['name']) as $row) {
+      $currentRows[] = $this->reOrderFields($row);
+    }
+    $current = $this->getComparableRowsByContribution($currentRows);
+    $changes = [];
+    foreach (array_keys($exported + $current) as $contributionID) {
+      if (($exported[$contributionID] ?? []) !== ($current[$contributionID] ?? [])) {
+        $changes[$contributionID] = ['exported' => $exported[$contributionID] ?? [], 'current' => $current[$contributionID] ?? []];
+      }
+    }
+    return $changes;
+  }
+
+  /**
+   * Reduce detail rows to the fields that affect totals, grouped by
+   * contribution & sorted so row order doesn't matter.
+   */
+  private function getComparableRowsByContribution(array $rows): array {
+    $fields = ['type', 'journal:ACCT_NO', 'is_endowment', 'settled_donation_amount', 'settled_fee_amount', 'settled_reversal_amount', 'settled_fee_reversal_amount'];
+    $byContribution = [];
+    foreach ($rows as $row) {
+      $comparable = [];
+      foreach ($fields as $field) {
+        $value = (string) ($row[$field] ?? '');
+        $comparable[$field] = (str_starts_with($field, 'settled_') && $value !== '') ? number_format((float) $value, 2, '.', '') : $value;
+      }
+      $byContribution[$row['contribution_id']][] = $comparable;
+    }
+    foreach ($byContribution as &$contributionRows) {
+      sort($contributionRows);
+    }
+    return $byContribution;
   }
 
   /**
@@ -347,11 +490,10 @@ class GenerateBatch extends AbstractAction {
         }
         $detailWriter->insertOne($formattedRow);
       }
-      $primaryInstance = $isEndowmentGateway ? 'endowment' : 'foundation';
-      $primaryDescriptor = $isEndowmentGateway ? 'endowment_instance' : 'foundation';
+      $primaryJournalFile = $this->getPrimaryJournalFile($batchName);
       $csvFiles = [
-        'journal_file' => ['file' => $batchJournalWriter->getPathname(), 'is_journal' => TRUE, 'instance' => $primaryInstance, 'suffix' => '', 'remote_descriptor' => $primaryDescriptor],
-        'detail_file' => ['file' => $detailWriter ? $detailWriter->getPathname() : NULL, 'is_journal' => FALSE, 'instance' => $primaryInstance, 'suffix' => ''],
+        'journal_file' => $primaryJournalFile,
+        'detail_file' => ['file' => $detailWriter ? $detailWriter->getPathname() : NULL, 'is_journal' => FALSE, 'instance' => $primaryJournalFile['instance'], 'suffix' => ''],
       ];
       if (empty($this->incompleteRows[$batchName])) {
         foreach ($csv_rows as $row) {
@@ -488,7 +630,7 @@ class GenerateBatch extends AbstractAction {
    * @return Writer
    */
   public function getDetailsWriter(array $headers, $batchName): Writer {
-    $detailWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $this->getSafeFileName($batchName) . '_details.csv', 'w');
+    $detailWriter = Writer::from($this->getFilePath($batchName, 'details'), 'w');
     $detailWriter->insertOne($headers);
     return $detailWriter;
   }
@@ -497,9 +639,13 @@ class GenerateBatch extends AbstractAction {
    * @return Writer
    */
   private function getBatchJournalWriter(string $batchName): Writer {
-    $journalWriter = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $this->getSafeFileName($batchName) . '_journals.csv', 'w');
+    $journalWriter = Writer::from($this->getFilePath($batchName, 'journals'), 'w');
     $journalWriter->insertOne($this->headers);
     return $journalWriter;
+  }
+
+  private function getFilePath(string $batchName, string $type): string {
+    return \Civi::settings()->get('wmf_audit_intact_files') . '/' . $this->getSafeFileName($batchName) . '_' . $type . '.csv';
   }
 
   /**

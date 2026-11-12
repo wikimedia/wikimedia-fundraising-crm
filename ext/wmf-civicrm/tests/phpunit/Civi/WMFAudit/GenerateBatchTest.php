@@ -3,6 +3,7 @@
 namespace Civi\WMFAudit;
 
 use Civi\Api4\Batch;
+use Civi\Api4\Contribution;
 use Civi\Api4\GatewayAccount;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\WMFAudit;
@@ -82,6 +83,12 @@ class GenerateBatchTest extends BaseAuditTestCase {
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'adyen_348%')
       ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', 'LIKE', 'adyen_353%')
+      ->execute();
+    foreach (glob(\Civi::settings()->get('wmf_audit_intact_files') . '/adyen_353*.csv') ?: [] as $file) {
+      unlink($file);
+    }
     parent::tearDown();
   }
 
@@ -603,6 +610,148 @@ class GenerateBatchTest extends BaseAuditTestCase {
   }
 
   /**
+   * A pushed batch that no longer validates does further forensics against the batch file.
+   */
+  public function testValidateReportsChangesSinceExport(): void {
+    $batchName = 'adyen_3532_USD';
+    $flippedID = $this->createSettledContribution($batchName, 10.00);
+    $this->createBatch($batchName, 'USD', '2026-02-01', 10, 1);
+    $this->generateCsv('adyen_3532');
+    $this->markPushed($batchName, 'Exported');
+
+    $addedID = $this->createSettledContribution($batchName, 5.00);
+    // Totals-neutral on its own, but should still be reported.
+    Contribution::update(FALSE)->addWhere('id', '=', $flippedID)->addValue('financial_type_id:name', 'Endowment Gift')->execute();
+    $batchID = Batch::get(FALSE)->addWhere('name', '=', $batchName)->execute()->single()['id'];
+    $result = Batch::validate(FALSE)->addWhere('id', '=', $batchID)->execute()->first();
+
+    $changes = $result['changes_since_export'];
+    ksort($changes);
+    $this->assertEquals([$flippedID, $addedID], array_keys($changes));
+    $this->assertEquals([], $changes[$addedID]['exported']);
+    $this->assertEquals('5.00', $changes[$addedID]['current'][0]['settled_donation_amount']);
+    $this->assertEquals('0', $changes[$flippedID]['exported'][0]['is_endowment']);
+    $this->assertEquals('1', $changes[$flippedID]['current'][0]['is_endowment']);
+    $this->assertEquals('needs_attention', $this->getBatchStatus($batchName));
+  }
+
+  private function createSettledContribution(string $batchName, float $amount): int {
+    return $this->createQueueContribution([
+      'total_amount' => $amount,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => $amount,
+      'contribution_settlement.settlement_date' => '2026-02-01',
+    ]);
+  }
+
+  /**
+   * Once a batch has been pushed to Intacct the batch files on disk are treated as a record.
+   *
+   * When a re-validated batch is picked up again the existing files are
+   * re-pushed (confirmed against the journal already in Intacct) rather
+   * than regenerated - which also completes a Partially Exported batch.
+   *
+   * (A server admin would need to manually remove them to regenerate).
+   */
+  public function testExportedBatchFilesAreNotRegenerated(): void {
+    $prefix = 'adyen_3531';
+    $batchName = 'adyen_3531_USD';
+    $this->createSettledContribution($batchName, 10.00);
+    $this->addBatchWebResponses('10.00');
+    $journalFile = $this->runGenerateWithGuzzle($batchName, 'USD', '2026-02-01', 10, 1, $prefix)[0]['csv']['journal_file']['file'];
+    $this->assertEquals('Exported', $this->getBatchStatus($batchName));
+
+    // A DONOTIMPORT row is skipped by PushJournal, so it marks the file without changing its totals.
+    file_put_contents($journalFile, "marker\n", FILE_APPEND);
+    Batch::update(FALSE)->addWhere('name', '=', $batchName)->addValue('status_id:name', 'validated')->execute();
+    $this->addExistingJournalWebResponses('10.00');
+    $result = $this->generateWithGuzzle($prefix);
+    $this->assertEquals($journalFile, $result[0]['csv']['journal_file']['file']);
+    $this->assertStringEndsWith("marker\n", file_get_contents($journalFile));
+    $this->assertEquals('Exported', $this->getBatchStatus($batchName));
+    // Lookup, details & lines - no post.
+    $this->assertCount(3, $this->container, 'The existing journal should be confirmed, not re-posted');
+
+    unlink($journalFile);
+    Batch::update(FALSE)->addWhere('name', '=', $batchName)->addValue('status_id:name', 'validated')->execute();
+    $this->addExistingJournalWebResponses('10.00');
+    $this->generateWithGuzzle($prefix);
+    $this->assertStringNotContainsString('marker', file_get_contents($journalFile), 'Manually removed files should be regenerated');
+  }
+
+  /**
+   * A Partially Exported batch set back to validated is completed by
+   * re-pushing its existing files - the journal already in Intacct is
+   * confirmed and only the missing ones are posted.
+   */
+  public function testPartiallyExportedBatchIsCompletedFromExistingFiles(): void {
+    $prefix = 'adyen_3533';
+    $batchName = 'adyen_3533_USD';
+    $this->createQueueContribution([
+      'financial_type_id:name' => 'Endowment Gift',
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settlement_date' => '2026-02-01',
+    ]);
+    $this->createQueueContribution([
+      'total_amount' => 20.00,
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 20.00,
+      'contribution_settlement.settlement_date' => '2026-02-01',
+    ]);
+    // The main journal goes through, the endowment transfer fails.
+    $this->addBatchWebResponses();
+    $this->webResponses[] = new Response(500, [], 'Intacct is down');
+    $this->runGenerateWithGuzzle($batchName, 'USD', '2026-02-01', 30, 2, $prefix);
+    $this->assertEquals('Partially Exported', $this->getBatchStatus($batchName));
+
+    Batch::update(FALSE)->addWhere('name', '=', $batchName)->addValue('status_id:name', 'validated')->execute();
+    $this->addExistingJournalWebResponses('30.00');
+    $this->addBatchWebResponses('10.00');
+    $this->addBatchWebResponses('10.00');
+    $this->generateWithGuzzle($prefix);
+
+    $batch = Batch::get(FALSE)
+      ->addSelect('status_id:name', 'batch_data.*')
+      ->addWhere('name', '=', $batchName)
+      ->execute()->single();
+    $this->assertEquals('Exported', $batch['status_id:name']);
+    $this->assertEquals('https://example.org', $batch['batch_data.remote_url_to_endowment']);
+    $this->assertEquals('https://example.org', $batch['batch_data.remote_url_endowment_instance']);
+    // Main journal confirmed (3 calls), both transfer journals posted (5 each).
+    $this->assertCount(13, $this->container);
+  }
+
+  /**
+   * Mock responses for a push that finds the journal already in Intacct.
+   */
+  private function addExistingJournalWebResponses(string $total): void {
+    $this->webResponses = [];
+    $this->addBatchWebResponses($total);
+    // Drop the 'no existing journal' lookup & the post.
+    array_splice($this->webResponses, 0, 2);
+  }
+
+  private function generateCsv(string $prefix): Result {
+    return WMFAudit::generateBatch(FALSE)
+      ->setBatchPrefix($prefix)
+      ->setIsDryRun(TRUE)
+      ->setIsOutputCsv(TRUE)
+      ->execute();
+  }
+
+  private function markPushed(string $batchName, string $status): void {
+    Batch::update(FALSE)
+      ->addWhere('name', '=', $batchName)
+      ->setValues(['batch_data.remote_identifier_foundation' => '456', 'status_id:name' => $status])
+      ->execute();
+  }
+
+  private function getBatchStatus(string $batchName): string {
+    return Batch::get(FALSE)->addWhere('name', '=', $batchName)->addSelect('status_id:name')->execute()->single()['status_id:name'];
+  }
+
+  /**
    * Create a total_verified Automatic Batch with the minimal batch_data fields.
    */
   private function createBatch(string $batchName, string $currency, string $settlementDate, float $net, int $itemCount): void {
@@ -627,7 +776,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
   /**
    * Create a contribution and set the Gift Data + Settlement custom fields entirely via API4.
    */
-  private function createQueueContribution(array $spec): void {
+  private function createQueueContribution(array $spec): int {
     $defaults = [
       'receive_date' => date('Y-m-d H:i:s'),
       'total_amount' => 10.0,
@@ -649,7 +798,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
       'contribution_settlement.settlement_date' => date('Y-m-d'),
       'contribution_settlement.settlement_currency' => 'USD',
     ];
-    $this->createTestEntity('Contribution', array_merge($defaults, $spec));
+    return $this->createTestEntity('Contribution', array_merge($defaults, $spec))['id'];
   }
 
   /**
@@ -1148,6 +1297,13 @@ class GenerateBatchTest extends BaseAuditTestCase {
   public function runGenerateWithGuzzle(string $batchName, string $currency, string $settlementDate, float $amount, int $itemCount, string $prefix): Result {
     // Batch expected totals must match what GenerateBatch will compute, or it flags discrepancy.
     $this->createBatch($batchName, $currency, $settlementDate, $amount, $itemCount);
+    return $this->generateWithGuzzle($prefix);
+  }
+
+  /**
+   * Run GenerateBatch for an existing batch, pushing via the mocked api.
+   */
+  public function generateWithGuzzle(string $prefix): Result {
     try {
       $this->container = [];
       $history = Middleware::history($this->container);
