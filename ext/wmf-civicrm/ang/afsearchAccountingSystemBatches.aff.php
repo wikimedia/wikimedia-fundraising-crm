@@ -6,4 +6,5 @@ return [
   'title' => E::ts('Accounting System Batches'),
   'icon' => 'fa-swatchbook',
   'server_route' => 'civicrm/accounting/batches',
+  'permission' => ['access CiviCRM'],
 ];
