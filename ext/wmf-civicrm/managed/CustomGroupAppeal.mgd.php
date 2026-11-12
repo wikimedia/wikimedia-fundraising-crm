@@ -649,6 +649,53 @@ $entities = [
     ],
   ],
   [
+    'name' => 'CustomGroup_MajorGiftsEngagement_CustomField_Contribution',
+    'entity' => 'CustomField',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'custom_group_id.name' => 'Major_Gifts_Engagement',
+        'name' => 'Contribution',
+        'label' => 'Contribution',
+        'data_type' => 'EntityReference',
+        'html_type' => 'Autocomplete-Select',
+        'fk_entity' => 'Contribution',
+        'is_searchable' => TRUE,
+        'column_name' => 'contribution_id',
+      ],
+      'match' => [
+        'name',
+        'custom_group_id',
+      ],
+    ],
+  ],
+  [
+    'name' => 'CustomGroup_MajorGiftsEngagement_CustomField_StewardshipCompletedDate',
+    'entity' => 'CustomField',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'custom_group_id.name' => 'Major_Gifts_Engagement',
+        'name' => 'Stewardship_Completed',
+        'label' => 'Stewardship Completed',
+        'data_type' => 'Date',
+        'html_type' => 'Select Date',
+        'is_searchable' => TRUE,
+        'is_search_range' => TRUE,
+        'date_format' => 'mm/dd/yy',
+        'column_name' => 'stewardship_completed_date',
+      ],
+      'match' => [
+        'name',
+        'custom_group_id',
+      ],
+    ],
+  ],
+  [
     'name' => 'CustomGroup_Mailing_Appeal',
     'entity' => 'CustomGroup',
     'cleanup' => 'unused',

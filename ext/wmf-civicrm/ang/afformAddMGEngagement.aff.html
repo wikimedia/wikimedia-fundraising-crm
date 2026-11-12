@@ -21,6 +21,11 @@
         <af-field name="activity_date_time" defn="{afform_default: 'now', input_attrs: {time: true}}" />
         <af-field name="status_id" defn="{label: 'Status', required: true, afform_default: '1'}" />
       </div>
+      <div class="af-container af-layout-cols">
+        <af-field name="Major_Gifts_Engagement.Contribution" defn="{label: 'Contribution'}" />
+        <af-field name="Major_Gifts_Engagement.Stewardship_Completed" defn="{label: 'Stewardship Completed'}" />
+        <div class="af-container">&nbsp;</div>
+      </div>
     </fieldset>
     <div class="af-container text-right">
       <button class="af-button btn btn-primary" crm-icon="fa-check" ng-click="afform.submit()" ng-if="afform.showSubmitButton">Save</button>

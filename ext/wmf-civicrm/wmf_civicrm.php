@@ -159,7 +159,7 @@ function wmf_civicrm_civicrm_searchTasks($objectType, &$tasks) {
   }
 }
 
-function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermissions, ?int $userID): void {
+function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermissions, ?int $userID, ?array $search = NULL): void {
   if (!$checkPermissions || CRM_Core_Permission::check('update read-only fields in SearchKit', $userID)) {
     $tasks['Contribution']['edit_gateway_fields'] = [
       'title' => E::ts('Edit gateway identifiers'),
@@ -271,6 +271,26 @@ function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermission
         'errorMsg' => E::ts('An error occurred while attempting to complete %1 %2.'),
       ],
     ];
+    // Only show when the search is for MG Engagement Activities specifically, less clutter
+    // A bit fragile as it depends on this exact where clause (not IN or in an OR, etc)
+    $mgEngagementClause = ['activity_type_id:name', '=', 'Major Gifts Engagement'];
+    if (in_array($mgEngagementClause, $search['api_params']['where'] ?? [], TRUE)) {
+      $tasks['Activity']['stewardship_complete'] = [
+        'title' => E::ts('Stewardship complete'),
+        'icon' => 'fa-handshake-o',
+        'apiBatch' => [
+          'action' => 'update',
+          'params' => [
+            'values' => ['Major_Gifts_Engagement.Stewardship_Completed' => 'now'],
+            'where' => [$mgEngagementClause, ['Major_Gifts_Engagement.Stewardship_Completed', 'IS EMPTY']],
+          ],
+          'confirmMsg' => E::ts('Mark stewardship complete for %1 %2?'),
+          'runMsg' => E::ts('Updating %1 %2...'),
+          'successMsg' => E::ts('Successfully marked stewardship complete for %1 %2.'),
+          'errorMsg' => E::ts('An error occurred while attempting to mark stewardship complete for %1 %2.'),
+        ],
+      ];
+    }
     $tasks['PaymentAttempt']['label'] = [
       'title' => ts('Label as fraud'),
       'entity' => 'PaymentAttempt',
