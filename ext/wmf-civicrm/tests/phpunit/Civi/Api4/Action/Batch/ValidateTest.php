@@ -15,7 +15,30 @@ class ValidateTest extends BaseAuditTestCase {
 
   public function tearDown(): void {
     Batch::delete(FALSE)->addWhere('name', 'LIKE', 'adyen_419%')->execute();
+    Batch::delete(FALSE)->addWhere('name', 'LIKE', 'adjustment_419%')->execute();
     parent::tearDown();
+  }
+
+  /**
+   * Adjustment Batches have no settlement totals, so validating one should
+   * not run the settlement checks or flag it needs_attention.
+   */
+  public function testAdjustmentBatchIsNotValidatedAsSettlementBatch(): void {
+    $batchID = $this->createTestEntity('Batch', [
+      'name' => 'adjustment_4191_USD',
+      'mode_id:name' => 'Adjustment Batch',
+      'status_id:name' => 'Open',
+      'item_count' => 1,
+      'batch_data.settled_donation_amount' => 10.00,
+      'batch_data.settlement_currency' => 'USD',
+      'batch_data.settlement_date' => '2026-01-26',
+    ], 'adjustment_4191_USD')['id'];
+
+    $result = Batch::validate(FALSE)->addWhere('id', '=', $batchID)->execute()->first();
+
+    $this->assertNotEmpty($result['skipped']);
+    $batch = Batch::get(FALSE)->addSelect('status_id:name')->addWhere('id', '=', $batchID)->execute()->single();
+    $this->assertEquals('Open', $batch['status_id:name']);
   }
 
   /**

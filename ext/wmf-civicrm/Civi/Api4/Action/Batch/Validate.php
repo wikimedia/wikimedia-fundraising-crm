@@ -2,6 +2,7 @@
 
 namespace Civi\Api4\Action\Batch;
 
+use Civi\Api4\Action\WMFAudit\GenerateBatch;
 use Civi\Api4\Generic\BasicBatchAction;
 use Civi\Api4\WMFAudit;
 
@@ -11,7 +12,7 @@ class Validate extends BasicBatchAction {
    * @inheritDoc
    */
   protected function getSelect(): array {
-    return ['id', 'name', 'status_id:name'];
+    return ['id', 'name', 'status_id:name', 'mode_id:name'];
   }
 
   /**
@@ -28,6 +29,11 @@ class Validate extends BasicBatchAction {
    * @throws \CRM_Core_Exception
    */
   public function doTask($item): array {
+    if (!in_array($item['mode_id:name'], GenerateBatch::EXPORTABLE_BATCH_MODES, TRUE)) {
+      // e.g. Adjustment Batches - their journals come from a FinancialDataAdjustment,
+      // not settlement data, so there are no settlement totals to check.
+      return ['batch' => $item, 'skipped' => $item['name'] . ' is not a settlement batch (' . ($item['mode_id:name'] ?? 'no mode') . ') - not validated'];
+    }
     $statusBefore = $item['status_id:name'];
     $record = WMFAudit::generateBatch($this->checkPermissions)
       ->setIsDryRun(TRUE)
