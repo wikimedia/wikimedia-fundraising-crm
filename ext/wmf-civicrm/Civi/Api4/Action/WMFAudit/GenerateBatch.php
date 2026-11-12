@@ -743,25 +743,36 @@ class GenerateBatch extends AbstractAction {
    */
   public function sendSummary(Result $result): void {
     [$incompleteAutomaticBatches, $incompleteOfflineBatches] = $this->getIncompleteBatchesByMode();
-    $offlineBatchStaleDays = (int) \Civi::settings()->get('wmf_audit_offline_batch_stale_days');
     $staleOfflineBatches = [];
     foreach ($incompleteOfflineBatches as $batch) {
-      if (strtotime($batch['created_date']) < strtotime('-' . $offlineBatchStaleDays . ' days')) {
+      if (!$this->isRecentOfflineBatch($batch)) {
         $staleOfflineBatches[] = $batch;
       }
     }
     $offlineResult = [];
+    // Recent offline batches that failed are left out of the main email - they
+    // are reported in the offline email.
+    $mainResult = new Result();
+    $mainBatches = $this->batches;
+    $mainIncompleteRows = $this->incompleteRows;
     foreach ($result as $row) {
       if ($row['batch']['mode_id:name'] !== 'Automatic Batch') {
         $offlineResult[] = $row;
+        $batchName = $row['batch']['name'];
+        $isFailed = !empty(array_filter($row['validation'])) || !empty($this->incompleteRows[$batchName]);
+        if ($isFailed && $this->isRecentOfflineBatch($row['batch'])) {
+          unset($mainBatches[$batchName], $mainIncompleteRows[$batchName]);
+          continue;
+        }
       }
+      $mainResult[] = $row;
     }
 
     (new BatchSummaryMailer(
-      $result,
-      $this->batches,
+      $mainResult,
+      $mainBatches,
       $this->batchSummary,
-      $this->incompleteRows,
+      $mainIncompleteRows,
       $this->log,
       $this->getAccountMapping(),
       $this->outputMethod,
@@ -772,6 +783,14 @@ class GenerateBatch extends AbstractAction {
       $offlineResult,
       \Civi::settings()->get('wmf_audit_offline_batch_email')
     ))->send();
+  }
+
+  /**
+   * Is this offline batch newer than wmf_audit_offline_batch_stale_days (by created_date)?
+   */
+  private function isRecentOfflineBatch(array $batch): bool {
+    $staleDays = (int) \Civi::settings()->get('wmf_audit_offline_batch_stale_days');
+    return strtotime($batch['created_date']) >= strtotime('-' . $staleDays . ' days');
   }
 
   /**
