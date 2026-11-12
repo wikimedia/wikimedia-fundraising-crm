@@ -7,6 +7,7 @@ use Civi\Api4\Contact;
 use Civi\Api4\Contribution;
 use Civi\Api4\MailingProviderData;
 use Civi\Api4\RelationshipCache;
+use Civi\Core\Event\PostEvent;
 use Civi\Core\Event\PreEvent;
 use Civi\WMFHelper\ContributionSoft as ContributionSoftHelper;
 use Civi\WMFHelper\Email;
@@ -29,7 +30,6 @@ class GiftCoding {
    * If the donation has a replaceable appeal, set the appeal from the most
    * recent MG Engagement or Direct Mail Activity or DAF mailing for the donor
    * or a related contact or, failing that, the donor's relationship manager.
-   * Also complete any scheduled MG Engagement activities.
    *
    * @throws \CRM_Core_Exception
    */
@@ -54,22 +54,14 @@ class GiftCoding {
     if (!self::isGiftCodingApplicable($channel, $giftType)) {
       return;
     }
+    if (!self::isAppealReplaceable($event->getValue('Gift_Data.Appeal'))) {
+      return;
+    }
     $contactID = (int) $event->getValue('contact_id');
     $contactIDs = self::getContactAndRelatedContactIDs($contactID);
     $receiveDate = $event->getValue('receive_date');
-    // If channel is Other Offline / Direct Mail, get & complete activities
     if (in_array($channel, self::OFFLINE_CHANNELS, TRUE)) {
       $activities = self::getRecentMGActivities($contactIDs, $receiveDate);
-      self::completeMGEngagementActivities($activities, [
-        'contact_id' => $contactID,
-        'total_amount' => $event->getValue('total_amount'),
-        'currency' => $event->getValue('currency'),
-        'Gift_Data.Campaign' => $giftType,
-      ]);
-    }
-    // If the appeal is not replaceable, we change nothing
-    if (!self::isAppealReplaceable($event->getValue('Gift_Data.Appeal'))) {
-      return;
     }
     if ($giftType === 'Donor Advised Fund') {
       $mailings = self::getRecentDAFMailings($contactIDs, $receiveDate);
@@ -106,6 +98,28 @@ class GiftCoding {
   }
 
   /**
+   * Implements hook_civicrm_post::Contribution.
+   *
+   * Complete any scheduled MG Engagement activities, now that the donation
+   * has an ID to link them to.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public static function contributionPost(PostEvent $event): void {
+    $contactID = (int) $event->getValue('contact_id');
+    if (
+      $event->action !== 'create'
+      || !in_array($event->getValue('Gift_Data.Channel'), self::OFFLINE_CHANNELS, TRUE)
+      || self::isRepeatRecurringFinancialType((int) $event->getValue('financial_type_id'))
+      || in_array($contactID, self::getExcludedContactIDs(), TRUE)
+    ) {
+      return;
+    }
+    $activities = self::getRecentMGActivities(self::getContactAndRelatedContactIDs($contactID), $event->getValue('receive_date'));
+    self::completeMGEngagementActivities($activities, $event->id);
+  }
+
+  /**
    * Implements hook_civicrm_pre::ContributionSoft.
    *
    * ContributionSoft::pre creates DAF relationships from DAF soft credits,
@@ -124,7 +138,7 @@ class GiftCoding {
     }
     $contributionID = (int) $event->getValue('contribution_id');
     $contribution = Contribution::get(FALSE)
-      ->addSelect('contact_id', 'receive_date', 'total_amount', 'currency', 'Gift_Data.Channel', 'Gift_Data.Campaign', 'Gift_Data.Appeal', 'Gift_Data.Package', 'Appeal_Change_Reason.Change_Reason', 'Appeal_Change_Reason.Entity_Table', 'Appeal_Change_Reason.Entity_ID')
+      ->addSelect('contact_id', 'receive_date', 'Gift_Data.Channel', 'Gift_Data.Campaign', 'Gift_Data.Appeal', 'Gift_Data.Package', 'Appeal_Change_Reason.Change_Reason', 'Appeal_Change_Reason.Entity_Table', 'Appeal_Change_Reason.Entity_ID')
       ->addWhere('id', '=', $contributionID)
       ->execute()->first();
     if (
@@ -134,15 +148,15 @@ class GiftCoding {
       return;
     }
     $contactIDs = self::getContactAndRelatedContactIDs($contribution['contact_id']);
-    // Also include the MG Engagement activity we set the appeal from
-    // (and completed) in ContributionPre, if any.
+    // Also include the MG Engagement activity we set the appeal from in
+    // ContributionPre (and completed in ContributionPost), if any.
     if ($contribution['Appeal_Change_Reason.Change_Reason'] === 'MG Engagement') {
       $completedMGEngagementID = $contribution['Appeal_Change_Reason.Entity_ID'];
     }
-    // Do the same as we did in ContributionPre above
+    // Do the same as we did in ContributionPre and ContributionPost above
     if (in_array($contribution['Gift_Data.Channel'], self::OFFLINE_CHANNELS, TRUE)) {
       $activities = self::getRecentMGActivities($contactIDs, $contribution['receive_date'], $completedMGEngagementID ?? NULL);
-      self::completeMGEngagementActivities($activities, $contribution);
+      self::completeMGEngagementActivities($activities, $contributionID);
     }
     // We only update if appeal is replaceable or we set the appeal in ContributionPre
     if (
@@ -210,23 +224,23 @@ class GiftCoding {
   }
 
   /**
-   * Mark the MG Engagement activities completed and notify their source
-   * contacts of the donation.
-   *
-   * @param array $activities
-   * @param array $donation
-   *   contact_id, total_amount, currency & Gift_Data.Campaign (Gift Type) of the donation.
+   * Mark the MG Engagement activities completed and link them to the donation
+   * if not already linked.
    *
    * @throws \CRM_Core_Exception
    */
-  protected static function completeMGEngagementActivities(array $activities, array $donation): void {
+  protected static function completeMGEngagementActivities(array $activities, int $contributionID): void {
     foreach ($activities as $activity) {
       if ($activity['activity_type_id:name'] === 'Major Gifts Engagement' && $activity['status_id:name'] === 'Scheduled') {
+        // Passing the activity type lets activityPre queue the notification
+        $values = ['status_id:name' => 'Completed', 'activity_type_id:name' => 'Major Gifts Engagement'];
+        if (!$activity['Major_Gifts_Engagement.Contribution']) {
+          $values['Major_Gifts_Engagement.Contribution'] = $contributionID;
+        }
         Activity::update(FALSE)
-          ->addValue('status_id:name', 'Completed')
+          ->setValues($values)
           ->addWhere('id', '=', $activity['id'])
           ->execute();
-        self::sendMGEngagementCompletionNotification($activity, $donation);
       }
     }
   }
@@ -318,9 +332,7 @@ class GiftCoding {
         'direct_mail_data.direct_mail_package',
         'direct_mail_data.direct_mail_appeal',
         'Major_Gifts_Engagement.Appeal',
-        'Major_Gifts_Engagement.Expected_Donation',
-        'source_contact_id',
-        'target_contact_id',
+        'Major_Gifts_Engagement.Contribution',
       )
       ->addOrderBy('activity_date_time', 'DESC')
       ->execute()->getArrayCopy();
@@ -345,64 +357,66 @@ class GiftCoding {
   }
 
   /**
-   * Notify the MG Engagement activity's source contact of the donation.
+   * Implements hook_civicrm_pre::Activity.
+   *
+   * Notify the source contact when an existing MG Engagement activity is
+   * completed. Only edits that pass the activity type are considered (the
+   * activity form, the MG Engagement Mark completed SearchKit task and
+   * completeMGEngagementActivities()), so other activities don't need a lookup.
    *
    * @throws \CRM_Core_Exception
    */
-  private static function sendMGEngagementCompletionNotification(array $activity, array $donation): void {
-    $to = Email::getStaffNotificationEmail($activity['source_contact_id']);
-
-    $formattedAmount = \Civi::format()->money($donation['total_amount'], $donation['currency']);
-    $giftType = \CRM_Core_PseudoConstant::getLabel('CRM_Contribute_BAO_Contribution', 'Gift_Data.Campaign', $donation['Gift_Data.Campaign']);
-    // Just get the first contact if there is more than one target.
-    $targetContactID = $activity['target_contact_id'][0];
-    $targetContactName = Contact::get(FALSE)
-      ->addWhere('id', '=', $targetContactID)
-      ->addSelect('display_name')
-      ->execute()->first()['display_name'] ?? NULL;
-
-    $activityLink = \CRM_Utils_System::url('civicrm/activity', [
-      'action' => 'view',
-      'id' => $activity['id'],
-      'cid' => $targetContactID,
-      'reset' => 1,
-    ], TRUE, NULL, FALSE);
-    $targetContactLink = \CRM_Utils_System::url('civicrm/contact/view', [
-      'cid' => $targetContactID,
-      'reset' => 1,
-    ], TRUE, NULL, FALSE);
-    $contributionsLink = \CRM_Utils_System::url('civicrm/contact/view', [
-      'cid' => $donation['contact_id'],
-      'selectedChild' => 'contribute',
-      'reset' => 1,
-    ], TRUE, NULL, FALSE);
-
-    // If the donation is from a different contact than the activity, add the name of the donor
-    $donorName = $targetContactName;
-    $fromClause = '';
-    if ($donation['contact_id'] !== $targetContactID) {
-      $donorLink = \CRM_Utils_System::url('civicrm/contact/view', [
-        'cid' => $donation['contact_id'],
-        'reset' => 1,
-      ], TRUE, NULL, FALSE);
-      $donorName = Contact::get(FALSE)
-        ->addWhere('id', '=', $donation['contact_id'])
-        ->addSelect('display_name')
-        ->execute()->first()['display_name'] ?? NULL;
-      $fromClause = " from <a href='{$donorLink}'>" . htmlspecialchars($donorName ?? '') . '</a>';
+  public static function activityPre(PreEvent $event): void {
+    if (
+      $event->action !== 'edit'
+      || !self::isMGEngagementType($event->getValue('activity_type_id'))
+      || !self::isCompletedStatus($event->getValue('status_id'))
+    ) {
+      return;
     }
-
-    $expectedClause = '';
-    if ($activity['Major_Gifts_Engagement.Expected_Donation']) {
-      $formattedExpectedAmount = \CRM_Utils_Money::format($activity['Major_Gifts_Engagement.Expected_Donation'], $donation['currency'], '%c%a');
-      $expectedClause = " (expected {$formattedExpectedAmount})";
+    $activity = Activity::get(FALSE)
+      ->addSelect('status_id:name', 'source_contact_id')
+      ->addWhere('id', '=', $event->id)
+      ->execute()->single();
+    if ($activity['status_id:name'] !== 'Completed') {
+      self::queueMGEngagementCompletionNotification($event->id, $activity['source_contact_id']);
     }
+  }
 
-    $message = "<p>Your <a href='{$activityLink}'>MG Engagement activity</a> for "
-      . "<a href='{$targetContactLink}'>" . htmlspecialchars($targetContactName ?? '') . '</a> has been completed '
-      . "with a donation of <a href='{$contributionsLink}'>{$formattedAmount}</a>{$expectedClause} of type "
-      . "{$giftType}{$fromClause}.</p>";
+  /**
+   * Implements hook_civicrm_post::Activity.
+   *
+   * Notify the source contact when an MG Engagement activity is created as
+   * completed.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public static function activityPost(PostEvent $event): void {
+    if (
+      $event->action === 'create'
+      && self::isMGEngagementType($event->getValue('activity_type_id'))
+      && self::isCompletedStatus($event->getValue('status_id'))
+    ) {
+      self::queueMGEngagementCompletionNotification($event->id, (int) $event->getValue('source_contact_id'));
+    }
+  }
 
+  private static function isCompletedStatus($statusID): bool {
+    return (int) $statusID === (int) \CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'status_id', 'Completed');
+  }
+
+  private static function isMGEngagementType($activityTypeID): bool {
+    return (int) $activityTypeID === (int) \CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Major Gifts Engagement');
+  }
+
+  /**
+   * Queue the notification, unless the source contact completed the activity
+   * themselves.
+   */
+  private static function queueMGEngagementCompletionNotification(int $activityID, int $sourceContactID): void {
+    if ($sourceContactID === (int) \CRM_Core_Session::getLoggedInContactID()) {
+      return;
+    }
     \Civi::queue('email', [
       'type' => 'Sql',
       'runner' => 'task',
@@ -410,15 +424,95 @@ class GiftCoding {
       'retry_interval' => 20,
       'error' => 'abort',
     ])->createItem(new \CRM_Queue_Task(
-      [self::class, 'sendEmail'],
-      [[
-        'toEmail' => $to,
-        'from' => 'MG Engagement Bot <fr-tech+mg_engagement@wikimedia.org>',
-        'subject' => "Donation from {$donorName} for {$formattedAmount}",
-        'html' => $message,
-      ]],
-      'Send MG Engagement completion notification for activity ' . $activity['id']
+      [self::class, 'sendMGEngagementCompletionNotification'],
+      [$activityID],
+      'Send MG Engagement completion notification for activity ' . $activityID
     ), ['weight' => 100]);
+  }
+
+  /**
+   * Notify the MG Engagement activity's source contact that it was completed,
+   * with the details of the linked donation, if any.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public static function sendMGEngagementCompletionNotification(\CRM_Queue_TaskContext $taskContext, int $activityID): bool {
+    $activity = Activity::get(FALSE)
+      ->addSelect('source_contact_id', 'target_contact_id', 'Major_Gifts_Engagement.Expected_Donation', 'Major_Gifts_Engagement.Contribution', 'Major_Gifts_Engagement.Stewardship_Completed')
+      ->addWhere('id', '=', $activityID)
+      ->execute()->first();
+    // Deleted after the notification was queued.
+    if (!$activity) {
+      return TRUE;
+    }
+    // Just get the first contact if there is more than one target.
+    $targetContactID = $activity['target_contact_id'][0] ?? NULL;
+    $targetContactName = Contact::get(FALSE)
+      ->addWhere('id', '=', $targetContactID)
+      ->addSelect('display_name')
+      ->execute()->first()['display_name'] ?? NULL;
+
+    $activityLink = \CRM_Utils_System::url('civicrm/activity', [
+      'action' => 'view',
+      'id' => $activityID,
+      'cid' => $targetContactID,
+      'reset' => 1,
+    ], TRUE, NULL, FALSE);
+    $targetContactLink = \CRM_Utils_System::url('civicrm/contact/view', [
+      'cid' => $targetContactID,
+      'reset' => 1,
+    ], TRUE, NULL, FALSE);
+
+    $subject = "MG Engagement activity for {$targetContactName} completed";
+    $message = "<p>Your <a href='{$activityLink}'>MG Engagement activity</a> for "
+      . "<a href='{$targetContactLink}'>" . htmlspecialchars($targetContactName ?? '') . '</a> has been completed';
+
+    if ($activity['Major_Gifts_Engagement.Contribution']) {
+      $donation = Contribution::get(FALSE)
+        ->addSelect('contact_id', 'contact_id.display_name', 'total_amount', 'currency', 'Gift_Data.Campaign:label')
+        ->addWhere('id', '=', $activity['Major_Gifts_Engagement.Contribution'])
+        ->execute()->first();
+    }
+    if ($donation ?? NULL) {
+      $formattedAmount = \Civi::format()->money($donation['total_amount'], $donation['currency']);
+      $contributionsLink = \CRM_Utils_System::url('civicrm/contact/view', [
+        'cid' => $donation['contact_id'],
+        'selectedChild' => 'contribute',
+        'reset' => 1,
+      ], TRUE, NULL, FALSE);
+
+      // If the donation is from a different contact than the activity, add the name of the donor
+      $fromClause = '';
+      if ($donation['contact_id'] !== $targetContactID) {
+        $donorLink = \CRM_Utils_System::url('civicrm/contact/view', [
+          'cid' => $donation['contact_id'],
+          'reset' => 1,
+        ], TRUE, NULL, FALSE);
+        $fromClause = " from <a href='{$donorLink}'>" . htmlspecialchars($donation['contact_id.display_name'] ?? '') . '</a>';
+      }
+
+      $expectedClause = '';
+      if ($activity['Major_Gifts_Engagement.Expected_Donation']) {
+        $formattedExpectedAmount = \Civi::format()->money($activity['Major_Gifts_Engagement.Expected_Donation'], 'USD');
+        $expectedClause = " (expected {$formattedExpectedAmount})";
+      }
+
+      $subject = "Donation from {$donation['contact_id.display_name']} for {$formattedAmount}";
+      $message .= " with a donation of <a href='{$contributionsLink}'>{$formattedAmount}</a>{$expectedClause} of type "
+        . "{$donation['Gift_Data.Campaign:label']}{$fromClause}";
+    }
+    $message .= '.';
+    if ($activity['Major_Gifts_Engagement.Stewardship_Completed']) {
+      $message .= ' Stewardship was completed on '
+        . \CRM_Utils_Date::customFormat($activity['Major_Gifts_Engagement.Stewardship_Completed'], \Civi::settings()->get('dateformatFull')) . '.';
+    }
+
+    return self::sendEmail($taskContext, [
+      'toEmail' => Email::getStaffNotificationEmail($activity['source_contact_id']),
+      'from' => 'MG Engagement Bot <fr-tech+mg_engagement@wikimedia.org>',
+      'subject' => $subject,
+      'html' => $message . '</p>',
+    ]);
   }
 
   public static function sendEmail(\CRM_Queue_TaskContext $taskContext, array $params): bool {

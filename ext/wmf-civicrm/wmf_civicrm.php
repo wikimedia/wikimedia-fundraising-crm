@@ -64,9 +64,12 @@ function wmf_civicrm_civicrm_config(&$config) {
   $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\GiftCoding', 'contributionPre'], -100);
   $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\FinancialDataChange', 'pre']);
   // TODO: add a isMajorGift listener here, which runs after GiftCoding because that may have changed the appeal
+  $dispatcher->addListener('hook_civicrm_post::Contribution', ['Civi\WMFHook\GiftCoding', 'contributionPost']);
   $dispatcher->addListener('hook_civicrm_pre::Batch', ['Civi\WMFHook\Data', 'batchPre']);
   $dispatcher->addListener('hook_civicrm_pre::ContributionSoft', ['Civi\WMFHook\ContributionSoft', 'pre'], 10);
   $dispatcher->addListener('hook_civicrm_pre::ContributionSoft', ['Civi\WMFHook\GiftCoding', 'contributionSoftPre'], -100);
+  $dispatcher->addListener('hook_civicrm_pre::Activity', ['Civi\WMFHook\GiftCoding', 'activityPre']);
+  $dispatcher->addListener('hook_civicrm_post::Activity', ['Civi\WMFHook\GiftCoding', 'activityPost']);
 }
 
 /**
@@ -275,6 +278,11 @@ function wmf_civicrm_civicrm_searchKitTasks(array &$tasks, bool $checkPermission
     // A bit fragile as it depends on this exact where clause (not IN or in an OR, etc)
     $mgEngagementClause = ['activity_type_id:name', '=', 'Major Gifts Engagement'];
     if (in_array($mgEngagementClause, $search['api_params']['where'] ?? [], TRUE)) {
+      // Passing the activity type lets GiftCoding::activityPre identify MG Engagement completions without a lookup
+      $tasks['Activity']['complete']['apiBatch']['params'] = [
+        'values' => ['status_id:name' => 'Completed', 'activity_type_id:name' => 'Major Gifts Engagement'],
+        'where' => [$mgEngagementClause],
+      ];
       $tasks['Activity']['stewardship_complete'] = [
         'title' => E::ts('Stewardship complete'),
         'icon' => 'fa-handshake-o',

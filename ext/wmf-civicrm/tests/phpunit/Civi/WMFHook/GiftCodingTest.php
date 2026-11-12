@@ -109,6 +109,13 @@ class GiftCodingTest extends TestCase {
       ->execute()->single()['status_id:name'];
   }
 
+  protected function getActivityContributionID(int $activityID): ?int {
+    return Activity::get(FALSE)
+      ->addWhere('id', '=', $activityID)
+      ->addSelect('Major_Gifts_Engagement.Contribution')
+      ->execute()->single()['Major_Gifts_Engagement.Contribution'];
+  }
+
   protected function setRelationshipManager(): void {
     Contact::update(FALSE)
       ->addValue('Prospect.Relationship_Manager', '1')
@@ -185,8 +192,8 @@ class GiftCodingTest extends TestCase {
   }
 
   /**
-   * A Scheduled MG Engagement activity targeting the donor is completed,
-   * and its Appeal value is copied onto the contribution.
+   * A Scheduled MG Engagement activity targeting the donor is completed and
+   * linked to the contribution, and its Appeal value is copied onto the contribution.
    */
   public function testDonorMGEngagementActivityCompleted(): void {
     $activityID = $this->createActivity('Major Gifts Engagement', [
@@ -196,6 +203,7 @@ class GiftCodingTest extends TestCase {
     $contribution = $this->createDirectMailContribution();
 
     $this->assertEquals('Completed', $this->getActivityStatus($activityID));
+    $this->assertEquals($contribution['id'], $this->getActivityContributionID($activityID));
     $updated = $this->getContribution($contribution['id']);
     $this->assertEquals('facebook', $updated['Gift_Data.Appeal:name']);
     $this->assertEquals('MG_Engagement', $updated['Appeal_Change_Reason.Change_Reason:name']);
@@ -439,6 +447,7 @@ class GiftCodingTest extends TestCase {
     $this->createSoftCredit($contribution, $softCreditContactID);
 
     $this->assertEquals('Completed', $this->getActivityStatus($activityID));
+    $this->assertEquals($contribution['id'], $this->getActivityContributionID($activityID));
     $updated = $this->getContribution($contribution['id']);
     $this->assertEquals('facebook', $updated['Gift_Data.Appeal:name']);
     $this->assertEquals('MG_Engagement', $updated['Appeal_Change_Reason.Change_Reason:name']);
@@ -749,6 +758,45 @@ class GiftCodingTest extends TestCase {
     $this->createDirectMailContribution();
 
     $this->assertEquals('fallback@wikimedia.org', $this->sendNotifications()[0]['recipient_email']);
+  }
+
+  /**
+   * Creating an MG Engagement activity as completed without a contribution notifies the source contact without donation details, with the stewardship date.
+   */
+  public function testMGEngagementCreatedCompletedSendsNotification(): void {
+    $sourceContactID = $this->createIndividual(['email_primary.email' => 'staffer@wikimedia.org']);
+    $this->createActivity('Major Gifts Engagement', [
+      'source_contact_id' => $sourceContactID,
+      'status_id:name' => 'Completed',
+      'Major_Gifts_Engagement.Stewardship_Completed' => '2025-01-15',
+    ]);
+
+    $emails = $this->sendNotifications();
+    $this->assertCount(1, $emails);
+    $this->assertStringContainsString('has been completed. Stewardship was completed on January 15th, 2025.', $emails[0]['body']);
+    $this->assertStringNotContainsString('selectedChild=contribute', $emails[0]['body']);
+  }
+
+  /**
+   * The source contact completing their own MG Engagement activity isn't notified.
+   */
+  public function testMGEngagementCompletedBySourceContactDoesNotSendNotification(): void {
+    $sourceContactID = $this->createIndividual(['email_primary.email' => 'staffer@wikimedia.org']);
+    $activityID = $this->createActivity('Major Gifts Engagement', ['source_contact_id' => $sourceContactID]);
+    \CRM_Core_Session::singleton()->set('userID', $sourceContactID);
+
+    try {
+      Activity::update(FALSE)
+        ->addValue('status_id:name', 'Completed')
+        ->addValue('activity_type_id:name', 'Major Gifts Engagement')
+        ->addWhere('id', '=', $activityID)
+        ->execute();
+    }
+    finally {
+      \CRM_Core_Session::singleton()->set('userID', NULL);
+    }
+
+    $this->assertCount(0, $this->sendNotifications());
   }
 
   /**
