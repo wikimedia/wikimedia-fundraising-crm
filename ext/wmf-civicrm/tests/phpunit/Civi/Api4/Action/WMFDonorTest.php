@@ -1445,8 +1445,8 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
           ['receive_date' => '2023-05-15 03:00:10', 'total_amount' => 10],
         ],
         'recur' => [
-          'params' => ['start_date' => '2023-04-15 03:00:00', 'next_sched_contribution_date' => '2023-05-15'],
-          'logDate' => '2023-04-15 03:00:30',
+          'params' => ['start_date' => '2023-04-15 02:59:30', 'next_sched_contribution_date' => '2023-05-15'],
+          'logDate' => '2023-04-15 02:59:30',
           'changes' => [
             // A charge: Processing, the payment, then In Progress with the next payment date.
             '2023-05-15 03:00:00' => ['contribution_status_id:name' => 'Processing'],
@@ -1454,8 +1454,8 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
           ],
         ],
         'expectedRows' => [
-          // One row for the first payment and its recurring's log row 30 seconds later
-          ['2023-04-15 03:00:30', 600, 30, 99, 25, 25, 95, [1, 2, 6, 4]],
+          // One row for the recurring and its first payment 30 seconds later, at the payment's time
+          ['2023-04-15 03:00:00', 600, 30, 99, 25, 25, 95, [1, 2, 6, 4]],
           // No row for the second charge, as nothing logged changes
           // New last year and active recurring, on rollover
           ['2023-07-01 00:00:00', 600, 60, 99, 15, 15, 95, [2, 6, 4]],
@@ -1538,8 +1538,8 @@ class WMFDonorTest extends TestCase implements HeadlessInterface, HookInterface 
           ],
         ],
         'expectedRows' => [
-          // New, with a new recurring
-          ['2023-06-30 23:56:00', 600, 30, 99, 25, 25, 95, [1, 2, 6, 4]],
+          // New, with a new recurring, at the gift's time
+          ['2023-06-30 23:55:00', 600, 30, 99, 25, 25, 95, [1, 2, 6, 4]],
           // New last year, and cancelled, on rollover: not merged into the year before
           ['2023-07-01 00:00:00', 600, 60, 99, 65, 65, 95, [2, 6, 4]],
           // Lapsed, on rollover
