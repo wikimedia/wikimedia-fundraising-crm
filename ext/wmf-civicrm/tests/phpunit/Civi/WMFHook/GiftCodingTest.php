@@ -243,6 +243,26 @@ class GiftCodingTest extends TestCase {
   }
 
   /**
+   * A DAF gift on an organization gets MGGO from the DAF soft credit contact's Relationship Manager.
+   */
+  public function testDAFSoftCreditRelationshipManagerSetsMGGOAppeal(): void {
+    $this->setRelationshipManager();
+    $contribution = $this->createDAFContribution([
+      'contact_id' => $this->createOrganization(),
+      'Gift_Data.Channel' => 'Other Offline',
+      'Gift_Data.Appeal' => 'White Mail',
+      'receive_date' => '2025-03-01',
+    ]);
+
+    $this->createSoftCredit($contribution, $this->donorID);
+
+    $updated = $this->getContribution($contribution['id']);
+    $this->assertEquals('MGGO25', $updated['Gift_Data.Appeal']);
+    $this->assertEquals('Relationship_Manager', $updated['Appeal_Change_Reason.Change_Reason:name']);
+    $this->assertEquals($this->donorID, $updated['Appeal_Change_Reason.Entity_ID']);
+  }
+
+  /**
    * The relationship manager MGGO appeal applies to any channel.
    */
   public function testRelationshipManagerSetsMGGOAppealForOnlineChannel(): void {

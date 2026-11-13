@@ -82,19 +82,29 @@ class GiftCoding {
     ) {
       return;
     }
-    $contactID = (int) $event->getValue('contact_id');
+    $event->mergeValues(self::getRelationshipManagerAppealValues((int) $event->getValue('contact_id'), $event->getValue('receive_date')));
+  }
+
+  /**
+   * MGGO plus the year of the donation if the contact has a relationship
+   * manager, otherwise nothing.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private static function getRelationshipManagerAppealValues(int $contactID, string $receiveDate): array {
     $relationshipManager = Contact::get(FALSE)
       ->addSelect('Prospect.Relationship_Manager')
       ->addWhere('id', '=', $contactID)
       ->execute()->first()['Prospect.Relationship_Manager'] ?? NULL;
-    if ($relationshipManager) {
-      $event->mergeValues([
-        'Gift_Data.Appeal' => 'MGGO' . date('y', strtotime($event->getValue('receive_date'))),
-        'Appeal_Change_Reason.Change_Reason' => 'Relationship Manager',
-        'Appeal_Change_Reason.Entity_Table' => 'civicrm_contact',
-        'Appeal_Change_Reason.Entity_ID' => $contactID,
-      ]);
+    if (!$relationshipManager) {
+      return [];
     }
+    return [
+      'Gift_Data.Appeal' => 'MGGO' . date('y', strtotime($receiveDate)),
+      'Appeal_Change_Reason.Change_Reason' => 'Relationship Manager',
+      'Appeal_Change_Reason.Entity_Table' => 'civicrm_contact',
+      'Appeal_Change_Reason.Entity_ID' => $contactID,
+    ];
   }
 
   /**
@@ -169,6 +179,15 @@ class GiftCoding {
       $mailings = self::getRecentDAFMailings($contactIDs, $contribution['receive_date']);
     }
     $values = self::getAppealValues($activities ?? [], $mailings ?? []);
+    // Add MGGO appeal if the soft credit contact has a relationship manager,
+    // only if we have no existing appeal and no other appeal to add
+    if (
+      !$values
+      && empty($contribution['Appeal_Change_Reason.Change_Reason'])
+      && !in_array($contribution['Gift_Data.Campaign'], self::RELATIONSHIP_MANAGER_EXCLUDED_GIFT_TYPES, TRUE)
+    ) {
+      $values = self::getRelationshipManagerAppealValues((int) $event->getValue('contact_id'), $contribution['receive_date']);
+    }
     if (array_diff_assoc($values, $contribution)) {
       Contribution::update(FALSE)
         ->addWhere('id', '=', $contributionID)
