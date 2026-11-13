@@ -7,7 +7,7 @@
   "main": "./build/ckeditor.js",
   "types": "./build/ckeditor.d.ts",
   "dependencies": {
-    "ckeditor5": "49.0.0"
+    "ckeditor5": "49.0.1"
   },
   "devDependencies": {
     "css-loader": "^7.1.2",

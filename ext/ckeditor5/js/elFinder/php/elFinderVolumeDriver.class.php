@@ -5450,7 +5450,7 @@ abstract class elFinderVolumeDriver
             }
             $volume->close($fp, $src);
 
-            $this->added[] = $this->stat($path);;
+            $this->added[] = $this->stat($path);
         }
 
         return $path;

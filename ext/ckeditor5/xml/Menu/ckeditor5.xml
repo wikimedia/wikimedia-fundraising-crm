@@ -11,11 +11,13 @@
     <page_callback>CRM_Ckeditor5_Page_ImageManager</page_callback>
     <title>ImageManager</title>
     <access_arguments>access CiviCRM</access_arguments>
+    <is_ajax>true</is_ajax>
   </item>
   <item>
     <path>civicrm/ckeditor5/tokens</path>
     <page_callback>CRM_Ckeditor5_Page_Tokens</page_callback>
     <title>CKEditor 5 tokens</title>
     <access_arguments>access CiviCRM</access_arguments>
+    <is_ajax>true</is_ajax>
   </item>
 </menu>

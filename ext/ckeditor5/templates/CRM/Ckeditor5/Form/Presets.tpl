@@ -6,15 +6,24 @@
   </nav>
   <p>{ts}Unchecked sections inherit the default preset. In the default preset, they retain the editor defaults. Check a section to replace its values. Uncheck all sections and save to reset this preset.{/ts}</p>
   <p class="description">{ts}Extensions may override these settings. Hiding a button does not filter pasted HTML or change permissions.{/ts}</p>
+  <fieldset id="ck5-preview" data-preset="{$preset|escape}">
+    <legend>{ts}Live editor preview{/ts}</legend>
+    <p>{ts}Unsaved settings are previewed here. This sample is never saved. Configuration changes reset the sample. Upload and file manager commands are disabled in the preview. Extensions can override your settings.{/ts}</p>
+    <p id="ck5-preview-status" role="status" aria-live="polite"></p>
+    <div id="ck5-preview-editor"></div>
+  </fieldset>
   <fieldset>
     <legend>{ts}Toolbar{/ts}</legend>
     {$form.custom_toolbar.html} {$form.custom_toolbar.label}
     <div class="ck5-section" data-control="custom_toolbar">
-      <p>{ts}Add buttons, then drag them to reorder, or use Up and Down. Separators may be repeated. The file manager button is ignored in Base64 mode.{/ts}</p>
-      <label for="ck5-button">{ts}Available button{/ts}</label>
-      <select id="ck5-button"></select>
-      <button type="button" id="ck5-add">{ts}Add{/ts}</button>
+      <p>{ts}Choose a button below or drag it onto the toolbar. Drag toolbar buttons to reorder them. Separators may be repeated. The file manager button is ignored in Base64 mode.{/ts}</p>
+      <div id="ck5-toolbar-available" aria-label="{ts}Available buttons{/ts}"></div>
       <ol id="ck5-toolbar" aria-label="{ts}Toolbar order{/ts}"></ol>
+      <div id="ck5-toolbar-fallback">
+        <label for="ck5-button">{ts}Available button{/ts}</label>
+        <select id="ck5-button"></select>
+        <button type="button" id="ck5-add">{ts}Add{/ts}</button>
+      </div>
       <div id="ck5-toolbar-source">{$form.toolbar_items.label} {$form.toolbar_items.html}</div>
     </div>
   </fieldset>
@@ -32,7 +41,7 @@
     <div class="ck5-section" data-control="custom_fullscreen">
       {$form.fullscreen_menu_bar.html} {$form.fullscreen_menu_bar.label}<br>
       {$form.fullscreen_ungrouped_toolbar.html} {$form.fullscreen_ungrouped_toolbar.label}
-      <p class="description">{ts}The CiviCRM default hides the menu bar and keeps all toolbar items visible when the editor fills the viewport.{/ts}</p>
+      <p class="description">{ts}By default, fullscreen hides CKEditor's optional menu bar and wraps the complete toolbar onto additional rows when necessary. These settings do not affect Drupal or CiviCRM administration menus.{/ts}</p>
     </div>
   </fieldset>
   <fieldset>
@@ -57,7 +66,7 @@
     {$form.custom_upload_mode.html} {$form.custom_upload_mode.label}
     <div class="ck5-section" data-control="custom_upload_mode">
       {$form.upload_mode.label} {$form.upload_mode.html}
-      <p class="description">{ts}Restrict or disable image uploads and server file browsing for this preset. Users without CiviCRM file permissions never receive elFinder access.{/ts}</p>
+      <p class="description">{ts}Uploading a new image requires the CiviCRM permission "CKEditor 5: upload images". Browsing existing server images separately requires "access uploaded files". The selected preset may disable either control even when the user has permission.{/ts}</p>
     </div>
   </fieldset>
   <fieldset>
@@ -106,12 +115,6 @@
       <p class="description">{ts}One style per line: Name | element | class-one class-two. Supported elements: p, h2, h3, h4, span, div, blockquote, table, td, th. Example: Lead paragraph | p | lead.{/ts}</p>
       <p class="description">{ts}Add the style button to the toolbar to select these styles. CSS must be supplied separately by your theme or extension, both in the editor and in the output. This page does not inline CSS for email or guarantee newsletter HTML preservation. An empty list removes inherited named styles.{/ts}</p>
     </div>
-  </fieldset>
-  <fieldset id="ck5-preview" data-preset="{$preset|escape}">
-    <legend>{ts}Live editor preview{/ts}</legend>
-    <p>{ts}Unsaved settings are previewed here. This sample is never saved. Configuration changes reset the sample. Upload and file manager commands are disabled in the preview. Extensions can override your settings.{/ts}</p>
-    <p id="ck5-preview-status" role="status" aria-live="polite"></p>
-    <div id="ck5-preview-editor"></div>
   </fieldset>
   <div class="crm-submit-buttons">{include file="CRM/common/formButtons.tpl" location="bottom"}</div>
 </div>

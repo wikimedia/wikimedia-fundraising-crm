@@ -10,7 +10,18 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
    * @throws \Exception
    */
   public function run() {
-    if (!CRM_Core_Permission::check('access CiviCRM') || !CRM_Core_Permission::check('access uploaded files')) {
+    $canAccessCivi = CRM_Core_Permission::check('access CiviCRM');
+    $canUpload = $canAccessCivi && CRM_Core_Permission::check(CKEDITOR5_PERMISSION_UPLOAD_IMAGES);
+    $canBrowse = $canAccessCivi && CRM_Core_Permission::check('access uploaded files');
+    $isDirectUploadTokenRequest = ($_SERVER['REQUEST_METHOD'] ?? NULL) === 'POST'
+      && ($_REQUEST['ckeditor5_direct_upload'] ?? NULL) === '1'
+      && ($_REQUEST['ckeditor5_csrf_init'] ?? NULL) === '1';
+    $isDirectUpload = ($_SERVER['REQUEST_METHOD'] ?? NULL) === 'POST'
+      && ($_REQUEST['cmd'] ?? NULL) === 'upload'
+      && ($_REQUEST['ckeditor5_direct_upload'] ?? NULL) === '1';
+
+    if ((($isDirectUpload || $isDirectUploadTokenRequest) && !$canUpload)
+      || (!$isDirectUpload && !$isDirectUploadTokenRequest && !$canBrowse)) {
       throw new CRM_Core_Exception('Permission denied');
     }
 
@@ -134,8 +145,11 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
      *
      * @return bool|null
      **/
-    $accessControl = static function($attr, $path, $data, $volume, $isDir, $relpath) {
+    $accessControl = static function($attr, $path, $data, $volume, $isDir, $relpath) use ($canUpload) {
       $basename = basename($path);
+      if ($attr === 'write' && !$canUpload) {
+        return FALSE;
+      }
       return ($basename[0] === '.' || ($isDir && $basename === 'thumbnails'))
       && strlen($relpath) !== 1           // but with out volume root
         ? !($attr === 'read' || $attr === 'write') // set read+write to false, other (locked+hidden) set to true
@@ -182,6 +196,9 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
       'image/x-icon',
     ];
     $disabledCommands = ['mkfile', 'archive', 'extract', 'edit', 'netmount'];
+    if (!$canUpload) {
+      $disabledCommands = array_merge($disabledCommands, ['upload', 'duplicate', 'mkdir', 'paste', 'put', 'rename', 'resize', 'rm']);
+    }
 
     // Documentation for connector options:
     // https://github.com/Studio-42/elFinder/wiki/Connector-configuration-options
@@ -228,7 +245,21 @@ class CRM_Ckeditor5_Page_ImageManager extends CRM_Core_Page {
     ];
 
     // run elFinder
-    $connector = new elFinderConnector(new elFinder($opts));
+    $connector = new class(new elFinder($opts)) extends elFinderConnector {
+
+      /**
+       * Issue an elFinder CSRF token without exposing the file listing.
+       */
+      public function issueDirectUploadCsrfToken(): string {
+        return $this->issueCsrfToken();
+      }
+
+    };
+    if ($isDirectUploadTokenRequest) {
+      CRM_Utils_System::setHttpHeader('Content-Type', 'application/json; charset=utf-8');
+      echo json_encode(['csrf' => $connector->issueDirectUploadCsrfToken()]);
+      exit;
+    }
     $connector->run();
     exit;
 

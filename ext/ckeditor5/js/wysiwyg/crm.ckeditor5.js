@@ -1,10 +1,10 @@
 /*jshint esversion: 6 */
 // https://civicrm.org/licensing
-(function($, _) {
+(function($) {
 
   var instances = {};
   const registeredPlugins = Object.create(null);
-  const loadedPluginStylesheets = Object.create(null);
+  const loadedStylesheets = Object.create(null);
   const base64MaximumFileSize = 10 * 1024 * 1024;
   const base64ImageTypes = new Set([
     'image/jpeg',
@@ -15,8 +15,73 @@
     'image/tiff'
   ]);
   let pluginAssetsPromise;
+  let editorRuntimePromise;
+
+  /**
+   * Allow the standalone elFinder window to receive focus from inside a
+   * modal CiviCRM popup. CiviCRM's jQuery UI dialog focus trap otherwise
+   * immediately returns keyboard focus to the parent popup.
+   */
+  function allowElFinderDialogInteraction() {
+    const dialogPrototype = $.ui && $.ui.dialog && $.ui.dialog.prototype;
+    if (!dialogPrototype || typeof dialogPrototype._allowInteraction !== 'function') return;
+
+    const currentAllowInteraction = dialogPrototype._allowInteraction;
+    if (currentAllowInteraction.crmCkeditor5AllowsElFinder === true) return;
+
+    const allowInteraction = function(event) {
+      if ($(event.target).closest('.dialogelfinder').length) return true;
+      return currentAllowInteraction.call(this, event);
+    };
+    allowInteraction.crmCkeditor5AllowsElFinder = true;
+    dialogPrototype._allowInteraction = allowInteraction;
+  }
 
   CRM.ckeditor5 = CRM.ckeditor5 || {};
+
+  /**
+   * Load the shared UMD bundle and normalize its export to the global expected
+   * by the CiviCRM WYSIWYG adapter. Monaco installs an AMD loader globally, so
+   * the UMD bundle registers as a named AMD module on message template pages.
+   *
+   * @param {string} url
+   * @return {Promise<Function>}
+   */
+  CRM.ckeditor5.loadEditorRuntime = function(url) {
+    if (window.ClassicEditor) return Promise.resolve(window.ClassicEditor);
+    if (editorRuntimePromise) return editorRuntimePromise;
+
+    editorRuntimePromise = new Promise(function(resolve, reject) {
+      CRM.loadScript(url).done(function() {
+        if (window.ClassicEditor) {
+          resolve(window.ClassicEditor);
+          return;
+        }
+
+        const amdRequire = window.requirejs || window.require;
+        if (typeof window.define !== 'function' || !window.define.amd || typeof amdRequire !== 'function') {
+          reject(new Error('The CKEditor 5 runtime loaded without exposing ClassicEditor.'));
+          return;
+        }
+
+        amdRequire(['ClassicEditor'], function(editor) {
+          window.ClassicEditor = editor && editor.default ? editor.default : editor;
+          if (!window.ClassicEditor) {
+            reject(new Error('The CKEditor 5 AMD module did not export ClassicEditor.'));
+            return;
+          }
+          resolve(window.ClassicEditor);
+        }, reject);
+      }).fail(function() {
+        reject(new Error('Unable to load the CKEditor 5 runtime.'));
+      });
+    }).catch(function(error) {
+      editorRuntimePromise = null;
+      throw error;
+    });
+
+    return editorRuntimePromise;
+  };
 
   /**
    * Register a plugin constructor built against the shared CKEditor runtime.
@@ -53,6 +118,33 @@
 
   CRM.ckeditor5.getRegisteredPlugins = function() {
     return Object.assign({}, registeredPlugins);
+  };
+
+  /**
+   * Enable a plugin constructor already exposed by the shared CKEditor bundle.
+   *
+   * This is intended for per-field crmCkeditor5Config listeners. It does not
+   * add the plugin to the default editor build or to any saved preset.
+   *
+   * @param {object} editorConfig
+   * @param {string} name
+   * @return {Function}
+   */
+  CRM.ckeditor5.enableBundledPlugin = function(editorConfig, name) {
+    if (!editorConfig || typeof editorConfig !== 'object') {
+      throw new TypeError('A CKEditor configuration object is required.');
+    }
+    if (typeof name !== 'string' || !name.trim()) {
+      throw new TypeError('A bundled CKEditor plugin name is required.');
+    }
+    const pluginConstructor = window.CKEDITOR && window.CKEDITOR[name];
+    if (typeof pluginConstructor !== 'function' || typeof pluginConstructor.pluginName !== 'string') {
+      throw new Error(`CKEditor 5 bundled plugin "${name}" is not available.`);
+    }
+    const plugins = Array.isArray(editorConfig.extraPlugins) ? editorConfig.extraPlugins.slice() : [];
+    if (!plugins.includes(pluginConstructor)) plugins.push(pluginConstructor);
+    editorConfig.extraPlugins = plugins;
+    return pluginConstructor;
   };
 
   /**
@@ -170,10 +262,10 @@
     return resolved.href;
   }
 
-  function loadPluginStylesheet(url) {
+  function loadStylesheet(url) {
     const href = localAssetUrl(url);
-    if (loadedPluginStylesheets[href]) return loadedPluginStylesheets[href];
-    loadedPluginStylesheets[href] = new Promise(function(resolve, reject) {
+    if (loadedStylesheets[href]) return loadedStylesheets[href];
+    loadedStylesheets[href] = new Promise(function(resolve, reject) {
       const existing = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
         .find(link => link.href === href);
       if (existing) {
@@ -183,12 +275,38 @@
       const link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = href;
-      link.dataset.ckeditor5PluginAsset = 'true';
+      link.dataset.ckeditor5Asset = 'true';
       link.onload = resolve;
-      link.onerror = () => reject(new Error(`Unable to load CKEditor 5 plugin stylesheet: ${url}`));
+      link.onerror = function() {
+        delete loadedStylesheets[href];
+        reject(new Error(`Unable to load CKEditor 5 stylesheet: ${url}`));
+      };
       document.head.appendChild(link);
     });
-    return loadedPluginStylesheets[href];
+    return loadedStylesheets[href];
+  }
+
+  function configuredStylesheets(setting) {
+    const configured = CRM.config[setting];
+    if (configured === undefined) return [];
+    if (!Array.isArray(configured)) {
+      throw new TypeError(`${setting} must be an array.`);
+    }
+    return configured.slice();
+  }
+
+  /**
+   * Ensure integration styles are present when editors are initialized after
+   * CiviCRM's initial header resource list has already been rendered.
+   *
+   * @param {boolean} useElFinder
+   * @return {Promise|null}
+   */
+  function loadRuntimeStylesheets(useElFinder) {
+    const stylesheets = configuredStylesheets('CKEditor5Stylesheets');
+    if (useElFinder) stylesheets.push(...configuredStylesheets('ELFinderStylesheets'));
+    const uniqueStylesheets = [...new Set(stylesheets)];
+    return uniqueStylesheets.length ? Promise.all(uniqueStylesheets.map(loadStylesheet)) : null;
   }
 
   /**
@@ -232,7 +350,7 @@
       });
     });
 
-    const stylePromise = Promise.all([...new Set(stylesheets)].map(loadPluginStylesheet));
+    const stylePromise = Promise.all([...new Set(stylesheets)].map(loadStylesheet));
     const scriptPromise = [...new Set(scripts)].reduce(function(chain, url) {
       return chain.then(function() {
         const scriptUrl = localAssetUrl(url);
@@ -258,6 +376,7 @@
   }
 
   CRM.ckeditor5.loadPluginAssets = loadPluginAssets;
+  CRM.ckeditor5.loadRuntimeStylesheets = loadRuntimeStylesheets;
 
   function presentationHtmlSupport(allowStyleElements = true) {
     const elements = /^(p|div|span|br|hr|h[1-6]|strong|b|em|i|u|s|del|ins|mark|small|big|sup|sub|ul|ol|li|dl|dt|dd|blockquote|pre|code|a|img|figure|figcaption|table|caption|thead|tbody|tfoot|tr|td|th|colgroup|col|center|font|address|section|article|header|footer|main|aside|nav|abbr|cite|q)$/;
@@ -927,6 +1046,8 @@
     }
   }
 
+  CRM.ckeditor5.getInstance = getInstance;
+
   /**
    * Build the shared editor configuration.
    *
@@ -934,7 +1055,10 @@
    * @return {object}
    */
   function getEditorConfig(item, useElFinder, adminOverride) {
-    const preset = $(item).attr('data-preset') || 'default';
+    const explicitPreset = $(item).attr('data-preset');
+    const isFormBuilder = !explicitPreset && item && typeof item.closest === 'function'
+      && Boolean(item.closest('civi-rich-text-input'));
+    const preset = explicitPreset || (isFormBuilder ? 'formbuilder' : (CRM.config.isFrontend ? 'frontend' : 'default'));
     const toolbarItems = [
       'heading',
       '|',
@@ -979,14 +1103,13 @@
       'fullscreen'
     ];
 
-    if (useElFinder) {
-      toolbarItems.splice(toolbarItems.indexOf('imageUpload') + 1, 0, 'ckfinder');
-    }
-
     const emailSafePreset = preset === 'default' || preset === 'civimail';
 
     let editorConfig = {
       htmlSupport: presentationHtmlSupport(),
+      civiDataFormat: 'html',
+      civiPasteMarkdown: true,
+      removePlugins: ['Markdown'],
       extraPlugins: emailSafePreset
         ? [preserveTemplateStyles, emailImageOutput]
         : [preserveTemplateStyles],
@@ -1004,6 +1127,11 @@
       },
       findAndReplace: {
         uiType: 'dialog'
+      },
+      emoji: {
+        definitionsUrl: CRM.config.CKEditor5EmojiDefinitions
+          ? localAssetUrl(CRM.config.CKEditor5EmojiDefinitions)
+          : undefined
       },
       fullscreen: {
         menuBar: {isVisible: false},
@@ -1144,12 +1272,39 @@
     const adminPresets = cloneConfig(CRM.config.CKEditor5AdminPresets || {});
     if (adminOverride !== undefined) adminPresets[preset] = cloneConfig(adminOverride);
     const presets = CRM.config.CKEditor5Presets || {};
+    const contextPresets = {
+      frontend: {
+        civiHtmlRuleset: 'strict',
+        toolbar: {items: ['heading', '|', 'bold', 'italic', 'link', '|', 'bulletedList', 'numberedList', '|', 'imageUpload', '|', 'undo', 'redo']}
+      },
+      formbuilder: {
+        civiHtmlRuleset: 'strict',
+        toolbar: {items: ['heading', '|', 'bold', 'italic', 'link', '|', 'bulletedList', 'numberedList', '|', 'imageUpload', '|', 'undo', 'redo']}
+      },
+      markdown: {
+        civiDataFormat: 'markdown',
+        civiHtmlQa: {enabled: false},
+        civiPreserveTemplateStyles: false,
+        civiUploadMode: 'none',
+        toolbar: {
+          items: [
+            'heading', '|',
+            'bold', 'italic', 'strikethrough', 'link', '|',
+            'bulletedList', 'numberedList', 'blockQuote', '|',
+            'sourceEditing', 'undo', 'redo'
+          ]
+        },
+        table: {
+          contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells']
+        }
+      }
+    };
     const hasConfig = (registry, name) => Object.prototype.hasOwnProperty.call(registry, name)
       && $.isPlainObject(registry[name]);
-    const hasPreset = hasConfig(presets, preset) || hasConfig(adminPresets, preset);
+    const hasPreset = hasConfig(contextPresets, preset) || hasConfig(presets, preset) || hasConfig(adminPresets, preset);
     const names = preset === 'default' ? ['default'] : ['default', preset];
     names.forEach(function(name) {
-      [adminPresets, presets].forEach(function(registry) {
+      [contextPresets, adminPresets, presets].forEach(function(registry) {
         if (hasConfig(registry, name)) {
           const entry = registry[name];
           if (typeof entry.civiHtmlRuleset === 'string') {
@@ -1160,13 +1315,14 @@
         }
       });
     });
-    const siteUploadMode = CRM.config.CKEditor5UploadMode === 'none' && !useElFinder
-      ? 'none'
+    const configuredUploadMode = CRM.config.CKEditor5UploadMode;
+    const siteUploadMode = ['none', 'elfinder', 'base64'].includes(configuredUploadMode)
+      ? configuredUploadMode
       : (useElFinder ? 'elfinder' : 'base64');
     const resolveUploadMode = function(requestedMode) {
       if (siteUploadMode === 'none' || requestedMode === 'none') return 'none';
       if (requestedMode === 'base64') return 'base64';
-      if (requestedMode === 'elfinder' && useElFinder) return 'elfinder';
+      if (requestedMode === 'elfinder') return 'elfinder';
       return siteUploadMode;
     };
     const rawAttr = $(item).attr('data-ckeditor5-raw') || $(item).attr('data-wysiwyg-raw');
@@ -1191,6 +1347,23 @@
     if (editorConfig.civiRawHtmlMode === true) {
       editorConfig.htmlEmbed = mergeConfig({showPreviews: true}, editorConfig.htmlEmbed || {});
     }
+    if (CRM.ckeditor5.tokenPicker && typeof CRM.ckeditor5.tokenPicker.configureMention === 'function') {
+      CRM.ckeditor5.tokenPicker.configureMention(editorConfig);
+    }
+
+    // Markdown output is opt-in because it replaces CKEditor's HTML data
+    // processor. Markdown paste can remain enabled with the HTML processor,
+    // where pasted Markdown is converted to rich text and saved as HTML.
+    const configuredPlugins = Array.isArray(editorConfig.removePlugins)
+      ? editorConfig.removePlugins.slice()
+      : [];
+    const pluginName = plugin => typeof plugin === 'string' ? plugin : plugin && plugin.pluginName;
+    const withoutPlugin = name => configuredPlugins.filter(plugin => pluginName(plugin) !== name);
+    let normalizedPlugins = withoutPlugin('Markdown');
+    if (editorConfig.civiDataFormat !== 'markdown') normalizedPlugins.push('Markdown');
+    normalizedPlugins = normalizedPlugins.filter(plugin => pluginName(plugin) !== 'PasteFromMarkdownExperimental');
+    if (editorConfig.civiPasteMarkdown === false) normalizedPlugins.push('PasteFromMarkdownExperimental');
+    editorConfig.removePlugins = normalizedPlugins;
 
     // Named size presets cannot be combined with CKEditor's supportAllValues.
     // Keep existing site configurations using tiny/small/big/huge operational.
@@ -1201,22 +1374,37 @@
 
     // Select one upload mode after all overrides. Preserve unrelated exclusions.
     const effectiveUploadMode = resolveUploadMode(editorConfig.civiUploadMode);
+    editorConfig.civiResolvedUploadMode = effectiveUploadMode;
     const modePlugins = effectiveUploadMode === 'none'
-      ? ['Base64UploadAdapter', 'CKFinder', 'CKFinderUploadAdapter', 'ImageUpload']
-      : ['Base64UploadAdapter', 'CKFinder', 'CKFinderUploadAdapter'];
+      ? ['Base64UploadAdapter', 'ImageUpload']
+      : ['Base64UploadAdapter'];
+    modePlugins.push('CKFinder', 'CKFinderUploadAdapter');
     const removed = (editorConfig.removePlugins || []).filter(plugin =>
       !modePlugins.includes(typeof plugin === 'string' ? plugin : plugin.pluginName));
     if (effectiveUploadMode === 'elfinder') {
       editorConfig.removePlugins = removed.concat(['Base64UploadAdapter']);
     }
     else if (effectiveUploadMode === 'base64') {
-      editorConfig.removePlugins = removed.concat(['CKFinder', 'CKFinderUploadAdapter']);
+      editorConfig.removePlugins = removed;
     }
     else {
-      editorConfig.removePlugins = removed.concat(['Base64UploadAdapter', 'CKFinder', 'CKFinderUploadAdapter', 'ImageUpload']);
+      editorConfig.removePlugins = removed.concat(['Base64UploadAdapter', 'ImageUpload']);
     }
-    if (effectiveUploadMode !== 'elfinder') {
-      const disallowedButtons = effectiveUploadMode === 'none' ? ['ckfinder', 'imageUpload'] : ['ckfinder'];
+    const replaceLegacyFileManager = item => item === 'ckfinder' ? 'civiFileManager' : item;
+    if (Array.isArray(editorConfig.toolbar)) {
+      editorConfig.toolbar = editorConfig.toolbar.map(replaceLegacyFileManager);
+    }
+    else if (editorConfig.toolbar && Array.isArray(editorConfig.toolbar.items)) {
+      editorConfig.toolbar.items = editorConfig.toolbar.items.map(replaceLegacyFileManager);
+    }
+    const canBrowseFiles = CRM.config.CKEditor5CanBrowseFiles === undefined
+      ? useElFinder
+      : CRM.config.CKEditor5CanBrowseFiles === true;
+    const presetDisablesFiles = editorConfig.civiUploadMode === 'none';
+    if (effectiveUploadMode === 'none' || !canBrowseFiles || presetDisablesFiles) {
+      const disallowedButtons = [];
+      if (effectiveUploadMode === 'none') disallowedButtons.push('imageUpload');
+      if (!canBrowseFiles || presetDisablesFiles) disallowedButtons.push('civiFileManager');
       if (Array.isArray(editorConfig.toolbar)) {
         editorConfig.toolbar = editorConfig.toolbar.filter(item => !disallowedButtons.includes(item));
       }
@@ -1318,27 +1506,48 @@
   CRM.wysiwyg._create = function(item) {
     var deferred = $.Deferred();
 
+    function rejectInitialization(error) {
+      const wrappedItem = $(item);
+      if (wrappedItem && typeof wrappedItem.removeClass === 'function') {
+        wrappedItem.removeClass('crm-wysiwyg-enabled');
+      }
+      deferred.reject(error);
+      console.error(error);
+    }
+
     /**
      * Add script for elfinder - this might be cleaner as it's own file but for now....
      * @param editor
      */
     function onReadyElFinder(editor) {
+      allowElFinderDialogInteraction();
+
       // elfinder folder hash of the destination folder to be uploaded in this CKeditor 5
       const uploadTargetHash = 'l1_Lw';
       // elFinder connector URL
       const connectorUrl = CRM.url('civicrm/ckeditor5/image-manager', null, 'back');
-      const ckf = editor.commands.get('ckfinder'),
-        fileRepo = editor.plugins.get('FileRepository'),
-        ntf = editor.plugins.get('Notification'),
-        i18 = editor.locale.t,
+      const canBrowseFiles = CRM.config.CKEditor5CanBrowseFiles === true;
+      const canUploadFiles = CRM.config.CKEditor5CanUploadFiles === true;
+      const fileRepo = canUploadFiles && editor.plugins.has('FileRepository')
+        ? editor.plugins.get('FileRepository')
+        : null;
+      const ntf = editor.plugins.has('Notification')
+        ? editor.plugins.get('Notification')
+        : null;
+      const i18 = editor.locale.t,
         // Insert images to editor window
         insertImages = urls => {
-          const imgCmd = editor.commands.get('imageUpload');
-          if (!imgCmd.isEnabled) {
-            ntf.showWarning(i18('Could not insert image at the current position.'), {
-              title: i18('Inserting image failed'),
-              namespace: 'ckfinder'
-            });
+          const imgCmd = editor.commands.get('imageInsert');
+          if (!imgCmd || !imgCmd.isEnabled) {
+            if (ntf) {
+              ntf.showWarning(i18('Could not insert image at the current position.'), {
+                title: i18('Inserting image failed'),
+                namespace: 'civiFileManager'
+              });
+            }
+            else {
+              console.warn('CKEditor 5 could not insert the selected image at the current position.');
+            }
             return;
           }
           editor.execute('imageInsert', { source: urls });
@@ -1436,47 +1645,63 @@
       // elFinder instance
       let _fm;
 
-      if (ckf) {
-        // Take over ckfinder execute()
-        ckf.execute = () => {
+      if (canBrowseFiles) {
+        editor.on('civiFileManager:open', () => {
           getfm().then(fm => {
             fm.getUI().dialogelfinder('open');
           });
-        };
+        });
       }
 
       // Make uploader
       const uploder = function(loader) {
+        let request;
+        let tokenRequest;
+        const getCsrfToken = function() {
+          tokenRequest = $.ajax({
+            url: connectorUrl,
+            method: 'POST',
+            data: {
+              ckeditor5_direct_upload: '1',
+              ckeditor5_csrf_init: '1'
+            },
+            dataType: 'json'
+          });
+          return tokenRequest.then(data => {
+            if (!data || !data.csrf) {
+              return $.Deferred().reject('errUploadCsrf').promise();
+            }
+            return data.csrf;
+          });
+        };
         let upload = function(file, resolve, reject) {
-          getfm(uploadTargetHash).then(fm => {
-            let fmNode = fm.getUI();
-            fmNode.dialogelfinder('open');
-            fm.exec('upload', {files: [file], target: uploadTargetHash}, void(0), uploadTargetHash)
-              .done(data => {
-                if (data.added && data.added.length) {
-                  fm.url(data.added[0].hash, { async: true }).done(function(url) {
-                    resolve({
-                      'default': fm.convAbsUrl(url)
-                    });
-                    fmNode.dialogelfinder('close');
-                  }).fail(function() {
-                    reject('errFileNotFound');
-                  });
-                } else {
-                  reject(fm.i18n(data.error? data.error : 'errUpload'));
-                  fmNode.dialogelfinder('close');
-                }
-              })
-              .fail(err => {
-                const error = fm.parseError(err);
-                reject(fm.i18n(error? (error === 'userabort'? 'errAbort' : error) : 'errUploadNoFiles'));
-              });
-          }).catch(err => {
-            const error = _fm && typeof _fm.parseError === 'function' ? _fm.parseError(err) : null;
-            const message = _fm && typeof _fm.i18n === 'function'
-              ? _fm.i18n(error ? (error === 'userabort' ? 'errAbort' : error) : 'errUploadNoFiles')
-              : (err && err.message ? err.message : String(err || 'errUploadNoFiles'));
-            reject(message);
+          const formData = new FormData();
+          formData.append('cmd', 'upload');
+          formData.append('target', uploadTargetHash);
+          formData.append('ckeditor5_direct_upload', '1');
+          formData.append('upload[]', file, file.name);
+          formData.append('mtime[]', file.lastModified ? Math.round(file.lastModified / 1000) : 0);
+          getCsrfToken().done(csrfToken => {
+            request = $.ajax({
+              url: connectorUrl,
+              method: 'POST',
+              data: formData,
+              headers: {'X-elFinder-CSRF': csrfToken},
+              contentType: false,
+              processData: false,
+              dataType: 'json'
+            }).done(data => {
+              const uploaded = data && data.added && data.added[0];
+              if (uploaded && uploaded.url) {
+                resolve({'default': uploaded.url});
+                return;
+              }
+              reject(data && data.error ? String(data.error) : 'errUploadNoFiles');
+            }).fail((xhr, status, error) => {
+              reject(error || status || 'errUploadNoFiles');
+            });
+          }).fail((xhr, status, error) => {
+            reject(error || status || xhr || 'errUploadCsrf');
           });
         };
 
@@ -1492,14 +1717,17 @@
           });
         };
         this.abort = function() {
-          _fm && _fm.getUI().trigger('uploadabort');
+          if (tokenRequest && typeof tokenRequest.abort === 'function') tokenRequest.abort();
+          if (request && typeof request.abort === 'function') request.abort();
         };
       };
 
       // Set up image uploader
-      fileRepo.createUploadAdapter = loader => {
-        return new uploder(loader);
-      };
+      if (fileRepo) {
+        fileRepo.createUploadAdapter = loader => {
+          return new uploder(loader);
+        };
+      }
       onReady(editor);
     }
 
@@ -1513,17 +1741,35 @@
 
       instances[name] = editor;
 
+      function cancelPendingSourceUpdate() {
+        if (debounce) {
+          clearTimeout(debounce);
+          debounce = null;
+        }
+      }
+
+      function isActiveInstance() {
+        return (!editor.state || editor.state === 'ready') && getInstance(item) === editor;
+      }
+
+      function scheduleSourceUpdate() {
+        cancelPendingSourceUpdate();
+        debounce = setTimeout(function() {
+          debounce = null;
+          if (!isActiveInstance()) {
+            return;
+          }
+          editor.updateSourceElement();
+        }, 50);
+      }
+
       if (typeof editor.ui.view.element.addEventListener === 'function') {
         editor.ui.view.element.addEventListener('input', function(event) {
           const target = event && event.target;
           if (!target || !target.matches) return;
           if (target.matches('textarea.raw-html-embed__source:not([disabled]), .ck-source-editing-area textarea:not([disabled])')) {
             syncActiveRawTextarea(editor);
-            if (debounce) clearTimeout(debounce);
-            debounce = setTimeout(function() {
-              editor.updateSourceElement();
-              $(item).trigger('change');
-            }, 50);
+            scheduleSourceUpdate();
           }
         });
       }
@@ -1532,16 +1778,18 @@
       // image uploads finish asynchronously and may otherwise be omitted when
       // an action reads the textarea before CKEditor loses focus.
       editor.model.document.on('change:data', function() {
-        if (debounce) clearTimeout(debounce);
-        debounce = setTimeout(function() {
-          editor.updateSourceElement();
-          $(item).trigger("change");
-        }, 50);
+        scheduleSourceUpdate();
       });
 
-      // Update source element on blur; especially important for javascript-based UIs
-      editor.editing.view.document.on('blur', function() {
-        if (debounce) clearTimeout(debounce);
+      // The editable itself loses focus when CKEditor opens contextual UI such
+      // as the link balloon. Only notify CiviCRM after the entire editor UI has
+      // lost focus, otherwise collapsed fields close while their dialogs are in use.
+      editor.ui.focusTracker.on('change:isFocused', function(evt, name, isFocused) {
+        if (isFocused) return;
+        cancelPendingSourceUpdate();
+        if (!isActiveInstance()) {
+          return;
+        }
         syncActiveRawTextarea(editor);
         editor.updateSourceElement();
         $(item).trigger("blur");
@@ -1549,8 +1797,11 @@
       });
 
       editor.on('destroy', function(e) {
+        cancelPendingSourceUpdate();
         var name = $(e.source.sourceElement).attr('name') || $(e.source.sourceElement).attr('id');
-        delete instances[name];
+        if (instances[name] === e.source) {
+          delete instances[name];
+        }
       });
       $(editor.sourceElement).trigger('crmWysiwygCreate', ['ckeditor', editor]);
       deferred.resolve();
@@ -1572,10 +1823,12 @@
       const config = getEditorConfig(item, useElFinder);
       const removed = Array.isArray(config.removePlugins) ? config.removePlugins : [];
       const uploadsDisabled = removed.includes('ImageUpload');
-      const activeElFinder = useElFinder && !uploadsDisabled && !removed.includes('CKFinder');
+      const canBrowseFiles = CRM.config.CKEditor5CanBrowseFiles === true;
+      const activeElFinder = (config.civiResolvedUploadMode === 'elfinder' && !uploadsDisabled)
+        || (useElFinder && canBrowseFiles);
 
       $(item).addClass('crm-wysiwyg-enabled');
-      ClassicEditor
+      window.ClassicEditor
         .create({...config, attachTo: $(item)[0]})
         .then(function(editor) {
           try {
@@ -1584,7 +1837,7 @@
           catch (error) {
             console.error('Unable to build the CKEditor 5 HTML QA report.', error);
           }
-          if (uploadsDisabled) {
+          if (uploadsDisabled && !activeElFinder) {
             onReady(editor);
           }
           else {
@@ -1592,27 +1845,23 @@
           }
         })
         .catch(function(error) {
-          deferred.reject(error);
-          console.error(error);
+          rejectInitialization(error);
         });
     }
 
     function loadExtensionsAndInitialize() {
       try {
-        const loading = loadPluginAssets();
-        if (loading) {
-          loading.then(initialize).catch(function(error) {
-            deferred.reject(error);
-            console.error(error);
-          });
+        const useElFinder = Boolean(CRM.config.ELFinderLocation);
+        const loading = [loadRuntimeStylesheets(useElFinder), loadPluginAssets()].filter(Boolean);
+        if (loading.length) {
+          Promise.all(loading).then(initialize).catch(rejectInitialization);
         }
         else {
           initialize();
         }
       }
       catch (error) {
-        deferred.reject(error);
-        console.error(error);
+        rejectInitialization(error);
       }
     }
 
@@ -1621,14 +1870,18 @@
      */
     function loadEditor() {
       function loadBuild() {
-        CRM.loadScript(CRM.config.CKEditor5Location).done(function() {
+        CRM.ckeditor5.loadEditorRuntime(CRM.config.CKEditor5Location).then(function() {
           if (CRM.config.ELFinderLocation) {
-            CRM.loadScript(CRM.config.ELFinderLocation).done(loadExtensionsAndInitialize);
+            CRM.loadScript(CRM.config.ELFinderLocation)
+              .done(loadExtensionsAndInitialize)
+              .fail(function() {
+                rejectInitialization(new Error('Unable to load the elFinder runtime.'));
+              });
           }
           else {
             loadExtensionsAndInitialize();
           }
-        });
+        }).catch(rejectInitialization);
       }
 
       if (CRM.config.CKEditor5Language) {
@@ -1660,6 +1913,10 @@
     $(item).removeClass('crm-wysiwyg-enabled');
     var editor = getInstance(item);
     if (editor) {
+      var name = $(item).attr('name') || $(item).attr('id');
+      if (instances[name] === editor) {
+        delete instances[name];
+      }
       editor.destroy();
     }
   };
@@ -1758,4 +2015,4 @@
     }
   };
 
-})(CRM.$, CRM._);
+})(CRM.$);

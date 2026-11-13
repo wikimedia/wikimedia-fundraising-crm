@@ -5,9 +5,28 @@
 .ck5-presets fieldset { margin: 16px 0; padding: 12px; border: 1px solid #aaa; }
 .ck5-section { margin-top: 12px; }
 .ck5-section textarea { display: block; max-width: 100%; }
-#ck5-toolbar { list-style: none; padding: 0; max-width: 650px; }
-#ck5-toolbar li { display: flex; align-items: center; gap: 6px; padding: 6px; margin: 4px 0; border: 1px solid #aaa; cursor: grab; }
-#ck5-toolbar li span { flex: 1; }
+#ck5-toolbar-available, #ck5-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px; border: 1px solid #aaa; border-radius: 3px; }
+#ck5-toolbar-available { margin: 8px 0; background: #f6f6f6; }
+#ck5-toolbar { min-height: 42px; margin: 8px 0; list-style: none; background: #fff; }
+.ck5-toolbar-choice, #ck5-toolbar li { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; border: 1px solid #aaa; border-radius: 3px; background: #fff; }
+.ck5-toolbar-choice { min-width: 34px; padding: 4px 7px; cursor: copy; }
+.ck5-toolbar-choice:disabled { opacity: .35; cursor: not-allowed; }
+#ck5-toolbar li { position: relative; gap: 2px; padding: 3px; cursor: grab; }
+#ck5-toolbar li:focus-within { outline: 2px solid #0b6fa4; outline-offset: 1px; }
+.ck5-toolbar-button { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; min-height: 28px; padding: 2px 5px; }
+.ck5-toolbar-button svg, .ck5-toolbar-choice svg { width: 20px; height: 20px; fill: currentColor; }
+.ck5-toolbar-separator { display: inline-block; width: 1px; height: 24px; margin: 0 6px; background: #888; }
+.ck5-toolbar-actions { display: inline-flex; gap: 1px; }
+.ck5-toolbar-actions button { min-width: 24px; padding: 2px 4px; line-height: 20px; }
+#ck5-toolbar li:not(:hover):not(:focus-within) .ck5-toolbar-actions {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.ck5-toolbar-text { padding: 0 4px; white-space: nowrap; }
+#ck5-toolbar-fallback { margin-top: 8px; }
 .ck5-swatch { display: inline-block; border-left: 24px solid; padding: 4px 8px; margin: 4px; }
 .ck5-values { width: 100%; margin: 8px 0; }
 .ck5-values th, .ck5-values td { padding: 6px; text-align: left; }

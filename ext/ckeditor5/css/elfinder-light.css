@@ -1,0 +1,166 @@
+/**
+ * CiviCRM light integration theme for elFinder.
+ *
+ * This file intentionally overrides the upstream theme without modifying it,
+ * so elFinder upgrades remain reviewable and sites can replace this layer.
+ */
+.dialogelfinder,
+.elfinder,
+.std42-dialog {
+  --ck5-fm-accent: var(--crm-c-primary, #4865d5);
+  --ck5-fm-accent-soft: var(--crm-c-blue-light, #eef3fd);
+  --ck5-fm-border: var(--crm-border-color, #d8dee8);
+  --ck5-fm-muted: var(--crm-c-gray-600, #637083);
+  --ck5-fm-sidebar: var(--crm-c-background2, #f6f8fb);
+  --ck5-fm-surface: var(--crm-c-background, #ffffff);
+  --ck5-fm-text: var(--crm-c-text, #172033);
+  color: var(--ck5-fm-text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.ui-front.dialogelfinder {
+  background: var(--ck5-fm-surface);
+  border: 1px solid var(--ck5-fm-border);
+  border-radius: 10px;
+  box-shadow: 0 18px 48px rgb(31 42 68 / 18%);
+  overflow: hidden;
+}
+
+.dialogelfinder .ui-dialog-titlebar {
+  background: var(--ck5-fm-surface);
+  border: 0;
+  border-bottom: 1px solid var(--ck5-fm-border);
+  color: var(--ck5-fm-text);
+  min-height: 44px;
+  padding: 10px 14px;
+}
+
+.dialogelfinder .ui-dialog-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.dialogelfinder .ui-dialog-content,
+.elfinder .elfinder-workzone,
+.elfinder .elfinder-cwd {
+  background: var(--ck5-fm-surface);
+  color: var(--ck5-fm-text);
+}
+
+.elfinder .elfinder-toolbar {
+  background: var(--ck5-fm-surface);
+  border: 0;
+  border-bottom: 1px solid var(--ck5-fm-border);
+  padding: 8px 10px;
+}
+
+.elfinder .elfinder-buttonset {
+  background: transparent;
+  border: 0;
+  margin: 0 6px 0 0;
+}
+
+.elfinder .elfinder-button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  margin: 0 1px;
+}
+
+.elfinder .elfinder-button:hover,
+.elfinder .elfinder-button.ui-state-hover,
+.elfinder .elfinder-button.ui-state-active {
+  background: var(--ck5-fm-accent-soft);
+  border-color: var(--ck5-fm-border);
+}
+
+.elfinder .elfinder-navbar {
+  background: var(--ck5-fm-sidebar);
+  border-color: var(--ck5-fm-border);
+  color: var(--ck5-fm-text);
+  padding: 6px;
+}
+
+.elfinder .elfinder-navbar .ui-state-hover {
+  background: var(--ck5-fm-surface);
+  border-color: var(--ck5-fm-border);
+  border-radius: 5px;
+  color: var(--ck5-fm-text);
+}
+
+.elfinder .elfinder-navbar .ui-state-active {
+  background: var(--ck5-fm-accent-soft);
+  border-color: transparent;
+  border-radius: 5px;
+  color: var(--ck5-fm-accent);
+  font-weight: 600;
+}
+
+.elfinder .elfinder-cwd-view-icons .elfinder-cwd-file .ui-state-hover,
+.elfinder .elfinder-cwd-view-icons .elfinder-cwd-file .ui-state-active,
+.elfinder .elfinder-cwd-view-icons .elfinder-cwd-file .elfinder-cwd-filename.ui-state-hover,
+.elfinder .elfinder-cwd table td.ui-state-hover {
+  background: var(--ck5-fm-accent-soft);
+  border-radius: 6px;
+  color: var(--ck5-fm-text);
+}
+
+.elfinder .elfinder-cwd table tr,
+.elfinder .elfinder-cwd table tr:nth-child(odd) {
+  background: var(--ck5-fm-surface);
+  border-color: var(--ck5-fm-border);
+}
+
+.elfinder .elfinder-cwd table tr:hover {
+  background: var(--ck5-fm-sidebar);
+}
+
+.elfinder .elfinder-statusbar {
+  background: var(--ck5-fm-sidebar);
+  border-color: var(--ck5-fm-border);
+  color: var(--ck5-fm-muted);
+  min-height: 28px;
+  padding: 5px 10px;
+}
+
+.elfinder .elfinder-statusbar a {
+  color: var(--ck5-fm-accent);
+}
+
+.elfinder input,
+.elfinder textarea,
+.elfinder select {
+  background: var(--ck5-fm-surface);
+  border: 1px solid var(--ck5-fm-border);
+  border-radius: 5px;
+  color: var(--ck5-fm-text);
+}
+
+.elfinder-contextmenu,
+.elfinder-button-menu,
+.std42-dialog,
+.std42-dialog .ui-widget-content,
+.ui-widget-content.elfinder-ui-tooltip {
+  background: var(--ck5-fm-surface);
+  border-color: var(--ck5-fm-border);
+  color: var(--ck5-fm-text);
+}
+
+.elfinder-contextmenu .ui-state-hover,
+.elfinder-contextmenu .ui-state-active,
+.elfinder-button-menu .ui-state-hover {
+  background: var(--ck5-fm-accent-soft);
+  color: var(--ck5-fm-text);
+}
+
+.elfinder:not(.elfinder-mobile) *::-webkit-scrollbar-track {
+  background: transparent;
+  box-shadow: none;
+}
+
+.elfinder:not(.elfinder-mobile) *::-webkit-scrollbar-thumb {
+  background: var(--ck5-fm-border);
+  border: 2px solid var(--ck5-fm-surface);
+  box-shadow: none;
+}
