@@ -302,17 +302,28 @@ class GiftCodingTest extends TestCase {
   }
 
   /**
-   * An activity dated after the donation's receive date is ignored.
+   * A Direct Mail activity dated after the donation's receive date is ignored.
    */
-  public function testActivityAfterReceiveDateIsIgnored(): void {
+  public function testDirectMailActivityAfterReceiveDateIsIgnored(): void {
+    $this->createActivity('Direct Mail', ['direct_mail_data.direct_mail_appeal' => 'facebook']);
+
+    $contribution = $this->createDirectMailContribution(['receive_date' => '-10 days']);
+
+    $this->assertEmpty($this->getContribution($contribution['id'])['Appeal_Change_Reason.Change_Reason:name']);
+  }
+
+  /**
+   * An MG Engagement activity dated after the donation's receive date, up to now, is completed and sets the appeal.
+   */
+  public function testMGEngagementActivityAfterReceiveDateIsCompleted(): void {
     $activityID = $this->createActivity('Major Gifts Engagement', [
       'Major_Gifts_Engagement.Appeal:name' => 'facebook',
     ]);
 
     $contribution = $this->createDirectMailContribution(['receive_date' => '-10 days']);
 
-    $this->assertEquals('Scheduled', $this->getActivityStatus($activityID));
-    $this->assertEmpty($this->getContribution($contribution['id'])['Gift_Data.Appeal']);
+    $this->assertEquals('Completed', $this->getActivityStatus($activityID));
+    $this->assertEquals('facebook', $this->getContribution($contribution['id'])['Gift_Data.Appeal:name']);
   }
 
   /**

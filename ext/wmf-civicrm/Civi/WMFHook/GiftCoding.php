@@ -307,22 +307,28 @@ class GiftCoding {
   }
 
   /**
-   * Get Direct Mail & Major Gifts Engagement activities for contacts in the
-   * 90 days before the donation.
+   * Get Direct Mail activities for contacts in the 90 days before the
+   * donation, and Major Gifts Engagement activities from 90 days before the
+   * donation up to now.
    *
    * @throws \CRM_Core_Exception
    */
   protected static function getRecentMGActivities(array $contactIDs, string $receiveDate, ?int $completedMGEngagementID = NULL): array {
+    [$windowStart, $windowEnd] = self::getAttributionWindow($receiveDate);
     return Activity::get(FALSE)
       ->addWhere('target_contact_id', 'CONTAINS ONE OF', $contactIDs)
-      ->addWhere('activity_date_time', 'BETWEEN', self::getAttributionWindow($receiveDate))
+      ->addWhere('activity_date_time', '>=', $windowStart)
       ->addClause('OR',
-        ['AND', [['activity_type_id:name', '=', 'Direct Mail'], ['status_id:name', '=', 'Completed']]],
-        ['AND', [['activity_type_id:name', '=', 'Direct Mail Upload'], ['status_id:name', '=', 'Completed']]],
+        ['AND', [
+          ['activity_type_id:name', 'IN', ['Direct Mail', 'Direct Mail Upload']],
+          ['status_id:name', '=', 'Completed'],
+          ['activity_date_time', '<=', $windowEnd],
+        ]],
         ['AND', [
           ['activity_type_id:name', '=', 'Major Gifts Engagement'],
           // If there is no $completedMGEngagementID, we are searching OR id is NULL, which is never true
           ['OR', [['status_id:name', '=', 'Scheduled'], ['id', '=', $completedMGEngagementID]]],
+          ['activity_date_time', '<=', date('Y-m-d H:i:s')],
         ]]
       )
       ->addSelect(
