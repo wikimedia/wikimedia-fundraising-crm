@@ -5811,6 +5811,42 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Queue rebuilding wmf_donor_history for contacts up to id 1-1.5m, up to now.
+   *
+   * On a parallel queue, in batches of a few minutes each.
+   *
+   * @return bool
+   */
+  public function upgrade_5245(): bool {
+    $queue = \Civi::queue('wmf_donor_history_backfill', [
+      'type' => 'SqlParallel',
+      'runner' => 'task',
+      'retry_limit' => 3,
+      'retry_interval' => 300,
+      'error' => 'abort',
+    ]);
+    $lastContactID = 1000000;
+    do {
+      $contactIDs = Contact::get(FALSE)
+        ->addSelect('id')
+        ->addWhere('id', '>', $lastContactID)
+        ->addWhere('id', '<=', 1500000)
+        ->addWhere('is_deleted', '=', FALSE)
+        ->addOrderBy('id')
+        ->setLimit(5000)
+        ->execute()->column('id');
+      if ($contactIDs) {
+        $queue->createItem(new \CRM_Queue_Task('civicrm_api4_queue',
+          ['WMFDonor', 'rebuildHistory', ['contactIds' => $contactIDs, 'checkPermissions' => FALSE]],
+          'Rebuild donor history from contact ' . $contactIDs[0]
+        ));
+        $lastContactID = end($contactIDs);
+      }
+    } while ($contactIDs);
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
