@@ -5783,6 +5783,34 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Set zero recurring start and create dates to the recurring's first contribution date.
+   *
+   * Rebuilding donor history fails on the start dates.
+   *
+   * @return bool
+   */
+  public function upgrade_5240(): bool {
+    $recurs = CRM_Core_DAO::executeQuery("
+      SELECT r.id, MIN(c.receive_date) AS first_receive_date
+      FROM civicrm_contribution_recur r
+      INNER JOIN civicrm_contribution c ON c.contribution_recur_id = r.id
+      WHERE r.start_date < '1900-01-01'
+      GROUP BY r.id
+    ")->fetchAll();
+    foreach ($recurs as $recur) {
+      CRM_Core_DAO::executeQuery("
+        UPDATE civicrm_contribution_recur
+        SET start_date = %1, create_date = %1
+        WHERE id = %2
+      ", [
+        1 => [$recur['first_receive_date'], 'String'],
+        2 => [$recur['id'], 'Integer'],
+      ]);
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
