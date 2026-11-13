@@ -5740,6 +5740,49 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Queue rebuilding wmf_donor_history for contacts with ids 500,001 to 1,000,000, up to now.
+   *
+   * In batches of a few minutes each, spread over plain Sql queues so one batch
+   * per queue runs at a time (maybe once coworker is upgraded, this will work in parallel).
+   *
+   * @return bool
+   */
+  public function upgrade_5235(): bool {
+    $queueCount = 3;
+    $queues = [];
+    for ($i = 1; $i <= $queueCount; $i++) {
+      $queues[] = \Civi::queue('wmf_donor_history_backfill_' . $i, [
+        'type' => 'Sql',
+        'runner' => 'task',
+        'retry_limit' => 3,
+        'retry_interval' => 300,
+        'error' => 'abort',
+      ]);
+    }
+    $batch = 0;
+    $lastContactID = 500000;
+    do {
+      $contactIDs = Contact::get(FALSE)
+        ->addSelect('id')
+        ->addWhere('id', '>', $lastContactID)
+        ->addWhere('id', '<=', 1000000)
+        ->addWhere('is_deleted', '=', FALSE)
+        ->addOrderBy('id')
+        ->setLimit(5000)
+        ->execute()->column('id');
+      if ($contactIDs) {
+        $queues[$batch % $queueCount]->createItem(new \CRM_Queue_Task('civicrm_api4_queue',
+          ['WMFDonor', 'rebuildHistory', ['contactIds' => $contactIDs, 'checkPermissions' => FALSE]],
+          'Rebuild donor history from contact ' . $contactIDs[0]
+        ));
+        $lastContactID = end($contactIDs);
+        $batch++;
+      }
+    } while ($contactIDs);
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
