@@ -608,6 +608,34 @@ class RefundQueueTest extends BaseQueueTestCase {
   }
 
   /**
+   * The refund adjustment copies the GL code of the original contribution.
+   */
+  public function testRefundAdjustmentCopiesGLCode(): void {
+    $this->setupOriginalContribution();
+    Contribution::update(FALSE)
+      ->addWhere('id', '=', $this->ids['Contribution']['original'])
+      ->addValue('Gift_Data.gl_code', 'GL43485')
+      ->execute();
+
+    $this->processMessage([
+      'gateway_parent_id' => 'E-I-E-I-O',
+      'gross_currency' => 'EUR',
+      'gross' => 0.98,
+      'date' => date('Y-m-d H:i:s'),
+      'gateway' => 'test_gateway',
+      'gateway_txn_id' => 'abc',
+      'type' => 'refund',
+    ], 'Refund', 'refund');
+
+    $refundContribution = Contribution::get(FALSE)
+      ->addSelect('Gift_Data.gl_code')
+      ->addWhere('contribution_extra.parent_contribution_id', '=', $this->ids['Contribution']['original'])
+      ->execute()
+      ->single();
+    $this->assertEquals('GL43485', $refundContribution['Gift_Data.gl_code']);
+  }
+
+  /**
    * Make a refund in the wrong currency.
    */
   public function testMakeWrongCurrencyRefund(): void {

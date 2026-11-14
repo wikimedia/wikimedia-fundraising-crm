@@ -120,6 +120,22 @@ class FinancialDataChangeTest extends TestCase implements HeadlessInterface {
   }
 
   /**
+   * A gl_code change for a settlement batch that doesn't exist yet creates no adjustment.
+   */
+  public function testChangeWhenBatchDoesNotExistCreatesNoAdjustment(): void {
+    $contributionID = $this->createSettledContribution('adyen_missing_USD', [
+      'Gift_Data.gl_code' => 'GL43481',
+    ]);
+
+    Contribution::update(FALSE)
+      ->addWhere('id', '=', $contributionID)
+      ->addValue('Gift_Data.gl_code', 'GL43485')
+      ->execute();
+
+    $this->assertNull($this->getAdjustment($contributionID));
+  }
+
+  /**
    * If the referenced batch hasn't been exported yet, there is no journal
    * to reverse - the not-yet-exported batch will just pick up the
    * corrected value when it is generated, so no adjustment is created.
@@ -185,6 +201,34 @@ class FinancialDataChangeTest extends TestCase implements HeadlessInterface {
     // Release the competing connection's lock now that the assertions
     // above are done with it.
     $competingLock->disconnect();
+  }
+
+  /**
+   * A calculated GL code change on an exported batch is applied and records
+   * a pending adjustment.
+   */
+  public function testCalculatedGlCodeOnExportedBatchCreatesPendingAdjustment(): void {
+    $contributionID = $this->createSettledContribution($this->createExportedBatch(), [
+      'Gift_Data.Channel' => 'Email',
+    ]);
+
+    Contribution::update(FALSE)
+      ->addWhere('id', '=', $contributionID)
+      ->addValue('Gift_Data.Appeal', 'MGGO26')
+      ->execute();
+
+    $this->assertEquals('GL43487', $this->getGlCode($contributionID));
+    $adjustment = $this->getAdjustment($contributionID);
+    $this->assertEquals('pending', $adjustment['status']);
+    $this->assertEquals('GL43482', $adjustment['gl_code_before']);
+    $this->assertEquals('GL43487', $adjustment['gl_code_after']);
+  }
+
+  private function getGlCode(int $contributionID): ?string {
+    return Contribution::get(FALSE)
+      ->addSelect('Gift_Data.gl_code')
+      ->addWhere('id', '=', $contributionID)
+      ->execute()->single()['Gift_Data.gl_code'];
   }
 
   private function createExportedBatch(string $identifier = 'default'): string {
