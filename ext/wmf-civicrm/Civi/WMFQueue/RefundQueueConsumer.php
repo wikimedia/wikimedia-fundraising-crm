@@ -8,6 +8,7 @@ use Civi\Api4\ContributionRecur;
 use Civi\Api4\ExchangeRate;
 use Civi\WMFException\WMFException;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
+use Civi\WMFHelper\Database;
 use Civi\WMFQueueMessage\RefundMessage;
 use Civi\WMFTransaction;
 use Exception;
@@ -283,9 +284,10 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
     }
     catch (\CRM_Core_Exception $e) {
       throw new WMFException(
-        WMFException::IMPORT_CONTRIB,
+        Database::isDatabaseContention($e) ? WMFException::DATABASE_CONTENTION : WMFException::IMPORT_CONTRIB,
         "Cannot mark original contribution as refunded:
-                {$contribution['id']}, " . $e->getMessage() . print_r($e->getErrorData(), TRUE)
+                {$contribution['id']}, " . $e->getMessage(),
+        $e->getErrorData()
       );
     }
 
@@ -327,9 +329,10 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
         }
         catch (\CRM_Core_Exception $e) {
           throw new WMFException(
-            WMFException::IMPORT_CONTRIB,
+            Database::isDatabaseContention($e) ? WMFException::DATABASE_CONTENTION : WMFException::IMPORT_CONTRIB,
             "Cannot create new contribution for the refund difference:
-                {$contribution['id']}, " . $e->getMessage() . print_r($e->getErrorData(), TRUE)
+                {$contribution['id']}, " . $e->getMessage(),
+            $e->getErrorData()
           );
         }
       }

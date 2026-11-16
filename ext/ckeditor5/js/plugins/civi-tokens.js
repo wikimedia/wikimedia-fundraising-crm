@@ -223,6 +223,75 @@
     return loadCatalogue(config.preset || 'default', options);
   }
 
+  function createMentionFeed() {
+    return {
+      marker: '{',
+      minimumCharacters: 0,
+      dropdownLimit: 12,
+      feed: function(query) {
+        if (/[{}\s]/.test(String(query || ''))) {
+          return [];
+        }
+        const editor = this;
+        return resolveEditorTokens(editor)
+          .then(function(groups) {
+            return filterTokens(flattenTokenGroups(groups), query, 12).map(function(token) {
+              return {
+                id: token.id,
+                text: token.id,
+                label: token.text,
+                group: token.group
+              };
+            });
+          })
+          .catch(function() {
+            return [];
+          });
+      },
+      itemRenderer: function(item) {
+        const label = item.label && item.label !== item.id ? item.label : item.id;
+        return `${label} — ${item.id}`;
+      }
+    };
+  }
+
+  function configureMention(editorConfig) {
+    if (!editorConfig || typeof editorConfig !== 'object') return;
+    const mention = Object.assign({}, editorConfig.mention || {});
+    const feeds = Array.isArray(mention.feeds) ? mention.feeds.slice() : [];
+    if (!feeds.some(function(feed) { return feed && feed.marker === '{'; })) {
+      feeds.push(createMentionFeed());
+    }
+    mention.feeds = feeds;
+    editorConfig.mention = mention;
+  }
+
+  function usePlainTextForCiviTokenMentions(editor) {
+    const mentionCommand = editor && editor.commands && typeof editor.commands.get === 'function'
+      ? editor.commands.get('mention')
+      : null;
+    if (!mentionCommand || typeof mentionCommand.on !== 'function') return;
+
+    mentionCommand.on('execute', function(evt, args) {
+      const options = args && args[0];
+      const mention = options && options.mention;
+      const token = mention && typeof mention === 'object' ? mention.id : mention;
+      if (!options || options.marker !== '{' || typeof token !== 'string'
+        || !token.startsWith('{') || !token.endsWith('}')) {
+        return;
+      }
+
+      evt.stop();
+      editor.model.change(function(writer) {
+        const selection = editor.model.document.selection;
+        const attributes = typeof selection.getAttributes === 'function'
+          ? Array.from(selection.getAttributes()).filter(function(attribute) { return attribute[0] !== 'mention'; })
+          : [];
+        editor.model.insertContent(writer.createText(options.text || token, attributes), options.range || selection);
+      });
+    }, {priority: 'highest'});
+  }
+
   function filterTokens(flatTokens, query, limit = 12) {
     const needle = String(query || '').replace(/^\{+|\}+$/g, '').trim().toLocaleLowerCase();
     if (!needle) {
@@ -328,42 +397,6 @@
     search.trigger('focus');
   }
 
-  function getModelPrefixBeforeSelection(editor) {
-    const selection = editor && editor.model && editor.model.document && editor.model.document.selection;
-    if (!selection || !selection.isCollapsed) return null;
-    const focus = selection.focus;
-    if (!focus || !focus.parent) return null;
-    let textBefore = '';
-    const parent = focus.parent;
-    if (typeof parent.getChildren === 'function') {
-      let offset = 0;
-      for (const child of parent.getChildren()) {
-        const size = child.offsetSize || 0;
-        if (offset + size <= focus.offset) {
-          textBefore += child.is && child.is('$text') ? child.data : '\uFFFC';
-        }
-        else if (offset < focus.offset && child.is && child.is('$text')) {
-          textBefore += child.data.slice(0, focus.offset - offset);
-          break;
-        }
-        else {
-          break;
-        }
-        offset += size;
-      }
-    }
-    else if (focus.textNode && typeof focus.textNode.data === 'string') {
-      textBefore = focus.textNode.data.slice(0, focus.offset);
-    }
-    const match = textBefore.match(/\{([^\s{}<>"]*)$/);
-    if (!match) return null;
-    return {
-      mode: 'model',
-      query: match[1],
-      matchLength: match[0].length
-    };
-  }
-
   function getTextareaPrefixBeforeCursor(textarea) {
     if (!textarea || typeof textarea.selectionStart !== 'number') return null;
     if (textarea.selectionStart !== textarea.selectionEnd) return null;
@@ -388,18 +421,6 @@
         top: rect.top + 24
       };
     }
-    if (typeof window !== 'undefined' && typeof window.getSelection === 'function') {
-      const domSelection = window.getSelection();
-      if (domSelection && domSelection.rangeCount > 0) {
-        const range = domSelection.getRangeAt(0);
-        if (range && typeof range.getBoundingClientRect === 'function') {
-          const rect = range.getBoundingClientRect();
-          if (rect && (rect.width || rect.height || rect.top || rect.left)) {
-            return rect;
-          }
-        }
-      }
-    }
     const rootEl = editor && editor.ui && editor.ui.view && editor.ui.view.element;
     if (rootEl && typeof rootEl.getBoundingClientRect === 'function') {
       const rect = rootEl.getBoundingClientRect();
@@ -412,7 +433,7 @@
     return {left: 20, bottom: 60, top: 40};
   }
 
-  function attachInlineAutocomplete(editor) {
+  function attachRawAutocomplete(editor) {
     if (typeof document === 'undefined' || !document.body || typeof document.createElement !== 'function') {
       return;
     }
@@ -490,34 +511,6 @@
           textarea.focus();
         }
         return;
-      }
-      if (editor.model && typeof editor.model.change === 'function') {
-        editor.model.change(function(writer) {
-          const selection = editor.model.document.selection;
-          const focus = selection && selection.focus;
-          if (!focus || typeof focus.getShiftedBy !== 'function') {
-            editor.model.insertContent(writer.createText(token.id), selection);
-            return;
-          }
-          const startPos = focus.getShiftedBy(-state.matchLength);
-          let endPos = focus;
-          const nodeAfter = focus.nodeAfter;
-          if (nodeAfter && nodeAfter.is && nodeAfter.is('$text') && String(nodeAfter.data || '').startsWith('}')) {
-            endPos = focus.getShiftedBy(1);
-          }
-          const range = writer.createRange(startPos, endPos);
-          const attrs = typeof selection.getAttributes === 'function'
-            ? Object.fromEntries(selection.getAttributes())
-            : {};
-          writer.remove(range);
-          writer.insertText(token.id, attrs, startPos);
-          if (typeof writer.setSelection === 'function') {
-            writer.setSelection(startPos.getShiftedBy(token.id.length));
-          }
-        });
-        if (editor.editing && editor.editing.view && typeof editor.editing.view.focus === 'function') {
-          editor.editing.view.focus();
-        }
       }
     }
 
@@ -641,43 +634,6 @@
       return false;
     }
 
-    if (editor.editing && editor.editing.view && editor.editing.view.document
-      && typeof editor.editing.view.document.on === 'function') {
-      editor.editing.view.document.on('keydown', function(evt, data) {
-        const domEvt = data && data.domEvent;
-        const key = (domEvt && domEvt.key) || (data && data.keyCode);
-        handleNavigationKey(key, function() {
-          if (typeof data.preventDefault === 'function') data.preventDefault();
-          if (typeof evt.stop === 'function') evt.stop();
-        });
-      }, {priority: 'highest'});
-
-      editor.editing.view.document.on('blur', function() {
-        setTimeout(hidePopup, 150);
-      });
-    }
-
-    if (editor.model && editor.model.document && typeof editor.model.document.on === 'function') {
-      editor.model.document.on('change:data', function(evt, batch) {
-        if (batch && batch.isUndo === false && batch.isLocal === false) {
-          return;
-        }
-        const rootEl = editor && editor.ui && editor.ui.view && editor.ui.view.element;
-        const hasFocus = (editor.editing && editor.editing.view && editor.editing.view.document && editor.editing.view.document.isFocused)
-          || (rootEl && typeof document !== 'undefined' && document.activeElement && rootEl.contains(document.activeElement));
-        if (!hasFocus) {
-          return;
-        }
-        checkStateAndTrigger(getModelPrefixBeforeSelection(editor));
-      });
-      if (editor.model.document.selection && typeof editor.model.document.selection.on === 'function') {
-        editor.model.document.selection.on('change:range', function() {
-          const state = getModelPrefixBeforeSelection(editor);
-          if (!state) hidePopup();
-        });
-      }
-    }
-
     function bindRootEvents() {
       const rootEl = editor && editor.ui && editor.ui.view && editor.ui.view.element;
       if (!rootEl || typeof rootEl.addEventListener !== 'function') return;
@@ -734,7 +690,8 @@
 
     init() {
       const editor = this.editor;
-      attachInlineAutocomplete(editor);
+      usePlainTextForCiviTokenMentions(editor);
+      attachRawAutocomplete(editor);
       editor.ui.componentFactory.add('civiTokens', function(locale) {
         const button = new CKEditor.ButtonView(locale);
         button.set({
@@ -764,6 +721,8 @@
     insert: insertToken,
     discoverPageTokens: discoverPageTokens,
     normalizeTokenGroups: normalizeTokenGroups,
+    configureMention: configureMention,
+    createMentionFeed: createMentionFeed,
     filterTokens: function(groupsOrFlat, query, limit) {
       const flat = Array.isArray(groupsOrFlat) && groupsOrFlat[0] && groupsOrFlat[0].codeLower !== undefined
         ? groupsOrFlat

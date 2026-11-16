@@ -5,6 +5,7 @@ namespace Civi\WMFQueue;
 use Civi;
 use Civi\Api4\Address;
 use Civi\Api4\Contact;
+use Civi\Api4\Contribution;
 use Civi\Api4\Email;
 use Civi\Api4\PaymentToken;
 use Civi\Api4\WMFContact;
@@ -12,6 +13,7 @@ use Civi\Api4\WorkflowMessage;
 use Civi\Core\Exception\DBQueryException;
 use Civi\Helper\FailureEmail;
 use Civi\WMFHelper\ContributionRecur as RecurHelper;
+use Civi\WMFHelper\Database;
 use Civi\Api4\ContributionRecur;
 use Civi\Api4\ContributionTracking;
 use Civi\WMFException\WMFException;
@@ -301,10 +303,10 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         $contactId = $contact['id'];
       }
       else {
-        $contactId = civicrm_api3('Contribution', 'getvalue', [
-          'id' => $ctRecord['contribution_id'],
-          'return' => 'contact_id',
-        ]);
+        $contactId = Contribution::get(FALSE)
+          ->addWhere('id', '=', $ctRecord['contribution_id'])
+          ->addSelect('contact_id')
+          ->execute()->single()['contact_id'];
 
         if (isset($msg['legal_identifier'])) {
           Contact::update(FALSE)
@@ -386,7 +388,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       $message->setContributionRecurID($newContributionRecur['id']);
     }
     catch (\CRM_Core_Exception $e) {
-      throw new WMFException(WMFException::IMPORT_CONTRIB, 'Failed inserting subscriber signup for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ': ' . $e->getMessage());
+      throw new WMFException(Database::isDatabaseContention($e) ? WMFException::DATABASE_CONTENTION : WMFException::IMPORT_CONTRIB, 'Failed inserting subscriber signup for subscriber id: ' . print_r($msg['subscr_id'], TRUE) . ': ' . $e->getMessage());
     }
 
     if (isset($msg['recurring_payment_token']) && isset($newContributionRecur['id'])) {
@@ -413,7 +415,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
     // Ideally we would move this catching higher up
     // see https://phabricator.wikimedia.org/T365418.
     catch (DBQueryException $e) {
-      if (in_array($e->getDBErrorMessage(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
+      if (Database::isDatabaseContention($e)) {
         throw new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $e->getErrorData());
       }
       // Could be a mysql error so let's pass it on up
@@ -426,7 +428,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
       return $this->updateContributionRecur($params);
     }
     catch (DBQueryException $e) {
-      if (in_array($e->getDBErrorMessage(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
+      if (Database::isDatabaseContention($e)) {
         throw new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $e->getErrorData());
       }
       // If it is a mysql query error then re-throw it.
@@ -526,7 +528,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         ->execute();
     }
     catch (\CRM_Core_Exception $e) {
-      throw new WMFException(WMFException::INVALID_RECURRING, 'There was a problem cancelling contribution recur ID: ' . $message->getContributionRecurID());
+      throw new WMFException(Database::isDatabaseContention($e) ? WMFException::DATABASE_CONTENTION : WMFException::INVALID_RECURRING, 'There was a problem cancelling contribution recur ID: ' . $message->getContributionRecurID());
     }
     Civi::log('wmf')->notice('recurring: Successfully cancelled contribution recur id {contributionRecurId}', ['contributionRecurId' => $message->getContributionRecurID()]);
   }
@@ -609,7 +611,7 @@ class RecurringQueueConsumer extends TransactionalQueueConsumer {
         ->setValues($updateParams)->execute();
     }
     catch (DBQueryException $e) {
-      if (in_array($e->getDBErrorMessage(), ['constraint violation', 'deadlock', 'database lock timeout'], TRUE)) {
+      if (Database::isDatabaseContention($e)) {
         throw new WMFException(WMFException::DATABASE_CONTENTION, 'Contribution not saved due to database load', $e->getErrorData());
       }
       throw $e;

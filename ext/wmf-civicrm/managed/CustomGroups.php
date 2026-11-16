@@ -486,10 +486,14 @@ function _wmf_civicrm_get_gift_data_fields(): array {
       'is_required' => 1,
       'is_searchable' => 1,
       'option_values' => [
-        ['name' => 'Unrestricted__General', 'label' => 'Unrestricted - General', 'value' => 'Unrestricted - General'],
-        ['name' => 'endowment', 'label' => 'Endowment Fund', 'value' => 'Endowment Fund'],
+        ['name' => 'Unrestricted__General', 'label' => 'Unrestricted - General', 'value' => 'Unrestricted - General', 'description' => 'Gifts attributed to the Annual Fund'],
+        ['name' => 'endowment', 'label' => 'Endowment Fund', 'value' => 'Endowment Fund', 'description' => 'Gifts attributed to the Endowment Fund'],
+        ['name' => 'Restricted_Wiki_Experiences_Adv', 'label' => 'Restricted - Wiki Experiences (Advance Editing Tools)', 'value' => 'Restricted - Wiki Experiences (Advance Editing Tools)', 'description' => 'Restricted Gift - Wiki Experiences (Advance Editing Tools)'],
         ['name' => 'Restricted__Foundation', 'label' => 'Restricted - Foundation', 'value' => 'Restricted - Foundation'],
+        ['name' => 'Restricted_Abstract_Wikipedia', 'label' => 'Restricted - Abstract Wikipedia', 'value' => 'Restricted - Abstract Wikipedia'],
+        ['name' => 'Restricted_Leveraging_AI', 'label' => 'Restricted - Leveraging AI', 'value' => 'Restricted - Leveraging AI', 'description' => 'To leverage AI for the benefit of Wikipedia’s readers and contributors, including tools to address vandalism.'],
         ['name' => 'Major_Gifts_CC104', 'label' => 'Major Gifts - CC104', 'value' => 'Major Gifts - CC104'],
+        ['name' => 'Online_Fundraising_CC_1005', 'label' => 'Online Fundraising - CC-1005', 'value' => 'Online Fundraising - CC-1005'],
       ],
     ],
     'Campaign' => [
@@ -597,7 +601,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
       'text_length' => 32,
       'note_columns' => 60,
       'note_rows' => 4,
-      'is_view' => 0,
+      'is_view' => 1,
       'option_values' => [
         ['name' => 'GL43481', 'label' => 'GL43481 Banner', 'value' => 'GL43481'],
         ['name' => 'GL43484', 'label' => 'GL43484 Other Online', 'value' => 'GL43484'],

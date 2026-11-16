@@ -1,6 +1,11 @@
 (function () {
   'use strict';
   CRM.ckeditor5Admin = CRM.ckeditor5Admin || {};
+  CRM.ckeditor5Admin.copyToolbarItems = function (config) {
+    return config && config.toolbar && Array.isArray(config.toolbar.items)
+      ? config.toolbar.items.slice()
+      : null;
+  };
   CRM.ckeditor5Admin.parse = function (values) {
     const config = {};
     const lines = text => (text || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);

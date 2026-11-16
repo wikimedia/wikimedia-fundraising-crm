@@ -12,7 +12,8 @@ use Civi\Core\Event\PreEvent;
 class ContributionSoft {
 
   /**
-   * Create employer relationship for employer type soft credit.
+   * Create employer relationship for employer type soft credit and DAF
+   * relationship for DAF type soft credit.
    *
    * @see https://wikitech.wikimedia.org/w/index.php?title=Fundraising/Internal-facing/CiviCRM/Imports
    *

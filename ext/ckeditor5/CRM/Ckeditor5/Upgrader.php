@@ -13,18 +13,40 @@ class CRM_Ckeditor5_Upgrader extends CRM_Extension_Upgrader_Base {
    * Example: Run an external SQL script when the module is installed.
    */
   public function install() {
-    CRM_Core_BAO_OptionValue::ensureOptionValueExists([
-        'option_group_id' => 'wysiwyg_editor',
-        'label' => 'CKEditor5 with uploaded images (recommended)',
-        'name' => 'CKEditor5-elfinder',
-      ]
-    );
-    CRM_Core_BAO_OptionValue::ensureOptionValueExists([
-        'option_group_id' => 'wysiwyg_editor',
-        'label' => 'CKEditor5 with embedded images',
-        'name' => 'CKEditor5-base64',
-      ]
-    );
+    $optionValue = CRM_Core_BAO_OptionValue::ensureOptionValueExists([
+      'option_group_id' => 'wysiwyg_editor',
+      'label' => E::ts('CKEditor 5'),
+      'name' => CRM_Ckeditor5_EditorRegistration::EDITOR_ID,
+    ]);
+    \Civi\Api4\OptionValue::update(FALSE)
+      ->addValue('label', E::ts('CKEditor 5'))
+      ->addValue('is_active', TRUE)
+      ->addWhere('id', '=', $optionValue['id'])
+      ->execute();
+    return TRUE;
+  }
+
+  /**
+   * Replace legacy editor choices without changing their upload behavior.
+   */
+  public function upgrade_1900() {
+    $this->ctx->log->info('Registering one CKEditor 5 editor and migrating legacy upload modes.');
+    $this->install();
+
+    $editorId = Civi::settings()->get('editor_id');
+    $legacyUploadMode = CRM_Ckeditor5_EditorRegistration::legacyUploadMode($editorId);
+    if ($legacyUploadMode !== NULL) {
+      $presets = Civi::settings()->get('ckeditor5_presets') ?: [];
+      $presets = CRM_Ckeditor5_EditorRegistration::migratePresets($presets, $legacyUploadMode);
+      Civi::settings()->set('ckeditor5_presets', $presets);
+      Civi::settings()->set('editor_id', CRM_Ckeditor5_EditorRegistration::EDITOR_ID);
+    }
+
+    \Civi\Api4\OptionValue::update(FALSE)
+      ->addValue('is_active', FALSE)
+      ->addWhere('option_group_id:name', '=', 'wysiwyg_editor')
+      ->addWhere('name', 'IN', array_keys(CRM_Ckeditor5_EditorRegistration::LEGACY_UPLOAD_MODES))
+      ->execute();
     return TRUE;
   }
 

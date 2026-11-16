@@ -851,6 +851,9 @@ class GenerateBatch extends AbstractAction {
         $this->batches = (array) $batchGet->addWhere('id', '=', $this->id)
           ->execute()->indexBy('name');
         $batch = reset($this->batches);
+        if (!in_array($batch['mode_id:name'], self::EXPORTABLE_BATCH_MODES, TRUE)) {
+          throw new \CRM_Core_Exception('Batch ' . $batch['name'] . ' is an ' . ($batch['mode_id:name'] ?? 'unknown mode') . ' - only ' . implode('/', self::EXPORTABLE_BATCH_MODES) . ' batches are settlement batches.');
+        }
         $isPreviouslyVerified = $batch['status_id:name'] === 'needs_attention' && !empty($batch['batch_data.last_successful_total_verification_date']);
         if (!$this->isDryRun && !in_array($batch['status_id:name'], ['validated', 'total_verified']) && !$isPreviouslyVerified) {
           // They have selected a specific batch, but it is not exportable, throw an exception.
@@ -999,7 +1002,7 @@ class GenerateBatch extends AbstractAction {
       'credit' => round($batch['batch_data.settled_donation_amount'] ?? 0, 2),
       'debit' => round($batch['batch_data.settled_reversal_amount'] ?? 0, 2),
       'fee' => $batch['batch_data.settled_fee_amount'],
-      'settled' => round($batch['batch_data.settled_net_amount'], 2),
+      'settled' => round($batch['batch_data.settled_net_amount'] ?? 0, 2),
     ];
     $result['validation'] = [
       'count' => $result['expected']['count'] - $result['totals']['count'],

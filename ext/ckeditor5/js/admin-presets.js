@@ -8,22 +8,67 @@
     const list = root.find('#ck5-toolbar');
     const picker = root.find('#ck5-button');
     const available = CRM.vars.ckeditor5Admin.buttons;
+    const buttonLabels = CRM.vars.ckeditor5Admin.buttonLabels || {};
+    const buttonLabel = name => buttonLabels[name] || (name === '|' ? ts('Separator') : name);
+    const iconCache = {};
+    let draggedAvailable = null;
     let items;
     try { items = JSON.parse(source.val()); }
     catch (error) { return; }
     if (!Array.isArray(items)) return;
     available.forEach(function (name) {
-      $('<option>').val(name).text(name === '|' ? ts('Separator') : name).appendTo(picker);
+      $('<option>').val(name).text(buttonLabel(name)).appendTo(picker);
     });
     let dragged = null;
+    function appendButtonVisual(target, name) {
+      if (name === '|') {
+        $('<span class="ck5-toolbar-separator" aria-hidden="true">').appendTo(target);
+      }
+      else if (iconCache[name]) {
+        $('<span aria-hidden="true">').html(iconCache[name]).appendTo(target);
+      }
+      else {
+        $('<span class="ck5-toolbar-text">').text(buttonLabel(name)).appendTo(target);
+      }
+    }
+    function renderAvailable() {
+      const target = root.find('#ck5-toolbar-available').empty();
+      available.forEach(function (name) {
+        const used = name !== '|' && items.includes(name);
+        const choice = $('<button type="button" class="ck5-toolbar-choice">')
+          .attr({'data-name': name, 'aria-label': buttonLabel(name), title: buttonLabel(name), draggable: !used})
+          .prop('disabled', used)
+          .on('click', function () {
+            if (!used) addItem(name, items.length);
+          })
+          .on('dragstart', function (event) {
+            if (used) return;
+            draggedAvailable = name;
+            event.originalEvent.dataTransfer.setData('text/plain', name);
+            event.originalEvent.dataTransfer.effectAllowed = 'copy';
+          })
+          .on('dragend', function () { draggedAvailable = null; })
+          .appendTo(target);
+        appendButtonVisual(choice, name);
+      });
+    }
+    function addItem(name, index) {
+      if (!available.includes(name) || (name !== '|' && items.includes(name))) return;
+      items.splice(index, 0, name);
+      render(index, 'remove');
+    }
     function render(focusIndex, action) {
       source.val(JSON.stringify(items));
       list.empty();
       items.forEach(function (name, index) {
         const row = $('<li draggable="true">').attr('data-index', index).appendTo(list);
-        $('<span>').text(name === '|' ? ts('Separator') : name).appendTo(row);
-        [['up', ts('Up')], ['down', ts('Down')], ['remove', ts('Remove')]].forEach(function (entry) {
-          $('<button type="button">').attr('data-action', entry[0]).text(entry[1])
+        const visual = $('<span class="ck5-toolbar-button">')
+          .attr({'aria-label': buttonLabel(name), title: buttonLabel(name)})
+          .appendTo(row);
+        appendButtonVisual(visual, name);
+        const actions = $('<span class="ck5-toolbar-actions">').appendTo(row);
+        [['up', ts('Move left'), '&#8592;'], ['down', ts('Move right'), '&#8594;'], ['remove', ts('Remove'), '&times;']].forEach(function (entry) {
+          $('<button type="button">').attr({'data-action': entry[0], 'aria-label': entry[1], title: entry[1]}).html(entry[2])
             .prop('disabled', (entry[0] === 'up' && index === 0) || (entry[0] === 'down' && index === items.length - 1))
             .on('click', function () {
               let next = index;
@@ -33,7 +78,7 @@
                 [items[index], items[next]] = [items[next], items[index]];
               }
               render(Math.min(next, items.length - 1), entry[0]);
-            }).appendTo(row);
+            }).appendTo(actions);
         });
         row.on('dragstart', function (event) {
           dragged = index;
@@ -42,6 +87,12 @@
         }).on('dragover', function (event) { if (dragged !== null) event.preventDefault(); })
           .on('drop', function (event) {
             event.preventDefault();
+            if (draggedAvailable !== null) {
+              const name = draggedAvailable;
+              draggedAvailable = null;
+              addItem(name, index);
+              return;
+            }
             if (dragged === null) return;
             const moved = items.splice(dragged, 1)[0];
             items.splice(index, 0, moved);
@@ -51,14 +102,23 @@
       });
       picker.find('option').each(function () { this.disabled = this.value !== '|' && items.includes(this.value); });
       if (picker.find(':selected').prop('disabled')) picker.val(picker.find('option:not(:disabled)').first().val());
+      renderAvailable();
       if (focusIndex >= 0) list.children().eq(focusIndex).find('[data-action="' + action + '"]').trigger('focus');
     }
     root.find('#ck5-add').on('click', function () {
       const name = picker.val();
       if (available.includes(name) && (name === '|' || !items.includes(name))) {
-        items.push(name);
-        render(items.length - 1, 'remove');
+        addItem(name, items.length);
       }
+    });
+    list.on('dragover', function (event) {
+      if (dragged !== null || draggedAvailable !== null) event.preventDefault();
+    }).on('drop', function (event) {
+      if (event.target !== this || draggedAvailable === null) return;
+      event.preventDefault();
+      const name = draggedAvailable;
+      draggedAvailable = null;
+      addItem(name, items.length);
     });
     root.find('.ck5-section').each(function () {
       const section = $(this);
@@ -117,6 +177,7 @@
     editableRows('styles', [ts('Style name'), ts('HTML element'), ts('CSS classes')], ['text', ['p', 'h2', 'h3', 'h4', 'span', 'div', 'blockquote', 'table', 'td', 'th'], 'text']);
     render();
     swatches();
+    root.find('#ck5-toolbar-fallback').hide();
     root.find('#ck5-toolbar-source').hide();
     let dirty = false;
     root.on('input change click drop', 'input, textarea, button, #ck5-toolbar', function () { dirty = true; });
@@ -127,6 +188,8 @@
     const status = root.find('#ck5-preview-status');
     const preview = root.find('#ck5-preview-editor');
     const preset = root.find('#ck5-preview').attr('data-preset');
+    const customToolbar = root.find('[name="custom_toolbar"]');
+    if (!customToolbar.prop('checked')) customToolbar.prop('disabled', true);
     preview.attr('data-preset', preset);
     if (!CRM.config.CKEditor5Location) {
       status.text(ts('Select CKEditor 5 as the site editor to enable the live preview.'));
@@ -140,7 +203,7 @@
     const ready = (async function () {
       if (!CRM.wysiwyg.getConfig) await load(CRM.config.wysisygScriptLocation);
       if (CRM.config.CKEditor5Language) await load(CRM.config.CKEditor5Language);
-      if (!window.ClassicEditor) await load(CRM.config.CKEditor5Location);
+      if (!window.ClassicEditor) await CRM.ckeditor5.loadEditorRuntime(CRM.config.CKEditor5Location);
       if (CRM.ckeditor5 && typeof CRM.ckeditor5.loadPluginAssets === 'function') {
         await CRM.ckeditor5.loadPluginAssets();
       }
@@ -161,6 +224,12 @@
           });
           const overrides = CRM.ckeditor5Admin.parse(values);
           const config = CRM.wysiwyg.getConfig(preview[0], Boolean(CRM.config.ELFinderLocation), overrides);
+          const inheritedToolbar = CRM.ckeditor5Admin.copyToolbarItems(config);
+          if (!values.custom_toolbar && inheritedToolbar) {
+            items = inheritedToolbar;
+            render();
+          }
+          customToolbar.prop('disabled', false);
           if (editor) { await editor.destroy(); editor = null; }
           if (current !== revision) return;
           preview.empty();
@@ -169,9 +238,23 @@
             .text(ts('Write a short article or event description here to test the selected settings.')).appendTo(preview);
           const sourceHtml = preview.html();
           editor = await window.ClassicEditor.create({...config, attachTo: preview[0]});
+          available.forEach(function (name) {
+            if (name === '|' || iconCache[name]) return;
+            try {
+              const view = editor.ui.componentFactory.create(name);
+              view.render();
+              const svg = view.element && view.element.querySelector('svg');
+              if (svg) iconCache[name] = svg.outerHTML;
+              view.destroy();
+            }
+            catch (error) {
+              // Some contextual components cannot render outside their editor state.
+            }
+          });
+          render();
           CRM.ckeditor5.attachHtmlQaReport(editor, sourceHtml);
           editor.ui.view.element.setAttribute('data-ckeditor5-preset', preset);
-          ['uploadImage', 'imageUpload', 'ckfinder'].forEach(name => {
+          ['uploadImage', 'imageUpload'].forEach(name => {
             const command = editor.commands.get(name);
             if (command) command.forceDisabled('adminPreview');
           });

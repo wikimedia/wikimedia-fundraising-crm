@@ -4,6 +4,7 @@ namespace Civi\WMFQueue;
 
 use CRM_Core_DAO;
 use Civi\WMFException\WMFException;
+use Civi\WMFHelper\Database;
 
 class UnsubscribeQueueConsumer extends TransactionalQueueConsumer {
 
@@ -120,7 +121,7 @@ EOS;
       return CRM_Core_DAO::executeQuery($query)->N;
     }
     catch (\Exception $ex) {
-      throw new WMFException(WMFException::UNSUBSCRIBE, $ex->getMessage());
+      throw new WMFException(Database::isDatabaseContention($ex) ? WMFException::DATABASE_CONTENTION : WMFException::UNSUBSCRIBE, $ex->getMessage());
     }
   }
 
