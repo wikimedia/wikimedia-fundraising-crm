@@ -399,6 +399,42 @@ class EOYEmailTest extends TestCase {
   }
 
   /**
+   * Test only donors with a non-first recurring payment in the year are queued.
+   */
+  public function testCalculateRecurringFirstPayment(): void {
+    $donors = [
+      'first_only@example.org' => ['2018-03-03'],
+      'prior_year@example.org' => ['2017-12-03', '2018-01-03'],
+    ];
+    foreach ($donors as $email => $dates) {
+      $contact = $this->createTestEntity('Contact', [
+        'contact_type' => 'Individual',
+        'email_primary.email' => $email,
+      ], $email);
+      $recur = $this->createTestEntity('ContributionRecur', [
+        'contact_id' => $contact['id'],
+        'amount' => 10,
+        'frequency_unit' => 'month',
+        'start_date' => $dates[0],
+      ]);
+      foreach ($dates as $date) {
+        $this->createTestEntity('Contribution', [
+          'receive_date' => $date,
+          'contact_id' => $contact['id'],
+          'total_amount' => 10,
+          'contribution_recur_id' => $recur['id'],
+          'contribution_status_id:name' => 'Completed',
+          'financial_type_id:name' => 'Cash',
+        ]);
+      }
+    }
+
+    EOYEmail::makeJob(FALSE)->setYear(2018)->execute();
+    $this->assertNull($this->getWMFReceiptDonorRows(2018, 'first_only@example.org'));
+    $this->assertEquals('queued', $this->getWMFReceiptDonorRows(2018, 'prior_year@example.org')['status']);
+  }
+
+  /**
    * @throws \CRM_Core_Exception
    */
   public function testCalculateSingleContactId(): void {
