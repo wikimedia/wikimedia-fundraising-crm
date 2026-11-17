@@ -3,7 +3,7 @@ return [
   [
     'name' => 'UserJob_import_Overflow_DAF_import',
     'entity' => 'UserJob',
-    'cleanup' => 'unused',
+    'cleanup' => 'never',
     'update' => 'unmodified',
     'params' => [
       'version' => 4,
