@@ -137,52 +137,10 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @return array
    */
   public function importBenevityFile(): array {
-    $softCreditEntityData = [
-      'soft_credit' => [
-        'action' => 'update',
-        'contact_type' => 'Organization',
-        'soft_credit_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionSoft', 'soft_credit_type_id', 'workplace'),
-        'dedupe_rule' => 'OrganizationSupervised',
-      ],
-    ];
-    return $this->importCSV('benevity.csv', [
-      ['name' => 'SoftCreditContact.organization_name', 'entity_data' => $softCreditEntityData],
-      [],
-      ['name' => 'Contribution.receive_date'],
-      ['name' => 'Contact.first_name'],
-      ['name' => 'Contact.last_name'],
-      ['name' => 'Contact.email_primary.email'],
-      ['name' => 'Contact.address_primary.street_address'],
-      ['name' => 'Contact.address_primary.city'],
-      ['name' => 'Contact.address_primary.state_province_id'],
-      ['name' => 'Contact.address_primary.postal_code'],
-      [],
-      ['name' => 'Contribution.note'],
-      ['name' => 'Contribution.contribution_extra.gateway_txn_id'],
-      [],
-      ['name' => 'Contribution.contribution_extra.original_currency', 'default_value' => 'USD'],
-      [],
-      ['name' => 'Contribution.Gift_Data.Campaign'],
-      ['name' => 'Contribution.contribution_extra.original_amount'],
-      ['name' => 'Contribution.fee_amount'],
-      // We unset this field again - it's a dummy field to make the information available.
-      ['name' => 'Contribution.Matching_Gift_Information.Match_Amount'],
-      // We unset this field again - it's a dummy field to make the information available.
-      ['name' => 'Contribution.contribution_extra.scheme_fee'],
-      [],
-      ['name' => 'Contribution.financial_type_id', 'default_value' => 'Cash'],
-      ['name' => 'Contribution.contribution_extra.gateway', 'default_value' => 'benevity'],
-    ], [
+    $template = (require __DIR__ . '/../../../../managed/UserJobBenevityEndowment.mgd.php')[0]['params']['values']['metadata'];
+    return $this->importCSV('benevity.csv', $template['import_mappings'], [
       'dateFormats' => \CRM_Utils_Date::DATE_yyyy_mm_dd,
-    ], [
-      'Contribution' => ['action' => 'create'],
-      'Contact' => [
-        'action' => 'save',
-        'contact_type' => 'Individual',
-        'dedupe_rule' => 'IndividualUnsupervised',
-      ],
-      'SoftCreditContact' => $softCreditEntityData['soft_credit'],
-    ]);
+    ], $template['entity_configuration']);
   }
 
   /**
@@ -235,8 +193,8 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     Contribution::delete(FALSE)->addWhere('contact_id.last_name', '=', 'Doe')->execute();
     Contribution::delete(FALSE)->addWhere('check_number', '=', 123456)->execute();
     Contribution::delete(FALSE)->addWhere('total_amount', '=', 321.99)->execute();
-    Contribution::delete(FALSE)->addWhere('trxn_id', '=', 'benevity trxn-SNUFFLE')->execute();
-    Contribution::delete(FALSE)->addWhere('trxn_id', '=', 'benevity trxn-ARF')->execute();
+    Contribution::delete(FALSE)->addWhere('trxn_id', '=', 'ach trxn-SNUFFLE')->execute();
+    Contribution::delete(FALSE)->addWhere('trxn_id', '=', 'ach trxn-ARF')->execute();
 
     Contact::delete(FALSE)->addWhere('nick_name', '=', 'Trading Name')->setUseTrash(FALSE)->execute();
     Contact::delete(FALSE)->addWhere('organization_name', '=', 'Trading Name')->setUseTrash(FALSE)->execute();
@@ -1546,7 +1504,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     // In addition the gift type here is mapped.
     $contribution = Contribution::get(FALSE)
       ->addSelect('fee_amount', 'total_amount', 'Gift_Data.Campaign', 'net_amount')
-      ->addWhere('trxn_id', '=', 'BENEVITY trxn-QUACK')
+      ->addWhere('trxn_id', '=', 'ach trxn-QUACK')
       ->execute()->single();
     $this->assertEquals(1080, $contribution['total_amount']);
     $this->assertEquals(9.9, $contribution['fee_amount']);
@@ -1563,7 +1521,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     // No gift source provided.
     $contribution = Contribution::get(FALSE)
       ->addSelect('fee_amount', 'total_amount','Gift_Data.Campaign', 'net_amount', 'contact_id', 'contact_id.email_primary.email', 'contact_id.address_primary.street_address', 'contact_id.employer_id.display_name')
-      ->addWhere('trxn_id', '=', 'BENEVITY trxn-SQUEAK')
+      ->addWhere('trxn_id', '=', 'ach trxn-SQUEAK')
       ->execute()->single();
     $this->assertEquals('Individual Gift', $contribution['Gift_Data.Campaign']);
     $this->assertEquals(.09, $contribution['fee_amount']);
@@ -1587,7 +1545,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->assertEquals(22, $contribution['total_amount']);
     $this->assertEquals(20.41, $contribution['net_amount']);
     $this->assertEquals(1.59, $contribution['fee_amount']);
-    $this->assertEquals('benevity trxn-WOOF', $contribution['trxn_id']);
+    $this->assertEquals('ach trxn-WOOF', $contribution['trxn_id']);
     $softCredit = ContributionSoft::get(FALSE)->addWhere('contribution_id', '=', $contribution['id'])->addSelect('soft_credit_type_id:name')->execute();
     $this->assertCount(1, $softCredit);
     $this->assertEquals('workplace', $softCredit->first()['soft_credit_type_id:name']);;
@@ -1598,7 +1556,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     // Now get the organization contribution.
     $contribution = Contribution::get(FALSE)
       ->addSelect('fee_amount', 'total_amount', 'Gift_Data.Campaign', 'net_amount', 'receive_date', 'contact_id', 'contact_id.display_name')
-      ->addWhere('trxn_id', '=', 'benevity trxn-WOOF_MATCHED')
+      ->addWhere('trxn_id', '=', 'ach trxn-WOOF_MATCHED')
       ->execute()->single();
 
     $this->assertEquals(25, $contribution['total_amount']);
@@ -1613,17 +1571,17 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     // In this case there is no individual contribution and, since the potential
     // individual soft credit would be to the anonymous donor this does not get a soft credit.
     // The trxn_id has _MATCHED appended to it, so there is no contribution
-    // with 'BENEVITY TRXN-ARF' as the trxn_id.
+    // with 'ach trxn-ARF' as the trxn_id.
     $contribution = Contribution::get(FALSE)
       ->addSelect('fee_amount', 'total_amount','Gift_Data.Campaign', 'net_amount')
-      ->addWhere('trxn_id', '=', 'BENEVITY TRXN-ARF')
+      ->addWhere('trxn_id', '=', 'ach trxn-ARF')
       ->execute();
     $this->assertCount(0, $contribution);
 
     // Now get the organization donation that was swapped in.
     $contribution = Contribution::get(FALSE)
       ->addSelect('fee_amount', 'total_amount', 'Gift_Data.Campaign', 'net_amount', 'receive_date', 'contact_id')
-      ->addWhere('trxn_id', '=', 'BENEVITY TRXN-ARF_MATCHED')
+      ->addWhere('trxn_id', '=', 'ach trxn-ARF_MATCHED')
       ->execute()->single();
     $this->assertEquals(.5, $contribution['total_amount']);
     $this->assertEquals(.33, $contribution['fee_amount']);
@@ -1654,7 +1612,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     // contribution but we have enough detail to match it.
     $contribution = Contribution::get(FALSE)
       ->addSelect('fee_amount', 'total_amount','Gift_Data.Campaign', 'net_amount', 'contact_id.display_name', 'contact_id.email_primary.email', 'contact_id.address_primary.street_address', 'contact_id.employer_id.display_name')
-      ->addWhere('trxn_id', '=', 'BENEVITY trxn-SNUFFLE_MATCHED')
+      ->addWhere('trxn_id', '=', 'ach trxn-SNUFFLE_MATCHED')
       ->execute()->single();
     $softCredit = ContributionSoft::get(FALSE)->addSelect('contact_id.display_name', 'amount', 'soft_credit_type_id:name')->addWhere('contribution_id', '=', $contribution['id'])->execute();
     $this->assertCount(1, $softCredit);
@@ -1695,7 +1653,9 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @return void
    */
   public static function hook_importAlterMappedRow(GenericHookEvent $event): void {
-    if (in_array($event->mappedRow['Contribution']['contribution_extra.gateway'] ?? '', ['fidelity', 'benevity'], TRUE)) {
+    if (($event->mappedRow['Contribution']['contribution_extra.gateway'] ?? '') === 'fidelity'
+      || ($event->mappedRow['Contribution']['contribution_extra.backend_processor'] ?? '') === 'Benevity'
+    ) {
       $event->mappedRow['Contribution']['receive_date'] = date('Y-m-d H:i:s', strtotime('-1 day'));
     }
   }

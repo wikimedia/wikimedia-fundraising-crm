@@ -483,7 +483,7 @@ class Import {
   }
 
   private function isBenevity(): bool {
-    return strtolower($this->getGateway()) === 'benevity' || (strtolower($this->mappedRow['Contribution']['contribution_extra.backend_processor'] ?? '') === 'benevity');
+    return strtolower($this->mappedRow['Contribution']['contribution_extra.backend_processor'] ?? '') === 'benevity';
   }
 
   /**
