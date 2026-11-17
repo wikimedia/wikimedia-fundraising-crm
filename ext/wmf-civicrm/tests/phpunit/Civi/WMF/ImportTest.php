@@ -237,7 +237,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     )->execute()->single();
 
     $this->assertEquals('USD 50.00', $contribution['source']);
-    $this->assertEquals('Matching Gifts', $contribution['contribution_extra.gateway']);
+    $this->assertEquals('bankcheck', $contribution['contribution_extra.gateway']);
     $this->assertEquals('Sent by portal (matching gift/ workplace giving)', $contribution['contribution_extra.no_thank_you']);
 
     $softCredits = ContributionSoft::get()->addWhere('contribution_id', '=', $contribution['id'])->execute();
@@ -782,6 +782,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
 
     $data = $this->setupImport([
       'Contribution.invoice_id' => 'noviable1',
+      'Contribution.contribution_extra.gateway' => 'adyen',
       'Contribution.contribution_extra.gateway_account' => 'not_a_real_account',
       'Contribution.contribution_settlement.settlement_batch_reference' => '789',
       'Contribution.total_amount' => '45',
@@ -1065,6 +1066,10 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
             'entity_data' => str_starts_with($columnName, 'SoftCreditContact.') ?$softCreditEntityParams : [],
           ];
       }
+    }
+    if (!isset($data['Contribution.contribution_extra.gateway']) && !isset($data['Contribution.contribution_extra.gateway_account'])) {
+      // Unmapped column - so the default is used.
+      $importMappings[] = ['name' => 'Contribution.contribution_extra.gateway_account', 'default_value' => 'bankcheck', 'column_number' => count($data)];
     }
     $params = [
       'job_type' => 'contribution_import',

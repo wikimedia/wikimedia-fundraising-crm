@@ -46,6 +46,8 @@ if (interface_exists(\PHPUnit\Framework\TestListener::class)) {
 
     private \CRM_Core_Permission_Base $originalUserPermissionClass;
 
+    private bool $isAddingImportGatewayAccount = FALSE;
+
     public function endTestSuite(\PHPUnit\Framework\TestSuite $suite): void {}
 
     public function startTest(\PHPUnit\Framework\Test $test): void {
@@ -77,9 +79,26 @@ if (interface_exists(\PHPUnit\Framework\TestListener::class)) {
         $listenerMap = \Civi\Core\Event\EventScanner::findListeners($test);
         \Civi::dispatcher()->addListenerMap($test, $listenerMap);
       }
+      // Shared extension tests don't know our imports require a gateway account.
+      $this->isAddingImportGatewayAccount = !str_contains((new \ReflectionClass($test))->getFileName(), '/ext/wmf-civicrm/');
+      if ($this->isAddingImportGatewayAccount) {
+        \Civi::dispatcher()->addListener('hook_civicrm_importAlterMappedRow', [self::class, 'addImportGatewayAccount'], 200);
+      }
+    }
+
+    /**
+     * Default the gateway account the wmf-civicrm import hook requires.
+     */
+    public static function addImportGatewayAccount($event): void {
+      if (isset($event->mappedRow['Contribution'])) {
+        $event->mappedRow['Contribution']['contribution_extra.gateway_account'] ??= 'bankcheck';
+      }
     }
 
     public function endTest(\PHPUnit\Framework\Test $test, float $time): void {
+      if ($this->isAddingImportGatewayAccount) {
+        \Civi::dispatcher()->removeListener('hook_civicrm_importAlterMappedRow', [self::class, 'addImportGatewayAccount']);
+      }
       \CRM_Core_DAO::executeQuery('UPDATE civicrm_monolog SET is_active = 0 WHERE type = "test"');
       MonologManager::flush();
       // @todo - should we set ALL settings here?

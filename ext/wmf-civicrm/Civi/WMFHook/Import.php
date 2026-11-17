@@ -128,10 +128,6 @@ class Import {
         if ($isMatchingGift && !array_key_exists('contribution_extra.no_thank_you', $this->mappedRow['Contribution'])) {
           $this->mappedRow['Contribution']['contribution_extra.no_thank_you'] = 'Sent by portal (matching gift/ workplace giving)';
         }
-        // Assume matching gifts if there is a soft credit involved...
-        if (empty($this->mappedRow['Contribution']['contribution_extra.gateway'])) {
-          $this->mappedRow['Contribution']['contribution_extra.gateway'] = $isMatchingGift ? 'Matching Gifts' : 'CiviCRM Import';
-        }
       }
 
       // If we have only a contact ID we can use that to determine the contact type
@@ -166,7 +162,6 @@ class Import {
             $this->userJobID);
         }
 
-        $this->mappedRow['Contribution']['contribution_extra.gateway'] = $this->getGateway();
         $this->deriveGatewayFromAccount();
         $existingContributionID = ContributionHelper::exists($this->mappedRow['Contribution']['contribution_extra.gateway'], $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id']);
         if ($existingContributionID) {
@@ -281,17 +276,10 @@ class Import {
   }
 
   /**
-   * Get the gateway (e.g fidelity, matching_gifts, benevity).
-   *
-   * Generally this is mapped in the import mapping and will show up in the mapped row.
-   * That may always be true now, but originally it was not possible to set a default
-   * so there is some additional handling based on the import template job name which
-   * possibly can go now.
-   *
-   * @throws \CRM_Core_Exception
+   * Get the gateway - mapped directly or derived from the gateway account.
    */
   protected function getGateway(): string {
-    return !empty($this->mappedRow['Contribution']['contribution_extra.gateway']) ? $this->mappedRow['Contribution']['contribution_extra.gateway'] : $this->getUserJob()['gateway'];
+    return $this->mappedRow['Contribution']['contribution_extra.gateway'];
   }
 
   /**
@@ -441,17 +429,6 @@ class Import {
   private function getUserJob(): array {
     if (!isset(\Civi::$statics[__CLASS__]['user_job'])) {
       $userJob = UserJob::get(FALSE)->addWhere('id', '=', $this->userJobID)->execute()->first();
-      $templateID = $userJob['metadata']['template_id'] ?? NULL;
-      $gateway = 'civicrm_import';
-      if ($templateID) {
-        try {
-          $gateway = UserJob::get(FALSE)->addSelect('name')->addWhere('id', '=', $templateID)->execute()->first()['name'];
-        }
-        catch (\CRM_Core_Exception $e) {
-          // ah well.
-        }
-      }
-      $userJob['gateway'] = $gateway;
       \Civi::$statics[__CLASS__]['user_job'] = $userJob;
     }
     return \Civi::$statics[__CLASS__]['user_job'];
@@ -643,24 +620,24 @@ class Import {
   }
 
   /**
-   * If a gateway account was picked (see fixUpSettlementBatchReference()),
-   * derive contribution_extra.gateway from it now - before ensureTrxnIdentifiersSet()
-   * and the duplicate-contribution check further down both use getGateway(),
-   * which would otherwise still see whatever generic fallback was set above.
+   * Derive contribution_extra.gateway from the gateway account, if one was picked -
+   * before ensureTrxnIdentifiersSet() and the duplicate-contribution check use it.
    *
    * @throws \CRM_Core_Exception
    */
   private function deriveGatewayFromAccount(): void {
     $gatewayAccountName = $this->mappedRow['Contribution']['contribution_extra.gateway_account'] ?? NULL;
-    if (!$gatewayAccountName) {
-      return;
+    if ($gatewayAccountName) {
+      $gatewayAccount = GatewayAccount::get(FALSE)
+        ->addWhere('name', '=', $gatewayAccountName)
+        ->addSelect('gateway')
+        ->execute()->first();
+      if ($gatewayAccount) {
+        $this->mappedRow['Contribution']['contribution_extra.gateway'] = $gatewayAccount['gateway'];
+      }
     }
-    $gatewayAccount = GatewayAccount::get(FALSE)
-      ->addWhere('name', '=', $gatewayAccountName)
-      ->addSelect('gateway')
-      ->execute()->first();
-    if ($gatewayAccount) {
-      $this->mappedRow['Contribution']['contribution_extra.gateway'] = $gatewayAccount['gateway'];
+    if (empty($this->mappedRow['Contribution']['contribution_extra.gateway'])) {
+      throw new \CRM_Core_Exception('A gateway account is required');
     }
   }
 
