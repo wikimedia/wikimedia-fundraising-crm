@@ -129,7 +129,7 @@ class PushJournal extends AbstractAction {
       $body   = $e->hasResponse() ? (string) $e->getResponse()->getBody() : $e->getMessage();
 
       throw new \CRM_Core_Exception(
-        'Intacct journal POST failed' . ($status ? " (HTTP $status)" : '') . ': ' . $body
+        "Intacct journal POST failed for {$this->batchName} on {$this->instance} instance (file {$this->journalFile})" . ($status ? " (HTTP $status)" : '') . ': ' . $body
       );
     }
   }
