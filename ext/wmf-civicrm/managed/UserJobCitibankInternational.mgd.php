@@ -138,7 +138,7 @@ return [
             ],
             [
               'name' => 'Contribution.contribution_extra.gateway_account',
-              'default_value' => 'citibankpublic2',
+              'default_value' => 'citibank-public2',
               'column_number' => 13,
             ],
             [
