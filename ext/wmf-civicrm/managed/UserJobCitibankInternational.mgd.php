@@ -1,4 +1,12 @@
 <?php
+
+use Civi\Api4\Contact;
+
+// Use the Citibank contact from production if present, otherwise find or create one.
+$citibankContactID = Contact::get(FALSE)->addWhere('id', '=', 31398010)->execute()->first()['id']
+  ?? Contact::get(FALSE)->addWhere('last_name', '=', 'Citibank')->addWhere('contact_type', '=', 'Individual')->execute()->first()['id']
+  ?? Contact::create(FALSE)->setValues(['contact_type' => 'Individual', 'last_name' => 'Citibank'])->execute()->first()['id'];
+
 return [
   [
     'name' => 'UserJob_import_Citibank_International_Intl_wires_import',
@@ -163,7 +171,7 @@ return [
             ],
             [
               'name' => 'Contribution.contact_id',
-              'default_value' => '31398010',
+              'default_value' => (string) $citibankContactID,
               'column_number' => 18,
             ],
             [
