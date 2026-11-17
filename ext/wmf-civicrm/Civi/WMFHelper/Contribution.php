@@ -288,15 +288,21 @@ class Contribution {
   public static function getURLForTransactionID(string $transactionID): ?string {
     try {
       $transaction = WMFTransaction::from_unique_id($transactionID);
+      $isDev = Civi::settings()->get('environment') === 'Development';
       switch ($transaction->gateway) {
         case 'gravy':
-          $prefix = ( Civi::settings()->get('environment') === 'Development') ? 'sandbox.' : '';
+          $prefix = $isDev ? 'sandbox.' : '';
           return "https://{$prefix}wikimedia.gr4vy.app/merchants/default/transactions/" .
             $transaction->gateway_txn_id . '/overview';
         case 'adyen':
-          $prefix = ( Civi::settings()->get('environment') === 'Development') ? 'test' : 'live';
+          $prefix = $isDev ? 'test' : 'live';
           return "https://ca-{$prefix}.adyen.com/ca/ca/accounts/showTx.shtml?pspReference=" .
             $transaction->gateway_txn_id . "&txType=Payment";
+        case 'braintree':
+          $prefix = $isDev ? 'sandbox' : 'www';
+          $merchantAccount = $isDev ? 'ms9fqmw9gxrm2bp3' : '424x94ssrpd9c44t';
+          return "https://{$prefix}.braintreegateway.com/merchants/$merchantAccount/transactions/" .
+            $transaction->gateway_txn_id;
         // TODO: add templates for other gateways
         default:
           return NULL;
