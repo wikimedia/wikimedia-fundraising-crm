@@ -1037,6 +1037,19 @@ class GiftCodingTest extends TestCase {
   }
 
   /**
+   * An excluded DAF soft credit contact's Relationship Manager is ignored.
+   */
+  public function testExcludedDAFSoftCreditContactRelationshipManagerIsIgnored(): void {
+    $this->setSetting('wmf_gift_coding_excluded_contacts', (string) $this->donorID);
+    $this->setRelationshipManager();
+
+    $contribution = $this->createDAFContribution(['contact_id' => $this->createOrganization()]);
+    $this->createSoftCredit($contribution, $this->donorID);
+
+    $this->assertEmpty($this->getContribution($contribution['id'])['Gift_Data.Appeal']);
+  }
+
+  /**
    * A newer DAF mailing to a contact related via the DAF soft credit
    * overrides an Appeal set from the donor's older mailing.
    */

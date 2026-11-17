@@ -154,6 +154,7 @@ class GiftCoding {
     if (
       !self::isGiftCodingApplicable($contribution['Gift_Data.Channel'], $contribution['Gift_Data.Campaign'])
       || in_array($contribution['contact_id'], self::getExcludedContactIDs(), TRUE)
+      || in_array((int) $event->getValue('contact_id'), self::getExcludedContactIDs(), TRUE)
     ) {
       return;
     }
