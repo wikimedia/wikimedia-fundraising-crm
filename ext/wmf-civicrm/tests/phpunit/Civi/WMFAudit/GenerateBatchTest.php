@@ -1068,9 +1068,9 @@ class GenerateBatchTest extends BaseAuditTestCase {
 
     $this->assertNotEmpty($result, 'Expected at least one batch result');
     $csvFiles = $result[0]['csv'] ?? [];
-    $this->assertArrayHasKey('journal_endowment_to_foundation', $csvFiles, 'Expected a journal_endowment_to_foundation file for an endowment-first gateway');
+    $this->assertArrayHasKey('journal_foundation_from_endowment', $csvFiles, 'Expected a journal_foundation_from_endowment file for an endowment-first gateway');
 
-    $reader = Reader::from($csvFiles['journal_endowment_to_foundation']['file']);
+    $reader = Reader::from($csvFiles['journal_foundation_from_endowment']['file']);
     $reader->setHeaderOffset(0);
     $rows = iterator_to_array($reader);
 
