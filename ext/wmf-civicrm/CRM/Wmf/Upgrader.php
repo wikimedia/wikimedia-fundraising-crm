@@ -5882,6 +5882,19 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Clear wmf_donor_history for the contacts excluded from it.
+   *
+   * @return bool
+   */
+  public function upgrade_5255(): bool {
+    $excludedContactIDs = CalculatedData::getExcludedContactIDs();
+    if ($excludedContactIDs) {
+      CRM_Core_DAO::executeQuery('DELETE FROM wmf_donor_history WHERE entity_id IN (' . implode(',', $excludedContactIDs) . ')');
+    }
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
