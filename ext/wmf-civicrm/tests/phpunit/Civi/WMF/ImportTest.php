@@ -1316,53 +1316,10 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     $this->imitateAdminUser();
     // Add hook to set our donation to be current (so ContributionSoft hook fires).
     \Civi::dispatcher()->addListener('hook_civicrm_importAlterMappedRow', [__CLASS__, 'hook_importAlterMappedRow'], 300);
-    $softCreditEntityData = [
-      'soft_credit' => [
-        'contact_type' => 'Individual',
-        'soft_credit_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionSoft', 'soft_credit_type_id', 'donor-advised_fund'),
-        'action' => 'save',
-        'dedupe_rule' => 'IndividualNameAddress',
-      ],
-    ];
-    $importRows = $this->importCSV('fidelity.csv', [
-      // Each array reflects a column in the csv, with the empty ones being unmapped fields
-      [],
-      ['name' => 'Contribution.contribution_extra.gateway_txn_id'],
-      [],
-      ['name' => 'Contribution.receive_date'],
-      ['name' => 'Contribution.total_amount'],
-      [],
-      ['name' => 'Contact.organization_name'],
-      ['name' => 'SoftCreditContact.full_name', 'default_value' => '', 'entity_data' => $softCreditEntityData],
-      ['name' => 'Contact.address_primary.street_address', 'default_value' => 'fidelity'],
-      [],
-      ['name' => 'Contribution.financial_type_id', 'default_value' => 'Cash'],
-      ['name' => 'Contact.address_primary.city'],
-      ['name' => 'Contact.address_primary.state_province_id'],
-      ['name' => 'Contact.address_primary.postal_code'],
-      ['name' => 'Contact.address_primary.country_id'],
-      [],
-      [],
-      [],
-      [],
-      ['name' => 'Contribution.Gift_Data.Fund', 'default_value' => 'Major Gifts - CC104'],
-      ['name' => 'Contribution.contribution_extra.gateway', 'default_value' => 'fidelity'],
-    ], [
+    $template = (require __DIR__ . '/../../../../managed/UserJobFidelityEndowment.mgd.php')[0]['params']['values']['metadata'];
+    $importRows = $this->importCSV('fidelity.csv', $template['import_mappings'], [
       'dateFormats' => \CRM_Utils_Date::DATE_mm_dd_yy,
-    ], [
-      'Contribution' => ['action' => 'create'],
-      'Contact' => [
-        'action' => 'save',
-        'contact_type' => 'Organization',
-        'dedupe_rule' => 'OrganizationNameAddress',
-      ],
-      'SoftCreditContact' => [
-        'action' => 'save',
-        'contact_type' => 'Individual',
-        'soft_credit_type_id' => \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_ContributionSoft', 'soft_credit_type_id', 'donor-advised_fund'),
-        'dedupe_rule' => 'IndividualNameAddress',
-      ],
-    ]);
+    ], $template['entity_configuration']);
 
     $this->assertNotEmpty($importRows[1]['_entity_id'], print_r($importRows, TRUE));
 
@@ -1372,7 +1329,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       ->addSelect('Gift_Data.*')
       ->addWhere('id', '=', $importRows[1]['_entity_id'])
       ->execute()->single();
-    $this->assertEquals('Major Gifts - CC104', $contribution['Gift_Data.Fund']);
+    $this->assertEquals('Endowment Fund', $contribution['Gift_Data.Fund']);
     $this->assertTrue($contribution['Gift_Data.is_major_gift']);
     $this->assertEquals('Other Offline', $contribution['Gift_Data.Channel']);
     $this->assertEquals('75 Big Way', $contribution['contact_id.address_primary.street_address']);
@@ -1653,9 +1610,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
    * @return void
    */
   public static function hook_importAlterMappedRow(GenericHookEvent $event): void {
-    if (($event->mappedRow['Contribution']['contribution_extra.gateway'] ?? '') === 'fidelity'
-      || ($event->mappedRow['Contribution']['contribution_extra.backend_processor'] ?? '') === 'Benevity'
-    ) {
+    if (in_array($event->mappedRow['Contribution']['contribution_extra.backend_processor'] ?? '', ['Fidelity', 'Benevity'], TRUE)) {
       $event->mappedRow['Contribution']['receive_date'] = date('Y-m-d H:i:s', strtotime('-1 day'));
     }
   }

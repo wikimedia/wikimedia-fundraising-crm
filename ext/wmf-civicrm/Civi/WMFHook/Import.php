@@ -517,7 +517,7 @@ class Import {
    * @throws \CRM_Core_Exception
    */
   public function isFidelity(): bool {
-    return $this->getGateway() === 'fidelity' || strtolower($this->mappedRow['Contribution']['contribution_extra.backend_processor'] ?? '') === 'fidelity';
+    return strtolower($this->mappedRow['Contribution']['contribution_extra.backend_processor'] ?? '') === 'fidelity';
   }
 
   /**
