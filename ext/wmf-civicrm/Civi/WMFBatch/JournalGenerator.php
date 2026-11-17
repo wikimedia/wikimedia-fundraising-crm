@@ -549,18 +549,36 @@ END";
    * @throws \League\Csv\UnavailableStream
    */
   public function getWriter(array $headers, string $type, string $sourceInstance, string $destinationInstance): Writer {
-    if ($type === 'source') {
-      $fromTo = "_{$destinationInstance}_from_{$sourceInstance}";
-    }
-    else {
-      $fromTo = "_{$sourceInstance}_to_{$destinationInstance}";
-    }
+    // Named for the instance the journal is pushed to.
+    $fromTo = $type === 'source' ? "{$sourceInstance}_to_{$destinationInstance}" : "{$destinationInstance}_from_{$sourceInstance}";
     if (!isset($this->writers[$fromTo])) {
-      $fileName = $this->getSafeFileName($this->batch['name']) . $fromTo . '.csv';
-      $this->writers[$fromTo] = Writer::from(\Civi::settings()->get('wmf_audit_intact_files') . '/' . $fileName, 'w');
+      $this->writers[$fromTo] = Writer::from($this->getFilePath($fromTo), 'w');
       $this->writers[$fromTo]->insertOne($headers);
     }
     return $this->writers[$fromTo];
+  }
+
+  /**
+   * The pair of journal files for this batch's cross-instance transfer.
+   *
+   * Each is named for the instance it is pushed to - e.g. on a normal
+   * gateway foundation_to_endowment is the foundation side.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function getTransferJournalFiles(): array {
+    $isEndowmentGateway = $this->isEndowmentGateway();
+    $from = $isEndowmentGateway ? 'endowment' : 'foundation';
+    $to = $isEndowmentGateway ? 'foundation' : 'endowment';
+    $suffix = $isEndowmentGateway ? 'f' : 'e';
+    return [
+      "journal_{$from}_to_{$to}" => ['file' => $this->getFilePath("{$from}_to_{$to}"), 'is_journal' => TRUE, 'instance' => $from, 'suffix' => $suffix, 'remote_descriptor' => $isEndowmentGateway ? 'to_foundation' : 'to_endowment'],
+      "journal_{$to}_from_{$from}" => ['file' => $this->getFilePath("{$to}_from_{$from}"), 'is_journal' => TRUE, 'instance' => $to, 'suffix' => $suffix, 'remote_descriptor' => $isEndowmentGateway ? 'foundation' : 'endowment_instance'],
+    ];
+  }
+
+  private function getFilePath(string $type): string {
+    return \Civi::settings()->get('wmf_audit_intact_files') . '/' . $this->getSafeFileName($this->batch['name']) . '_' . $type . '.csv';
   }
 
   /**

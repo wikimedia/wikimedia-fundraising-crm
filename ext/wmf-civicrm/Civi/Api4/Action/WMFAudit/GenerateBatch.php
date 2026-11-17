@@ -275,12 +275,7 @@ class GenerateBatch extends AbstractAction {
     if (!(float) $transferAmount) {
       return $csvFiles;
     }
-    $config = $isEndowmentGateway ? $this->getFoundationTransferConfig() : $this->getEndowmentTransferConfig();
-    foreach (['from', 'to'] as $direction) {
-      $key = $config[$direction . 'Key'];
-      $csvFiles[$key] = ['file' => $this->getFilePath($batch['name'], substr($key, strlen('journal_'))), 'is_journal' => TRUE, 'instance' => $config[$direction . 'Instance'], 'suffix' => $config['suffix'], 'remote_descriptor' => $config[$direction . 'Descriptor']];
-    }
-    return $csvFiles;
+    return $csvFiles + $this->getJournalGenerator($batch)->getTransferJournalFiles();
   }
 
   private function getPrimaryJournalFile(string $batchName): array {
@@ -500,7 +495,8 @@ class GenerateBatch extends AbstractAction {
           if (!$isEndowmentGateway && $row['is_endowment'] && !str_ends_with(trim($row['MEMO']), 'Fees') && ($row['ACCT_NO'] != $this->getReversalAccountCode($row['CURRENCY'], $batchName))) {
             $endowmentWriterFrom = $this->getJournalGenerator($batch)->getWriter($headers, 'source', 'foundation', 'endowment');
             $endowmentWriterTo = $this->getJournalGenerator($batch)->getWriter($headers, 'destination', 'foundation', 'endowment');
-            $csvFiles += $this->writeCrossInstanceTransfer($row, $batchName, $endowmentWriterFrom, $endowmentWriterTo, $this->getEndowmentTransferConfig());
+            $csvFiles += $this->getJournalGenerator($batch)->getTransferJournalFiles();
+            $this->writeCrossInstanceTransfer($row, $batchName, $endowmentWriterFrom, $endowmentWriterTo, $this->getEndowmentTransferConfig());
           }
           elseif ($isEndowmentGateway && !$row['is_endowment'] && !str_ends_with(trim($row['MEMO']), 'Fees') && ($row['ACCT_NO'] != $this->getReversalAccountCode($row['CURRENCY'], $batchName))) {
             // Reverse of the block above: an endowment-gateway batch whose
@@ -508,7 +504,8 @@ class GenerateBatch extends AbstractAction {
             // carved out and journaled over to the wmf/foundation instance.
             $foundationWriterFrom = $this->getJournalGenerator($batch)->getWriter($headers, 'source', 'endowment', 'foundation');
             $foundationWriterTo = $this->getJournalGenerator($batch)->getWriter($headers, 'destination', 'endowment', 'foundation');
-            $csvFiles += $this->writeCrossInstanceTransfer($row, $batchName, $foundationWriterFrom, $foundationWriterTo, $this->getFoundationTransferConfig());
+            $csvFiles += $this->getJournalGenerator($batch)->getTransferJournalFiles();
+            $this->writeCrossInstanceTransfer($row, $batchName, $foundationWriterFrom, $foundationWriterTo, $this->getFoundationTransferConfig());
           }
         }
       }
@@ -530,17 +527,10 @@ class GenerateBatch extends AbstractAction {
    * @param \League\Csv\Writer $writerTo
    * @param array $config
    *
-   * @return array
-   *
    * @throws \League\Csv\CannotInsertRecord
    * @throws \League\Csv\Exception
    */
-  private function writeCrossInstanceTransfer(array $row, string $batchName, Writer $writerFrom, Writer $writerTo, array $config): array {
-    $csvFiles = [
-      $config['fromKey'] => ['file' => $writerFrom->getPathname(), 'is_journal' => TRUE, 'instance' => $config['fromInstance'], 'suffix' => $config['suffix'], 'remote_descriptor' => $config['fromDescriptor']],
-      $config['toKey'] => ['file' => $writerTo->getPathname(), 'is_journal' => TRUE, 'instance' => $config['toInstance'], 'suffix' => $config['suffix'], 'remote_descriptor' => $config['toDescriptor']],
-    ];
-
+  private function writeCrossInstanceTransfer(array $row, string $batchName, Writer $writerFrom, Writer $writerTo, array $config): void {
     $fromRow = $fromBalancingRow = $row;
     $toValues = [
       'LOCATION_ID' => $config['toLocationId'],
@@ -563,7 +553,6 @@ class GenerateBatch extends AbstractAction {
     $writerFrom->insertOne($fromBalancingRow);
     $writerTo->insertOne($toRow);
     $writerTo->insertOne($toBalancingRow);
-    return $csvFiles;
   }
 
   /**
@@ -572,13 +561,6 @@ class GenerateBatch extends AbstractAction {
    */
   private function getEndowmentTransferConfig(): array {
     return [
-      'fromInstance' => 'foundation',
-      'toInstance' => 'endowment',
-      'fromKey' => 'journal_endowment_from_foundation',
-      'toKey' => 'journal_foundation_to_endowment',
-      'fromDescriptor' => 'to_endowment',
-      'toDescriptor' => 'endowment_instance',
-      'suffix' => 'e',
       'toLocationId' => FinanceConstants::LOCATION_ID_ENDOWMENT,
       'vendorMapperMethod' => 'mapVendorToEndowmentVendor',
       'remapMajorGiftsToRestricted' => TRUE,
@@ -595,13 +577,6 @@ class GenerateBatch extends AbstractAction {
    */
   private function getFoundationTransferConfig(): array {
     return [
-      'fromInstance' => 'endowment',
-      'toInstance' => 'foundation',
-      'fromKey' => 'journal_foundation_from_endowment',
-      'toKey' => 'journal_endowment_to_foundation',
-      'fromDescriptor' => 'to_foundation',
-      'toDescriptor' => 'foundation',
-      'suffix' => 'f',
       'toLocationId' => FinanceConstants::LOCATION_ID_WMF,
       'vendorMapperMethod' => 'mapVendorToFoundationVendor',
       // @todo unlike the endowment-bound transfer, this doesn't remap

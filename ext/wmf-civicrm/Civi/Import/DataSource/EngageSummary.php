@@ -45,6 +45,20 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
    */
   private const BATCH_TYPES_NEEDING_ID_PREFIX = ['WF', 'ED'];
 
+  /**
+   * Label line opening a card block, e.g. "CREDIT CARDS - WF".
+   */
+  private const CARD_BLOCK_LABEL_PREFIX = 'CREDIT CARDS - ';
+
+  /**
+   * Batch Type values for card rows - these have Docs but no Checks.
+   */
+  private const CARD_BATCH_TYPES = ['credit cards', 'ns credit cards'];
+
+  private const BATCH_TYPE_HEADER = 'Batch Type';
+
+  private const DOCS_HEADER = 'Docs';
+
   private const CHECKS_HEADER = 'Checks';
 
   private const BATCH_DATE_HEADER = 'Batch Date';
@@ -157,6 +171,7 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
       throw new \CRM_Core_Exception(ts('Could not find the "%1" header row in the uploaded report.', [1 => self::HEADER_MARKER_VALUE]));
     }
     $dataRows = $this->skipRowsWithoutBatchId($columnHeaders, $dataRows);
+    $dataRows = $this->useDocsAsChecksForCardRows($columnHeaders, $dataRows);
     $dataRows = $this->skipRowsWithoutChecks($columnHeaders, $dataRows);
     $dataRows = $this->convertBatchDateColumn($columnHeaders, $dataRows);
     [$columnHeaders, $dataRows] = $this->convertGroupValueToSettlementGatewayAccountId($columnHeaders, $dataRows, $isEndowment);
@@ -265,14 +280,43 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
 
   /**
    * If $row is a bare single-value line matching one of
-   * BATCH_TYPES_NEEDING_ID_PREFIX, return that value - else NULL.
+   * BATCH_TYPES_NEEDING_ID_PREFIX, or a card block label for one
+   * (e.g. "CREDIT CARDS - WF"), return that prefix - else NULL.
    */
   private function matchBatchTypeNeedingPrefix(array $row): ?string {
     $nonBlankValues = array_values(array_filter($row, fn(string $value): bool => $value !== ''));
-    if (count($nonBlankValues) === 1 && in_array($nonBlankValues[0], self::BATCH_TYPES_NEEDING_ID_PREFIX, TRUE)) {
-      return $nonBlankValues[0];
+    if (count($nonBlankValues) !== 1) {
+      return NULL;
     }
-    return NULL;
+    $label = $nonBlankValues[0];
+    if (stripos($label, self::CARD_BLOCK_LABEL_PREFIX) === 0) {
+      $label = trim(substr($label, strlen(self::CARD_BLOCK_LABEL_PREFIX)));
+    }
+    return in_array($label, self::BATCH_TYPES_NEEDING_ID_PREFIX, TRUE) ? $label : NULL;
+  }
+
+  /**
+   * Card rows have Docs but no Checks - copy Docs into Checks (which feeds
+   * item_count) so they are imported like the other rows.
+   *
+   * @param string[] $headers
+   * @param array[] $rows
+   *
+   * @return array[]
+   */
+  private function useDocsAsChecksForCardRows(array $headers, array $rows): array {
+    $typeIndex = array_search(self::BATCH_TYPE_HEADER, $headers, TRUE);
+    $docsIndex = array_search(self::DOCS_HEADER, $headers, TRUE);
+    $checksIndex = array_search(self::CHECKS_HEADER, $headers, TRUE);
+    if ($typeIndex === FALSE || $docsIndex === FALSE || $checksIndex === FALSE) {
+      return $rows;
+    }
+    foreach ($rows as &$row) {
+      if (in_array(strtolower($row[$typeIndex] ?? ''), self::CARD_BATCH_TYPES, TRUE)) {
+        $row[$checksIndex] = $row[$docsIndex] ?? '';
+      }
+    }
+    return $rows;
   }
 
   /**
@@ -359,8 +403,8 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
   }
 
   /**
-   * Skip rows with no Checks (e.g. Credit Card lines, which carry a Docs
-   * count but no actual checks) - there's nothing to deposit/batch.
+   * Skip rows with no Checks - there's nothing to deposit/batch. Card rows
+   * have already had Docs copied in by useDocsAsChecksForCardRows().
    *
    * @param string[] $headers
    * @param array[] $rows
