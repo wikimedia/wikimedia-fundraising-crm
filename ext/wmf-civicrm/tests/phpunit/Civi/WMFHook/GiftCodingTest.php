@@ -845,6 +845,108 @@ class GiftCodingTest extends TestCase {
   }
 
   // ---------------------------------------------------------------------
+  // FWM / EWM appeal checks
+  // ---------------------------------------------------------------------
+
+  public function matchingDirectMailAppealProvider(): array {
+    return [
+      'FWM base' => ['ABC25FWM', 'ABC25'],
+      'FWM MGF' => ['ABC25FWM', 'ABC25MGF'],
+      'EWM E' => ['ABC25EWM', 'ABC25E'],
+      'EWM MGE' => ['ABC25EWM', 'ABC25MGE'],
+    ];
+  }
+
+  /**
+   * An FWM/EWM appeal is replaced by a matching Direct Mail activity's appeal and package.
+   *
+   * @dataProvider matchingDirectMailAppealProvider
+   */
+  public function testMatchingDirectMailActivityReplacesAppeal(string $appeal, string $directMailAppeal): void {
+    $activityID = $this->createActivity('Direct Mail', [
+      'activity_date_time' => '-200 days',
+      'direct_mail_data.direct_mail_appeal' => $directMailAppeal,
+      'direct_mail_data.direct_mail_package' => 'OCT1B3ES',
+    ]);
+
+    $contribution = $this->createDirectMailContribution(['Gift_Data.Appeal' => $appeal]);
+
+    $updated = $this->getContribution($contribution['id']);
+    $this->assertEquals($directMailAppeal, $updated['Gift_Data.Appeal']);
+    $this->assertEquals('OCT1B3ES', $updated['Gift_Data.Package']);
+    $this->assertEquals('Appeal_specific_WM', $updated['Appeal_Change_Reason.Change_Reason:name']);
+    $this->assertEquals('civicrm_activity', $updated['Appeal_Change_Reason.Entity_Table']);
+    $this->assertEquals($activityID, $updated['Appeal_Change_Reason.Entity_ID']);
+  }
+
+  /**
+   * A Direct Mail activity with an appeal that doesn't match the FWM/EWM rule is ignored.
+   */
+  public function testNonMatchingDirectMailActivityLeavesAppeal(): void {
+    $this->createActivity('Direct Mail', ['activity_date_time' => '-10 days', 'direct_mail_data.direct_mail_appeal' => 'ABC25']);
+
+    $contribution = $this->createDirectMailContribution(['Gift_Data.Appeal' => 'ABC25EWM']);
+
+    $this->assertEquals('ABC25EWM', $this->getContribution($contribution['id'])['Gift_Data.Appeal']);
+  }
+
+  /**
+   * The FWM/EWM rule only applies to the Direct Mail channels.
+   */
+  public function testMatchingDirectMailActivityIgnoredForOtherOffline(): void {
+    $this->createActivity('Direct Mail', ['activity_date_time' => '-10 days', 'direct_mail_data.direct_mail_appeal' => 'ABC25']);
+
+    $contribution = $this->createDirectMailContribution(['Gift_Data.Channel' => 'Other Offline', 'Gift_Data.Appeal' => 'ABC25FWM']);
+
+    $this->assertEquals('ABC25FWM', $this->getContribution($contribution['id'])['Gift_Data.Appeal']);
+  }
+
+  /**
+   * An Appeal-specific WM appeal isn't replaced by a DAF soft credit contact's newer activity.
+   */
+  public function testAppealSpecificWMNotOverriddenByDAFSoftCreditRelatedContact(): void {
+    $donorID = $this->createOrganization();
+    $softCreditContactID = $this->createIndividual();
+    $activityID = $this->createActivity('Direct Mail', [
+      'target_contact_id' => [$donorID],
+      'activity_date_time' => '-200 days',
+      'direct_mail_data.direct_mail_appeal' => 'ABC25',
+    ]);
+    $this->createActivity('Direct Mail', [
+      'target_contact_id' => [$softCreditContactID],
+      'activity_date_time' => '-1 day',
+      'direct_mail_data.direct_mail_appeal' => 'facebook',
+    ]);
+
+    $contribution = $this->createDirectMailContribution(['contact_id' => $donorID, 'Gift_Data.Appeal' => 'ABC25FWM']);
+    $this->createSoftCredit($contribution, $softCreditContactID);
+
+    $updated = $this->getContribution($contribution['id']);
+    $this->assertEquals('ABC25', $updated['Gift_Data.Appeal']);
+    $this->assertEquals($activityID, $updated['Appeal_Change_Reason.Entity_ID']);
+  }
+
+  /**
+   * An FWM appeal is replaced from a matching activity of a contact related via the DAF soft credit.
+   */
+  public function testDAFSoftCreditRelatedContactMatchingDirectMailActivityReplacesAppeal(): void {
+    $softCreditContactID = $this->createIndividual();
+    $activityID = $this->createActivity('Direct Mail', [
+      'target_contact_id' => [$softCreditContactID],
+      'activity_date_time' => '-1 day',
+      'direct_mail_data.direct_mail_appeal' => 'ABC25MGF',
+    ]);
+
+    $contribution = $this->createDirectMailContribution(['contact_id' => $this->createOrganization(), 'Gift_Data.Appeal' => 'ABC25FWM']);
+    $this->createSoftCredit($contribution, $softCreditContactID);
+
+    $updated = $this->getContribution($contribution['id']);
+    $this->assertEquals('ABC25MGF', $updated['Gift_Data.Appeal']);
+    $this->assertEquals('Appeal_specific_WM', $updated['Appeal_Change_Reason.Change_Reason:name']);
+    $this->assertEquals($activityID, $updated['Appeal_Change_Reason.Entity_ID']);
+  }
+
+  // ---------------------------------------------------------------------
   // DAF mailing checks
   // ---------------------------------------------------------------------
 

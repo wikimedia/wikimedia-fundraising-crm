@@ -119,6 +119,26 @@ return [
     ],
   ],
   [
+    'name' => 'OptionGroup_Appeal_Change_Reason_OptionValue_Appeal_specific_WM',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'Appeal_Change_Reason',
+        'label' => E::ts('Appeal-specific WM'),
+        'value' => 'Appeal-specific WM',
+        'name' => 'Appeal_specific_WM',
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+        'value',
+      ],
+    ],
+  ],
+  [
     'name' => 'CustomGroup_Appeal_Change_Reason_CustomField_Change_Reason',
     'entity' => 'CustomField',
     'cleanup' => 'unused',

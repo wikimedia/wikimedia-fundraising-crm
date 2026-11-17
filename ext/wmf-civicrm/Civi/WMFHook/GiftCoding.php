@@ -25,11 +25,18 @@ class GiftCoding {
   private const RELATIONSHIP_MANAGER_EXCLUDED_GIFT_TYPES = ['Matching Gift', 'Payroll Deduction'];
 
   /**
+   * Appeal change reasons that a DAF soft credit can re-check.
+   */
+  private const SOFT_CREDIT_RECHECKED_CHANGE_REASONS = ['MG Engagement', 'Direct Mail', 'DAF Email', 'Relationship Manager'];
+
+  /**
    * Implements hook_civicrm_pre::Contribution.
    *
-   * If the donation has a replaceable appeal, set the appeal from the most
-   * recent MG Engagement or Direct Mail Activity or DAF mailing for the donor
-   * or a related contact or, failing that, the donor's relationship manager.
+   * If the donation has an FWM or EWM appeal, set the appeal from a matching
+   * Direct Mail activity. If the donation has a replaceable appeal, set the
+   * appeal from the most recent MG Engagement or Direct Mail Activity or DAF
+   * mailing for the donor or a related contact or, failing that, the donor's
+   * relationship manager.
    *
    * @throws \CRM_Core_Exception
    */
@@ -41,8 +48,73 @@ class GiftCoding {
     ) {
       return;
     }
+    self::setAppealFromMatchingDirectMail($event);
     self::setAppealFromActivitiesAndMailings($event);
     self::setAppealFromRelationshipManager($event);
+  }
+
+  /**
+   * @throws \CRM_Core_Exception
+   */
+  private static function setAppealFromMatchingDirectMail(PreEvent $event): void {
+    $event->mergeValues(self::getMatchingDirectMailAppealValues(
+      (int) $event->getValue('contact_id'),
+      $event->getValue('Gift_Data.Channel'),
+      $event->getValue('Gift_Data.Appeal'),
+      $event->getValue('receive_date')
+    ));
+  }
+
+  /**
+   * For a Direct Mail donation with a 'WM' ending appeal, get the correct
+   * appeal from the donor or a related contact if possible.
+   *
+   * There are two types of white mail. "White Mail' appeals means the donation
+   * came in the donor's envelope, out of the blue. We handle those in
+   * setAppealFromActivitiesAndMailings.
+   * The other type is an appeal that ends in 'WM', which means we received the
+   * donation in our reply envelope, which tells us which appeal it was, but
+   * not if it was MG or not, nor which variant of the mailing it was
+   * (package). Here, if we get one of those 'WM' appeals, we try to replace
+   * the appeal and add the package from the associated direct mail activity.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private static function getMatchingDirectMailAppealValues(int $contactID, ?string $channel, ?string $appeal, string $receiveDate): array {
+    if (!in_array($channel, ['Direct Mail', 'Direct Mail Upload'], TRUE)) {
+      return [];
+    }
+    $appeal = (string) $appeal;
+    $appealEnd = substr($appeal, -3);
+    if (!in_array($appealEnd, ['FWM', 'EWM'], TRUE)) {
+      return [];
+    }
+    $baseAppeal = substr($appeal, 0, -3);
+    if ($appealEnd === 'FWM') {
+      $appealsToCheck = [$baseAppeal, $baseAppeal . 'MGF'];
+    }
+    else {
+      $appealsToCheck = [$baseAppeal . 'E', $baseAppeal . 'MGE'];
+    }
+    $activities = self::getMatchingDirectMailActivities(self::getContactAndRelatedContactIDs($contactID), $appealsToCheck, $receiveDate);
+    $matchedActivity = $activities[0] ?? NULL;
+    if (!$matchedActivity) {
+      return [];
+    }
+    foreach ($activities as $activity) {
+      // Prioritize the contact's activities over related contacts'
+      if (in_array($contactID, $activity['target_contact_id'], TRUE)) {
+        $matchedActivity = $activity;
+        break;
+      }
+    }
+    return [
+      'Gift_Data.Appeal' => $matchedActivity['direct_mail_data.direct_mail_appeal'],
+      'Gift_Data.Package' => $matchedActivity['direct_mail_data.direct_mail_package'],
+      'Appeal_Change_Reason.Change_Reason' => 'Appeal-specific WM',
+      'Appeal_Change_Reason.Entity_Table' => 'civicrm_activity',
+      'Appeal_Change_Reason.Entity_ID' => $matchedActivity['id'],
+    ];
   }
 
   /**
@@ -169,10 +241,18 @@ class GiftCoding {
       $activities = self::getRecentMGActivities($contactIDs, $contribution['receive_date'], $completedMGEngagementID ?? NULL);
       self::completeMGEngagementActivities($activities, $contributionID);
     }
-    // We only update if appeal is replaceable or we set the appeal in ContributionPre
+    $matchingDirectMailValues = self::getMatchingDirectMailAppealValues($contribution['contact_id'], $contribution['Gift_Data.Channel'], $contribution['Gift_Data.Appeal'], $contribution['receive_date']);
+    if ($matchingDirectMailValues) {
+      Contribution::update(FALSE)
+        ->addWhere('id', '=', $contributionID)
+        ->setValues($matchingDirectMailValues)
+        ->execute();
+      return;
+    }
+    // We only update if appeal is replaceable or its change reason can be re-checked
     if (
       !self::isAppealReplaceable($contribution['Gift_Data.Appeal'])
-      && empty($contribution['Appeal_Change_Reason.Change_Reason'])
+      && !in_array($contribution['Appeal_Change_Reason.Change_Reason'], self::SOFT_CREDIT_RECHECKED_CHANGE_REASONS, TRUE)
     ) {
       return;
     }
@@ -359,6 +439,30 @@ class GiftCoding {
         'direct_mail_data.direct_mail_appeal',
         'Major_Gifts_Engagement.Appeal',
         'Major_Gifts_Engagement.Contribution',
+      )
+      ->addOrderBy('activity_date_time', 'DESC')
+      ->execute()->getArrayCopy();
+  }
+
+  /**
+   * Get completed Direct Mail activities for contacts with one of the appeals,
+   * from 3 years before the donation (but not before the start of FY2526) up
+   * to the donation.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  protected static function getMatchingDirectMailActivities(array $contactIDs, array $appeals, string $receiveDate): array {
+    $timestamp = strtotime($receiveDate);
+    return Activity::get(FALSE)
+      ->addWhere('target_contact_id', 'CONTAINS ONE OF', $contactIDs)
+      ->addWhere('activity_type_id:name', 'IN', ['Direct Mail', 'Direct Mail Upload'])
+      ->addWhere('status_id:name', '=', 'Completed')
+      ->addWhere('direct_mail_data.direct_mail_appeal', 'IN', $appeals)
+      ->addWhere('activity_date_time', 'BETWEEN', [max('2025-07-01', date('Y-m-d', strtotime('-3 years', $timestamp))), $receiveDate])
+      ->addSelect(
+        'target_contact_id',
+        'direct_mail_data.direct_mail_appeal',
+        'direct_mail_data.direct_mail_package',
       )
       ->addOrderBy('activity_date_time', 'DESC')
       ->execute()->getArrayCopy();
