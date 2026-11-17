@@ -473,6 +473,30 @@ return [
     ],
   ],
   [
+    'name' => 'GatewayAccount_citibankpublic2',
+    'entity' => 'GatewayAccount',
+    'cleanup' => 'never',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        // public2 appended as that is how finance sees it.
+        'name' => 'citibank-public2',
+        'gateway' => 'citibank',
+        'label' => 'Citibank Public #2',
+        'is_endowment' => FALSE,
+        // No vendor code for direct wire transfers.
+        'vendor_code_foundation' => NULL,
+        'vendor_code_endowment' => NULL,
+        // Placeholder, expect update.
+        'balancing_account_foundation' => '11252',
+      ],
+      'match' => [
+        'name',
+      ],
+    ],
+  ],
+  [
     'name' => 'GatewayAccount_ach',
     'entity' => 'GatewayAccount',
     'cleanup' => 'never',
