@@ -5895,10 +5895,10 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
-   * Create BatchAccount table from entityType.
+   * Create BatchFinancialBreakdown table from entityType.
    */
   public function upgrade_5260(): bool {
-    E::schema()->createEntityTable('schema/BatchAccount.entityType.php');
+    E::schema()->createEntityTable('schema/BatchFinancialBreakdown.entityType.php');
     return TRUE;
   }
 

@@ -9,12 +9,12 @@
  * This stub provides compatibility. It is not intended to be modified in a
  * substantive way. Property annotations may be added, but are not required.
  */
-class CRM_Wmf_DAO_BatchAccount extends CRM_Wmf_DAO_Base {
+class CRM_Wmf_DAO_BatchFinancialBreakdown extends CRM_Wmf_DAO_Base {
 
   /**
    * Required by older versions of CiviCRM (<5.74).
    * @var string
    */
-  public static $_tableName = 'civicrm_batch_account';
+  public static $_tableName = 'civicrm_batch_financial_breakdown';
 
 }

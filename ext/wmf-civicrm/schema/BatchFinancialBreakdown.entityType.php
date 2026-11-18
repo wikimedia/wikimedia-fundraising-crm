@@ -3,12 +3,12 @@
 use CRM_Wmf_ExtensionUtil as E;
 
 return [
-  'name' => 'BatchAccount',
-  'table' => 'civicrm_batch_account',
-  'class' => 'CRM_Wmf_DAO_BatchAccount',
+  'name' => 'BatchFinancialBreakdown',
+  'table' => 'civicrm_batch_financial_breakdown',
+  'class' => 'CRM_Wmf_DAO_BatchFinancialBreakdown',
   'getInfo' => fn() => [
-    'title' => E::ts('Batch Account'),
-    'title_plural' => E::ts('Batch Accounts'),
+    'title' => E::ts('Batch Financial Breakdown'),
+    'title_plural' => E::ts('Batch Financial Breakdowns'),
     'description' => E::ts('Donation total journaled for each GL code & fund in an exported batch.'),
   ],
   'getFields' => fn() => [
@@ -18,7 +18,7 @@ return [
       'primary_key' => TRUE,
       'auto_increment' => TRUE,
       'input_type' => 'Number',
-      'title' => E::ts('Batch Account ID'),
+      'title' => E::ts('Batch Financial Breakdown ID'),
     ],
     'batch_id' => [
       'sql_type' => 'int unsigned',
