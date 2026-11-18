@@ -10,6 +10,9 @@ use SmashPig\PaymentProviders\PaymentProviderFactory;
 function _civicrm_api3_contribution_forgetme_spec(array &$spec): void {
   $spec['contact_id']['api.required'] = 1;
   $spec['contact_id']['type'] = CRM_Utils_Type::T_INT;
+  $spec['receive_date']['title'] = 'Receive Date';
+  $spec['receive_date']['description'] = 'Filter contributions by receive date, e.g. {"<=": "2024-01-01"}';
+  $spec['receive_date']['type'] = CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME;
 }
 
 /**
@@ -40,6 +43,9 @@ function civicrm_api3_contribution_forgetme(array $params): array {
     ],
     'options' => ['limit' => 0],
   ];
+  if (!empty($params['receive_date'])) {
+    $getParams['receive_date'] = $params['receive_date'];
+  }
 
   $contributions = civicrm_api3('Contribution', 'get', $getParams)['values'];
 

@@ -70,4 +70,40 @@ class api_v3_Contribution_ForgetmeTest extends TestCase {
     $this->assertArrayNotHasKey('Contribution' . $this->ids['Contribution']['not_found'], $result['values']);
   }
 
+  /**
+   * Only contributions matching the receive_date filter are sent for deletion.
+   */
+  public function testForgetmeReceiveDateFilter(): void {
+    $ctx = TestingContext::get();
+    $providerConfig = TestingProviderConfiguration::createForProvider('adyen', $ctx->getGlobalConfiguration());
+    $adyenProvider = $this->getMockBuilder(CardPaymentProvider::class)->disableOriginalConstructor()->getMock();
+    $providerConfig->overrideObjectInstance('payment-provider/cc', $adyenProvider);
+    $ctx->providerConfigurationOverride = $providerConfig;
+
+    $adyenProvider->expects($this->once())
+      ->method('deleteDataForPayment')
+      ->with('BEFORE')
+      ->willReturn((new DeleteDataResponse())->setSuccessful(TRUE));
+
+    $contactID = $this->createIndividual();
+    $this->createContribution([
+      'contact_id' => $contactID,
+      'receive_date' => '2024-01-01',
+      'contribution_extra.gateway' => 'adyen',
+      'contribution_extra.gateway_txn_id' => 'BEFORE',
+    ], 'before');
+    $this->createContribution([
+      'contact_id' => $contactID,
+      'receive_date' => '2024-03-01',
+      'contribution_extra.gateway' => 'adyen',
+      'contribution_extra.gateway_txn_id' => 'AFTER',
+    ], 'after');
+
+    $result = civicrm_api3('Contribution', 'forgetme', [
+      'contact_id' => $contactID,
+      'receive_date' => ['<=' => '2024-02-01'],
+    ]);
+    $this->assertEquals(1, $result['count']);
+  }
+
 }
