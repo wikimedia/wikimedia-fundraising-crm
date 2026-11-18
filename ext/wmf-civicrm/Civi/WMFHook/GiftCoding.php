@@ -78,6 +78,9 @@ class GiftCoding {
    * (package). Here, if we get one of those 'WM' appeals, we try to replace
    * the appeal and add the package from the associated direct mail activity.
    *
+   * See https://docs.google.com/spreadsheets/d/151lpAqFm9mGaEpxhoy9IhjxmJbdClx3JSr4DRvGfNCU/edit?gid=746697981#gid=746697981
+   * and https://docs.google.com/document/d/1umQnZeAFzNkaGR8sGydWk3aPrFuwRfpNJCC_o22kbvY/edit?tab=t.0#heading=h.vy2ah1z8btax
+   *
    * @throws \CRM_Core_Exception
    */
   private static function getMatchingDirectMailAppealValues(int $contactID, ?string $channel, ?string $appeal, string $receiveDate): array {
