@@ -13,6 +13,7 @@ use Civi\Api4\WMFContact;
 use Civi\Api4\Email;
 use Civi\Api4\Contact;
 use Civi\Api4\Activity;
+use Civi\Api4\ActivityContact;
 use Civi\Api4\WMFDonor;
 use Civi\Api4\Address;
 use Civi\Api4\Country;
@@ -5878,6 +5879,66 @@ v.channel IS NULL AND c.id = 131486342;",
         $lastContactID = end($contactIDs);
       }
     } while ($contactIDs);
+    return TRUE;
+  }
+
+  /**
+   * Clear wmf_donor_history for the contacts excluded from it.
+   *
+   * @return bool
+   */
+  public function upgrade_5255(): bool {
+    $excludedContactIDs = CalculatedData::getExcludedContactIDs();
+    if ($excludedContactIDs) {
+      CRM_Core_DAO::executeQuery('DELETE FROM wmf_donor_history WHERE entity_id IN (' . implode(',', $excludedContactIDs) . ')');
+    }
+    return TRUE;
+  }
+
+  /**
+   * Create BatchFinancialBreakdown table from entityType.
+   */
+  public function upgrade_5260(): bool {
+    E::schema()->createEntityTable('schema/BatchFinancialBreakdown.entityType.php');
+    return TRUE;
+  }
+
+  /**
+   * Queue re-sending Adyen data deletion requests for contacts forgotten since 2022-10-20.
+   *
+   * Only contributions received up to each contact's latest forget date are sent.
+   *
+   * @return bool
+   */
+  public function upgrade_5265(): bool {
+    $queue = new QueueHelper(\Civi::queue('wmf_forgetme_adyen_backfill', [
+      'type' => 'Sql',
+      'runner' => 'task',
+      'retry_limit' => 3,
+      'retry_interval' => 300,
+      'error' => 'abort',
+    ]));
+    $forgotten = ActivityContact::get(FALSE)
+      ->addSelect('contact_id', 'MAX(activity_id.activity_date_time) AS forget_date')
+      ->addJoin('Contribution AS contribution', 'INNER',
+        ['contribution.contact_id', '=', 'contact_id'],
+        ['contribution.receive_date', '<=', 'activity_id.activity_date_time']
+      )
+      ->addWhere('record_type_id:name', '=', 'Activity Targets')
+      ->addWhere('activity_id.activity_type_id:name', '=', 'forget_me')
+      ->addWhere('activity_id.activity_date_time', '>=', '2022-10-20')
+      ->addClause('OR',
+        ['contribution.contribution_extra.gateway', '=', 'adyen'],
+        ['contribution.contribution_extra.backend_processor', '=', 'adyen']
+      )
+      ->addGroupBy('contact_id')
+      ->execute();
+    foreach ($forgotten as $row) {
+      $queue->api3('Contribution', 'forgetme', [
+        'contact_id' => $row['contact_id'],
+        'receive_date' => ['<=' => $row['forget_date']],
+      ], 'Re-send Adyen data deletion for contact ' . $row['contact_id']);
+    }
     return TRUE;
   }
 

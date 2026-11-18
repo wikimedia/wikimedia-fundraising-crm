@@ -80,13 +80,18 @@ class QueueHelper {
   }
 
   /**
+   * Add an apiv3 call to the queue.
    *
-   *
-   * public function api3(string $entity, string $action, array $params = []) {
-   * $this->queue->createItem(new \CRM_Queue_Task([self::class, 'doApi3'], [$entity, $action, $params]));
-   * return $this;
-   * }
+   * @param string $entity
+   * @param string $action
+   * @param array $params
+   * @param string|null $title
+   * @return $this
    */
+  public function api3(string $entity, string $action, array $params = [], ?string $title = NULL): QueueHelper {
+    $this->queue->createItem(new \CRM_Queue_Task([self::class, 'doApi3'], [$entity, $action, $params], $title));
+    return $this;
+  }
 
   /**
    * Do SQL in a queue context.
@@ -262,24 +267,22 @@ class QueueHelper {
    * Do apiv3 call in a queue context.
    *
    * @internal only use from this class.
-   *
-   *
-   * public static function doApi3(\CRM_Queue_TaskContext $taskContext, string $entity, string $action, array $params): bool {
-   * try {
-   * civicrm_api3($entity, $action, $params);
-   * }
-   * catch (\CRM_Core_Exception $e) {
-   * \Civi::log('queue')->error('queued action failed {entity} {action} {params} {message} {exception}', [
-   * 'entity' => $entity,
-   * 'action' => $action,
-   * 'params' => $params,
-   * 'message' => $e->getMessage(),
-   * 'exception' => $e,
-   * ]);
-   * return FALSE;
-   * }
-   * return TRUE;
-   * }
    */
+  public static function doApi3(\CRM_Queue_TaskContext $taskContext, string $entity, string $action, array $params): bool {
+    try {
+      civicrm_api3($entity, $action, $params);
+    }
+    catch (\CRM_Core_Exception $e) {
+      \Civi::log('queue')->error('queued action failed {entity} {action} {params} {message} {exception}', [
+        'entity' => $entity,
+        'action' => $action,
+        'params' => $params,
+        'message' => $e->getMessage(),
+        'exception' => $e,
+      ]);
+      return FALSE;
+    }
+    return TRUE;
+  }
 
 }
