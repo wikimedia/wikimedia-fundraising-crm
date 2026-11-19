@@ -453,17 +453,10 @@ class Message {
         'data_type' => 'String',
         'used_for' => '*tbd',
       ],
-      'stock_ticker' => [
-        'name' => 'stock_ticker',
-        'data_type' => 'String',
-        'api_field' => 'Stock_Information.Stock Ticker',
-        'api_entity' => 'Contribution',
-        'used_for' => 'Overflow',
-      ],
-      'stock_quantity' => [
-        'name' => 'stock_quantity',
-        'data_type' => 'Float',
-        'api_field' => 'Stock_Information.Stock Quantity',
+      'stock_holdings' => [
+        'name' => 'stock_holdings',
+        'data_type' => 'Array',
+        'description' => 'List of [ticker, quantity] - StockGift.save maps these to Stock_Information.Stock Ticker & Stock Quantity',
         'api_entity' => 'Contribution',
         'used_for' => 'Overflow',
       ],

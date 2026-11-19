@@ -56,8 +56,8 @@ class Save extends \Civi\Api4\Action\Contribution\Save {
       'address_primary.postal_code' => $record['postal_code'] ?? '',
       'address_primary.street_address' => $record['street_address'] ?? '',
       'address_primary.city' => $record['city'] ?? '',
-      'address_primary.state_province:abbr' => $record['state_province'] ?? '',
-      'address_primary.country:abbr' => $record['country'] ?? '',
+      'address_primary.country_id:abbr' => $record['country'] ?? '',
+      'address_primary.state_province_id:abbr' => $record['state_province'] ?? '',
     ]);
   }
 
