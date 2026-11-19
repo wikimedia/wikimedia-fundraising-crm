@@ -28,11 +28,13 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
       // Multi-stock gifts have no single quantity & Overflow only gives the
       // combined value, so staff split these by hand from the email.
       $holdings = $record['stock_holdings'] ?? [];
-      $tickers = [];
+      $tickers = $descriptions = [];
       foreach ($holdings as $holding) {
         $tickers[] = $holding['ticker'];
+        $descriptions[] = $holding['ticker'] . ': ' . $holding['quantity'] . ' shares';
       }
       $quantity = count($holdings) === 1 ? $holdings[0]['quantity'] : NULL;
+      $holdingsDescription = count($holdings) > 1 ? 'Split required - ' . implode(', ', $descriptions) : NULL;
 
       $individualID = $this->getOrCreateIndividual($record, NULL, NULL);
       $contribution = $this->saveContribution($record, [
@@ -44,8 +46,15 @@ class Save extends \Civi\Api4\Action\OfflineGift\Save {
         'contribution_extra.no_thank_you' => 'pending manual confirmation',
       ], $individualID, 1);
       $result[] = $contribution;
-      \Civi::log('offline_gifts')->info('A Stock contribution has been created that needs manual_review', [
-        'subject' => 'Stock Gift requiring review',
+      $message = 'A Stock contribution has been created that needs manual_review';
+      $subject = 'Stock Gift requiring review';
+      if ($holdingsDescription) {
+        $message = 'A Stock contribution with multiple stocks has been created - it needs to be split into one contribution per stock. ' . $holdingsDescription;
+        $subject = 'Multiple Stock Gift - ' . $holdingsDescription;
+      }
+      $message .= "\nNo thank you has been sent - once reviewed, clear the 'No Thank You' field (currently 'pending manual confirmation') so the thank you goes out.";
+      \Civi::log('offline_gifts')->info($message, [
+        'subject' => $subject,
         'id' => $contribution['id'],
         'ticker' => implode(',', $tickers),
         'quantity' => $quantity,

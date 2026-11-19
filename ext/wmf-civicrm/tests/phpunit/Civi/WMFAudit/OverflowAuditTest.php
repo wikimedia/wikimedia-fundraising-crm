@@ -91,6 +91,8 @@ class OverflowAuditTest extends BaseAuditTestCase {
     $this->assertEquals(17, $contribution['Stock_Information.Stock Quantity']);
     // Stock Value is the net (post-fee) value, not the gross.
     $this->assertEquals(7158.74, $contribution['Stock_Information.Stock Value']);
+    // Held until staff have reviewed it - the email tells them to clear this.
+    $this->assertSame('pending manual confirmation', $contribution['contribution_extra.no_thank_you']);
     $this->assertSame('Major Gifts - CC104', $contribution['Gift_Data.Fund']);
     $this->assertEquals(1, $contribution['Gift_Data.is_major_gift']);
     // Comes from OfflineGift\Save's parent saveContribution(), via SourceFields.
@@ -126,8 +128,7 @@ class OverflowAuditTest extends BaseAuditTestCase {
     $this->assertSame('Endowment Fund', $contribution['Gift_Data.Fund']);
     // This fixture holds two stocks - no single quantity, split manually.
     $this->assertSame('TSLA,NVDA', $contribution['Stock_Information.Stock Ticker']);
-    $this->assertNull($contribution['Stock_Information.Stock Quantity']);
-  }
+    $this->assertNull($contribution['Stock_Information.Stock Quantity']);  }
 
   /**
    * Overflow DAF contributions should route to DAFGift, not StockGift.
