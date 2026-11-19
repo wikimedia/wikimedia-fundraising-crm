@@ -72,8 +72,7 @@ class OfflineAuditMessage extends AuditMessage {
    *    partner_full_name: string,
    *    gift_source: string,
    *    gateway_account: string,
-   *    stock_ticker: string,
-   *    stock_quantity: float,
+   *    stock_holdings: array<array{ticker: string, quantity: ?float}>,
    *    }
    */
   protected array $message;

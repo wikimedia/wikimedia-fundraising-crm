@@ -90,9 +90,20 @@
         },
         "contributionReceivedAt": "2025-02-18T20:00:00.000Z",
         "stocks": {
-          "quantity": 1,
+          "quantity": 2,
           "tickers": [
-            "TSLA"
+            "TSLA",
+            "NVDA"
+          ],
+          "holdings": [
+            {
+              "ticker": "TSLA",
+              "quantity": 17
+            },
+            {
+              "ticker": "NVDA",
+              "quantity": 60
+            }
           ]
         },
         "givingLinkId": null,

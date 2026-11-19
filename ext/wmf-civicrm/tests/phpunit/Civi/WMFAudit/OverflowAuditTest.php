@@ -88,7 +88,7 @@ class OverflowAuditTest extends BaseAuditTestCase {
     $this->assertSame('Overflow Disbursements', $contribution['contribution_extra.gateway_account']);
     $this->assertSame($this->batchName, $contribution['contribution_settlement.settlement_batch_reference']);
     $this->assertSame('TSLA', $contribution['Stock_Information.Stock Ticker']);
-    $this->assertEquals(1, $contribution['Stock_Information.Stock Quantity']);
+    $this->assertEquals(17, $contribution['Stock_Information.Stock Quantity']);
     // Stock Value is the net (post-fee) value, not the gross.
     $this->assertEquals(7158.74, $contribution['Stock_Information.Stock Value']);
     $this->assertSame('Major Gifts - CC104', $contribution['Gift_Data.Fund']);
@@ -115,7 +115,7 @@ class OverflowAuditTest extends BaseAuditTestCase {
     $this->runAuditBatch('', $this->endowmentFile);
 
     $contribution = Contribution::get(FALSE)
-      ->setSelect(['*', 'payment_instrument_id:name', 'financial_type_id:name', 'contribution_extra.*', 'Gift_Data.Fund'])
+      ->setSelect(['*', 'payment_instrument_id:name', 'financial_type_id:name', 'contribution_extra.*', 'Gift_Data.Fund', 'Stock_Information.*'])
       ->addWhere('contribution_settlement.settlement_batch_reference', '=', $this->endowmentBatchName)
       ->execute()->single();
 
@@ -124,6 +124,9 @@ class OverflowAuditTest extends BaseAuditTestCase {
     // gateway_account is a pass-through of the audit row's own value.
     $this->assertSame('Endowment', $contribution['contribution_extra.gateway_account']);
     $this->assertSame('Endowment Fund', $contribution['Gift_Data.Fund']);
+    // This fixture holds two stocks - no single quantity, split manually.
+    $this->assertSame('TSLA,NVDA', $contribution['Stock_Information.Stock Ticker']);
+    $this->assertNull($contribution['Stock_Information.Stock Quantity']);
   }
 
   /**
