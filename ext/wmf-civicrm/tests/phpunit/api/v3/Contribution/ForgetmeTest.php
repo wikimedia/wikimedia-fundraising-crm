@@ -71,6 +71,25 @@ class api_v3_Contribution_ForgetmeTest extends TestCase {
   }
 
   /**
+   * Gateways unknown to SmashPig are skipped without an alert.
+   */
+  public function testForgetmeSkipsUnknownGateway(): void {
+    $ctx = TestingContext::get();
+    $ctx->providerConfigurationOverride = TestingProviderConfiguration::createForProvider('engage', $ctx->getGlobalConfiguration());
+
+    $contactID = $this->createIndividual();
+    $this->createContribution([
+      'contact_id' => $contactID,
+      'contribution_extra.gateway' => 'engage',
+      'contribution_extra.gateway_txn_id' => 'ENGAGE',
+    ], 'engage');
+
+    $result = civicrm_api3('Contribution', 'forgetme', ['contact_id' => $contactID]);
+    $this->assertEquals(0, $result['count']);
+    $this->assertFalse($this->getLogger()->hasAlertThatContains("contribution {$this->ids['Contribution']['engage']}"));
+  }
+
+  /**
    * Only contributions matching the receive_date filter are sent for deletion.
    */
   public function testForgetmeReceiveDateFilter(): void {
