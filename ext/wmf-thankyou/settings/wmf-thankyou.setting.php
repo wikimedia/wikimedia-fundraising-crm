@@ -134,6 +134,22 @@ return [
     ],
     'settings_pages' => ['wmf-thankyou' => ['weight' => 80]],
   ],
+  'wmf_mg_reply_to_address' => [
+    'group_name' => 'WMF Thank You Settings',
+    'group' => 'wmf-thankyou',
+    'name' => 'wmf_mg_reply_to_address',
+    'default' => 'benefactors@wikimedia.org',
+    'type' => 'String',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'title' => E::ts('EOY email reply to for MG segment donors'),
+    'help_text' => 'No reply to added if empty',
+    'html_type' => 'text',
+    'html_attributes' => [
+      'size' => 80,
+    ],
+    'settings_pages' => ['wmf-thankyou' => ['weight' => 85]],
+  ],
   'wmf_double_opt_in_from_name' => [
     'group_name' => 'WMF Thank You Settings',
     'group' => 'wmf-thankyou',

@@ -453,6 +453,21 @@ class EOYEmailTest extends TestCase {
   }
 
   /**
+   * Test MG reply-to is set when any contact sharing the email is MG segment.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testRenderMGReplyTo(): void {
+    [$olderContactID, $newerContactID] = $this->setUpContactsSharingEmail();
+    $email = EOYEmail::render(FALSE)->setYear(2018)->setContactID($newerContactID)->execute()->first();
+    $this->assertArrayNotHasKey('reply_to_address', $email);
+
+    $this->addTestContactContribution($olderContactID, ['receive_date' => '2018-01-15', 'total_amount' => 1000]);
+    $email = EOYEmail::render(FALSE)->setYear(2018)->setContactID($newerContactID)->execute()->first();
+    $this->assertEquals('benefactors@wikimedia.org', $email['reply_to_address']);
+  }
+
+  /**
    * Test that we create activity records for each contact with a
    * shared email.
    *
@@ -595,6 +610,7 @@ class EOYEmailTest extends TestCase {
     $this->assertEquals([
       'from_name' => 'Bobita',
       'from_address' => 'bobita@example.org',
+      'reply_to_address' => 'benefactors@wikimedia.org',
       'to_name' => 'Bob Walrus',
       'to_address' => 'bob@example.com',
       'subject' => 'A record of your support for Wikipedia',
@@ -1070,6 +1086,8 @@ WHERE
    * @return array
    */
   protected function send(?int $year = 2018, ?int $contactID = NULL, $startDateTime = '', $endDateTime = ''): array {
+    // Drop mail sent during setup, e.g. large donation notifications.
+    $this->resetMailTracking();
     try {
       EOYEmail::makeJob(FALSE)->setYear($year)->execute();
       EOYEmail::send(FALSE)
