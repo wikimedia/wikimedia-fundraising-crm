@@ -147,11 +147,13 @@ class ChariotAuditTest extends BaseAuditTestCase {
     $contributionSoft = ContributionSoft::get(FALSE)
       ->addWhere('contribution_id', '=', $contribution['id'])
       ->addWhere('soft_credit_type_id:name', '=', 'donor-advised_fund')
-      ->setSelect(['*', 'contact_id.display_name', 'contact_id.first_name', 'contact_id.last_name'])
+      ->setSelect(['*', 'contact_id.display_name', 'contact_id.first_name', 'contact_id.last_name', 'contact_id.address_primary.country_id:abbr', 'contact_id.address_primary.state_province_id:abbr'])
       ->execute()->single();
     $this->assertEquals('Marge', $contributionSoft['contact_id.first_name']);
     $this->assertEquals('Mouse', $contributionSoft['contact_id.last_name']);
     $this->assertEquals('Marge Mouse', $contributionSoft['contact_id.display_name']);
+    $this->assertEquals('US', $contributionSoft['contact_id.address_primary.country_id:abbr']);
+    $this->assertEquals('CA', $contributionSoft['contact_id.address_primary.state_province_id:abbr']);
   }
 
   /**
