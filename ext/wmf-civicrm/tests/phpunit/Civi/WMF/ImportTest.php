@@ -136,8 +136,15 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   /**
    * @return array
    */
-  public function importBenevityFile(): array {
+  public function importBenevityFile(string $batchNumber = '1234'): array {
     $template = (require __DIR__ . '/../../../../managed/UserJobBenevityEndowment.mgd.php')[0]['params']['values']['metadata'];
+    foreach ($template['import_mappings'] as &$mapping) {
+      if ($mapping['name'] === 'Contribution.Gift_Information.import_batch_number') {
+        // Imitate staff filling in the batch number.
+        $mapping['default_value'] = $batchNumber;
+      }
+    }
+    unset($mapping);
     return $this->importCSV('benevity.csv', $template['import_mappings'], [
       'dateFormats' => \CRM_Utils_Date::DATE_yyyy_mm_dd,
     ], $template['entity_configuration']);
@@ -1448,12 +1455,16 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     // There is no gift against the organization here.
     // In addition the gift type here is mapped.
     $contribution = Contribution::get(FALSE)
-      ->addSelect('fee_amount', 'total_amount', 'Gift_Data.Campaign', 'net_amount')
+      ->addSelect('fee_amount', 'total_amount', 'Gift_Data.Campaign', 'net_amount', 'contribution_extra.gateway', 'contribution_settlement.*')
       ->addWhere('trxn_id', '=', 'ach trxn-QUACK')
       ->execute()->single();
     $this->assertEquals(1080, $contribution['total_amount']);
     $this->assertEquals(9.9, $contribution['fee_amount']);
     $this->assertEquals(1070.1, $contribution['net_amount']);
+    $this->assertEquals('ach', $contribution['contribution_extra.gateway']);
+    $this->assertEquals('achendowment_1234_USD', $contribution['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals(1080, $contribution['contribution_settlement.settled_donation_amount']);
+    $this->assertEquals(-9.9, $contribution['contribution_settlement.settled_fee_amount']);
     $this->assertEquals('Individual Gift', $contribution['Gift_Data.Campaign']);
     $softCredit = ContributionSoft::get(FALSE)->addWhere('contribution_id', '=', $contribution['id'])->execute();
     $this->assertCount(1, $softCredit);
@@ -1479,6 +1490,16 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     // Relationship should be created.
     Relationship::get(FALSE)->addWhere('contact_id_a', '=', $contribution['contact_id'])->execute()->single();
 
+    // The CAD 1,000 match is settled in USD.
+    $contribution = Contribution::get(FALSE)
+      ->addSelect('total_amount', 'contribution_settlement.*')
+      ->addWhere('trxn_id', '=', 'ach trxn-SQUEAK_MATCHED')
+      ->execute()->single();
+    $this->assertEquals(900, $contribution['total_amount']);
+    $this->assertEquals('achendowment_1234_USD', $contribution['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals(900, $contribution['contribution_settlement.settled_donation_amount']);
+    $this->assertEquals(0, $contribution['contribution_settlement.settled_fee_amount']);
+
     // Row 3 Check Pluto's individual contribution with a soft credit to Goofy Inc
     // PLUS a contribution for Goofy Inc soft credited back to Pluto.
     // A new contact will have been created for Pluto.
@@ -1500,13 +1521,16 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
 
     // Now get the organization contribution.
     $contribution = Contribution::get(FALSE)
-      ->addSelect('fee_amount', 'total_amount', 'Gift_Data.Campaign', 'net_amount', 'receive_date', 'contact_id', 'contact_id.display_name')
+      ->addSelect('fee_amount', 'total_amount', 'Gift_Data.Campaign', 'net_amount', 'receive_date', 'contact_id', 'contact_id.display_name', 'contribution_settlement.*')
       ->addWhere('trxn_id', '=', 'ach trxn-WOOF_MATCHED')
       ->execute()->single();
 
     $this->assertEquals(25, $contribution['total_amount']);
     $this->assertEquals(0, $contribution['fee_amount']);
     $this->assertEquals(25, $contribution['net_amount']);
+    $this->assertEquals('achendowment_1234_USD', $contribution['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals(25, $contribution['contribution_settlement.settled_donation_amount']);
+    $this->assertEquals(0, $contribution['contribution_settlement.settled_fee_amount']);
     $this->assertEquals('Goofy Inc', $contribution['contact_id.display_name']);
     $softCredit = ContributionSoft::get(FALSE)->addWhere('contribution_id', '=', $contribution['id'])->addSelect('soft_credit_type_id:name')->execute();
     $this->assertCount(1, $softCredit);
@@ -1525,12 +1549,15 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
 
     // Now get the organization donation that was swapped in.
     $contribution = Contribution::get(FALSE)
-      ->addSelect('fee_amount', 'total_amount', 'Gift_Data.Campaign', 'net_amount', 'receive_date', 'contact_id')
+      ->addSelect('fee_amount', 'total_amount', 'Gift_Data.Campaign', 'net_amount', 'receive_date', 'contact_id', 'contribution_settlement.*')
       ->addWhere('trxn_id', '=', 'ach trxn-ARF_MATCHED')
       ->execute()->single();
     $this->assertEquals(.5, $contribution['total_amount']);
     $this->assertEquals(.33, $contribution['fee_amount']);
     $this->assertEquals(.17, $contribution['net_amount']);
+    $this->assertEquals('achendowment_1234_USD', $contribution['contribution_settlement.settlement_batch_reference']);
+    $this->assertEquals(.5, $contribution['contribution_settlement.settled_donation_amount']);
+    $this->assertEquals(-.33, $contribution['contribution_settlement.settled_fee_amount']);
 
     // No address should have been created for the organization.
     $organizationAddress = Address::get(FALSE)->addWhere('contact_id', '=', $contribution['contact_id'])->execute();

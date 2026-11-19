@@ -813,7 +813,12 @@ class Import {
           'contribution_extra.gateway_txn_id' => $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] . '_MATCHED',
           'contribution_extra.original_amount' => $this->mappedRow['Contribution']['Matching_Gift_Information.Match_Amount'],
           'contribution_extra.original_currency' => $this->mappedRow['Contribution']['contribution_extra.original_currency'],
+          'contribution_settlement.settlement_batch_reference' => $this->getContributionSettlementBatchReference(),
+          'contribution_settlement.settlement_currency' => $this->getContributionSettlementCurrency(),
+          'contribution_settlement.settled_fee_amount' => 0,
         ]);
+        // Converted from the match amount, as for the main row's total_amount.
+        $contributionValues['contribution_settlement.settled_donation_amount'] = ContributionHelper::getConvertedTotalAmount($contributionValues);
         // total_amount should be recalculated in the hook
         // The additional fee fields are only for the fee_amount calculation, not for saving.
         unset($contributionValues['total_amount'], $contributionValues['additional_fee_amount'], $contributionValues['contribution_extra.scheme_fee']);

@@ -116,6 +116,8 @@ return [
             ['name' => 'Contribution.financial_type_id', 'default_value' => 'Endowment Gift', 'column_number' => 28],
             ['name' => 'Contribution.contribution_extra.no_thank_you', 'default_value' => 'No TY', 'column_number' => 29],
             ['name' => 'Contribution.contribution_extra.backend_processor', 'default_value' => 'Benevity', 'column_number' => 30],
+            // Staff fill this in at import time - it becomes the settlement batch reference.
+            ['name' => 'Contribution.Gift_Information.import_batch_number', 'default_value' => '', 'column_number' => 31],
           ],
           'import_options' => [
             'date_format' => 1,
