@@ -39,6 +39,26 @@ $entities = [
     ],
   ],
   [
+    'name' => 'OptionGroup_appeal_20080709183729_OptionValue_Benevity',
+    'entity' => 'OptionValue',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'values' => [
+        'option_group_id.name' => 'appeal_20080709183729',
+        'label' => 'Benevity',
+        'value' => 'Benevity',
+        'name' => 'Benevity',
+      ],
+      'match' => [
+        'option_group_id',
+        'name',
+        'value',
+      ],
+    ],
+  ],
+  [
     'name' => 'OptionGroup_appeal_20080709183729_OptionValue_Spontaneous_Donation',
     'entity' => 'OptionValue',
     'cleanup' => 'unused',

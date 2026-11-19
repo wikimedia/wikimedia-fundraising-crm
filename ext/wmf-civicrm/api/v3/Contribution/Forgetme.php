@@ -52,9 +52,12 @@ function civicrm_api3_contribution_forgetme(array $params): array {
   $deleted = [];
   $notFound = [];
   $failures = [];
+  $skipped = [];
   foreach ($contributions as $contribution) {
     $gatewayTxnId = $contribution[$customFieldMap['gateway_txn_id']];
     $txnIdToForget = $gatewayTxnId;
+    $provider = NULL;
+    $outcome = 'skipped';
     try {
       $provider = _civicrm_api3_contribution_forgetme_getproviderobject(
         $contribution[$customFieldMap['gateway']] ?? null
@@ -67,6 +70,7 @@ function civicrm_api3_contribution_forgetme(array $params): array {
       }
       if ($provider instanceof IDeleteDataProvider && $txnIdToForget) {
         $response = $provider->deleteDataForPayment($txnIdToForget);
+        $outcome = $response->getRawResponse()['result'] ?? 'no result';
         if ($response->isSuccessful()) {
           $deleted[] = $contribution;
         }
@@ -82,10 +86,23 @@ function civicrm_api3_contribution_forgetme(array $params): array {
           $failures[] = "contribution {$contribution['id']} (contact {$contribution['contact_id']}, $gatewayTxnId): " . implode(', ', $errors);
         }
       }
+      else {
+        $skipped[] = $contribution['id'];
+      }
     }
     catch (Exception $ex) {
+      $outcome = 'exception: ' . $ex->getMessage();
       $failures[] = "contribution {$contribution['id']} (contact {$contribution['contact_id']}, $gatewayTxnId): " . $ex->getMessage();
     }
+    // Temp logging to see why this doesn't work via coworker
+    \Civi::log('wmf')->info('Forgetme: contribution {id}: gateway {gateway}, backend {backend}, provider {provider}, txn {txn}: {outcome}', [
+      'id' => $contribution['id'],
+      'gateway' => $contribution[$customFieldMap['gateway']] ?? '',
+      'backend' => $contribution[$customFieldMap['backend_processor']] ?? '',
+      'provider' => $provider ? get_class($provider) : 'none',
+      'txn' => $txnIdToForget,
+      'outcome' => $outcome,
+    ]);
   }
 
   if ($failures) {
@@ -93,6 +110,15 @@ function civicrm_api3_contribution_forgetme(array $params): array {
       'subject' => 'Forgetme payment processor data deletion failed',
     ]);
   }
+  // Temp logging to see why this doesn't work via coworker
+  \Civi::log('wmf')->info('Forgetme: contact {contact_id}, receive_date {receive_date}: {count} contributions, deleted [{deleted}], not found [{not_found}], skipped [{skipped}]', [
+    'contact_id' => json_encode($params['contact_id']),
+    'receive_date' => json_encode($params['receive_date'] ?? NULL),
+    'count' => count($contributions),
+    'deleted' => implode(',', array_column($deleted, 'id')),
+    'not_found' => implode(',', $notFound),
+    'skipped' => implode(',', $skipped),
+  ]);
 
   $result = civicrm_api3_create_success($deleted, $params);
   $result['not_found'] = $notFound;
@@ -134,6 +160,11 @@ function _civicrm_api3_contribution_forgetme_getproviderobject(?string $gateway)
     return PaymentProviderFactory::getDefaultProvider();
   }
   catch (ConfigurationKeyException $ex) {
+    // Temp logging to see why this doesn't work via coworker
+    \Civi::log('wmf')->info('Forgetme: no SmashPig provider for {gateway}: {message}', [
+      'gateway' => $gateway,
+      'message' => $ex->getMessage(),
+    ]);
     return null;
   }
 }

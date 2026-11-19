@@ -3,7 +3,7 @@ return [
   [
     'name' => 'UserJob_import_Endowment_Overflow_stock_import',
     'entity' => 'UserJob',
-    'cleanup' => 'unused',
+    'cleanup' => 'never',
     'update' => 'unmodified',
     'params' => [
       'version' => 4,
