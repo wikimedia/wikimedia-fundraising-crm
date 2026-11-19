@@ -27,7 +27,7 @@
         "coderkungfu/php-queue": ">= 1.0.4",
         "predis/predis": "^3",
         "ext-intl": "*",
-        "wikimedia/smash-pig": "v1.2.8.1",
+        "wikimedia/smash-pig": "v1.2.8.2",
         "phpmailer/phpmailer": "^6",
         "phpseclib/phpseclib":  "~2.0|~3",
         "wikimedia/composer-merge-plugin": "^2",
@@ -99,9 +99,6 @@
         },
         "pear/mail": {
           "Apply CiviCRM Customisations for CRM-1367 and CRM-5946": "core/tools/patches/raw/pear/mail/pear-mail.patch"
-        },
-        "pear/mail_mime": {
-          "Apply patch for CRM-3133 wordwrap body to be 750 characters to apply with RFC 2821": "core/tools/patches/raw/pear/mail_mime/crm_3133.patch"
         },
         "pear/net_smtp": {
           "Add in CiviCRM custom error message for CRM-8744": "core/tools/patches/raw/pear/net_smtp/error-msg.patch"

@@ -5943,6 +5943,40 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Backfill payment_instrument_id on contribution_recur for pre-2024-03
+   *
+   * Follow up on upgrade_4475, but going back for all time and using the
+   * latest contribution just in case. Also don't update modified date.
+   *
+   * This doesn't change future charges (which use the last contribution as a
+   * template), this is just for analytics and to show in donor portal.
+   * I sampled a few hundred of these over the years and all the values to
+   * insert look reasonable.
+   *
+   * Bug: T444431
+   *
+   * @return bool
+   */
+  public function upgrade_5270(): bool {
+    $this->queueSQL(
+      "UPDATE civicrm_contribution_recur cr
+        SET cr.payment_instrument_id = (
+            SELECT c.payment_instrument_id
+            FROM civicrm_contribution c
+            WHERE c.contribution_recur_id = cr.id
+            ORDER BY c.id DESC
+            LIMIT 1
+          ),
+          cr.modified_date = cr.modified_date
+        WHERE cr.payment_instrument_id IS NULL
+        AND cr.create_date < '2024-03-01'
+        AND EXISTS (SELECT 1 FROM civicrm_contribution c WHERE c.contribution_recur_id = cr.id)
+        LIMIT 10000"
+    );
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
