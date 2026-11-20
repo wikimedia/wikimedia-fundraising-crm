@@ -23,7 +23,7 @@ use League\Csv\Writer;
  * Which entity holds the revenue follows the contribution's endowment flag,
  * not the gateway - the gateway decides where the cash landed, and hence
  * which way a transfer runs, but an endowment gift's revenue ends up on the
- * endowment instance either way (see writeCrossInstanceTransfer).
+ * endowment instance either way (see JournalWriter).
  *
  * So a correction that leaves the entity alone is one journal of two lines,
  * with no contra: the cash never moved, only its coding. A correction that
@@ -115,8 +115,8 @@ class GenerateAdjustmentJournals extends AbstractAction {
 
     // Different entities - the transfer that settlement would have made.
     // In endowment journals all major gifts are treated as restricted; the
-    // settlement code deliberately does not do the reverse remap on the way
-    // back, so neither do we (see getFoundationTransferConfig's @todo).
+    // settlement code does not do the reverse remap on the way back, so
+    // neither do we (see JournalWriter::writeReplacementJournal()).
     if ($toIsEndowment && in_array((int) $toAccount, FinanceConstants::GL_MAJOR_GIFTS_ACCOUNTS, TRUE)) {
       $toAccount = (string) FinanceConstants::GL_MAJOR_GIFTS_RESTRICTED;
     }

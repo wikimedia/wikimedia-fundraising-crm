@@ -102,7 +102,7 @@ class GenerateAdjustmentJournalsTest extends BaseAuditTestCase {
 
   /**
    * On the way to endowment a major gift is restricted whatever it was on
-   * the foundation side - matching writeCrossInstanceTransfer().
+   * the foundation side - matching JournalWriter::writeReplacementJournal().
    */
   public function testMajorGiftIsRestrictedOnTheEndowmentSide(): void {
     $batchName = $this->reserve([

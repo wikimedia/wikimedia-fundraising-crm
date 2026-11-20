@@ -514,6 +514,20 @@ GROUP BY s.settlement_batch_reference
   }
 
   /**
+   * Get the writer for this batch's reclassification journals.
+   *
+   * Normal gateways reclassify endowment rows from the foundation to the
+   * endowment instance, endowment gateways the reverse.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   */
+  public function getJournalWriter(): JournalWriter {
+    [$source, $destination] = $this->isEndowmentGateway() ? ['endowment', 'foundation'] : ['foundation', 'endowment'];
+    return new JournalWriter($this->getWriter('source', $source, $destination), $this->getWriter('destination', $source, $destination), $source, $destination, $this->getGatewayAccount());
+  }
+
+  /**
    * Create a journal csv file, overwriting any existing one.
    *
    * Rows are written as FinanceConstants::JOURNAL_HEADERS - other keys

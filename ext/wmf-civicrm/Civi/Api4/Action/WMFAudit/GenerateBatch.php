@@ -489,109 +489,19 @@ class GenerateBatch extends AbstractAction {
         'detail_file' => ['file' => $detailWriter ? $detailWriter->getPathname() : NULL, 'is_journal' => FALSE, 'instance' => $primaryJournalFile['instance'], 'suffix' => ''],
       ];
       if (empty($this->incompleteRows[$batchName])) {
+        $journalGenerator = $this->getJournalGenerator($batch);
+        $transferKey = $isEndowmentGateway ? 'foundation_transfer' : 'endowment_transfer';
         foreach ($csv_rows as $row) {
-          if (!$isEndowmentGateway && $this->isTransferRequired($row, $batch)) {
-            $endowmentWriterFrom = $this->getJournalGenerator($batch)->getWriter('source', 'foundation', 'endowment');
-            $endowmentWriterTo = $this->getJournalGenerator($batch)->getWriter('destination', 'foundation', 'endowment');
-            $csvFiles += $this->getJournalGenerator($batch)->getTransferJournalFiles();
-            $this->writeCrossInstanceTransfer($row, $batchName, $endowmentWriterFrom, $endowmentWriterTo, $this->getEndowmentTransferConfig());
-          }
-          elseif ($isEndowmentGateway && $this->isTransferRequired($row, $batch)) {
-            // Reverse of the block above: an endowment-gateway batch whose
-            // rows are earmarked for the annual (foundation) fund get
-            // carved out and journaled over to the wmf/foundation instance.
-            $foundationWriterFrom = $this->getJournalGenerator($batch)->getWriter('source', 'endowment', 'foundation');
-            $foundationWriterTo = $this->getJournalGenerator($batch)->getWriter('destination', 'endowment', 'foundation');
-            $csvFiles += $this->getJournalGenerator($batch)->getTransferJournalFiles();
-            $this->writeCrossInstanceTransfer($row, $batchName, $foundationWriterFrom, $foundationWriterTo, $this->getFoundationTransferConfig());
+          if ($this->isTransferRequired($row, $batch)) {
+            $journalGenerator->getJournalWriter()->writeReclassificationJournals($row);
+            $this->batchSummary[$batchName][$transferKey] = $this->batchSummary[$batchName][$transferKey]->plus((string) ($row['CREDIT'] - $row['DEBIT']));
+            $csvFiles += $journalGenerator->getTransferJournalFiles();
           }
         }
       }
       return [$csvFiles, empty($this->incompleteRows[$batchName])];
     }
     return [[], FALSE];
-  }
-
-  /**
-   * Build and write one row's from/to balancing pair for a transfer
-   * between the wmf and endowment Intacct instances, and accumulate the
-   * transferred amount into batchSummary. Shared by the two directions -
-   * see getEndowmentTransferConfig()/getFoundationTransferConfig() for what
-   * differs between them.
-   *
-   * @param array $row
-   * @param string $batchName
-   * @param \League\Csv\Writer $writerFrom
-   * @param \League\Csv\Writer $writerTo
-   * @param array $config
-   *
-   * @throws \League\Csv\CannotInsertRecord
-   * @throws \League\Csv\Exception
-   */
-  private function writeCrossInstanceTransfer(array $row, string $batchName, Writer $writerFrom, Writer $writerTo, array $config): void {
-    $fromRow = $fromBalancingRow = $row;
-    $toValues = [
-      'LOCATION_ID' => $config['toLocationId'],
-      'DEPT_ID' => '',
-      'GLENTRY_VENDORID' => $this->{$config['vendorMapperMethod']}($batchName),
-    ];
-    $toBalancingRow = $toRow = array_merge($row, $toValues);
-    // In endowment journal treat all major gifts as restricted.
-    if ($config['toLocationId'] === FinanceConstants::LOCATION_ID_ENDOWMENT && $this->isMajorGiftAccount($toRow['ACCT_NO'])) {
-      $toRow['ACCT_NO'] = $this->getRestrictedMajorGiftsAccount();
-    }
-
-    $fromRow['DEBIT'] = $toBalancingRow['DEBIT'] = $row['CREDIT'];
-    $fromRow['CREDIT'] = $toBalancingRow['CREDIT'] = $row['DEBIT'];
-    $fromBalancingRow['ACCT_NO'] = $config['fromBalancingAccount'];
-    $toBalancingRow['ACCT_NO'] = $config['toBalancingAccount'];
-    $transfer = (string) ($row['CREDIT'] - $row['DEBIT']);
-    $this->batchSummary[$batchName][$config['summaryKey']] = $this->batchSummary[$batchName][$config['summaryKey']]->plus($transfer);
-    $writerFrom->insertOne($fromRow);
-    $writerFrom->insertOne($fromBalancingRow);
-    $writerTo->insertOne($toRow);
-    $writerTo->insertOne($toBalancingRow);
-  }
-
-  /**
-   * Config for the wmf->endowment transfer (normal gateways, donation rows
-   * earmarked for the endowment fund) - see writeCrossInstanceTransfer().
-   */
-  private function getEndowmentTransferConfig(): array {
-    return [
-      'toLocationId' => FinanceConstants::LOCATION_ID_ENDOWMENT,
-      'vendorMapperMethod' => 'mapVendorToEndowmentVendor',
-      'fromBalancingAccount' => FinanceConstants::GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT,
-      'toBalancingAccount' => FinanceConstants::GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE,
-      'summaryKey' => 'endowment_transfer',
-    ];
-  }
-
-  /**
-   * Config for the endowment->foundation transfer (endowment-first gateways,
-   * rows earmarked for the annual/foundation fund) - the reverse of
-   * getEndowmentTransferConfig() - see writeCrossInstanceTransfer().
-   */
-  private function getFoundationTransferConfig(): array {
-    return [
-      'toLocationId' => FinanceConstants::LOCATION_ID_WMF,
-      'vendorMapperMethod' => 'mapVendorToFoundationVendor',
-      'fromBalancingAccount' => FinanceConstants::GL_BALANCING_ACCOUNT_ENDOWMENT_TO_WMF,
-      'toBalancingAccount' => FinanceConstants::GL_BALANCING_ACCOUNT_WMF_INSTANCE,
-      'summaryKey' => 'foundation_transfer',
-    ];
-  }
-
-  private function mapVendorToEndowmentVendor(string $batchName): string {
-    $accounts = $this->getGatewayAccounts();
-    // Vendor code is optional - e.g. wire & ach have no vendor in Intacct.
-    return (string) ($accounts[$this->getGateway($batchName)]['vendor_code_endowment'] ?? '');
-  }
-
-  private function mapVendorToFoundationVendor(string $batchName): string {
-    $accounts = $this->getGatewayAccounts();
-    // Vendor code is optional - e.g. wire & ach have no vendor in Intacct.
-    return (string) ($accounts[$this->getGateway($batchName)]['vendor_code_foundation'] ?? '');
   }
 
   /**
@@ -635,14 +545,6 @@ class GenerateBatch extends AbstractAction {
     $currency = array_pop($parts);
     $middle = preg_replace('/[^a-zA-Z0-9-]+/', '-', implode('_', $parts));
     return $gateway . '_' . $middle . '_' . $currency;
-  }
-
-  private function isMajorGiftAccount($accountCode): bool {
-    return in_array((int) $accountCode, FinanceConstants::GL_MAJOR_GIFTS_ACCOUNTS, TRUE);
-  }
-
-  private function getRestrictedMajorGiftsAccount(): string {
-    return (string) FinanceConstants::GL_MAJOR_GIFTS_RESTRICTED;
   }
 
   /**

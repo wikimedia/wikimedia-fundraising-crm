@@ -29,13 +29,9 @@ final class FinanceConstants {
   const ADJUSTMENT_LOCK_PREFIX = 'data.finance_adjustment.';
 
   // Balancing accounts for a transfer between the wmf (foundation) and
-  // endowment instances - one const per instance per direction, for
-  // transparency about which is in play, but the values are shared: each
-  // instance always uses the same balancing account for the transfer,
-  // whichever direction it's moving.
-  const GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT = 27375;
+  // endowment instances. Each instance uses the same balancing account
+  // whichever direction the transfer is going.
   const GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE = 11110;
-  const GL_BALANCING_ACCOUNT_ENDOWMENT_TO_WMF = 11110;
   const GL_BALANCING_ACCOUNT_WMF_INSTANCE = 27375;
 
   const LOCATION_ID_WMF = '100-WMF';
@@ -126,7 +122,7 @@ final class FinanceConstants {
    * GLCode codes a gift to it when the gift's fund is restricted, that
    * taking precedence over the unrestricted codes (T409994). Endowment
    * journals also treat every major gift as restricted whatever it was on
-   * the foundation side - see writeCrossInstanceTransfer().
+   * the foundation side - see JournalWriter::writeReplacementJournal().
    */
   const GL_MAJOR_GIFTS_RESTRICTED = 43428;
 
