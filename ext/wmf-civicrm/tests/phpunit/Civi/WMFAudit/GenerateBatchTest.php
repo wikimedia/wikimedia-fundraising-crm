@@ -293,6 +293,40 @@ class GenerateBatchTest extends BaseAuditTestCase {
   }
 
   /**
+   * In the endowment instance major gifts are journalled to the restricted account (43428).
+   */
+  public function testEndowmentJournalRemapsMajorGiftsToRestricted(): void {
+    $prefix = 'adyen_343';
+    $batchName = "{$prefix}_USD";
+    $currency = 'USD';
+    $settlementDate = '2026-01-31';
+
+    $this->createQueueContribution([
+      'financial_type_id:name' => 'Endowment Gift',
+      // Major gifts appeal => GL43487.
+      'Gift_Data.Appeal' => 'MGGO26',
+      'contribution_settlement.settlement_batch_reference' => $batchName,
+      'contribution_settlement.settled_donation_amount' => 10.00,
+      'contribution_settlement.settlement_currency' => $currency,
+      'contribution_settlement.settlement_date' => $settlementDate,
+    ]);
+    $this->createBatch($batchName, $currency, $settlementDate, 10, 1);
+
+    $result = WMFAudit::generateBatch(FALSE)
+      ->setBatchPrefix($prefix)
+      ->setIsDryRun(TRUE)
+      ->setIsOutputRows(TRUE)
+      ->setIsOutputCsv(TRUE)
+      ->execute();
+
+    $reader = Reader::from($result[0]['csv']['journal_endowment_from_foundation']['file']);
+    $reader->setHeaderOffset(0);
+    $accounts = array_column(iterator_to_array($reader), 'ACCT_NO');
+    $this->assertContains('43428', $accounts);
+    $this->assertNotContains('43487', $accounts);
+  }
+
+  /**
    * Rows group by account, not fund - a restricted fund has its own account.
    */
   public function testSameGlCodeGroupsAcrossFunds(): void {

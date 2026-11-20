@@ -6,6 +6,7 @@ use Brick\Money\Exception\MoneyMismatchException;
 use Brick\Money\Exception\UnknownCurrencyException;
 use Brick\Money\Money;
 use Civi\Api4\Batch;
+use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\GatewayAccount;
@@ -538,8 +539,8 @@ class GenerateBatch extends AbstractAction {
       'GLENTRY_VENDORID' => $this->{$config['vendorMapperMethod']}($batchName),
     ];
     $toBalancingRow = $toRow = array_merge($row, $toValues);
-    if ($config['remapMajorGiftsToRestricted'] && str_starts_with($this->getAccountName($toRow['ACCT_NO']), 'Major Gifts')) {
-      // In endowment journal treat all major gifts as restricted.
+    // In endowment journal treat all major gifts as restricted.
+    if ($config['toLocationId'] === FinanceConstants::LOCATION_ID_ENDOWMENT && $this->isMajorGiftAccount($toRow['ACCT_NO'])) {
       $toRow['ACCT_NO'] = $this->getRestrictedMajorGiftsAccount();
     }
 
@@ -563,7 +564,6 @@ class GenerateBatch extends AbstractAction {
     return [
       'toLocationId' => FinanceConstants::LOCATION_ID_ENDOWMENT,
       'vendorMapperMethod' => 'mapVendorToEndowmentVendor',
-      'remapMajorGiftsToRestricted' => TRUE,
       'fromBalancingAccount' => FinanceConstants::GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT,
       'toBalancingAccount' => FinanceConstants::GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE,
       'summaryKey' => 'endowment_transfer',
@@ -579,10 +579,6 @@ class GenerateBatch extends AbstractAction {
     return [
       'toLocationId' => FinanceConstants::LOCATION_ID_WMF,
       'vendorMapperMethod' => 'mapVendorToFoundationVendor',
-      // @todo unlike the endowment-bound transfer, this doesn't remap
-      // Major Gifts to a restricted account - unconfirmed whether an
-      // equivalent un-restricting remap is needed here.
-      'remapMajorGiftsToRestricted' => FALSE,
       'fromBalancingAccount' => FinanceConstants::GL_BALANCING_ACCOUNT_ENDOWMENT_TO_WMF,
       'toBalancingAccount' => FinanceConstants::GL_BALANCING_ACCOUNT_WMF_INSTANCE,
       'summaryKey' => 'foundation_transfer',
@@ -656,14 +652,12 @@ class GenerateBatch extends AbstractAction {
     }
   }
 
-  private function getAccountName($accountCode): string {
-    $map = $this->getAccountMapping();
-    return $map[$accountCode] ?? '';
+  private function isMajorGiftAccount($accountCode): bool {
+    return in_array((int) $accountCode, FinanceConstants::GL_MAJOR_GIFTS_ACCOUNTS, TRUE);
   }
 
   private function getRestrictedMajorGiftsAccount(): string {
-    $map = array_flip($this->getAccountMapping());
-    return $map['Major Gifts - Restricted'];
+    return (string) FinanceConstants::GL_MAJOR_GIFTS_RESTRICTED;
   }
 
   /**
@@ -1107,19 +1101,25 @@ class GenerateBatch extends AbstractAction {
   }
 
   /**
+   * Account names, keyed by account number, from the gl_code options.
+   *
+   * e.g. 'GL43481 Online Banner' => [43481 => 'Online Banner'].
+   *
    * @return string[]
+   * @throws \CRM_Core_Exception
    */
   private function getAccountMapping(): array {
-    return [
-      43480 => 'Recurring Gift',
-      43481 => 'Banner',
-      43482 => 'Email',
-      43483 => 'Direct Mail',
-      43484 => 'Online Other',
-      43440 => 'Chapter Gifts',
-      43485 => 'Major Gifts - Unrestricted',
-      43428 => 'Major Gifts - Restricted',
-    ];
+    if (!isset(\Civi::$statics[__CLASS__]['account_mapping'])) {
+      $options = Contribution::getFields(FALSE)
+        ->addWhere('name', '=', 'Gift_Data.gl_code')
+        ->setLoadOptions(['id', 'label'])
+        ->execute()->single()['options'];
+      \Civi::$statics[__CLASS__]['account_mapping'] = [];
+      foreach ($options as $option) {
+        \Civi::$statics[__CLASS__]['account_mapping'][(int) substr($option['id'], 2)] = trim(substr($option['label'], strlen($option['id'])));
+      }
+    }
+    return \Civi::$statics[__CLASS__]['account_mapping'];
   }
 
 }
