@@ -17,7 +17,7 @@ class GLCodeTest extends TestCase {
     return [
       'restricted fund' => [['Gift_Data.Fund' => 'Restricted - Foundation', 'Gift_Data.Channel' => 'Workplace Giving'], 'GL43428'],
       'Workplace Giving' => [['Gift_Data.Channel' => 'Workplace Giving', 'total_amount' => 10, 'Gift_Data.Appeal' => 'MGGO26'], 'GL43488'],
-      'Workplace Giving 10000 major gifts appeal' => [['Gift_Data.Channel' => 'Workplace Giving', 'total_amount' => 10000, 'Gift_Data.Appeal' => 'MGGO26'], 'GL43485'],
+      'Workplace Giving 10000 major gifts appeal' => [['Gift_Data.Channel' => 'Workplace Giving', 'total_amount' => 10000, 'Gift_Data.Appeal' => 'MGGO26'], 'GL43488'],
       'Chapter Gifts' => [['Gift_Data.Channel' => 'Chapter Gifts', 'total_amount' => 10000, 'Gift_Data.Appeal' => 'MGGO26'], 'GL43440'],
       'Planned Giving 10000' => [['Gift_Data.Channel' => 'Planned Giving', 'total_amount' => 10000], 'GL43485'],
       'Direct Solicitation under 10000' => [['Gift_Data.Channel' => 'Direct Solicitation', 'total_amount' => 10], 'GL43487'],
@@ -49,21 +49,22 @@ class GLCodeTest extends TestCase {
 
   public static function relationshipManagerProvider(): array {
     return [
-      'DAF' => [['total_amount' => 1000, 'Gift_Data.Campaign' => 'Donor Advised Fund', 'Gift_Data.Channel' => 'Email']],
-      'Direct Solicitation' => [['total_amount' => 10, 'Gift_Data.Channel' => 'Direct Solicitation']],
+      'DAF' => [['total_amount' => 1000, 'Gift_Data.Campaign' => 'Donor Advised Fund', 'Gift_Data.Channel' => 'Email'], 'GL43485'],
+      'Direct Solicitation' => [['total_amount' => 10, 'Gift_Data.Channel' => 'Direct Solicitation'], 'GL43485'],
+      'Workplace Giving' => [['total_amount' => 10000, 'Gift_Data.Channel' => 'Workplace Giving', 'Gift_Data.Campaign' => 'Matching Gift'], 'GL43488'],
     ];
   }
 
   /**
    * A donor with a relationship manager outranks the DAF and offline channel
-   * rules.
+   * rules, but not Workplace Giving.
    *
    * @dataProvider relationshipManagerProvider
    */
-  public function testRelationshipManagerGLCode(array $values): void {
+  public function testRelationshipManagerGLCode(array $values, string $expected): void {
     $contactID = $this->createIndividual(['Prospect.Relationship_Manager' => '1']);
     $contribution = $this->createContribution(['contact_id' => $contactID] + $values);
-    $this->assertEquals('GL43485', $this->getGLCode($contribution['id']));
+    $this->assertEquals($expected, $this->getGLCode($contribution['id']));
   }
 
   /**

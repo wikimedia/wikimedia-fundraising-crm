@@ -157,7 +157,7 @@ class GLCode {
     if (str_starts_with($contribution['Gift_Data.Fund'] ?? '', 'Restricted')) {
       return 'GL43428';
     }
-    if ($channel === 'Chapter Gifts') {
+    if (in_array($channel,['Chapter Gifts', 'Workplace Giving'], TRUE)) {
       return $channelGLCode;
     }
     if ($hasRelationshipManager) {
@@ -165,9 +165,6 @@ class GLCode {
     }
     if ($amount >= 10000 && $isMajorGiftsAssociated) {
       return 'GL43485';
-    }
-    if ($channel === 'Workplace Giving') {
-      return $channelGLCode;
     }
     if ($channel === 'Recurring Gift') {
       if ($amount >= 10000) {
