@@ -191,6 +191,30 @@ class MergeTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
+   * Merges only update Relationship Manager when the merged contact is someone's relationship manager.
+   */
+  public function testMergeOnlyUpdatesReferencedRelationshipManager(): void {
+    $this->assertNotContains('relationship_manager', \CRM_Dedupe_Merger::cidRefs()['civicrm_value_1_prospect_5'] ?? []);
+    $sqls = [];
+    \CRM_Utils_Hook::merge('sqls', $sqls, $this->contactID, $this->contactID2);
+    $this->assertEquals([], $sqls);
+
+    $this->breedDuck(['Prospect.Relationship_Manager' => $this->contactID2], 'donor');
+    \CRM_Utils_Hook::merge('sqls', $sqls, $this->contactID, $this->contactID2);
+    $this->assertEquals(["UPDATE civicrm_value_1_prospect_5 SET relationship_manager = $this->contactID WHERE relationship_manager = $this->contactID2"], $sqls);
+  }
+
+  /**
+   * Merging a relationship manager moves their donors to the remaining contact.
+   */
+  public function testMergeRepointsRelationshipManager(): void {
+    $donorID = $this->createTestEntity('Contact', ['contact_type' => 'Individual', 'first_name' => 'Donald', 'last_name' => 'Duck', 'Prospect.Relationship_Manager' => $this->contactID2], 'donor')['id'];
+    $result = $this->callAPISuccess('Contact', 'merge', ['to_keep_id' => $this->contactID, 'to_remove_id' => $this->contactID2, 'mode' => 'aggressive']);
+    $this->assertCount(1, $result['values']['merged']);
+    $this->assertContactValues($donorID, ['Prospect.Relationship_Manager' => $this->contactID]);
+  }
+
+  /**
    * Data provider for merge hook to do both ways around.
    *
    * @return array

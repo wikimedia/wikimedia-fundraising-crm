@@ -62,7 +62,7 @@ class GLCodeTest extends TestCase {
    * @dataProvider relationshipManagerProvider
    */
   public function testRelationshipManagerGLCode(array $values, string $expected): void {
-    $contactID = $this->createIndividual(['Prospect.Relationship_Manager' => '1']);
+    $contactID = $this->createIndividual(['Prospect.Relationship_Manager' => $this->createIndividual([], 'relationship_manager')]);
     $contribution = $this->createContribution(['contact_id' => $contactID] + $values);
     $this->assertEquals($expected, $this->getGLCode($contribution['id']));
   }
@@ -71,7 +71,7 @@ class GLCodeTest extends TestCase {
    * A contact excluded from gift coding has its relationship manager ignored.
    */
   public function testExcludedContactGLCode(): void {
-    $contactID = $this->createIndividual(['Prospect.Relationship_Manager' => '1']);
+    $contactID = $this->createIndividual(['Prospect.Relationship_Manager' => $this->createIndividual([], 'relationship_manager')]);
     $this->setSetting('wmf_gift_coding_excluded_contacts', (string) $contactID);
     $contribution = $this->createContribution(['contact_id' => $contactID, 'Gift_Data.Channel' => 'Email']);
     $this->assertEquals('GL43482', $this->getGLCode($contribution['id']));
@@ -82,7 +82,7 @@ class GLCodeTest extends TestCase {
    * gifts code.
    */
   public function testDAFHolderRelationshipManagerGLCode(): void {
-    $dafHolderID = $this->createIndividual(['Prospect.Relationship_Manager' => '1'], 'daf_holder');
+    $dafHolderID = $this->createIndividual(['Prospect.Relationship_Manager' => $this->createIndividual([], 'relationship_manager')], 'daf_holder');
     $contribution = $this->createContribution([
       'contact_id' => $this->createOrganization(),
       'total_amount' => 500,
@@ -155,7 +155,7 @@ class GLCodeTest extends TestCase {
       'annual 1000' => ['year', 1000, 'GL43487'],
       'annual 10000' => ['year', 10000, 'GL43485'],
       'annual under 1000' => ['year', 999.99, 'GL43480'],
-      'monthly under 84 relationship manager' => ['month', 83.99, 'GL43485', [], ['Prospect.Relationship_Manager' => '1']],
+      'monthly under 84 relationship manager' => ['month', 83.99, 'GL43485', [], TRUE],
       'monthly sign-up' => ['month', 84, 'GL43482', ['Gift_Data.Channel' => 'Email']],
       'monthly sign-up major gifts associated' => ['month', 10, 'GL43487', ['Gift_Data.Channel' => 'Email', 'Gift_Data.Appeal' => 'MGGO26']],
     ];
@@ -167,7 +167,11 @@ class GLCodeTest extends TestCase {
    *
    * @dataProvider recurringProvider
    */
-  public function testRecurringGLCode(string $frequencyUnit, float $amount, string $expected, array $values = [], array $contactValues = []): void {
+  public function testRecurringGLCode(string $frequencyUnit, float $amount, string $expected, array $values = [], bool $hasRelationshipManager = FALSE): void {
+    $contactValues = [];
+    if ($hasRelationshipManager) {
+      $contactValues['Prospect.Relationship_Manager'] = $this->createIndividual([], 'relationship_manager');
+    }
     $contactID = $this->createIndividual($contactValues);
     $recur = $this->createTestEntity('ContributionRecur', [
       'contact_id' => $contactID,
@@ -230,7 +234,7 @@ class GLCodeTest extends TestCase {
     $contribution = $this->createContribution(['Gift_Data.Channel' => 'Email']);
     Contact::update(FALSE)
       ->addWhere('id', '=', $contribution['contact_id'])
-      ->addValue('Prospect.Relationship_Manager', '1')
+      ->addValue('Prospect.Relationship_Manager', $this->createIndividual([], 'relationship_manager'))
       ->execute();
     $stored = Contribution::get(FALSE)
       ->addSelect('contact_id', 'total_amount', 'receive_date')

@@ -73,6 +73,47 @@ $entities = [
       ],
     ],
   ],
+  [
+    'name' => 'mg_relationship_managers',
+    'entity' => 'Group',
+    'cleanup' => 'unused',
+    'update' => 'unmodified',
+    'params' => [
+      'version' => 4,
+      'match' => ['name'],
+      'values' => [
+        'name' => 'mg_relationship_managers',
+        'title' => 'MG Relationship Managers',
+        'description' => 'Contacts selectable as relationship manager',
+        'group_type' => [],
+        'is_reserved' => TRUE,
+      ],
+    ],
+  ],
 ];
+
+if (Civi::settings()->get('environment') === 'Development') {
+  foreach (['Alex', 'Sam', 'Robin'] as $firstName) {
+    $entities[] = [
+      'name' => 'dev_relationship_manager_' . $firstName,
+      'entity' => 'Contact',
+      'cleanup' => 'never',
+      'update' => 'never',
+      'params' => [
+        'version' => 4,
+        'match' => ['external_identifier'],
+        'values' => [
+          'contact_type' => 'Individual',
+          'first_name' => $firstName,
+          'last_name' => 'Manager',
+          'external_identifier' => 'dev_relationship_manager_' . $firstName,
+        ],
+        'chain' => [
+          'group' => ['GroupContact', 'create', ['values' => ['contact_id' => '$id', 'group_id:name' => 'mg_relationship_managers']]],
+        ],
+      ],
+    ];
+  }
+}
 
 return $entities;

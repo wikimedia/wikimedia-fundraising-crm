@@ -316,12 +316,13 @@ class CRM_Wmf_Page_DonorIframeTest extends TestCase implements HeadlessInterface
   }
 
   public function testRelationshipManager(): void {
+    $relationshipManagerID = $this->createIndividual(['first_name' => 'Jimmy'], 'relationship_manager');
     $this->createIndividual([
       'email_primary.email' => 'hasrm@example.org',
-      'Prospect.Relationship_Manager:label' => 'Jimmy Wales',
+      'Prospect.Relationship_Manager' => $relationshipManagerID,
     ]);
     $donor = $this->runPage('hasrm@example.org')['donor'];
-    $this->assertSame('Jimmy Wales', $donor['relationship_manager']);
+    $this->assertSame('Jimmy Mouse', $donor['relationship_manager']);
   }
 
   public function testLegacySocietyMember(): void {

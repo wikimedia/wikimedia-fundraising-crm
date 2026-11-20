@@ -118,7 +118,7 @@ class GiftCodingTest extends TestCase {
 
   protected function setRelationshipManager(): void {
     Contact::update(FALSE)
-      ->addValue('Prospect.Relationship_Manager', '1')
+      ->addValue('Prospect.Relationship_Manager', $this->createIndividual([], 'relationship_manager'))
       ->addWhere('id', '=', $this->donorID)
       ->execute();
   }

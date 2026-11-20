@@ -4,8 +4,14 @@ namespace Civi\WMFHook;
 
 use Civi\Api4\Contact as ContactAPI;
 use Civi\Api4\Activity;
+use Civi\Core\Event\GenericHookEvent;
 
 class Contact {
+
+  /**
+   * Prospect contact reference columns handled by merge().
+   */
+  private const PROSPECT_CONTACT_COLUMNS = ['relationship_manager'];
 
   /**
    * Implements hook_civicrm_pre
@@ -35,6 +41,34 @@ class Contact {
             ->addValue('subject', 'From ' . ($options[$currentStage] ?? 'None') . ' to ' . ($options[$stage] ?? 'None'))
             ->addValue('details', $event->getValue('Prospect.Stage_Change_Reason'))
             ->execute();
+        }
+      }
+    }
+  }
+
+  /**
+   * Implements hook_civicrm_merge.
+   *
+   * Only update Prospect contact reference fields on merge when another
+   * contact references the merged contact, instead of core's update on every
+   * merge. Under REPEATABLE READ
+   * that update gap-locks the index even when nothing matches, and for low
+   * contact IDs that gap is where every new contact's Prospect row is
+   * inserted. The check is a plain (non-locking) read.
+   *
+   * The columns must exist, so don't merge between deploying this and
+   * running the upgrade that adds them.
+   *
+   * @param \Civi\Core\Event\GenericHookEvent $event
+   */
+  public static function merge(GenericHookEvent $event): void {
+    if ($event->type === 'cidRefs') {
+      $event->data['civicrm_value_1_prospect_5'] = array_values(array_diff($event->data['civicrm_value_1_prospect_5'] ?? [], self::PROSPECT_CONTACT_COLUMNS));
+    }
+    if ($event->type === 'sqls') {
+      foreach (self::PROSPECT_CONTACT_COLUMNS as $column) {
+        if (\CRM_Core_DAO::singleValueQuery("SELECT 1 FROM civicrm_value_1_prospect_5 WHERE $column = %1 LIMIT 1", [1 => [$event->otherId, 'Integer']])) {
+          $event->data[] = "UPDATE civicrm_value_1_prospect_5 SET $column = " . (int) $event->mainId . " WHERE $column = " . (int) $event->otherId;
         }
       }
     }

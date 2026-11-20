@@ -5,6 +5,8 @@ use Civi\Api4\ContributionRecur;
 use Civi\Api4\CustomField;
 use Civi\Api4\CustomGroup;
 use Civi\Api4\ExchangeRate;
+use Civi\Api4\Group;
+use Civi\Api4\Managed;
 use Civi\Api4\OptionGroup;
 use Civi\Api4\OptionValue;
 use Civi\Api4\LocationType;
@@ -19,6 +21,7 @@ use Civi\Api4\Address;
 use Civi\Api4\Country;
 use Civi\Api4\Relationship;
 use Civi\Api4\RelationshipType;
+use Civi\Api4\UFField;
 use Civi\QueueHelper;
 use Civi\WMFHook\CalculatedData;
 use CRM_Wmf_ExtensionUtil as E;
@@ -6018,6 +6021,160 @@ v.channel IS NULL AND c.id = 131486342;",
   public function upgrade_5285(): bool {
     CRM_Core_DAO::executeQuery("DELETE FROM civicrm_financial_data_adjustment WHERE gl_code_before IS NULL AND gl_code_after = 'GL60917'");
     return TRUE;
+  }
+
+  /**
+   * Replace the Prospect.Relationship_Manager option list with a contact entity reference.
+   *
+   * Converting the column in place would rebuild civicrm_value_1_prospect_5
+   * with writes blocked, so instead the old field is renamed and made view-only
+   * (to be removed disabled later after legacy searches etc updated) and a new
+   * column is added.
+   *
+   * Values without a mapped contact on this site (i.e. all of them on dev)
+   * are not copied.
+   *
+   * SearchKits using Prospect.Relationship_Manager:label or :name are switched
+   * to the contact's display_name. Follow up will be required to adjust any that
+   * filter on a specific value (not empty checks will still work). Profile
+   * fields are updated.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5290(): bool {
+    $contactIDs = [
+      '20' => 4846156,
+      '31' => 39449118,
+      '35' => 46766367,
+      '41' => 57821764,
+      '42' => 64014651,
+      '43' => 55250634,
+      '44' => 19459897,
+      '45' => 70168169,
+      '46' => 51097111,
+      '49' => 71905919,
+    ];
+    $existingIDs = Contact::get(FALSE)
+      ->addWhere('id', 'IN', $contactIDs)
+      ->execute()->column('id');
+    Managed::reconcile(FALSE)->setModules([E::LONG_NAME])->execute();
+    $groupID = Group::get(FALSE)
+      ->addWhere('name', '=', 'mg_relationship_managers')
+      ->execute()->single()['id'];
+    CRM_Contact_BAO_GroupContact::addContactsToGroup($existingIDs, $groupID);
+    $legacyField = CustomField::get(FALSE)
+      ->addSelect('id', 'custom_group_id', 'name', 'weight')
+      ->addWhere('custom_group_id:name', '=', 'Prospect')
+      ->addWhere('column_name', '=', 'relationship_manager_284')
+      ->execute()->single();
+    if ($legacyField['name'] === 'Relationship_Manager') {
+      CustomField::update(FALSE)
+        ->addWhere('id', '=', $legacyField['id'])
+        ->addValue('name', 'Relationship_Manager_Legacy')
+        ->addValue('label', 'Relationship Manager (legacy)')
+        ->execute();
+    }
+    $newFieldID = $this->addProspectContactField($legacyField['custom_group_id'], 'Relationship_Manager', 'Relationship Manager', 'relationship_manager', $legacyField['weight'], 'The WMF staff member who manages our relationship with the donor.');
+    UFField::update(FALSE)
+      ->addWhere('field_name', '=', 'custom_' . $legacyField['id'])
+      ->addValue('field_name', 'custom_' . $newFieldID)
+      ->execute();
+    foreach ($contactIDs as $value => $contactID) {
+      if (in_array($contactID, $existingIDs, TRUE)) {
+        Contact::update(FALSE)
+          ->addValue('Prospect.Relationship_Manager', $contactID)
+          ->addWhere('is_deleted', 'IN', [TRUE, FALSE])
+          ->addWhere('Prospect.Relationship_Manager_Legacy', '=', $value)
+          ->execute();
+      }
+    }
+    CustomField::update(FALSE)
+      ->addWhere('id', '=', $legacyField['id'])
+      ->addValue('is_view', TRUE)
+      ->execute();
+    foreach (['civicrm_saved_search' => 'api_params', 'civicrm_search_display' => 'settings'] as $table => $column) {
+      foreach (['label', 'name'] as $suffix) {
+        CRM_Core_DAO::executeQuery("
+          UPDATE $table
+          SET $column = REPLACE($column, 'Prospect.Relationship_Manager:$suffix', 'Prospect.Relationship_Manager.display_name')
+          WHERE $column LIKE '%Prospect.Relationship_Manager:$suffix%'
+        ");
+      }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Add a Prospect contact reference field limited to relationship managers, if not already added.
+   *
+   * Core adds a custom field's column and foreign key in one ALTER, which
+   * rebuilds the whole table (slow, blocking). Run separately, adding the
+   * column is instant and adding the foreign key only builds its index.
+   * Foreign key checks can be off because the new column is all NULL.
+   *
+   * @param int $customGroupID
+   * @param string $name
+   * @param string $label
+   * @param string $column
+   * @param int $weight
+   * @param string|null $helpPost
+   *
+   * @return int
+   *   The field ID.
+   * @throws \CRM_Core_Exception
+   */
+  private function addProspectContactField(int $customGroupID, string $name, string $label, string $column, int $weight, ?string $helpPost = NULL): int {
+    $table = 'civicrm_value_1_prospect_5';
+    $fieldID = CustomField::get(FALSE)
+      ->addWhere('custom_group_id:name', '=', 'Prospect')
+      ->addWhere('column_name', '=', $column)
+      ->execute()->first()['id'] ?? NULL;
+    if (!$fieldID) {
+      $fkName = 'FK_' . CRM_Core_BAO_SchemaHandler::getIndexName($table, $column);
+      $lockWaitTimeout = CRM_Core_DAO::singleValueQuery('SELECT @@SESSION.lock_wait_timeout');
+      // So we fail fast if we can't get a lock
+      CRM_Core_DAO::executeQuery('SET SESSION lock_wait_timeout = 30');
+      try {
+        if (!CRM_Core_BAO_SchemaHandler::checkIfFieldExists($table, $column)) {
+          CRM_Core_DAO::executeQuery("ALTER TABLE $table ADD COLUMN `$column` int unsigned NULL, ALGORITHM=INSTANT");
+        }
+        if (!CRM_Core_BAO_SchemaHandler::checkFKExists($table, $fkName)) {
+          CRM_Core_DAO::executeQuery('SET foreign_key_checks = 0');
+          try {
+            CRM_Core_DAO::executeQuery("ALTER TABLE $table ADD CONSTRAINT $fkName FOREIGN KEY (`$column`) REFERENCES civicrm_contact (id) ON DELETE SET NULL, ALGORITHM=NOCOPY, LOCK=NONE");
+          }
+          finally {
+            CRM_Core_DAO::executeQuery('SET foreign_key_checks = 1');
+          }
+        }
+      }
+      finally {
+        CRM_Core_DAO::executeQuery("SET SESSION lock_wait_timeout = $lockWaitTimeout");
+      }
+      // Not API4, which would add the column and foreign key itself in one ALTER.
+      $fieldID = CRM_Core_DAO_CustomField::writeRecord([
+        'custom_group_id' => $customGroupID,
+        'name' => $name,
+        'label' => $label,
+        'data_type' => 'EntityReference',
+        'html_type' => 'Autocomplete-Select',
+        'fk_entity' => 'Contact',
+        'filter' => '[["groups:name", "IN", ["mg_relationship_managers"]]]',
+        'is_searchable' => TRUE,
+        'is_active' => TRUE,
+        'weight' => $weight,
+        'column_name' => $column,
+        'help_post' => $helpPost,
+      ])->id;
+    }
+    if (CRM_Core_Config::singleton()->logging) {
+      (new CRM_Logging_Schema())->fixSchemaDifferencesFor($table, ['ADD' => [$column]]);
+    }
+    Civi::service('sql_triggers')->rebuild($table, TRUE);
+    Civi::rebuild(['system' => TRUE])->execute();
+    Civi::cache('metadata')->clear();
+    return $fieldID;
   }
 
   /**
