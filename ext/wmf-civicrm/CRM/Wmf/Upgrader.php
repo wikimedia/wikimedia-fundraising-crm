@@ -5977,6 +5977,39 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Queue setting the GL code for contributions received this fiscal year.
+   *
+   * @return bool
+   */
+  public function upgrade_5280(): bool {
+    $queue = new QueueHelper(\Civi::queue('wmf_gl_code_backfill', [
+      'type' => 'SqlParallel',
+      'runner' => 'task',
+      'retry_limit' => 3,
+      'retry_interval' => 300,
+      'error' => 'abort',
+    ]));
+    $startContributionID = (int) CRM_Core_DAO::singleValueQuery("SELECT MIN(id) - 1 FROM civicrm_contribution WHERE receive_date >= '2026-07-01'");
+    do {
+      $contributionIDs = Contribution::get(FALSE)
+        ->addSelect('id')
+        ->addWhere('id', '>', $startContributionID)
+        ->addWhere('receive_date', '>=', '2026-07-01')
+        ->addOrderBy('id')
+        ->setLimit(1000)
+        ->execute()->column('id');
+      if ($contributionIDs) {
+        $queue->api4('Contribution', 'backfillGLCode', [
+          'where' => [['id', 'IN', $contributionIDs]],
+          'isOverwrite' => FALSE,
+        ]);
+        $startContributionID = end($contributionIDs);
+      }
+    } while ($contributionIDs);
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
