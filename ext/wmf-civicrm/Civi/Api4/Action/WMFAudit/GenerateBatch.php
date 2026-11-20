@@ -490,13 +490,13 @@ class GenerateBatch extends AbstractAction {
       ];
       if (empty($this->incompleteRows[$batchName])) {
         foreach ($csv_rows as $row) {
-          if (!$isEndowmentGateway && $row['is_endowment'] && !str_ends_with(trim($row['MEMO']), 'Fees') && ($row['ACCT_NO'] != $this->getReversalAccountCode($row['CURRENCY'], $batchName))) {
+          if (!$isEndowmentGateway && $this->isTransferRequired($row, $batch)) {
             $endowmentWriterFrom = $this->getJournalGenerator($batch)->getWriter('source', 'foundation', 'endowment');
             $endowmentWriterTo = $this->getJournalGenerator($batch)->getWriter('destination', 'foundation', 'endowment');
             $csvFiles += $this->getJournalGenerator($batch)->getTransferJournalFiles();
             $this->writeCrossInstanceTransfer($row, $batchName, $endowmentWriterFrom, $endowmentWriterTo, $this->getEndowmentTransferConfig());
           }
-          elseif ($isEndowmentGateway && !$row['is_endowment'] && !str_ends_with(trim($row['MEMO']), 'Fees') && ($row['ACCT_NO'] != $this->getReversalAccountCode($row['CURRENCY'], $batchName))) {
+          elseif ($isEndowmentGateway && $this->isTransferRequired($row, $batch)) {
             // Reverse of the block above: an endowment-gateway batch whose
             // rows are earmarked for the annual (foundation) fund get
             // carved out and journaled over to the wmf/foundation instance.
@@ -675,6 +675,7 @@ class GenerateBatch extends AbstractAction {
       $memoParts = explode(' | ', $row['MEMO']);
       unset($memoParts[3], $memoParts[6]);
       $reversalRow['MEMO'] = implode(' | ', $memoParts);
+      $reversalRow['row_type'] = 'balancing';
       $rowsWithReversals[] = $reversalRow;
     }
     return $rowsWithReversals;
@@ -790,7 +791,27 @@ class GenerateBatch extends AbstractAction {
    * @return bool
    */
   public function isFee($row): bool {
-    return str_contains($row['MEMO'], 'Fee') || str_ends_with($row['MEMO'], 'Adjustment');
+    return !$this->isRevenue($row);
+  }
+
+  /**
+   * Is the row donations or refunds, rather than fees, adjustments or balancing.
+   */
+  private function isRevenue(array $row): bool {
+    return in_array($row['row_type'], ['donation', 'refund'], TRUE);
+  }
+
+  /**
+   * Does the row need transferring to the other instance.
+   *
+   * Rows for the other fund do, other than fees & balancing rows.
+   *
+   * @todo adjustments are included, so on an endowment gateway they are
+   *   transferred to the foundation - confirm that is intended.
+   */
+  private function isTransferRequired(array $row, array $batch): bool {
+    return (bool) $row['is_endowment'] !== $this->batchSummary[$batch['name']]['is_endowment_gateway']
+      && !in_array($row['row_type'], ['donation_fee', 'invoice_fee', 'balancing'], TRUE);
   }
 
   /**
@@ -923,9 +944,7 @@ class GenerateBatch extends AbstractAction {
       if (!$isFee) {
         $count += $rowCount;
       }
-      if (str_ends_with($row['MEMO'], 'Adjustment') || (str_ends_with($row['MEMO'], 'Fees')
-        && !str_ends_with($row['MEMO'], 'Donation Fees'))
-      ) {
+      if (in_array($row['row_type'], ['invoice_fee', 'adjustment'], TRUE)) {
         // These are the fee-only rows. Include them in the count
         // as they are in the batch count...
         $count += $rowCount;
@@ -1069,11 +1088,11 @@ class GenerateBatch extends AbstractAction {
     $reordered = [
       'gateway' => $row['gateway'],
       'settlement_date' => $row['settlement_date'],
-      'type' => trim(str_replace(FinanceConstants::GL_ENDOWMENT_MEMO_SUFFIX, '', substr(strrchr($row['MEMO'], '|'), 1))),
+      'type' => FinanceConstants::JOURNAL_ROW_TYPES[$row['row_type']],
       'DEBIT' => $row['DEBIT'],
       'CREDIT' => $row['CREDIT'],
     ];
-    unset($row['type'], $row['gateway'], $row['settlement_date'], $row['DESCRIPTION'], $row['MEMO'], $row['DEBIT'], $row['CREDIT']);
+    unset($row['type'], $row['row_type'], $row['gateway'], $row['settlement_date'], $row['DESCRIPTION'], $row['MEMO'], $row['DEBIT'], $row['CREDIT']);
 
     $glFields = ['ACCT_NO', 'LOCATION_ID', 'DEPT_ID', 'CURRENCY', 'GLDIMFUNDING', 'GL_VENDOR', 'GLENTRY_PROJECTID'];
     foreach ($glFields as $field) {

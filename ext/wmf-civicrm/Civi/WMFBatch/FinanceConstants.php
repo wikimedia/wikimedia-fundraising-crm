@@ -47,6 +47,18 @@ final class FinanceConstants {
   const GL_ENDOWMENT_MEMO_SUFFIX = 'Earmarked for Endowment from WMF';
 
   /**
+   * Journal row types, with the label used in the details file.
+   */
+  const JOURNAL_ROW_TYPES = [
+    'donation' => 'Donations',
+    'refund' => 'Refunds',
+    'donation_fee' => 'Donation Fees',
+    'invoice_fee' => 'Invoice Fees',
+    'adjustment' => 'Adjustment',
+    'balancing' => 'Balancing',
+  ];
+
+  /**
    * The columns of a journal csv file, in order.
    *
    * Not all of these are used - they are part of the finance spec but when
