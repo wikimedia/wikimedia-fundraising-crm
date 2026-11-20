@@ -956,6 +956,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
         'channel' => 'Mobile Banner',
         'fund' => 'Unrestricted - General',
         'is_major_gift' => '0',
+        'gl_code' => 'GL43481',
         'is_endowment' => '0',
         'original_amount' => '25.00',
         'original_currency' => 'USD',

@@ -144,6 +144,7 @@ class JournalGenerator {
         gift.channel,
         gift.fund,
         gift.is_major_gift,
+        gift.gl_code,
         IF(c.financial_type_id = ' . $endowmentFinancialType . ', 1, 0) as is_endowment,
         "' . $this->getGatewayAccountIdentifier() . '" as gateway,
         COALESCE(x.backend_processor, x.gateway) as backend_processor,
