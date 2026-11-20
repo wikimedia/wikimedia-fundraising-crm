@@ -363,47 +363,16 @@ GROUP BY s.settlement_batch_reference
   }
 
   /**
-   * GLCode is currently calculated in sql but once Gift_Data.gl_code is populated we will use that instead.
+   * The account the contribution is coded to, from Gift_Data.gl_code.
+   *
+   * The stored code has a GL prefix (GL43485) that the journal doesn't use.
+   * A contribution with no GL code gets an empty ACCT_NO, which is reported
+   * as an error and stops the batch closing.
    *
    * @return string
    */
   private function getGLCodeClause(): string {
-    return "
-    -- See GL Account Structure Rules
-    -- Online Recurring Contributions 43480 = channel =  	Recurring Gift
-    -- Online Banner Contributions	43481 = channel = Banner
-    -- Online Email Contributions	43482 = channel = email
-    -- Online Direct Mail Contributions	43483 = channel = Direct Mail
-    -- Online Other Contributions	43484
-    -- Chapter Gifts	43440 = channel =  Chapter Gifts
-    -- Major Gifts - Unrestricted	43485
-    -- Major Gifts - Restricted	43428
-    CASE
-  -- 1) Major gifts first
-  WHEN gift.is_major_gift = 1 AND gift.fund LIKE 'restricted%' THEN 43428  -- Major Gifts - Restricted
-  WHEN gift.is_major_gift = 1 THEN 43485                                   -- Major Gifts - Unrestricted
-
-  -- 2) Specific channels
-  WHEN gift.channel = 'Chapter Gifts'   THEN 43440   -- Chapter Gifts
-  WHEN gift.channel = 'Recurring Gift'  THEN 43480   -- Online Recurring Contributions
-  WHEN gift.channel = 'Mobile Banner'   THEN 43481   -- Online Banner Contributions
-  WHEN gift.channel = 'Desktop Banner'  THEN 43481   -- Online Banner Contributions
-  WHEN gift.channel = 'Other Banner'    THEN 43481   -- Online Banner Contributions
-  WHEN gift.channel = 'Email'           THEN 43482   -- Online Email Contributions
-  WHEN gift.channel = 'Direct Mail'     THEN 43483   -- Online Direct Mail Contributions
-  WHEN gift.channel = 'SMS'             THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Other Online'    THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Portal Banner'   THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Sidebar'         THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Wikipedia App'   THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Wikimedia Portal' THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Other Portal'    THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Social Media'    THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Interest'        THEN 45050   -- Interest (occurs with CCK)
-  -- 3) Everything else -> Online Other Contributions
-  -- remaining = 'Workplace Giving','Direct Solicitation','Planned Giving', 'Events','White Mail','Other Offline'
-  ELSE '' -- default/fallback - this will cause the batch to report errors and not close.
-END";
+    return 'SUBSTRING(gift.gl_code, 3)';
   }
 
   /**
@@ -419,8 +388,7 @@ END";
    * Is the row's revenue restricted funding?
    *
    * We calculate this off a combination of the gl_code and whether it is intended
-   * for the endowment. (The gl_code is currently calculated in sql but we plan to move
-   * that to a calculated field)
+   * for the endowment.
    */
   private function getIsRestrictedGift(): string {
     $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');

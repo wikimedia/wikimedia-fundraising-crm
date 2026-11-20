@@ -189,7 +189,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $currency = 'USD';
     $settlementDate = '2026-01-20';
 
-    // Mobile Banner / Desktop Banner / Other Banner => all map to ACCT_NO 43481 in getAccountClause().
+    // Mobile Banner / Desktop Banner / Other Banner => all coded GL43481.
     $this->createQueueContribution([
       'Gift_Data.Channel' => 'Mobile Banner',
       'Gift_Data.Fund' => 'Unrestricted',
@@ -253,7 +253,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $currency = 'USD';
     $settlementDate = '2026-01-20';
 
-    // Mobile Banner / Desktop Banner / Other Banner => all map to ACCT_NO 43481 in getAccountClause().
+    // Mobile Banner / Desktop Banner / Other Banner => all coded GL43481.
     $this->createQueueContribution([
       'financial_type_id:name' => 'Endowment Gift',
       'Gift_Data.Channel' => 'Mobile Banner',
@@ -298,9 +298,9 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $currency = 'USD';
     $settlementDate = '2026-01-21';
 
-    // Both channels map to 43484, but different Fund => GROUP BY Fund, ACCT_NO, is_major_gift => should become 2 rows.
+    // Both channels are coded GL43484, but different Fund => GROUP BY Fund, ACCT_NO, is_major_gift => should become 2 rows.
     $this->createQueueContribution([
-      'Gift_Data.Channel' => 'SMS', // 43484
+      'Gift_Data.Channel' => 'Social Media', // 43484
       'Gift_Data.Fund' => 'Unrestricted',
       'Gift_Data.is_major_gift' => 0,
       'contribution_settlement.settlement_batch_reference' => $batchName,
@@ -310,7 +310,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     ]);
     $this->createQueueContribution([
       'Gift_Data.Channel' => 'Other Online', // 43484
-      'Gift_Data.Fund' => 'Restricted - Foo', // different Fund => separate group
+      'Gift_Data.Fund' => 'Online Fundraising - CC-1005', // different Fund => separate group
       'Gift_Data.is_major_gift' => 0,
       'contribution_settlement.settlement_batch_reference' => $batchName,
       'contribution_settlement.settled_donation_amount' => 20.00,
@@ -403,7 +403,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $donationRows = array_values(array_filter($rows, fn($r) => str_ends_with((string) ($r['MEMO'] ?? ''), 'Donations')));
     $this->assertNotEmpty($donationRows);
 
-    // When getAccountClause() falls through, ACCT_NO is ''.
+    // No GL code for the channel, so ACCT_NO is ''.
     $this->assertSame('', (string) ($donationRows[0]['ACCT_NO'] ?? ''), 'Expected unmapped channel to yield blank ACCT_NO');
   }
 
@@ -1095,7 +1095,8 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $this->createQueueContribution([
       'Gift_Data.Channel' => 'Mobile Banner',
       'Gift_Data.Fund' => 'Unrestricted',
-      'Gift_Data.is_major_gift' => 1,
+      // Major gifts appeal => GL43487.
+      'Gift_Data.Appeal' => 'MGGO26',
       'contribution_settlement.settlement_batch_reference' => $batchName,
       'contribution_settlement.settled_donation_amount' => 10.00,
       'contribution_settlement.settlement_currency' => $currency,
@@ -1113,8 +1114,8 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $result = $this->runGenerate($batchName, $currency, $settlementDate, 30, 2, $prefix);
 
     $deptIDs = $this->getDonationRowDeptIDs($result[0]['csv_rows']);
-    // 43485 = Major Gifts - Unrestricted, 43481 = Online Banner Contributions.
-    $this->assertSame('CC-1004', $deptIDs['43485'] ?? NULL, 'Major gift row should use the major gifts cost centre');
+    // 43487 = Major Gifts - <$10K, 43481 = Online Banner Contributions.
+    $this->assertSame('CC-1004', $deptIDs['43487'] ?? NULL, 'Major gift row should use the major gifts cost centre');
     $this->assertSame('CC-1005', $deptIDs['43481'] ?? NULL, 'Other rows should use the online fundraising cost centre');
   }
 

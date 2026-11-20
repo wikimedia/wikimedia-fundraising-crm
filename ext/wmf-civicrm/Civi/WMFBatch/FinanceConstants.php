@@ -72,7 +72,7 @@ final class FinanceConstants {
   /**
    * The one major gifts account that is restricted funding.
    *
-   * getAccountClause() reaches it when the gift's fund is restricted, that
+   * GLCode codes a gift to it when the gift's fund is restricted, that
    * taking precedence over the unrestricted codes (T409994). Endowment
    * journals also treat every major gift as restricted whatever it was on
    * the foundation side - see writeCrossInstanceTransfer().
