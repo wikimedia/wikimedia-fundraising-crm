@@ -195,6 +195,7 @@ class JournalGenerator {
     s.settlement_currency as CURRENCY,
     '' as GLENTRY_PROJECTID,
     IF(c.financial_type_id = $endowmentFinancialType , 1, 0) as is_endowment,
+    COUNT(*) as item_count,
     $restrictionsClause as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -216,6 +217,7 @@ UNION ALL
     s.settlement_currency as CURRENCY,
     '' as GLENTRY_PROJECTID,
     IF(c.financial_type_id = $endowmentFinancialType , 1, 0) as is_endowment,
+    COUNT(*) as item_count,
     $restrictionsClause as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -240,6 +242,7 @@ SELECT
     s.settlement_currency as CURRENCY,
     IF(c.financial_type_id =  $endowmentFinancialType , 'FR-EI-EN', '') as GLENTRY_PROJECTID,
     IF(c.financial_type_id =  $endowmentFinancialType , 1, 0) as is_endowment,
+    COUNT(*) as item_count,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -265,6 +268,7 @@ SELECT
     s.settlement_currency as CURRENCY,
     IF(c.financial_type_id =  $endowmentFinancialType , 'FR-EI-EN', '') as GLENTRY_PROJECTID,
     IF(c.financial_type_id =  $endowmentFinancialType , 1, 0) as is_endowment,
+    COUNT(*) as item_count,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -290,6 +294,7 @@ SELECT
     s.settlement_currency as CURRENCY,
     '' as GLENTRY_PROJECTID,
     0 as is_endowment,
+    COUNT(*) as item_count,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -315,6 +320,7 @@ SELECT
     s.settlement_currency as CURRENCY,
     '' as GLENTRY_PROJECTID,
     0 as is_endowment,
+    COUNT(*) as item_count,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id

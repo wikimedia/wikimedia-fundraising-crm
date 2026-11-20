@@ -958,6 +958,7 @@ class AdyenAuditTest extends BaseAuditTestCase {
         'is_major_gift' => '0',
         'gl_code' => 'GL43481',
         'is_endowment' => '0',
+        'item_count' => '1',
         'original_amount' => '25.00',
         'original_currency' => 'USD',
         'settled_donation_amount' => '25.10',

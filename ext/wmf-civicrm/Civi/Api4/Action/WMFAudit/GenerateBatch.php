@@ -935,7 +935,7 @@ class GenerateBatch extends AbstractAction {
     $count = 0;
     foreach ($journalRows as $row) {
       $isFee = $this->isFee($row);
-      $rowCount = (int) (explode(' | ', $row['MEMO'])[3]);
+      $rowCount = (int) $row['item_count'];
       if (!$isFee) {
         $count += $rowCount;
       }

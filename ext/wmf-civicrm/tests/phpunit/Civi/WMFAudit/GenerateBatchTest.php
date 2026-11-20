@@ -240,6 +240,7 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $this->assertEquals('0.00', (string) $row['DEBIT'], 'Expected donations to be credit-only in this dataset');
     $this->assertEquals('V01670', $row['GLENTRY_VENDORID']);
     $this->assertSame(3, $this->memoCount($row), 'Expected MEMO count to equal number of contributions grouped');
+    $this->assertEquals(3, $row['item_count']);
   }
 
   /**
