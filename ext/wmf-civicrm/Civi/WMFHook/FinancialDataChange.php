@@ -26,7 +26,6 @@ class FinancialDataChange {
     if (!$event->hasValue('financial_type_id') && !$event->hasValue('Gift_Data.gl_code')) {
       return;
     }
-
     $current = Contribution::get(FALSE)
       ->addWhere('id', '=', $event->id)
       ->addSelect('financial_type_id', 'Gift_Data.gl_code', 'contribution_settlement.settlement_batch_reference')
@@ -78,7 +77,7 @@ class FinancialDataChange {
       $batchStatus = Batch::get(FALSE)
         ->addWhere('name', '=', $batchReference)
         ->addSelect('status_id:name')
-        ->execute()->single()['status_id:name'] ?? NULL;
+        ->execute()->first()['status_id:name'] ?? NULL;
 
       if ($batchStatus === 'Exported') {
         // original_batch is only populated once we know there is a real
@@ -111,7 +110,12 @@ class FinancialDataChange {
   private static function alertFrTech(int $contributionID, string $batchReference, string $reason): void {
     \Civi::log('wmf')->alert(
       'financial_data_change: Contribution {contribution_id} GL/financial type correction needs review - {reason} (batch {batch_reference})',
-      ['contribution_id' => $contributionID, 'batch_reference' => $batchReference, 'reason' => $reason]
+      [
+        'contribution_id' => $contributionID,
+        'batch_reference' => $batchReference,
+        'reason' => $reason,
+        'subject' => 'Financial data adjustment needs review for contribution ' . $contributionID,
+      ]
     );
   }
 

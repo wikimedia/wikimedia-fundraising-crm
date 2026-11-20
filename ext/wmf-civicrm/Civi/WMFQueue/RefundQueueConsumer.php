@@ -158,7 +158,7 @@ class RefundQueueConsumer extends TransactionalQueueConsumer {
 
     $giftDataFields = [];
     foreach ($contribution as $field => $value) {
-      if (str_starts_with('Gift_Data.', $field)) {
+      if (str_starts_with($field, 'Gift_Data.')) {
         $giftDataFields[$field] = $value;
       }
     }

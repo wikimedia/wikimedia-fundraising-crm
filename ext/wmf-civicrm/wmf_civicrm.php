@@ -58,16 +58,20 @@ function wmf_civicrm_civicrm_config(&$config) {
 
   $dispatcher->addListener('hook_civicrm_pre::Individual', ['Civi\WMFHook\Contact', 'pre']);
   $dispatcher->addListener('hook_civicrm_pre::Organization', ['Civi\WMFHook\Contact', 'pre']);
-  // Gift coding runs last so it sees params as modified by the other listeners.
+  // Gift coding runs late so it sees params as modified by the other listeners,
+  // GL code after it because it depends on the appeal, and FinancialDataChange
+  // last so it sees the GL code.
   $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\Data', 'contributionPre'], 20);
   $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\Contribution', 'pre'], 10);
   $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\GiftCoding', 'contributionPre'], -100);
-  $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\FinancialDataChange', 'pre']);
+  $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\GLCode', 'contributionPre'], -150);
+  $dispatcher->addListener('hook_civicrm_pre::Contribution', ['Civi\WMFHook\FinancialDataChange', 'pre'], -200);
   // TODO: add a isMajorGift listener here, which runs after GiftCoding because that may have changed the appeal
   $dispatcher->addListener('hook_civicrm_post::Contribution', ['Civi\WMFHook\GiftCoding', 'contributionPost']);
   $dispatcher->addListener('hook_civicrm_pre::Batch', ['Civi\WMFHook\Data', 'batchPre']);
   $dispatcher->addListener('hook_civicrm_pre::ContributionSoft', ['Civi\WMFHook\ContributionSoft', 'pre'], 10);
   $dispatcher->addListener('hook_civicrm_pre::ContributionSoft', ['Civi\WMFHook\GiftCoding', 'contributionSoftPre'], -100);
+  $dispatcher->addListener('hook_civicrm_post::ContributionSoft', ['Civi\WMFHook\GLCode', 'contributionSoftPost']);
   $dispatcher->addListener('hook_civicrm_pre::Activity', ['Civi\WMFHook\GiftCoding', 'activityPre']);
   $dispatcher->addListener('hook_civicrm_post::Activity', ['Civi\WMFHook\GiftCoding', 'activityPost']);
 }

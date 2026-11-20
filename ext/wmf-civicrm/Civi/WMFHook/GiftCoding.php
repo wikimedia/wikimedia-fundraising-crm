@@ -278,9 +278,6 @@ class GiftCoding {
         ->setValues($values)
         ->execute();
     }
-    // TODO: if we updated the appeal, re-run isMajorGift()
-    // but we would need to consider if the change can still be made at this point, since we might be
-    // dealing with a soft credit & relationship added after the fact via the UI
   }
 
   /**
@@ -322,7 +319,7 @@ class GiftCoding {
    * We ignore donations on these contacts and do not consider them
    * to be related contacts for activities, mailings, etc.
    */
-  private static function getExcludedContactIDs(): array {
+  public static function getExcludedContactIDs(): array {
     return array_map('intval', array_filter(explode(',', \Civi::settings()->get('wmf_gift_coding_excluded_contacts'))));
   }
 
