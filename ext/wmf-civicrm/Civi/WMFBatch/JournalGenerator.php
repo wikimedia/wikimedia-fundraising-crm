@@ -38,10 +38,10 @@ class JournalGenerator {
   }
 
   /**
-   * @return array{rows: array, batchSummary: array, defaults: array, sql: string}
+   * @return array{rows: array, batchSummary: array, sql: string}
    *   'rows' are the csv rows; 'batchSummary' seeds the caller's per-batch
-   *   currency/fee totals; 'defaults' is the row shape (for setHeaders());
-   *   'sql' is the rendered query (for isOutputSql reporting).
+   *   currency/fee totals; 'sql' is the rendered query (for isOutputSql
+   *   reporting).
    *
    * @throws \Brick\Money\Exception\UnknownCurrencyException
    * @throws \CRM_Core_Exception
@@ -49,41 +49,18 @@ class JournalGenerator {
    */
   public function getJournalRows(): array {
     $isEndowmentGateway = $this->isEndowmentGateway();
-    // Note that not all of these fields are used. They are part of the finance spec but
-    // when we push journals to Accounts we only use a subset. We could probably stop populating them.
-    // Just a bit nervous to alter at this point.
-    $defaults = [
-      'DONOTIMPORT' => '',
+    $defaults = array_merge(array_fill_keys(FinanceConstants::JOURNAL_HEADERS, ''), [
       'JOURNAL' => 'CREV',
       'DATE' => date('m/d/Y', strtotime($this->batch['batch_data.settlement_date'])),
-      'REVERSEDATE' => '',
-      'REFERENCE_NO' => '',
-      'LINE_NO' => '',
-      'ACCT_NO' => '',
       'LOCATION_ID' => $isEndowmentGateway ? FinanceConstants::LOCATION_ID_ENDOWMENT : FinanceConstants::LOCATION_ID_WMF,
-      'DEPT_ID' => '',
       'DOCUMENT' => $this->batch['name'],
       'DEBIT' => 0,
       'CREDIT' => 0,
-      'SOURCEENTITY' => '',
       'CURRENCY' => $this->batch['batch_data.settlement_currency'],
       'EXCH_RATE_DATE' => date('m/d/Y', strtotime($this->batch['batch_data.settlement_date'])),
-      'EXCH_RATE_TYPE_ID' => '',
-      'EXCHANGE_RATE' => '',
       'STATE' => 'Draft',
-      'ALLOCATION_ID' => '',
-      'BILLABLE' => '',
-      'GLDIMEVENT_ID' => '',
-      'GLDIMFUNDING' => '',
-      'GLENTRY_PROJECTID' => '',
-      'GLENTRY_CLASSID' => '',
-      'GLENTRY_CUSTOMERID' => '',
       'GLENTRY_VENDORID' => $this->getVendorCode(),
-      'GLENTRY_ITEMID' => '',
-      'GLENTRY_EMPLOYEEID' => '',
-      'DESCRIPTION' => '',
-      'MEMO' => '',
-    ];
+    ]);
 
     $batchSummary = [
       'currency' => $this->batch['batch_data.settlement_currency'],
@@ -108,7 +85,6 @@ class JournalGenerator {
     return [
       'rows' => $batchedData,
       'batchSummary' => $batchSummary,
-      'defaults' => $defaults,
       'sql' => $renderedSql,
     ];
   }
@@ -515,22 +491,35 @@ GROUP BY s.settlement_batch_reference
    *
    * It WILL overwrite an existing file.
    *
-   * @param array $headers
    * @param string $type
    * @param string $sourceInstance
    * @param string $destinationInstance
    *
    * @return Writer
-   * @throws \League\Csv\UnavailableStream
+   * @throws \League\Csv\Exception
    */
-  public function getWriter(array $headers, string $type, string $sourceInstance, string $destinationInstance): Writer {
+  public function getWriter(string $type, string $sourceInstance, string $destinationInstance): Writer {
     // Named for the instance the journal is pushed to.
     $fromTo = $type === 'source' ? "{$sourceInstance}_to_{$destinationInstance}" : "{$destinationInstance}_from_{$sourceInstance}";
     if (!isset($this->writers[$fromTo])) {
-      $this->writers[$fromTo] = Writer::from($this->getFilePath($fromTo), 'w');
-      $this->writers[$fromTo]->insertOne($headers);
+      $this->writers[$fromTo] = self::createJournalCsvWriter($this->getFilePath($fromTo));
     }
     return $this->writers[$fromTo];
+  }
+
+  /**
+   * Create a journal csv file, overwriting any existing one.
+   *
+   * Rows are written as FinanceConstants::JOURNAL_HEADERS - other keys
+   * (e.g is_endowment) are left out.
+   *
+   * @throws \League\Csv\Exception
+   */
+  public static function createJournalCsvWriter(string $filePath): Writer {
+    $writer = Writer::from($filePath, 'w');
+    $writer->insertOne(FinanceConstants::JOURNAL_HEADERS);
+    $writer->addFormatter(fn(array $row): array => array_map(fn(string $header) => $row[$header] ?? '', FinanceConstants::JOURNAL_HEADERS));
+    return $writer;
   }
 
   /**

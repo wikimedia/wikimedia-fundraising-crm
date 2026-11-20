@@ -112,8 +112,6 @@ class GenerateBatch extends AbstractAction {
    */
   protected ?string $emailSummaryAddress = NULL;
 
-  private array $headers = [];
-
   private array $incompleteRows = [];
 
   private array $log = [];
@@ -449,7 +447,6 @@ class GenerateBatch extends AbstractAction {
       if (!$csv_rows) {
         throw new \CRM_Core_Exception('No journal rows for batch ' . $batchName);
       }
-      $headers = array_keys(reset($csv_rows));
       $batchJournalWriter = $this->getBatchJournalWriter($batchName);
       $batchJournalWriter->insertAll($csv_rows);
       $detailedData = $this->getDetailData($renderedSql, $batchName);
@@ -494,8 +491,8 @@ class GenerateBatch extends AbstractAction {
       if (empty($this->incompleteRows[$batchName])) {
         foreach ($csv_rows as $row) {
           if (!$isEndowmentGateway && $row['is_endowment'] && !str_ends_with(trim($row['MEMO']), 'Fees') && ($row['ACCT_NO'] != $this->getReversalAccountCode($row['CURRENCY'], $batchName))) {
-            $endowmentWriterFrom = $this->getJournalGenerator($batch)->getWriter($headers, 'source', 'foundation', 'endowment');
-            $endowmentWriterTo = $this->getJournalGenerator($batch)->getWriter($headers, 'destination', 'foundation', 'endowment');
+            $endowmentWriterFrom = $this->getJournalGenerator($batch)->getWriter('source', 'foundation', 'endowment');
+            $endowmentWriterTo = $this->getJournalGenerator($batch)->getWriter('destination', 'foundation', 'endowment');
             $csvFiles += $this->getJournalGenerator($batch)->getTransferJournalFiles();
             $this->writeCrossInstanceTransfer($row, $batchName, $endowmentWriterFrom, $endowmentWriterTo, $this->getEndowmentTransferConfig());
           }
@@ -503,8 +500,8 @@ class GenerateBatch extends AbstractAction {
             // Reverse of the block above: an endowment-gateway batch whose
             // rows are earmarked for the annual (foundation) fund get
             // carved out and journaled over to the wmf/foundation instance.
-            $foundationWriterFrom = $this->getJournalGenerator($batch)->getWriter($headers, 'source', 'endowment', 'foundation');
-            $foundationWriterTo = $this->getJournalGenerator($batch)->getWriter($headers, 'destination', 'endowment', 'foundation');
+            $foundationWriterFrom = $this->getJournalGenerator($batch)->getWriter('source', 'endowment', 'foundation');
+            $foundationWriterTo = $this->getJournalGenerator($batch)->getWriter('destination', 'endowment', 'foundation');
             $csvFiles += $this->getJournalGenerator($batch)->getTransferJournalFiles();
             $this->writeCrossInstanceTransfer($row, $batchName, $foundationWriterFrom, $foundationWriterTo, $this->getFoundationTransferConfig());
           }
@@ -610,9 +607,7 @@ class GenerateBatch extends AbstractAction {
    * @return Writer
    */
   private function getBatchJournalWriter(string $batchName): Writer {
-    $journalWriter = Writer::from($this->getFilePath($batchName, 'journals'), 'w');
-    $journalWriter->insertOne($this->headers);
-    return $journalWriter;
+    return JournalGenerator::createJournalCsvWriter($this->getFilePath($batchName, 'journals'));
   }
 
   private function getFilePath(string $batchName, string $type): string {
@@ -640,16 +635,6 @@ class GenerateBatch extends AbstractAction {
     $currency = array_pop($parts);
     $middle = preg_replace('/[^a-zA-Z0-9-]+/', '-', implode('_', $parts));
     return $gateway . '_' . $middle . '_' . $currency;
-  }
-
-  /**
-   * @param array $defaults)
-   * @return void
-   */
-  public function setHeaders(array $defaults): void {
-    if (empty($this->headers)) {
-      $this->headers = array_keys($defaults);
-    }
   }
 
   private function isMajorGiftAccount($accountCode): bool {
@@ -906,7 +891,6 @@ class GenerateBatch extends AbstractAction {
   private function getJournalRows(array $batch): array {
     $generated = $this->getJournalGenerator($batch)->getJournalRows();
     $this->batchSummary[$batch['name']] = $generated['batchSummary'];
-    $this->setHeaders($generated['defaults']);
     $this->batches[$batch['name']]['sql'] = $generated['sql'];
     return $generated['rows'];
   }

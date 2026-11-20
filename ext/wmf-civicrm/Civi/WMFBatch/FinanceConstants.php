@@ -47,6 +47,45 @@ final class FinanceConstants {
   const GL_ENDOWMENT_MEMO_SUFFIX = 'Earmarked for Endowment from WMF';
 
   /**
+   * The columns of a journal csv file, in order.
+   *
+   * Not all of these are used - they are part of the finance spec but when
+   * we push journals to Intacct we only use a subset.
+   */
+  const JOURNAL_HEADERS = [
+    'DONOTIMPORT',
+    'JOURNAL',
+    'DATE',
+    'REVERSEDATE',
+    'REFERENCE_NO',
+    'LINE_NO',
+    'ACCT_NO',
+    'LOCATION_ID',
+    'DEPT_ID',
+    'DOCUMENT',
+    'DEBIT',
+    'CREDIT',
+    'SOURCEENTITY',
+    'CURRENCY',
+    'EXCH_RATE_DATE',
+    'EXCH_RATE_TYPE_ID',
+    'EXCHANGE_RATE',
+    'STATE',
+    'ALLOCATION_ID',
+    'BILLABLE',
+    'GLDIMEVENT_ID',
+    'GLDIMFUNDING',
+    'GLENTRY_PROJECTID',
+    'GLENTRY_CLASSID',
+    'GLENTRY_CUSTOMERID',
+    'GLENTRY_VENDORID',
+    'GLENTRY_ITEMID',
+    'GLENTRY_EMPLOYEEID',
+    'DESCRIPTION',
+    'MEMO',
+  ];
+
+  /**
    * The GL accounts that are major gifts.
    *
    * These take the major gifts cost centre rather than the online
