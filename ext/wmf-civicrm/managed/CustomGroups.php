@@ -579,6 +579,7 @@ function _wmf_civicrm_get_gift_data_fields(): array {
         ['name' => 'Other_Online', 'label' => 'Other Online', 'value' => 'Other Online', 'description' => 'GL43484'],
         ['name' => 'GoFundMe', 'label' => 'GoFundMe', 'value' => 'GoFundMe', 'description' => 'GL43484'],
         ['name' => 'Interest', 'label' => 'Interest', 'value' => 'Interest', 'description' => 'GL45050'],
+        ['name' => 'Gateway_Fee', 'label' => 'Gateway Fee', 'value' => 'Gateway Fee', 'description' => 'GL60917'],
       ],
     ],
     'is_major_gift' => [
