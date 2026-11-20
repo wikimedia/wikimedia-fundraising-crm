@@ -1600,7 +1600,7 @@ abstract class BaseAuditProcessor {
                 'financial_type_id:name' => ($messageType === 'adjustment') ? 'Adjustment': 'Cash',
                 'contribution_status_id:name' => ($messageType === 'adjustment') ? 'adjustment': 'Completed',
                 'payment_instrument_id:name' => 'Cash',
-              ])->setMatch(['trxn_id'])->execute();
+              ] + ($messageType === 'fee' ? ['Gift_Data.Channel' => 'Gateway Fee'] : []))->setMatch(['trxn_id'])->execute();
             continue;
           }
 

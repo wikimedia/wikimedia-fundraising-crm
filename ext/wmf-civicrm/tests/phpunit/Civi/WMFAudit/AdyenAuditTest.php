@@ -837,8 +837,11 @@ class AdyenAuditTest extends BaseAuditTestCase {
 
     $fee = Contribution::get(FALSE)
       ->addWhere('contribution_extra.gateway_txn_id', 'LIKE', 'fee-4522268860022701%')
+      ->addSelect('Gift_Data.Channel', 'Gift_Data.gl_code')
       ->execute();
     $this->assertCount(1, $fee, 'The PaymentCost row should create its own fee contribution.');
+    $this->assertEquals('Gateway Fee', $fee->single()['Gift_Data.Channel']);
+    $this->assertEquals('GL60917', $fee->single()['Gift_Data.gl_code']);
   }
 
   /**
