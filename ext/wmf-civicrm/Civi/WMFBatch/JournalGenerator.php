@@ -201,7 +201,7 @@ FROM civicrm_value_contribution_settlement s
 WHERE (%1 = s.settlement_batch_reference)
   AND (COALESCE(settled_donation_amount, 0) <> 0)
   AND is_template = 0
-GROUP BY Fund, $accountCodeClause, is_major_gift, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
+GROUP BY gift.gl_code, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
 
 UNION ALL
   SELECT
@@ -222,7 +222,7 @@ FROM civicrm_value_contribution_settlement s
 WHERE (%1 = s.settlement_batch_reversal_reference)
   AND (COALESCE(settled_reversal_amount, 0) <> 0)
   AND is_template = 0
-GROUP BY Fund, $accountCodeClause, is_major_gift, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
+GROUP BY gift.gl_code, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
 
 UNION ALL
 

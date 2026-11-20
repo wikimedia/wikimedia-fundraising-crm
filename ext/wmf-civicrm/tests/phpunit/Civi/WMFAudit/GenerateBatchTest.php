@@ -292,42 +292,38 @@ class GenerateBatchTest extends BaseAuditTestCase {
     $this->assertEquals(20, $batch['batch_data.amount_journaled_to_foundation']);
   }
 
-  public function testSameGlCodeDoesNotGroupAcrossDifferentFunds(): void {
+  /**
+   * Rows group by account, not fund - a restricted fund has its own account.
+   */
+  public function testSameGlCodeGroupsAcrossFunds(): void {
     $prefix = 'adyen_335';
     $batchName = "{$prefix}_USD";
     $currency = 'USD';
     $settlementDate = '2026-01-21';
 
-    // Both channels are coded GL43484, but different Fund => GROUP BY Fund, ACCT_NO, is_major_gift => should become 2 rows.
-    $this->createQueueContribution([
-      'Gift_Data.Channel' => 'Social Media', // 43484
-      'Gift_Data.Fund' => 'Unrestricted',
-      'Gift_Data.is_major_gift' => 0,
-      'contribution_settlement.settlement_batch_reference' => $batchName,
-      'contribution_settlement.settled_donation_amount' => 10.00,
-      'contribution_settlement.settlement_currency' => $currency,
-      'contribution_settlement.settlement_date' => $settlementDate,
-    ]);
-    $this->createQueueContribution([
-      'Gift_Data.Channel' => 'Other Online', // 43484
-      'Gift_Data.Fund' => 'Online Fundraising - CC-1005', // different Fund => separate group
-      'Gift_Data.is_major_gift' => 0,
-      'contribution_settlement.settlement_batch_reference' => $batchName,
-      'contribution_settlement.settled_donation_amount' => 20.00,
-      'contribution_settlement.settlement_currency' => $currency,
-      'contribution_settlement.settlement_date' => $settlementDate,
-    ]);
+    $contributions = [
+      // GL43484, different funds => one row.
+      ['Gift_Data.Channel' => 'Social Media', 'Gift_Data.Fund' => 'Unrestricted - General', 'contribution_settlement.settled_donation_amount' => 10.00],
+      ['Gift_Data.Channel' => 'Other Online', 'Gift_Data.Fund' => 'Online Fundraising - CC-1005', 'contribution_settlement.settled_donation_amount' => 20.00],
+      // Major gifts appeal => GL43487, different funds => one row.
+      ['Gift_Data.Appeal' => 'MGGO26', 'Gift_Data.Fund' => 'Unrestricted - General', 'contribution_settlement.settled_donation_amount' => 30.00],
+      ['Gift_Data.Appeal' => 'MGGO26', 'Gift_Data.Fund' => 'Major Gifts - CC104', 'contribution_settlement.settled_donation_amount' => 40.00],
+    ];
+    foreach ($contributions as $contribution) {
+      $this->createQueueContribution($contribution + [
+        'contribution_settlement.settlement_batch_reference' => $batchName,
+        'contribution_settlement.settlement_currency' => $currency,
+        'contribution_settlement.settlement_date' => $settlementDate,
+      ]);
+    }
 
-    $result = $this->runGenerate($batchName, $currency, $settlementDate, 30.00, 2, $prefix);
-
+    $result = $this->runGenerate($batchName, $currency, $settlementDate, 100.00, 4, $prefix);
     $rows = $result[0]['csv_rows'] ?? [];
+    $donationRows = fn(string $account) => array_values(array_filter($rows, fn($r) => (string) ($r['ACCT_NO'] ?? '') === $account
+      && str_ends_with((string) ($r['MEMO'] ?? ''), 'Donations')));
 
-    $matches = array_values(array_filter($rows, function ($r) {
-      return (string) ($r['ACCT_NO'] ?? '') === '43484'
-        && str_ends_with((string) ($r['MEMO'] ?? ''), 'Donations');
-    }));
-
-    $this->assertCount(2, $matches, 'Expected two donation rows for 43484 because Fund differs (GROUP BY Fund, ACCT_NO, is_major_gift)');
+    $this->assertCount(1, $donationRows('43484'), 'Expected one donation row for 43484 across funds');
+    $this->assertCount(1, $donationRows('43487'), 'Expected one donation row for 43487 across funds');
   }
 
   /**
