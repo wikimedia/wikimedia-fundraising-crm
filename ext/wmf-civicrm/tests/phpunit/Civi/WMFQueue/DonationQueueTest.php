@@ -766,6 +766,45 @@ class DonationQueueTest extends BaseQueueTestCase {
     $this->assertNotEquals($msg['street_address'], $address['street_address']);
   }
 
+  public static function checksumDetailsProvider(): array {
+    return [
+      'first name matches' => ['Danger', 'McTest', 'other@example.org', TRUE],
+      'last name matches' => ['Lex', 'Mouse', 'other@example.org', TRUE],
+      'non-primary email matches' => ['Lex', 'McTest', 'secondary@example.org', TRUE],
+      'nothing matches' => ['Lex', 'McTest', 'other@example.org', FALSE],
+    ];
+  }
+
+  /**
+   * Valid checksum only attaches to the contact if first name, last name or one of its emails matches.
+   *
+   * @dataProvider checksumDetailsProvider
+   */
+  public function testImportChecksumDetailsMatch(string $firstName, string $lastName, string $email, bool $isMatch): void {
+    $contactID = $this->createIndividual(['email_primary.email' => 'danger@example.org']);
+    $this->createTestEntity('Email', [
+      'contact_id' => $contactID,
+      'email' => 'secondary@example.org',
+      'location_type_id:name' => 'Other',
+    ]);
+
+    $message = $this->processDonationMessage([
+      'contact_id' => $contactID,
+      'checksum' => \CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID),
+      'first_name' => $firstName,
+      'last_name' => $lastName,
+      'email' => $email,
+    ]);
+    $contribution = $this->getContributionForMessage($message);
+    $this->assertEquals($isMatch, $contribution['contact_id'] === $contactID);
+    $referrals = Activity::get(FALSE)
+      ->addWhere('activity_type_id:name', '=', 'Contact referral')
+      ->addWhere('source_contact_id', '=', $contactID)
+      ->addWhere('source_record_id', '=', $contribution['id'])
+      ->execute()->count();
+    $this->assertEquals($isMatch ? 0 : 1, $referrals);
+  }
+
   /**
    * @throws \CRM_Core_Exception
    */

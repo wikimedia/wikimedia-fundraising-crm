@@ -49,6 +49,11 @@ class Save extends AbstractAction {
    */
   protected $isLowConfidenceNameSource;
 
+  /**
+   * Checksum contact rejected because the donor details didn't match.
+   */
+  private ?int $referralContactID = NULL;
+
   protected function getTimer(): \Statistics\Collector\AbstractCollector {
     return ImportStatsCollector::getInstance();
   }
@@ -66,7 +71,7 @@ class Save extends AbstractAction {
     $existingContact = $this->getExistingContact($msg);
     if ($existingContact) {
       $this->handleUpdate($existingContact);
-      $result[] = ['id' => $existingContact['id']];
+      $result[] = ['id' => $existingContact['id'], 'referral_id' => $this->referralContactID];
       return;
     }
 
@@ -199,7 +204,7 @@ class Save extends AbstractAction {
     if (Database::isNativeTxnRolledBack()) {
       throw new WMFException(WMFException::IMPORT_CONTACT, "Native txn rolled back after inserting contact auxiliary fields");
     }
-    $result[] = $contact_result;
+    $result[] = $contact_result + ['referral_id' => $this->referralContactID];
   }
 
   /**
@@ -901,7 +906,7 @@ class Save extends AbstractAction {
       $contact = Contact::get(FALSE)
         ->addWhere('id', '=', $msg['contact_id'])
         ->addWhere('is_deleted', '=', FALSE)
-        ->addSelect('first_name', 'last_name', 'email_primary.location_type_id:name')->execute()->first();
+        ->addSelect('first_name', 'last_name', 'email_primary.email', 'email_primary.location_type_id:name')->execute()->first();
       if (!$contact) {
         $mergedTo = Contact::getMergedTo(FALSE)
           ->setContactId($msg['contact_id'])->execute()->first();
@@ -909,11 +914,15 @@ class Save extends AbstractAction {
           $contact = Contact::get(FALSE)
             ->addWhere('id', '=', $mergedTo['id'])
             ->addWhere('is_deleted', '=', FALSE)
-            ->addSelect('first_name', 'last_name', 'email_primary.location_type_id:name')->execute()->first();
+            ->addSelect('first_name', 'last_name', 'email_primary.email', 'email_primary.location_type_id:name')->execute()->first();
         }
       }
       if ($contact) {
-        return $contact;
+        // No checksum means we already trust this contact id
+        if (empty($msg['checksum']) || $this->isChecksumContactMatch($contact, $msg)) {
+          return $contact;
+        }
+        $this->referralContactID = $contact['id'];
       }
     }
 
@@ -1119,6 +1128,30 @@ class Save extends AbstractAction {
     }
 
     return NULL;
+  }
+
+  /**
+   * Checksum links get forwarded, so require the first name, last name or one of the emails to match.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function isChecksumContactMatch(array $contact, array $msg): bool {
+    if (!empty($msg['email']) && strcasecmp($contact['email_primary.email'] ?? '', $msg['email']) === 0) {
+      return TRUE;
+    }
+    foreach (['first_name', 'last_name'] as $field) {
+      if (!empty($msg[$field]) && strcasecmp($contact[$field] ?? '', $msg[$field]) === 0) {
+        return TRUE;
+      }
+    }
+    if (empty($msg['email'])) {
+      return FALSE;
+    }
+    return Email::get(FALSE)
+      ->addSelect('id')
+      ->addWhere('contact_id', '=', $contact['id'])
+      ->addWhere('email', '=', $msg['email'])
+      ->execute()->count() > 0;
   }
 
   private function isNameMatch(array $candidate, array $msg): bool {
