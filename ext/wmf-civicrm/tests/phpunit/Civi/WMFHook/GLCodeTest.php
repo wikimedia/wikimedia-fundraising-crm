@@ -182,6 +182,34 @@ class GLCodeTest extends TestCase {
     $this->assertEquals($expected, $this->getGLCode($contribution['id']));
   }
 
+  public static function backfillProvider(): array {
+    return [
+      'overwrite' => ['GL43485', TRUE, FALSE, 'GL43482'],
+      'fill keeps existing' => ['GL43485', FALSE, FALSE, 'GL43485'],
+      'fill empty' => [NULL, FALSE, FALSE, 'GL43482'],
+      'dry run' => ['GL43485', TRUE, TRUE, 'GL43485'],
+    ];
+  }
+
+  /**
+   * Backfill sets the calculated GL code, replacing an existing one only if overwriting.
+   *
+   * @dataProvider backfillProvider
+   */
+  public function testBackfill(?string $storedGLCode, bool $isOverwrite, bool $isDryRun, string $expected): void {
+    $contribution = $this->createContribution(['Gift_Data.Channel' => 'Email']);
+    Contribution::update(FALSE)
+      ->addWhere('id', '=', $contribution['id'])
+      ->addValue('Gift_Data.gl_code', $storedGLCode)
+      ->execute();
+    Contribution::backfillGLCode(FALSE)
+      ->addWhere('id', '=', $contribution['id'])
+      ->setIsOverwrite($isOverwrite)
+      ->setIsDryRun($isDryRun)
+      ->execute();
+    $this->assertEquals($expected, $this->getGLCode($contribution['id']));
+  }
+
   /**
    * Changing the appeal recalculates the GL code.
    */
