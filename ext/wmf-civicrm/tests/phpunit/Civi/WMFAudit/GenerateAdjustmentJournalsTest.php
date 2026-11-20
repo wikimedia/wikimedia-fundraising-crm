@@ -29,7 +29,7 @@ class GenerateAdjustmentJournalsTest extends BaseAuditTestCase {
    * cash never moved, only how the revenue was coded.
    */
   public function testGlCodeChangeIsOneBalancedJournal(): void {
-    $batchName = $this->reserve(['gl_code_before' => '43481', 'gl_code_after' => '43484']);
+    $batchName = $this->reserve(['gl_code_before' => 'GL43481', 'gl_code_after' => 'GL43484']);
 
     $journals = Batch::generateAdjustmentJournals(FALSE)->setName($batchName)->execute()->first();
 
@@ -55,8 +55,8 @@ class GenerateAdjustmentJournalsTest extends BaseAuditTestCase {
    */
   public function testEndowmentFlipIsATransferPair(): void {
     $batchName = $this->reserve([
-      'gl_code_before' => '43481',
-      'gl_code_after' => '43481',
+      'gl_code_before' => 'GL43481',
+      'gl_code_after' => 'GL43481',
       'is_endowment_before' => FALSE,
       'is_endowment_after' => TRUE,
     ]);
@@ -95,8 +95,8 @@ class GenerateAdjustmentJournalsTest extends BaseAuditTestCase {
    */
   public function testGlCodeAndEndowmentChangeTogether(): void {
     $batchName = $this->reserve([
-      'gl_code_before' => '43481',
-      'gl_code_after' => '43484',
+      'gl_code_before' => 'GL43481',
+      'gl_code_after' => 'GL43484',
       'is_endowment_before' => FALSE,
       'is_endowment_after' => TRUE,
     ]);
@@ -116,8 +116,8 @@ class GenerateAdjustmentJournalsTest extends BaseAuditTestCase {
   public function testMajorGiftIsRestrictedOnTheEndowmentSide(): void {
     $batchName = $this->reserve([
       // 43485 = Major Gifts - Unrestricted.
-      'gl_code_before' => '43481',
-      'gl_code_after' => '43485',
+      'gl_code_before' => 'GL43481',
+      'gl_code_after' => 'GL43485',
       'is_endowment_before' => FALSE,
       'is_endowment_after' => TRUE,
     ]);
@@ -136,7 +136,7 @@ class GenerateAdjustmentJournalsTest extends BaseAuditTestCase {
    * consulted, and here says otherwise.
    */
   public function testCostCentreFollowsEachLinesAccount(): void {
-    $batchName = $this->reserve(['gl_code_before' => '43481', 'gl_code_after' => '43485']);
+    $batchName = $this->reserve(['gl_code_before' => 'GL43481', 'gl_code_after' => 'GL43485']);
 
     $journals = Batch::generateAdjustmentJournals(FALSE)->setName($batchName)->execute()->first();
 
@@ -176,8 +176,8 @@ class GenerateAdjustmentJournalsTest extends BaseAuditTestCase {
     CustomValue::create('FinancialDataAdjustment', FALSE)
       ->setValues($adjustment + [
         'entity_id' => $contributionID,
-        'gl_code_before' => '43481',
-        'gl_code_after' => '43481',
+        'gl_code_before' => 'GL43481',
+        'gl_code_after' => 'GL43481',
         'is_endowment_before' => FALSE,
         'is_endowment_after' => FALSE,
         'status' => 'pending',

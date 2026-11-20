@@ -67,6 +67,10 @@ class GenerateAdjustmentJournals extends AbstractAction {
     if (!$adjustment) {
       throw new \CRM_Core_Exception('No adjustment is reserved against ' . $this->name);
     }
+    // Copied from Gift_Data.gl_code, whose GL prefix the journals don't use.
+    foreach (['gl_code_before', 'gl_code_after'] as $field) {
+      $adjustment[$field] = substr($adjustment[$field], 2);
+    }
 
     $journals = $this->getJournals($batch, $adjustment);
     $csvFiles = [];
