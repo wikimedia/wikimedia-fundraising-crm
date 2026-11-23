@@ -210,12 +210,27 @@ class GLCode {
    * Send failmail, as a contribution without a GL code will mess up accounting.
    */
   private static function alertNoChannel(array $contribution): void {
+    if (isset($contribution['id'])) {
+      $url = \CRM_Utils_System::url('civicrm/contact/view/contribution', [
+        'reset' => 1,
+        'id' => $contribution['id'],
+        'cid' => $contribution['contact_id'],
+        'action' => 'view',
+      ], TRUE, NULL, FALSE);
+    }
+    else {
+      $url = \CRM_Utils_System::url('civicrm/contact/view', [
+        'reset' => 1,
+        'cid' => $contribution['contact_id'],
+      ], TRUE, NULL, FALSE);
+    }
     \Civi::log('wmf')->alert(
-      'channel: No channel or no GL Code for channel on contribution {contribution_id} for contact {contact_id}',
+      'channel: No channel or no GL Code for channel on contribution {contribution_id} for contact {contact_id}. See {url}',
       [
         'channel' => $contribution['Gift_Data.Channel'] ?? '',
         'contribution_id' => $contribution['id'] ?? 'being created',
         'contact_id' => $contribution['contact_id'],
+        'url' => $url,
         'subject' => 'No channel or no GL Code for channel',
       ]
     );
