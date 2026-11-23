@@ -733,69 +733,52 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
   }
 
   /**
-   * Imports not yet migrated to populate gateway_account don't have enough
-   * to build a reference from - the fix-up only ever keys off
-   * gateway_account, so a plain contribution_extra.gateway alone leaves
-   * the reference exactly as entered.
+   * A gateway account is required to create a contribution - a plain
+   * contribution_extra.gateway is not enough.
    *
    * @throws \CRM_Core_Exception
    */
-  public function testSettlementReferenceUnchangedWithoutGatewayAccount(): void {
-    $this->createTestEntity('Contact', [
-      'contact_type' => 'Individual',
-      'first_name' => 'Jane',
-      'last_name' => 'Doe',
-      'email_primary.email' => 'jane.unmigrated@example.com',
-    ], 'individual_1');
-
-    $data = $this->setupImport([
-      'Contribution.invoice_id' => 'unmigrated1',
-      'Contribution.contribution_extra.gateway' => 'adyen',
-      'Contribution.contribution_settlement.settlement_batch_reference' => '789',
-      'Contribution.total_amount' => '45',
-      'Contribution.contact_id' => $this->ids['Contact']['individual_1'],
-    ]);
-    $this->runImport($data, 'Individual');
-
-    $contribution = Contribution::get(FALSE)
-      ->addWhere('invoice_id', '=', 'unmigrated1')
-      ->addSelect('contribution_settlement.settlement_batch_reference')
-      ->execute()->single();
-    $this->assertEquals('789', $contribution['contribution_settlement.settlement_batch_reference']);
+  public function testImportFailsWithoutGatewayAccount(): void {
+    $this->assertImportFailsForGatewayValues(['Contribution.contribution_extra.gateway' => 'adyen'], 'A recognised gateway account is required');
   }
 
   /**
-   * An unrecognised gateway_account (not a real GatewayAccount.name)
-   * leaves the reference untouched - we're not yet throwing for this,
-   * just declining to guess. The settled_* amounts are left unset too,
-   * since they're only defaulted alongside a successful reference fix-up.
+   * An unrecognised gateway_account (not a real GatewayAccount.name) fails the row.
    *
    * @throws \CRM_Core_Exception
    */
-  public function testSettlementReferenceUnchangedWithUnrecognisedGatewayAccount(): void {
+  public function testImportFailsWithUnrecognisedGatewayAccount(): void {
+    $this->assertImportFailsForGatewayValues([
+      'Contribution.contribution_extra.gateway' => 'adyen',
+      'Contribution.contribution_extra.gateway_account' => 'not_a_real_account',
+    ], 'A recognised gateway account is required');
+  }
+
+  /**
+   * Import a single row with the given gateway values & check it errors without creating a contribution.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function assertImportFailsForGatewayValues(array $gatewayValues, string $expectedMessage): void {
     $this->createTestEntity('Contact', [
       'contact_type' => 'Individual',
       'first_name' => 'Jane',
       'last_name' => 'Doe',
-      'email_primary.email' => 'jane.noviablegateway@example.com',
+      'email_primary.email' => 'jane.nogatewayaccount@example.com',
     ], 'individual_1');
 
-    $data = $this->setupImport([
-      'Contribution.invoice_id' => 'noviable1',
-      'Contribution.contribution_extra.gateway' => 'adyen',
-      'Contribution.contribution_extra.gateway_account' => 'not_a_real_account',
+    $data = $this->setupImport(array_merge([
+      'Contribution.invoice_id' => 'nogatewayaccount1',
       'Contribution.contribution_settlement.settlement_batch_reference' => '789',
       'Contribution.total_amount' => '45',
       'Contribution.contact_id' => $this->ids['Contact']['individual_1'],
-    ]);
+    ], $gatewayValues));
     $this->runImport($data, 'Individual');
 
-    $contribution = Contribution::get(FALSE)
-      ->addWhere('invoice_id', '=', 'noviable1')
-      ->addSelect('contribution_settlement.settlement_batch_reference', 'contribution_settlement.settled_donation_amount')
-      ->execute()->single();
-    $this->assertEquals('789', $contribution['contribution_settlement.settlement_batch_reference']);
-    $this->assertEmpty($contribution['contribution_settlement.settled_donation_amount']);
+    $import = Import::get($this->userJobID)->setSelect(['_status_message', '_status'])->execute()->first();
+    $this->assertEquals('ERROR', $import['_status']);
+    $this->assertStringContainsString($expectedMessage, $import['_status_message']);
+    $this->assertCount(0, Contribution::get(FALSE)->addWhere('invoice_id', '=', 'nogatewayaccount1')->execute());
   }
 
   /**

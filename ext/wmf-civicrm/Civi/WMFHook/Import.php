@@ -87,6 +87,7 @@ class Import {
     // Tweaks to apply during validate only.
     $this->inValidateModeDoNotRequireTotalAmount();
     // Tweaks to apply during validate and import.
+    $this->requireGatewayAccountInContributionCreateMode();
     $this->filterBadBenevityData();
     $this->applyFieldTransformations();
 
@@ -162,7 +163,6 @@ class Import {
             $this->userJobID);
         }
 
-        $this->deriveGatewayFromAccount();
         $existingContributionID = ContributionHelper::exists($this->mappedRow['Contribution']['contribution_extra.gateway'], $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id']);
         if ($existingContributionID) {
           throw new \CRM_Core_Exception('This contribution appears to be a duplicate of contribution id ' . $existingContributionID);
@@ -620,25 +620,32 @@ class Import {
   }
 
   /**
-   * Derive contribution_extra.gateway from the gateway account, if one was picked -
-   * before ensureTrxnIdentifiersSet() and the duplicate-contribution check use it.
+   * Require a recognised gateway account when creating a contribution via the contribution import or batch entry.
    *
    * @throws \CRM_Core_Exception
    */
-  private function deriveGatewayFromAccount(): void {
-    $gatewayAccountName = $this->mappedRow['Contribution']['contribution_extra.gateway_account'] ?? NULL;
-    if ($gatewayAccountName) {
-      $gatewayAccount = GatewayAccount::get(FALSE)
+  private function requireGatewayAccountInContributionCreateMode(): void {
+    if (!$this->isContributionCreateMode()) {
+      return;
+    }
+    // Throw rather than setting invalid_import_value as the searchkit import validate ignores the latter.
+    $gatewayAccountName = $this->mappedRow['Contribution']['contribution_extra.gateway_account'] ?? '';
+    $this->mappedRow['Contribution']['contribution_extra.gateway'] = $this->getGatewayAccount($gatewayAccountName)['gateway'];
+  }
+
+  /**
+   * Get the Gateway Account record.
+   */
+  private function getGatewayAccount(string $gatewayAccountName): array {
+    if (!array_key_exists($gatewayAccountName, \Civi::$statics[__CLASS__]['gateway_by_account'] ?? [])) {
+      \Civi::$statics[__CLASS__]['gateway_by_account'][$gatewayAccountName] = GatewayAccount::get(FALSE)
         ->addWhere('name', '=', $gatewayAccountName)
-        ->addSelect('gateway')
         ->execute()->first();
-      if ($gatewayAccount) {
-        $this->mappedRow['Contribution']['contribution_extra.gateway'] = $gatewayAccount['gateway'];
-      }
     }
-    if (empty($this->mappedRow['Contribution']['contribution_extra.gateway'])) {
-      throw new \CRM_Core_Exception('A gateway account is required');
+    if (empty(\Civi::$statics[__CLASS__]['gateway_by_account'][$gatewayAccountName])) {
+      throw new \CRM_Core_Exception('A recognised gateway account is required');
     }
+    return \Civi::$statics[__CLASS__]['gateway_by_account'][$gatewayAccountName];
   }
 
   /**
@@ -649,15 +656,8 @@ class Import {
    *
    * This does not create or update any Batch record - it only normalises
    * the reference value on the contribution itself; batch creation is
-   * handled separately.
-   *
-   * Only kicks in when contribution_extra.gateway_account is populated and
-   * recognised (a real GatewayAccount.name) - this is transitional, since
-   * gateway_account will become required soon; an unrecognised value is
-   * left alone for now rather than throwing, though that may change once
-   * gateway_account is required. Falls back to
-   * Gift_Information.import_batch_number for the raw reference value when
-   * contribution_settlement.settlement_batch_reference itself is empty.
+   * handled separately. Accepts Gift_Information.import_batch_number
+   * or settlement_batch_number - but we are starting to prefer the former.
    *
    * Also defaults the settled_* amounts (see fillSettledAmounts()) once a
    * gateway account is confirmed recognised, since a contribution imported
@@ -666,29 +666,17 @@ class Import {
    * @throws \CRM_Core_Exception
    */
   private function fixUpSettlementBatchReference(): void {
-    if (!empty($this->mappedRow['Contribution']['id'])) {
+    if (!$this->isContributionCreateMode()) {
       // This is an update to an existing contribution - the reference (if
       // any) has already been fixed up once, and re-deriving it from
       // itself would double it up.
       return;
     }
-    $gatewayAccountName = $this->mappedRow['Contribution']['contribution_extra.gateway_account'] ?? NULL;
-    if (!$gatewayAccountName) {
-      return;
-    }
+    $gatewayAccountName = $this->mappedRow['Contribution']['contribution_extra.gateway_account'];
     $inputReference = $this->mappedRow['Contribution']['contribution_settlement.settlement_batch_reference']
       ?? $this->mappedRow['Contribution']['Gift_Information.import_batch_number']
       ?? NULL;
     if (!$inputReference) {
-      return;
-    }
-    $isRecognisedGatewayAccount = (bool) GatewayAccount::get(FALSE)
-      ->addWhere('name', '=', $gatewayAccountName)
-      ->selectRowCount()
-      ->execute()->count();
-    if (!$isRecognisedGatewayAccount) {
-      // Not yet throwing for an unrecognised gateway_account - just leave
-      // the reference untouched until we do.
       return;
     }
     // If it didn't settle in USD they will need to fill it in as we can't rely on original currency.
@@ -950,6 +938,13 @@ class Import {
    */
   protected function isValidateMode(): bool {
     return $this->context === 'validate';
+  }
+
+  /**
+   * Is this import creating contributions.
+   */
+  private function isContributionCreateMode(): bool {
+    return !empty($this->mappedRow['Contribution']) && empty($this->mappedRow['Contribution']['id']);
   }
 
 }
