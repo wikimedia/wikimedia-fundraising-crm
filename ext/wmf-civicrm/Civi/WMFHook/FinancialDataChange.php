@@ -5,6 +5,8 @@ namespace Civi\WMFHook;
 use Civi\Api4\Batch;
 use Civi\Api4\Contribution;
 use Civi\Api4\CustomValue;
+use Civi\API\Event\PrepareEvent;
+use Civi\Api4\Generic\AbstractSaveAction;
 use Civi\Core\Event\PreEvent;
 use Civi\WMFBatch\FinanceConstants;
 
@@ -54,9 +56,6 @@ class FinancialDataChange {
       'gl_code_after' => $glCodeAfter,
       'is_endowment_before' => $isEndowmentBefore,
       'is_endowment_after' => $isEndowmentAfter,
-      'created_id' => \CRM_Core_Session::getLoggedInContactID() ?? \CRM_Core_BAO_UFMatch::getContactId(1),
-      'created_date' => date('Y-m-d H:i:s'),
-      'modified_date' => date('Y-m-d H:i:s'),
     ];
 
     // Locking (rather than just checking the batch status) guards against
@@ -99,6 +98,70 @@ class FinancialDataChange {
     finally {
       $lock->release();
     }
+  }
+
+  /**
+   * Listener for civi.api.prepare.
+   *
+   * Custom fields can't default to the current time / user, so fill
+   * created_date, created_id & modified_date on apiv4 FinancialDataAdjustment writes.
+   */
+  public static function apiPrepare(PrepareEvent $event): void {
+    $action = $event->getActionName();
+    if ($event->getEntityName() !== 'Custom_FinancialDataAdjustment' || !in_array($action, ['create', 'update', 'save'], TRUE)) {
+      return;
+    }
+    $apiRequest = $event->getApiRequest();
+    if ($apiRequest['version'] !== 4) {
+      return;
+    }
+    $now = date('Y-m-d H:i:s');
+    if ($action === 'save') {
+      $records = $apiRequest->getRecords();
+      foreach ($records as &$record) {
+        $record += ['modified_date' => $now];
+        if (empty($record['id']) && !self::isMatched($apiRequest, $record + $apiRequest->getDefaults())) {
+          $record += self::getCreateDefaults($now);
+        }
+      }
+      $apiRequest->setRecords($records);
+      return;
+    }
+    $values = $apiRequest->getValues() + ['modified_date' => $now];
+    if ($action === 'create') {
+      $values += self::getCreateDefaults($now);
+    }
+    $apiRequest->setValues($values);
+  }
+
+  /**
+   * Will save() match this record to an existing row?
+   *
+   * Core only resolves `match` per record after prepare, so repeat its lookup.
+   * @see \Civi\Api4\Generic\Traits\MatchParamTrait::matchExisting()
+   */
+  private static function isMatched(AbstractSaveAction $apiRequest, array $record): bool {
+    $match = $apiRequest->getMatch();
+    if (!$match || array_diff($match, array_keys($record))) {
+      return FALSE;
+    }
+    $where = [];
+    foreach ($match as $key) {
+      $where[] = ($record[$key] === '' || $record[$key] === NULL) ? [$key, 'IS EMPTY'] : [$key, '=', $record[$key]];
+    }
+    return civicrm_api4($apiRequest->getEntityName(), 'get', [
+      'select' => ['id'],
+      'where' => $where,
+      'checkPermissions' => FALSE,
+      'limit' => 2,
+    ])->count() === 1;
+  }
+
+  private static function getCreateDefaults(string $now): array {
+    return [
+      'created_date' => $now,
+      'created_id' => \CRM_Core_Session::getLoggedInContactID() ?? \CRM_Core_BAO_UFMatch::getContactId(1),
+    ];
   }
 
   private static function saveAdjustment(array $values): void {

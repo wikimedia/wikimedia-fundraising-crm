@@ -1,0 +1,12 @@
+<div af-fieldset="">
+  <div class="af-container af-layout-inline">
+    <af-field name="BatchFinancialBreakdown_Batch_batch_id_01.batch_data.settlement_date" defn="{label: 'Settlement Date', input_type: 'Select', search_range: true, input_attrs: {}}" />
+    <af-field name="BatchFinancialBreakdown_Batch_batch_id_01.batch_data.settlement_gateway" defn="{label: 'Gateway', input_attrs: {}}" />
+    <af-field name="BatchFinancialBreakdown_Batch_batch_id_01.batch_data.settlement_gateway_account_id" defn="{label: 'Gateway Account', input_attrs: {multiple: true}}" />
+    <af-field name="BatchFinancialBreakdown_Batch_batch_id_01.batch_data.settlement_currency" defn="{label: 'Currency', input_attrs: {}}" />
+    <af-field name="BatchFinancialBreakdown_Batch_batch_id_01.status_id" defn="{label: 'Batch Status', input_attrs: {multiple: true}}" />
+    <af-field name="BatchFinancialBreakdown_Batch_batch_id_01.name" defn="{label: 'Batch Name', search_operator: 'LIKE', expose_operator: true, input_attrs: {}}" />
+    <af-field name="is_endowment" defn="{label: 'Is Endowment'}" />
+  </div>
+  <crm-search-display-table search-name="Finance_break_down" display-name="Batch_Financial_Breakdowns_Table_1"></crm-search-display-table>
+</div>

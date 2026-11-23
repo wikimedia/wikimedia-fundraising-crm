@@ -181,13 +181,17 @@ class Render extends AbstractAction {
       throw new NoContributionException($e->getMessage(), 'no_contribution', ['email' => $email]);
     }
 
-    return [
+    $mailParams = [
       'to_name' => $contactDetails['display_name'],
       'to_address' => $email,
       'subject' => trim($rendered['subject']),
       'html' => str_replace('<p></p>', '', $rendered['html']),
       'contactIDs' => $contactDetails['ids'],
     ];
+    if ($contactDetails['mg_segment'] ?? NULL) {
+      $mailParams['reply_to_address'] = \Civi::settings()->get('wmf_mg_reply_to_address');
+    }
+    return $mailParams;
   }
 
   /**
@@ -203,15 +207,17 @@ class Render extends AbstractAction {
       ->addWhere('email', '=', $email)
       ->addWhere('is_primary', '=', TRUE)
       ->addWhere('contact_id.is_deleted', '=', FALSE)
-      ->addSelect('contact_id', 'contact_id.preferred_language', 'contact_id.display_name')
+      ->addSelect('contact_id', 'contact_id.preferred_language', 'contact_id.display_name', 'contact_id.wmf_donor.donor_segment_overall')
       ->addJoin('Contact AS contact', 'LEFT')
       ->addOrderBy('contact.wmf_donor.all_funds_last_donation_date')
       ->execute();
-    $contactDetails = [];
     foreach ($emailRecords as $emailRecord) {
       $contactDetails['ids'][] = $emailRecord['contact_id'];
       $contactDetails['language'] = $emailRecord['contact_id.preferred_language'];
       $contactDetails['display_name'] = $emailRecord['contact_id.display_name'];
+      if (($emailRecord['contact_id.wmf_donor.donor_segment_overall'] ?? 990) <= 300) {
+        $contactDetails['mg_segment'] = TRUE;
+      }
     }
     if (empty($contactDetails['ids'])) {
       throw new NoEmailException('email is not attached (anymore?) to a valid contact: ' . $email, 'eoy_fail', ['email' => $email]);

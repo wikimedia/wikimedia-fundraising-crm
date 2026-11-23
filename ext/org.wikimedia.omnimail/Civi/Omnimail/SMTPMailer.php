@@ -50,7 +50,9 @@ class SMTPMailer extends MailerBase implements IMailer {
     $mailer->set('CharSet', 'utf-8');
     $mailer->Encoding = 'quoted-printable';
 
-    $mailer->addReplyTo($email['from_address'], $email['from_name']);
+    if (!empty($email['reply_to_address'])) {
+      $mailer->addReplyTo($email['reply_to_address'], $email['from_name']);
+    }
     $mailer->setFrom($email['from_address'], $email['from_name']);
     if (!empty($email['reply_to'])) {
       $mailer->set('Sender', $email['reply_to']);
