@@ -38,10 +38,10 @@ class JournalGenerator {
   }
 
   /**
-   * @return array{rows: array, batchSummary: array, defaults: array, sql: string}
+   * @return array{rows: array, batchSummary: array, sql: string}
    *   'rows' are the csv rows; 'batchSummary' seeds the caller's per-batch
-   *   currency/fee totals; 'defaults' is the row shape (for setHeaders());
-   *   'sql' is the rendered query (for isOutputSql reporting).
+   *   currency/fee totals; 'sql' is the rendered query (for isOutputSql
+   *   reporting).
    *
    * @throws \Brick\Money\Exception\UnknownCurrencyException
    * @throws \CRM_Core_Exception
@@ -49,41 +49,18 @@ class JournalGenerator {
    */
   public function getJournalRows(): array {
     $isEndowmentGateway = $this->isEndowmentGateway();
-    // Note that not all of these fields are used. They are part of the finance spec but
-    // when we push journals to Accounts we only use a subset. We could probably stop populating them.
-    // Just a bit nervous to alter at this point.
-    $defaults = [
-      'DONOTIMPORT' => '',
+    $defaults = array_merge(array_fill_keys(FinanceConstants::JOURNAL_HEADERS, ''), [
       'JOURNAL' => 'CREV',
       'DATE' => date('m/d/Y', strtotime($this->batch['batch_data.settlement_date'])),
-      'REVERSEDATE' => '',
-      'REFERENCE_NO' => '',
-      'LINE_NO' => '',
-      'ACCT_NO' => '',
       'LOCATION_ID' => $isEndowmentGateway ? FinanceConstants::LOCATION_ID_ENDOWMENT : FinanceConstants::LOCATION_ID_WMF,
-      'DEPT_ID' => '',
       'DOCUMENT' => $this->batch['name'],
       'DEBIT' => 0,
       'CREDIT' => 0,
-      'SOURCEENTITY' => '',
       'CURRENCY' => $this->batch['batch_data.settlement_currency'],
       'EXCH_RATE_DATE' => date('m/d/Y', strtotime($this->batch['batch_data.settlement_date'])),
-      'EXCH_RATE_TYPE_ID' => '',
-      'EXCHANGE_RATE' => '',
       'STATE' => 'Draft',
-      'ALLOCATION_ID' => '',
-      'BILLABLE' => '',
-      'GLDIMEVENT_ID' => '',
-      'GLDIMFUNDING' => '',
-      'GLENTRY_PROJECTID' => '',
-      'GLENTRY_CLASSID' => '',
-      'GLENTRY_CUSTOMERID' => '',
       'GLENTRY_VENDORID' => $this->getVendorCode(),
-      'GLENTRY_ITEMID' => '',
-      'GLENTRY_EMPLOYEEID' => '',
-      'DESCRIPTION' => '',
-      'MEMO' => '',
-    ];
+    ]);
 
     $batchSummary = [
       'currency' => $this->batch['batch_data.settlement_currency'],
@@ -108,9 +85,43 @@ class JournalGenerator {
     return [
       'rows' => $batchedData,
       'batchSummary' => $batchSummary,
-      'defaults' => $defaults,
       'sql' => $renderedSql,
     ];
+  }
+
+  /**
+   * Get the donations less refunds journaled, & how many, per account & fund.
+   *
+   * @param array $journalRows
+   *
+   * @return array
+   *   e.g. [43481 => ['annual_fund' => Money, 'endowment_fund' => Money,
+   *   'item_count' => ['annual_fund' => 3, 'endowment_fund' => 0]]]
+   */
+  public function getAccountTotals(array $journalRows): array {
+    $currency = $this->batch['batch_data.settlement_currency'];
+    $accounts = [];
+    foreach ($journalRows as $row) {
+      if (!self::isRevenue($row) || empty($row['ACCT_NO'])) {
+        continue;
+      }
+      $fund = $row['is_endowment'] ? 'endowment_fund' : 'annual_fund';
+      $accounts[$row['ACCT_NO']] ??= [
+        'annual_fund' => Money::zero($currency),
+        'endowment_fund' => Money::zero($currency),
+        'item_count' => ['annual_fund' => 0, 'endowment_fund' => 0],
+      ];
+      $accounts[$row['ACCT_NO']][$fund] = $accounts[$row['ACCT_NO']][$fund]->plus($row['CREDIT'] ?: 0)->minus($row['DEBIT'] ?: 0);
+      $accounts[$row['ACCT_NO']]['item_count'][$fund] += (int) $row['item_count'];
+    }
+    return $accounts;
+  }
+
+  /**
+   * Is the row donations or refunds, rather than fees, adjustments or balancing.
+   */
+  public static function isRevenue(array $row): bool {
+    return in_array($row['row_type'], ['donation', 'refund'], TRUE);
   }
 
   /**
@@ -144,6 +155,7 @@ class JournalGenerator {
         gift.channel,
         gift.fund,
         gift.is_major_gift,
+        gift.gl_code,
         IF(c.financial_type_id = ' . $endowmentFinancialType . ', 1, 0) as is_endowment,
         "' . $this->getGatewayAccountIdentifier() . '" as gateway,
         COALESCE(x.backend_processor, x.gateway) as backend_processor,
@@ -194,6 +206,8 @@ class JournalGenerator {
     s.settlement_currency as CURRENCY,
     '' as GLENTRY_PROJECTID,
     IF(c.financial_type_id = $endowmentFinancialType , 1, 0) as is_endowment,
+    COUNT(*) as item_count,
+    'donation' as row_type,
     $restrictionsClause as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -201,7 +215,7 @@ FROM civicrm_value_contribution_settlement s
 WHERE (%1 = s.settlement_batch_reference)
   AND (COALESCE(settled_donation_amount, 0) <> 0)
   AND is_template = 0
-GROUP BY Fund, $accountCodeClause, is_major_gift, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
+GROUP BY gift.gl_code, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
 
 UNION ALL
   SELECT
@@ -215,6 +229,8 @@ UNION ALL
     s.settlement_currency as CURRENCY,
     '' as GLENTRY_PROJECTID,
     IF(c.financial_type_id = $endowmentFinancialType , 1, 0) as is_endowment,
+    COUNT(*) as item_count,
+    'refund' as row_type,
     $restrictionsClause as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -222,7 +238,7 @@ FROM civicrm_value_contribution_settlement s
 WHERE (%1 = s.settlement_batch_reversal_reference)
   AND (COALESCE(settled_reversal_amount, 0) <> 0)
   AND is_template = 0
-GROUP BY Fund, $accountCodeClause, is_major_gift, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
+GROUP BY gift.gl_code, CASE WHEN c.financial_type_id = $endowmentFinancialType THEN 1 ELSE 0 END
 
 UNION ALL
 
@@ -239,6 +255,8 @@ SELECT
     s.settlement_currency as CURRENCY,
     IF(c.financial_type_id =  $endowmentFinancialType , 'FR-EI-EN', '') as GLENTRY_PROJECTID,
     IF(c.financial_type_id =  $endowmentFinancialType , 1, 0) as is_endowment,
+    COUNT(*) as item_count,
+    'donation_fee' as row_type,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -264,6 +282,8 @@ SELECT
     s.settlement_currency as CURRENCY,
     IF(c.financial_type_id =  $endowmentFinancialType , 'FR-EI-EN', '') as GLENTRY_PROJECTID,
     IF(c.financial_type_id =  $endowmentFinancialType , 1, 0) as is_endowment,
+    COUNT(*) as item_count,
+    'donation_fee' as row_type,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -289,6 +309,8 @@ SELECT
     s.settlement_currency as CURRENCY,
     '' as GLENTRY_PROJECTID,
     0 as is_endowment,
+    COUNT(*) as item_count,
+    'invoice_fee' as row_type,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -314,6 +336,8 @@ SELECT
     s.settlement_currency as CURRENCY,
     '' as GLENTRY_PROJECTID,
     0 as is_endowment,
+    COUNT(*) as item_count,
+    'adjustment' as row_type,
     'Unrestricted' as GLDIMFUNDING
 FROM civicrm_value_contribution_settlement s
   LEFT JOIN civicrm_contribution c ON c.id = s.entity_id
@@ -363,47 +387,16 @@ GROUP BY s.settlement_batch_reference
   }
 
   /**
-   * GLCode is currently calculated in sql but once Gift_Data.gl_code is populated we will use that instead.
+   * The account the contribution is coded to, from Gift_Data.gl_code.
+   *
+   * The stored code has a GL prefix (GL43485) that the journal doesn't use.
+   * A contribution with no GL code gets an empty ACCT_NO, which is reported
+   * as an error and stops the batch closing.
    *
    * @return string
    */
   private function getGLCodeClause(): string {
-    return "
-    -- See GL Account Structure Rules
-    -- Online Recurring Contributions 43480 = channel =  	Recurring Gift
-    -- Online Banner Contributions	43481 = channel = Banner
-    -- Online Email Contributions	43482 = channel = email
-    -- Online Direct Mail Contributions	43483 = channel = Direct Mail
-    -- Online Other Contributions	43484
-    -- Chapter Gifts	43440 = channel =  Chapter Gifts
-    -- Major Gifts - Unrestricted	43485
-    -- Major Gifts - Restricted	43428
-    CASE
-  -- 1) Major gifts first
-  WHEN gift.is_major_gift = 1 AND gift.fund LIKE 'restricted%' THEN 43428  -- Major Gifts - Restricted
-  WHEN gift.is_major_gift = 1 THEN 43485                                   -- Major Gifts - Unrestricted
-
-  -- 2) Specific channels
-  WHEN gift.channel = 'Chapter Gifts'   THEN 43440   -- Chapter Gifts
-  WHEN gift.channel = 'Recurring Gift'  THEN 43480   -- Online Recurring Contributions
-  WHEN gift.channel = 'Mobile Banner'   THEN 43481   -- Online Banner Contributions
-  WHEN gift.channel = 'Desktop Banner'  THEN 43481   -- Online Banner Contributions
-  WHEN gift.channel = 'Other Banner'    THEN 43481   -- Online Banner Contributions
-  WHEN gift.channel = 'Email'           THEN 43482   -- Online Email Contributions
-  WHEN gift.channel = 'Direct Mail'     THEN 43483   -- Online Direct Mail Contributions
-  WHEN gift.channel = 'SMS'             THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Other Online'    THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Portal Banner'   THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Sidebar'         THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Wikipedia App'   THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Wikimedia Portal' THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Other Portal'    THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Social Media'    THEN 43484   -- Other Online Contributions
-  WHEN gift.channel = 'Interest'        THEN 45050   -- Interest (occurs with CCK)
-  -- 3) Everything else -> Online Other Contributions
-  -- remaining = 'Workplace Giving','Direct Solicitation','Planned Giving', 'Events','White Mail','Other Offline'
-  ELSE '' -- default/fallback - this will cause the batch to report errors and not close.
-END";
+    return 'SUBSTRING(gift.gl_code, 3)';
   }
 
   /**
@@ -419,8 +412,7 @@ END";
    * Is the row's revenue restricted funding?
    *
    * We calculate this off a combination of the gl_code and whether it is intended
-   * for the endowment. (The gl_code is currently calculated in sql but we plan to move
-   * that to a calculated field)
+   * for the endowment.
    */
   private function getIsRestrictedGift(): string {
     $endowmentFinancialType = \CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'financial_type_id', 'Endowment Gift');
@@ -540,22 +532,49 @@ END";
    *
    * It WILL overwrite an existing file.
    *
-   * @param array $headers
    * @param string $type
    * @param string $sourceInstance
    * @param string $destinationInstance
    *
    * @return Writer
-   * @throws \League\Csv\UnavailableStream
+   * @throws \League\Csv\Exception
    */
-  public function getWriter(array $headers, string $type, string $sourceInstance, string $destinationInstance): Writer {
+  public function getWriter(string $type, string $sourceInstance, string $destinationInstance): Writer {
     // Named for the instance the journal is pushed to.
     $fromTo = $type === 'source' ? "{$sourceInstance}_to_{$destinationInstance}" : "{$destinationInstance}_from_{$sourceInstance}";
     if (!isset($this->writers[$fromTo])) {
-      $this->writers[$fromTo] = Writer::from($this->getFilePath($fromTo), 'w');
-      $this->writers[$fromTo]->insertOne($headers);
+      $this->writers[$fromTo] = self::createJournalCsvWriter($this->getFilePath($fromTo));
     }
     return $this->writers[$fromTo];
+  }
+
+  /**
+   * Get the writer for this batch's reclassification journals.
+   *
+   * Normal gateways reclassify endowment rows from the foundation to the
+   * endowment instance, endowment gateways the reverse.
+   *
+   * @throws \CRM_Core_Exception
+   * @throws \League\Csv\Exception
+   */
+  public function getJournalWriter(): JournalWriter {
+    [$source, $destination] = $this->isEndowmentGateway() ? ['endowment', 'foundation'] : ['foundation', 'endowment'];
+    return new JournalWriter($this->getWriter('source', $source, $destination), $this->getWriter('destination', $source, $destination), $source, $destination, $this->getGatewayAccount());
+  }
+
+  /**
+   * Create a journal csv file, overwriting any existing one.
+   *
+   * Rows are written as FinanceConstants::JOURNAL_HEADERS - other keys
+   * (e.g is_endowment) are left out.
+   *
+   * @throws \League\Csv\Exception
+   */
+  public static function createJournalCsvWriter(string $filePath): Writer {
+    $writer = Writer::from($filePath, 'w');
+    $writer->insertOne(FinanceConstants::JOURNAL_HEADERS);
+    $writer->addFormatter(fn(array $row): array => array_map(fn(string $header) => $row[$header] ?? '', FinanceConstants::JOURNAL_HEADERS));
+    return $writer;
   }
 
   /**

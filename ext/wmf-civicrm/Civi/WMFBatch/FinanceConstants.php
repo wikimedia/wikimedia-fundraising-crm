@@ -29,13 +29,9 @@ final class FinanceConstants {
   const ADJUSTMENT_LOCK_PREFIX = 'data.finance_adjustment.';
 
   // Balancing accounts for a transfer between the wmf (foundation) and
-  // endowment instances - one const per instance per direction, for
-  // transparency about which is in play, but the values are shared: each
-  // instance always uses the same balancing account for the transfer,
-  // whichever direction it's moving.
-  const GL_BALANCING_ACCOUNT_WMF_TO_ENDOWMENT = 27375;
+  // endowment instances. Each instance uses the same balancing account
+  // whichever direction the transfer is going.
   const GL_BALANCING_ACCOUNT_ENDOWMENT_INSTANCE = 11110;
-  const GL_BALANCING_ACCOUNT_ENDOWMENT_TO_WMF = 11110;
   const GL_BALANCING_ACCOUNT_WMF_INSTANCE = 27375;
 
   const LOCATION_ID_WMF = '100-WMF';
@@ -45,6 +41,57 @@ final class FinanceConstants {
   const GL_FEE_DEFAULT = 60917;
 
   const GL_ENDOWMENT_MEMO_SUFFIX = 'Earmarked for Endowment from WMF';
+
+  /**
+   * Journal row types, with the label used in the details file.
+   */
+  const JOURNAL_ROW_TYPES = [
+    'donation' => 'Donations',
+    'refund' => 'Refunds',
+    'donation_fee' => 'Donation Fees',
+    'invoice_fee' => 'Invoice Fees',
+    'adjustment' => 'Adjustment',
+    'balancing' => 'Balancing',
+  ];
+
+  /**
+   * The columns of a journal csv file, in order.
+   *
+   * Not all of these are used - they are part of the finance spec but when
+   * we push journals to Intacct we only use a subset.
+   */
+  const JOURNAL_HEADERS = [
+    'DONOTIMPORT',
+    'JOURNAL',
+    'DATE',
+    'REVERSEDATE',
+    'REFERENCE_NO',
+    'LINE_NO',
+    'ACCT_NO',
+    'LOCATION_ID',
+    'DEPT_ID',
+    'DOCUMENT',
+    'DEBIT',
+    'CREDIT',
+    'SOURCEENTITY',
+    'CURRENCY',
+    'EXCH_RATE_DATE',
+    'EXCH_RATE_TYPE_ID',
+    'EXCHANGE_RATE',
+    'STATE',
+    'ALLOCATION_ID',
+    'BILLABLE',
+    'GLDIMEVENT_ID',
+    'GLDIMFUNDING',
+    'GLENTRY_PROJECTID',
+    'GLENTRY_CLASSID',
+    'GLENTRY_CUSTOMERID',
+    'GLENTRY_VENDORID',
+    'GLENTRY_ITEMID',
+    'GLENTRY_EMPLOYEEID',
+    'DESCRIPTION',
+    'MEMO',
+  ];
 
   /**
    * The GL accounts that are major gifts.
@@ -72,10 +119,10 @@ final class FinanceConstants {
   /**
    * The one major gifts account that is restricted funding.
    *
-   * getAccountClause() reaches it when the gift's fund is restricted, that
+   * GLCode codes a gift to it when the gift's fund is restricted, that
    * taking precedence over the unrestricted codes (T409994). Endowment
    * journals also treat every major gift as restricted whatever it was on
-   * the foundation side - see writeCrossInstanceTransfer().
+   * the foundation side - see JournalWriter::writeReplacementJournal().
    */
   const GL_MAJOR_GIFTS_RESTRICTED = 43428;
 
