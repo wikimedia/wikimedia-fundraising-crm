@@ -10,7 +10,7 @@ use Civi\Api4\GatewayAccount;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\WMFBatch\FinanceConstants;
-use League\Csv\Writer;
+use Civi\WMFBatch\JournalGenerator;
 
 /**
  * Write the journals that correct one contribution's GL coding.
@@ -66,6 +66,10 @@ class GenerateAdjustmentJournals extends AbstractAction {
       ->execute()->first();
     if (!$adjustment) {
       throw new \CRM_Core_Exception('No adjustment is reserved against ' . $this->name);
+    }
+    // Copied from Gift_Data.gl_code, whose GL prefix the journals don't use.
+    foreach (['gl_code_before', 'gl_code_after'] as $field) {
+      $adjustment[$field] = substr($adjustment[$field], 2);
     }
 
     $journals = $this->getJournals($batch, $adjustment);
@@ -175,20 +179,16 @@ class GenerateAdjustmentJournals extends AbstractAction {
   }
 
   /**
-   * One journal line, in the column shape the settlement journals use -
-   * PushJournal reads the same keys whichever generated the file.
+   * One journal line. Columns not set here are written blank - see
+   * JournalGenerator::createJournalCsvWriter().
    *
    * @throws \CRM_Core_Exception
    */
   private function row(array $batch, array $adjustment, string $account, string $debit, string $credit, bool $isEndowmentSide): array {
     $date = date('m/d/Y', strtotime($batch['batch_data.settlement_date']));
     return [
-      'DONOTIMPORT' => '',
       'JOURNAL' => 'CREV',
       'DATE' => $date,
-      'REVERSEDATE' => '',
-      'REFERENCE_NO' => '',
-      'LINE_NO' => '',
       'ACCT_NO' => $account,
       'LOCATION_ID' => $isEndowmentSide ? FinanceConstants::LOCATION_ID_ENDOWMENT : FinanceConstants::LOCATION_ID_WMF,
       // Same rule as getDeptIDClause: no cost centre on endowment journals,
@@ -199,23 +199,12 @@ class GenerateAdjustmentJournals extends AbstractAction {
       'DOCUMENT' => $batch['name'],
       'DEBIT' => $debit,
       'CREDIT' => $credit,
-      'SOURCEENTITY' => '',
       'CURRENCY' => $batch['batch_data.settlement_currency'],
       'EXCH_RATE_DATE' => $date,
-      'EXCH_RATE_TYPE_ID' => '',
-      'EXCHANGE_RATE' => '',
       'STATE' => 'Draft',
-      'ALLOCATION_ID' => '',
-      'BILLABLE' => '',
-      'GLDIMEVENT_ID' => '',
       // Mirrors what the settlement journal's restrictions clause produces.
       'GLDIMFUNDING' => 'Unrestricted',
-      'GLENTRY_PROJECTID' => '',
-      'GLENTRY_CLASSID' => '',
-      'GLENTRY_CUSTOMERID' => '',
       'GLENTRY_VENDORID' => $this->getVendorCode($batch, $isEndowmentSide),
-      'GLENTRY_ITEMID' => '',
-      'GLENTRY_EMPLOYEEID' => '',
       'DESCRIPTION' => 'GL correction ' . $batch['name'],
       'MEMO' => $this->getMemo($batch, $adjustment, $date),
     ];
@@ -252,12 +241,10 @@ class GenerateAdjustmentJournals extends AbstractAction {
   /**
    * @throws \League\Csv\CannotInsertRecord
    * @throws \League\Csv\Exception
-   * @throws \League\Csv\UnavailableStream
    */
   private function write(array $rows, string $descriptor): string {
     $path = \Civi::settings()->get('wmf_audit_intact_files') . '/' . $this->name . '_' . $descriptor . '.csv';
-    $writer = Writer::from($path, 'w');
-    $writer->insertOne(array_keys($rows[0]));
+    $writer = JournalGenerator::createJournalCsvWriter($path);
     $lineNumber = 1;
     foreach ($rows as $row) {
       $row['LINE_NO'] = $lineNumber;

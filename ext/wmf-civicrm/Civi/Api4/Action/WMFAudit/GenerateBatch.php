@@ -1004,7 +1004,7 @@ class GenerateBatch extends AbstractAction {
       'DEBIT' => $row['DEBIT'],
       'CREDIT' => $row['CREDIT'],
     ];
-    unset($row['type'], $row['row_type'], $row['gateway'], $row['settlement_date'], $row['DESCRIPTION'], $row['MEMO'], $row['DEBIT'], $row['CREDIT']);
+    unset($row['type'], $row['row_type'], $row['gateway'], $row['settlement_date'], $row['DESCRIPTION'], $row['MEMO'], $row['DEBIT'], $row['CREDIT'], $row['item_count']);
 
     $glFields = ['ACCT_NO', 'LOCATION_ID', 'DEPT_ID', 'CURRENCY', 'GLDIMFUNDING', 'GL_VENDOR', 'GLENTRY_PROJECTID'];
     foreach ($glFields as $field) {
