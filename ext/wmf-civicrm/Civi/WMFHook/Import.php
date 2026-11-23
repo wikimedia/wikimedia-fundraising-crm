@@ -657,10 +657,10 @@ class Import {
    * This does not create or update any Batch record - it only normalises
    * the reference value on the contribution itself; batch creation is
    * handled separately. Accepts Gift_Information.import_batch_number
-   * or settlement_batch_number - but we are starting to prefer the former.
+   * or settlement_batch_reference - but we are starting to prefer the former.
    *
    * Also defaults the settled_* amounts (see fillSettledAmounts()) once a
-   * gateway account is confirmed recognised, since a contribution imported
+   * gateway account is confirmed, since a contribution imported
    * this way has no other source for them.
    *
    * @throws \CRM_Core_Exception
@@ -672,18 +672,13 @@ class Import {
       // itself would double it up.
       return;
     }
-    $gatewayAccountName = $this->mappedRow['Contribution']['contribution_extra.gateway_account'];
-    $inputReference = $this->mappedRow['Contribution']['contribution_settlement.settlement_batch_reference']
-      ?? $this->mappedRow['Contribution']['Gift_Information.import_batch_number']
-      ?? NULL;
-    if (!$inputReference) {
+    if (!$this->getBatchReferenceInput()) {
+      // Note that we might be going to make this required but for now skip.
       return;
     }
-    // If it didn't settle in USD they will need to fill it in as we can't rely on original currency.
-    $currency = $this->mappedRow['Contribution']['contribution_settlement.settlement_currency'] ?? 'USD';
-    $this->mappedRow['Contribution']['contribution_settlement.settlement_currency'] = $currency;
-    $this->mappedRow['Contribution']['contribution_settlement.settlement_batch_reference'] = ($this->isFidelity() ? $this->getFidelityBatchName($gatewayAccountName, $inputReference, $currency) : NULL)
-      ?? implode('_', [$gatewayAccountName, $inputReference, $currency]);
+
+    $this->mappedRow['Contribution']['contribution_settlement.settlement_currency'] = $this->getContributionSettlementCurrency();
+    $this->mappedRow['Contribution']['contribution_settlement.settlement_batch_reference'] = $this->getContributionSettlementBatchReference();
     $this->fillSettledAmounts();
   }
 
@@ -697,10 +692,11 @@ class Import {
    * @return string|null
    *   The batch name, if exactly one batch matches.
    */
-  private function getFidelityBatchName(string $gatewayAccountName, string $achGroupID, string $currency): ?string {
+  private function getFidelityBatchName(): ?string {
+    $achGroupID = $this->getBatchReferenceInput();
     $batches = Batch::get(FALSE)
       // Escape '_' so the 'ach' account does not also match 'achendowment' batches.
-      ->addWhere('name', 'LIKE', $gatewayAccountName . '\_%' . $achGroupID . '%\_' . $currency)
+      ->addWhere('name', 'LIKE', $this->mappedRow['Contribution']['contribution_extra.gateway_account'] . '\_%' . $achGroupID . '%\_' . $this->getContributionSettlementCurrency())
       ->addSelect('name')
       ->setLimit(2)
       ->execute();
@@ -945,6 +941,37 @@ class Import {
    */
   private function isContributionCreateMode(): bool {
     return !empty($this->mappedRow['Contribution']) && empty($this->mappedRow['Contribution']['id']);
+  }
+
+  /**
+   * Get the entered reference for the batch.
+   *
+   * Note that we are moving towards consolidating on 'Gift_Information.import_batch_number'
+   * at the input level.
+   */
+  private function getBatchReferenceInput(): ?string {
+    return $this->mappedRow['Contribution']['contribution_settlement.settlement_batch_reference']
+      ?? $this->mappedRow['Contribution']['Gift_Information.import_batch_number']
+      ?? NULL;
+  }
+
+  /**
+   * Get the settlement currency.
+   *
+   * If it didn't settle in USD they will need to fill it in as we can't rely on original currency.
+   */
+  private function getContributionSettlementCurrency(): string {
+    return $this->mappedRow['Contribution']['contribution_settlement.settlement_currency'] ?? 'USD';
+  }
+
+  /**
+   * Get the full resolved batch reference (e.g engage_WF1234_USD)
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  private function getContributionSettlementBatchReference(): string {
+    return ($this->isFidelity() ? $this->getFidelityBatchName() : NULL)
+      ?? implode('_', [$this->mappedRow['Contribution']['contribution_extra.gateway_account'], $this->getBatchReferenceInput(), $this->getContributionSettlementCurrency()]);
   }
 
 }
