@@ -6010,6 +6010,17 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Remove the adjustments the GL code backfill (upgrade_5280) recorded for
+   * gateway fees - they had no GL code before, so nothing was journalled.
+   *
+   * @return bool
+   */
+  public function upgrade_5285(): bool {
+    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_financial_data_adjustment WHERE gl_code_before IS NULL AND gl_code_after = 'GL60917'");
+    return TRUE;
+  }
+
+  /**
     * Queue up an API4 update.
     *
     * @param string $entity
