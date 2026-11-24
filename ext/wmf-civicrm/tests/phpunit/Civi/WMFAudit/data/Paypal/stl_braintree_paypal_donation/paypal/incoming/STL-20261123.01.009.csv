@@ -1,0 +1,3 @@
+SH,2026/11/23 00:00:00 -0800,2026/11/23 23:59:59 -0800,EZ782AXEUJUW8
+CH,Transaction ID,Invoice ID,PayPal Reference ID,PayPal Reference ID Type,Transaction Event Code,Transaction Initiation Date,Transaction Completion Date,Transaction Debit or Credit,Gross Transaction Amount,Gross Transaction Currency,Fee Debit or Credit,Fee Amount,Fee Currency,Custom Field,Consumer ID,Payment Tracking ID,Store ID
+SB,3CC11111K1111111A,255504595.1,4AA22222K2222222B,TXN,T0003,2026/11/23 05:26:57 -0800,2026/11/23 05:26:57 -0800,CR,200,GBP,DR,45,GBP,,JAZGDSUPU4BPL,,

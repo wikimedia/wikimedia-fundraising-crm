@@ -480,6 +480,44 @@ class PaypalAuditTest extends BaseAuditTestCase {
   }
 
   /**
+   * Braintree PayPal donation settled via PayPal's STL file.
+   *
+   * The contribution has the capture as backend_processor_txn_id while the
+   * STL row has the auth - the matching capture_id should win.
+   *
+   * @see https://phabricator.wikimedia.org/T444253
+   */
+  public function testSTLBraintreePaypalDonation(): void {
+    $contributionID = $this->createTestEntity('Contribution', [
+      'contact_id' => $this->createIndividual([], 'donor'),
+      'financial_type_id:name' => 'Cash',
+      'total_amount' => 2,
+      'currency' => 'GBP',
+      'source' => 'GBP 2.00',
+      'receive_date' => '2026-11-23 13:26:57',
+      'invoice_id' => '255504595.1',
+      'trxn_id' => 'BRAINTREE dHJhbnNhY3Rpb25fdGVzdA',
+      'contribution_extra.gateway' => 'braintree',
+      'contribution_extra.gateway_txn_id' => 'dHJhbnNhY3Rpb25fdGVzdA',
+      'contribution_extra.original_currency' => 'GBP',
+      'contribution_extra.original_amount' => 2,
+      'contribution_extra.backend_processor' => 'paypal',
+      'contribution_extra.backend_processor_txn_id' => '3CC11111K1111111A',
+      'contribution_extra.auth_id' => '4AA22222K2222222B',
+      'contribution_extra.capture_id' => '3CC11111K1111111A',
+    ], 'braintree_paypal')['id'];
+
+    $this->runAuditBatch('stl_braintree_paypal_donation', 'STL-20261123.01.009.csv');
+
+    $contribution = Contribution::get(FALSE)
+      ->addWhere('contact_id', '=', $this->ids['Contact']['donor'])
+      ->addSelect('contribution_settlement.settlement_batch_reference')
+      ->execute()->single();
+    $this->assertEquals($contributionID, $contribution['id']);
+    $this->assertEquals('paypal_20261123_GBP', $contribution['contribution_settlement.settlement_batch_reference']);
+  }
+
+  /**
    * Test batch of BRL transactions converted to USD creates a BRL not USD batch.
    *
    * https://phabricator.wikimedia.org/T418556#11683676
