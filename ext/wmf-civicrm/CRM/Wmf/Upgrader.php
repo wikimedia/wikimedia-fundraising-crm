@@ -6106,6 +6106,32 @@ v.channel IS NULL AND c.id = 131486342;",
   }
 
   /**
+   * Add Prospect.Followed_by, a relationship manager contact reference.
+   *
+   * The fields below Relationship Manager move down one to make room.
+   *
+   * @return bool
+   * @throws \CRM_Core_Exception
+   */
+  public function upgrade_5295(): bool {
+    $fields = CustomField::get(FALSE)
+      ->addSelect('id', 'custom_group_id', 'name', 'weight')
+      ->addWhere('custom_group_id:name', '=', 'Prospect')
+      ->execute()->indexBy('name');
+    $customGroupID = $fields['Relationship_Manager']['custom_group_id'];
+    $weight = $fields['Relationship_Manager']['weight'] + 1;
+    if (!isset($fields['Followed_by'])) {
+      CRM_Core_DAO::executeQuery('UPDATE civicrm_custom_field SET weight = weight + 1 WHERE custom_group_id = %1 AND weight >= %2', [
+        1 => [$customGroupID, 'Integer'],
+        2 => [$weight, 'Integer'],
+      ]);
+      Civi::cache('metadata')->clear();
+    }
+    $this->addProspectContactField($customGroupID, 'Followed_by', 'Followed by', 'followed_by', $weight, "The follower sees the donor's contributions, but the donor does not warrant a portfolio assignment at the moment.");
+    return TRUE;
+  }
+
+  /**
    * Add a Prospect contact reference field limited to relationship managers, if not already added.
    *
    * Core adds a custom field's column and foreign key in one ALTER, which

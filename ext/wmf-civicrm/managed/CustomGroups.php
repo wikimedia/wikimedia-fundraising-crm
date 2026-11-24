@@ -723,6 +723,17 @@ function _wmf_civicrm_get_prospect_fields(): array {
       'column_name' => 'relationship_manager',
       'help_post' => 'The WMF staff member who manages our relationship with the donor.',
     ],
+    'Followed_by' => [
+      'name' => 'Followed_by',
+      'label' => 'Followed by',
+      'data_type' => 'EntityReference',
+      'html_type' => 'Autocomplete-Select',
+      'fk_entity' => 'Contact',
+      'filter' => '[["groups:name", "IN", ["mg_relationship_managers"]]]',
+      'is_searchable' => 1,
+      'column_name' => 'followed_by',
+      'help_post' => "The follower sees the donor's contributions, but the donor does not warrant a portfolio assignment at the moment.",
+    ],
     'Biography' => [
       'name' => 'Biography',
       'label' => 'Biography',

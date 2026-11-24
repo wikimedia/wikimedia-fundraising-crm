@@ -11,7 +11,7 @@ class Contact {
   /**
    * Prospect contact reference columns handled by merge().
    */
-  private const PROSPECT_CONTACT_COLUMNS = ['relationship_manager'];
+  private const PROSPECT_CONTACT_COLUMNS = ['relationship_manager', 'followed_by'];
 
   /**
    * Implements hook_civicrm_pre
