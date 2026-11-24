@@ -442,9 +442,7 @@ class AuditMessage extends DonationMessage {
       // First check whether a standalone negative or reversal-reversing contribution already exists.
       $this->lookupByTrxnIdAndStatus();
       if (!$this->isReversingPriorReversal()) {
-        if (!$isAvoidGravyLookups && $this->getPaymentOrchestratorReconciliationReference()) {
-          $this->lookupByPaymentOrchestratorReconciliationId();
-        }
+        $this->lookupByPaymentOrchestratorReconciliationId();
         // We are moving towards this being our preferred way of identifying transactions as it
         // reliably matches (famous last words) the settlement file, where populated.
         // Ideally move above the lookupByPaymentOrchestratorReconciliationId in a follow-up.
@@ -1081,7 +1079,7 @@ class AuditMessage extends DonationMessage {
    * @throws \CRM_Core_Exception
    */
   private function lookupByPaymentOrchestratorReconciliationId(): void {
-    if ($this->existingContribution) {
+    if ($this->existingContribution || $this->isAvoidGravyLookups() || !$this->getPaymentOrchestratorReconciliationReference()) {
       return;
     }
     $this->existingContribution = Contribution::get(FALSE)
@@ -1093,6 +1091,15 @@ class AuditMessage extends DonationMessage {
       ->addWhere('contribution_extra.gateway', '=', $this->getGateway())
       ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
       ->execute()->first() ?? [];
+  }
+
+  /**
+   * Should gravy id lookups be skipped, for a gravy trustly recurring.
+   *
+   * @see getExistingContribution()
+   */
+  private function isAvoidGravyLookups(): bool {
+    return $this->isGravyTrustly() && $this->getContributionRecurID();
   }
 
   private function getReversalReversalFinancialTypeNames(): array {
