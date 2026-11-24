@@ -445,14 +445,10 @@ class AuditMessage extends DonationMessage {
         if (!$isAvoidGravyLookups && $this->getPaymentOrchestratorReconciliationReference()) {
           $this->lookupByPaymentOrchestratorReconciliationId();
         }
-        if ($this->getBackEndProcessor()
-          && ($this->getBackendProcessorTxnID() || ($this->isNegative() && $this->getBackendProcessorParentTxnID()))
-        ) {
-          // We are moving towards this being our preferred way of identifying transactions as it
-          // reliably matches (famous last words) the settlement file, where populated.
-          // Ideally move above the lookupByPaymentOrchestratorReconciliationId in a follow-up.
-          $this->lookupByBackendProcessorTrxnId();
-        }
+        // We are moving towards this being our preferred way of identifying transactions as it
+        // reliably matches (famous last words) the settlement file, where populated.
+        // Ideally move above the lookupByPaymentOrchestratorReconciliationId in a follow-up.
+        $this->lookupByBackendProcessorTrxnId();
         if ($this->isDlocal()) {
           // Try order ID lookup first for dlocal - this will only take place if there is one - in which
           // case it is more reliable.
@@ -1108,7 +1104,9 @@ class AuditMessage extends DonationMessage {
    * @throws \Civi\API\Exception\UnauthorizedException
    */
   private function lookupByBackendProcessorTrxnId(): void {
-    if ($this->existingContribution) {
+    if ($this->existingContribution || !$this->getBackEndProcessor()
+      || !($this->getBackendProcessorTxnID() || ($this->isNegative() && $this->getBackendProcessorParentTxnID()))
+    ) {
       return;
     }
     // Try the parent ID, if provided (e.g. refund) or the backend processor txn ID.
