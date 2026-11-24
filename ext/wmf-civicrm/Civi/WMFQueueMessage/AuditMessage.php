@@ -453,24 +453,7 @@ class AuditMessage extends DonationMessage {
       $this->lookupByGatewayOriginalTxnId();
       $this->lookupByOrderId();
 
-      // Do not accept existing contribution with mismatch against backend_processor_txn_id.
-      if ($this->existingContribution &&
-        (
-          (
-            !$this->isNegative()
-            && !empty($this->message['backend_processor_txn_id'])
-            && !empty($this->existingContribution['contribution_extra.backend_processor_txn_id'])
-            && $this->message['backend_processor_txn_id'] !== $this->existingContribution['contribution_extra.backend_processor_txn_id']
-          )
-          ||
-          (
-            $this->isNegative()
-            && !empty($this->message['backend_processor_reversal_id'])
-            && !empty($this->existingContribution['contribution_extra.backend_processor_reversal_id'])
-            && $this->message['backend_processor_reversal_id'] !== $this->existingContribution['contribution_extra.backend_processor_reversal_id']
-          )
-        )
-      ) {
+      if ($this->existingContribution && $this->isDifferentTransaction($this->existingContribution)) {
         $this->parentContribution = $this->existingContribution;
         $this->existingContribution = [];
       }
@@ -480,6 +463,23 @@ class AuditMessage extends DonationMessage {
     }
 
     return $this->existingContribution ?: NULL;
+  }
+
+  /**
+   * Is the matched contribution a different transaction to this row?
+   *
+   * The backend processor ids disagree - eg. it is the parent donation of
+   * this refund, rather than a record of the refund itself.
+   */
+  private function isDifferentTransaction(array $contribution): bool {
+    if ($this->isNegative()) {
+      return !empty($this->message['backend_processor_reversal_id'])
+        && !empty($contribution['contribution_extra.backend_processor_reversal_id'])
+        && $this->message['backend_processor_reversal_id'] !== $contribution['contribution_extra.backend_processor_reversal_id'];
+    }
+    return !empty($this->message['backend_processor_txn_id'])
+      && !empty($contribution['contribution_extra.backend_processor_txn_id'])
+      && $this->message['backend_processor_txn_id'] !== $contribution['contribution_extra.backend_processor_txn_id'];
   }
 
   /**
