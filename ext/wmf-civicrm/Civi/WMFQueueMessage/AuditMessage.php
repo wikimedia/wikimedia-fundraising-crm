@@ -415,7 +415,6 @@ class AuditMessage extends DonationMessage {
       // they never need to resolve to a donation here.
       return [];
     }
-    $debugInformation = [];
     if (!isset($this->existingContribution)) {
       $this->existingContribution = [];
 
@@ -474,20 +473,27 @@ class AuditMessage extends DonationMessage {
       }
     }
     if (!$this->existingContribution && !$this->isAggregateRow() && !$this->isFeeRow() && !$this->isAdjustmentRow()) {
-      static $isFirst = TRUE;
-      if ($isFirst) {
-        \Civi::log('wmf')->info("contribution not found using contribution_extra.gateway {gateway} and gateway_txn_id {gateway_txn_id}\n", $debugInformation + [
-            'gateway' => $this->getGateway(),
-            'gateway_txn_id' => $this->getGatewayOriginalTxnID(),
-            'backend_processor' => $this->getBackEndProcessor(),
-            'backend_txn_id' => $this->getBackendProcessorTxnID(),
-          ] + $this->message
-        );
-      }
-      $isFirst = FALSE;
+      $this->logFirstNotFound();
     }
 
     return $this->existingContribution ?: NULL;
+  }
+
+  /**
+   * Log the first contribution not found, to help debug lookups.
+   */
+  private function logFirstNotFound(): void {
+    static $isFirst = TRUE;
+    if ($isFirst) {
+      \Civi::log('wmf')->info("contribution not found using contribution_extra.gateway {gateway} and gateway_txn_id {gateway_txn_id}\n", [
+          'gateway' => $this->getGateway(),
+          'gateway_txn_id' => $this->getGatewayOriginalTxnID(),
+          'backend_processor' => $this->getBackEndProcessor(),
+          'backend_txn_id' => $this->getBackendProcessorTxnID(),
+        ] + $this->message
+      );
+    }
+    $isFirst = FALSE;
   }
 
   public function isSubsequentRecurring(): bool {
