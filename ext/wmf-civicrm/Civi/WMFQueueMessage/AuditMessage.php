@@ -429,12 +429,7 @@ class AuditMessage extends DonationMessage {
         return $this->existingContribution;
       }
 
-      // See first if it is gravy trustly as the trustly ID is reliable here but the
-      // gravy ID might refer to a different contribution. We can probably do some more here but
-      // failing to link up is less evil than linking to the wrong one & we will be warning if that
-      // happens as the batch will not close.
-      $isAvoidGravyLookups = $this->isGravyTrustly() && $this->getContributionRecurID();
-      if ($this->existingContribution) {
+      if ($this->isAvoidGravyLookups() && $this->existingContribution) {
         // This could have been set during the trustly contribution recur lookup.
         return $this->existingContribution;
       }
@@ -452,9 +447,7 @@ class AuditMessage extends DonationMessage {
           // case it is more reliable.
           $this->lookupByOrderId();
         }
-        if (!$isAvoidGravyLookups && $this->getGatewayOriginalTxnID()) {
-          $this->lookupByGatewayOriginalTxnId();
-        }
+        $this->lookupByGatewayOriginalTxnId();
         if (!$this->existingContribution) {
           $this->lookupByOrderId();
         }
@@ -1096,7 +1089,9 @@ class AuditMessage extends DonationMessage {
   /**
    * Should gravy id lookups be skipped, for a gravy trustly recurring.
    *
-   * @see getExistingContribution()
+   * The trustly ID is reliable here but the gravy ID might refer to a different
+   * contribution. Failing to link up is less evil than linking to the wrong one
+   * & we will be warning if that happens as the batch will not close.
    */
   private function isAvoidGravyLookups(): bool {
     return $this->isGravyTrustly() && $this->getContributionRecurID();
@@ -1148,7 +1143,7 @@ class AuditMessage extends DonationMessage {
    * @throws \CRM_Core_Exception
    */
   private function lookupByGatewayOriginalTxnId(): void {
-    if ($this->existingContribution) {
+    if ($this->existingContribution || $this->isAvoidGravyLookups() || !$this->getGatewayOriginalTxnID()) {
       return;
     }
     $this->existingContribution = Contribution::get(FALSE)
