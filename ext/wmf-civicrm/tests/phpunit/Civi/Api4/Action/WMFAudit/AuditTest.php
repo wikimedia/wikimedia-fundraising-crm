@@ -300,4 +300,72 @@ class AuditTest extends TestCase {
     $this->assertEquals($contributionID, $audit['message']['contribution_id']);
   }
 
+  /**
+   * A PayPal recurring instalment's backend_processor_txn_id is the subscription
+   * id, shared by every instalment - so it is matched on capture_id instead.
+   *
+   * @see https://phabricator.wikimedia.org/T442644
+   */
+  public function testAuditPaypalRecurringInstalmentMatchesOnCaptureId(): void {
+    $contactID = $this->createIndividual();
+    $this->createPaypalInstalment($contactID, '95X90702HN901141T');
+    $contributionID = $this->createPaypalInstalment($contactID, '7V5055720E234413P');
+
+    $audit = WMFAudit::audit(FALSE)->setValues($this->getPaypalInstalmentMessage('7V5055720E234413P'))->execute()->first();
+    $this->assertFalse($audit['is_missing']);
+    $this->assertEquals($contributionID, $audit['message']['contribution_id']);
+  }
+
+  /**
+   * A PayPal recurring instalment must not match an earlier instalment via the
+   * shared subscription id - with only the earlier one in civi it is missing.
+   *
+   * @see https://phabricator.wikimedia.org/T442644
+   */
+  public function testAuditPaypalRecurringInstalmentNotMatchedToPriorInstalment(): void {
+    $contactID = $this->createIndividual();
+    $priorContributionID = $this->createPaypalInstalment($contactID, '95X90702HN901141T');
+
+    $audit = WMFAudit::audit(FALSE)->setValues($this->getPaypalInstalmentMessage('7V5055720E234413P'))->execute()->first();
+    $this->assertTrue($audit['is_missing']);
+    $this->assertNotEquals($priorContributionID, $audit['message']['contribution_id'] ?? NULL);
+  }
+
+  private function createPaypalInstalment(int $contactID, string $txnID): int {
+    return $this->createTestEntity('Contribution', [
+      'contact_id' => $contactID,
+      'financial_type_id:name' => 'Recurring Gift',
+      'contribution_status_id:name' => 'Completed',
+      'total_amount' => 5,
+      'trxn_id' => 'PAYPAL_EC ' . $txnID,
+      'contribution_extra.gateway' => 'paypal_ec',
+      'contribution_extra.gateway_txn_id' => $txnID,
+      'contribution_extra.backend_processor' => 'paypal_ec',
+      'contribution_extra.backend_processor_txn_id' => 'I-VSHPS0208AD5',
+      'contribution_extra.capture_id' => $txnID,
+    ], $txnID)['id'];
+  }
+
+  /**
+   * An STL T0002 (recurring instalment) row as parsed by SmashPig.
+   */
+  private function getPaypalInstalmentMessage(string $txnID): array {
+    return [
+      'gateway' => 'paypal_ec',
+      'audit_file_gateway' => 'paypal',
+      'type' => 'donation',
+      'txn_type' => 'subscr_payment',
+      'subscr_id' => 'I-VSHPS0208AD5',
+      'gateway_txn_id' => $txnID,
+      'backend_processor' => 'paypal_ec',
+      'backend_processor_txn_id' => 'I-VSHPS0208AD5',
+      'auth_id' => 'I-VSHPS0208AD5',
+      'capture_id' => $txnID,
+      'currency' => 'USD',
+      'gross' => '5.00',
+      'gross_currency' => 'USD',
+      'date' => time(),
+    ];
+  }
+
 }

@@ -428,6 +428,7 @@ class AuditMessage extends DonationMessage {
         return $this->existingContribution;
       }
 
+      $this->lookupByCaptureId();
       $this->lookupByTrustlyRecurring();
       // First check whether a standalone negative or reversal-reversing contribution already exists.
       $this->lookupByTrxnIdAndStatus();
@@ -465,7 +466,9 @@ class AuditMessage extends DonationMessage {
    * Is the matched contribution a different transaction to this row?
    *
    * The backend processor ids disagree - eg. it is the parent donation of
-   * this refund, rather than a record of the refund itself.
+   * this refund, rather than a record of the refund itself. A differing
+   * capture_id is only treated as different for the shared subscription id
+   * case - otherwise it is logged.
    */
   private function isDifferentTransaction(array $contribution): bool {
     if ($this->isNegative()) {
@@ -473,9 +476,32 @@ class AuditMessage extends DonationMessage {
         && !empty($contribution['contribution_extra.backend_processor_reversal_id'])
         && $this->message['backend_processor_reversal_id'] !== $contribution['contribution_extra.backend_processor_reversal_id'];
     }
-    return !empty($this->message['backend_processor_txn_id'])
+    if (!empty($this->message['backend_processor_txn_id'])
       && !empty($contribution['contribution_extra.backend_processor_txn_id'])
-      && $this->message['backend_processor_txn_id'] !== $contribution['contribution_extra.backend_processor_txn_id'];
+      && $this->message['backend_processor_txn_id'] !== $contribution['contribution_extra.backend_processor_txn_id']
+    ) {
+      return TRUE;
+    }
+    if (!$this->getCaptureID() || empty($contribution['contribution_extra.capture_id'])
+      || $contribution['contribution_extra.capture_id'] === $this->getCaptureID()
+    ) {
+      return FALSE;
+    }
+    if (!empty($this->message['subscr_id']) && $this->message['subscr_id'] === ($this->message['backend_processor_txn_id'] ?? NULL)) {
+      // The backend_processor_txn_id is the subscription id (eg. PayPal STL recurring),
+      // so it matched an earlier instalment.
+      // @see https://phabricator.wikimedia.org/T442644
+      return TRUE;
+    }
+    \Civi::log('wmf')->warning('Audit matched contribution {contribution_id} with capture_id {existing_capture_id} but the row has capture_id {capture_id}', [
+      'contribution_id' => $contribution['id'],
+      'existing_capture_id' => $contribution['contribution_extra.capture_id'],
+      'capture_id' => $this->getCaptureID(),
+      'gateway' => $this->getGateway(),
+      'backend_processor' => $this->getBackEndProcessor(),
+      'backend_processor_txn_id' => $this->getBackendProcessorTxnID(),
+    ]);
+    return FALSE;
   }
 
   /**
@@ -950,6 +976,7 @@ class AuditMessage extends DonationMessage {
       'contact_id',
       'invoice_id',
       'contribution_extra.backend_processor_txn_id',
+      'contribution_extra.capture_id',
       'contribution_extra.backend_processor_gateway_txn_id',
       'contribution_extra.backend_processor_reversal_id',
       'contribution_extra.payment_orchestrator_reconciliation_id',
@@ -1101,6 +1128,30 @@ class AuditMessage extends DonationMessage {
    */
   private function isAvoidGravyLookups(): bool {
     return $this->isGravyTrustly() && $this->getContributionRecurID();
+  }
+
+  /**
+   * Lookup a donation by capture_id, which is unique to each payment.
+   *
+   * Unlike backend_processor_txn_id, which can be shared - eg. the
+   * subscription id on every PayPal recurring instalment.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function lookupByCaptureId(): void {
+    if ($this->existingContribution || $this->isNegative() || $this->isReversingPriorReversal()
+      // Potentially the check on getBackEndProcessor() might turn out to be something we could
+      // ditch if capture winds up being reliable enough.
+      || !$this->getCaptureID() || !$this->getBackEndProcessor()
+    ) {
+      return;
+    }
+    $this->existingContribution = Contribution::get(FALSE)
+      ->setSelect($this->getContributionSelectFields())
+      ->addWhere('contribution_extra.backend_processor', '=', $this->getBackEndProcessor())
+      ->addWhere('contribution_extra.capture_id', '=', $this->getCaptureID())
+      ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
+      ->execute()->first() ?? [];
   }
 
   /**
