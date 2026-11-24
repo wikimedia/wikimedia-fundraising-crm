@@ -5,6 +5,7 @@ namespace Civi\WMFQueue;
 use Civi\API\Exception\UnauthorizedException;
 use Civi\Api4\Activity;
 use Civi\Api4\Contact;
+use Civi\Api4\DoubleOptIn;
 use Civi\Api4\Email;
 use Civi\Api4\WMFContact;
 use Civi\WMFHelper\Activity as ActivityHelper;
@@ -81,8 +82,9 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
   {
     return Contact::get(FALSE)
       ->addWhere('id', '=', $contactID)
+      ->addSelect('display_name')
+      ->addSelect('preferred_language')
       ->addSelect('email_primary.email')
-      ->addSelect('email_primary.id')
       ->addSelect('address_primary.country_id')
       ->addSelect('email_primary.location_type_id')
       ->addSelect('Communication.opt_in')
@@ -162,23 +164,6 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
 
     \Civi::log('wmf')->info("Updated primary email for contact ID {$contact['id']} to $newEmail");
 
-    if (in_array(
-      $contact['address_primary.country_id'],
-      \Civi::settings()->get('thank_you_double_opt_in_countries')
-    )) {
-      $doubleOptInEmails = ActivityHelper::getDoubleOptInActivities($contact['id']);
-      if (empty($doubleOptInEmails[$newEmail])) {
-        Activity::create(FALSE)
-          ->addValue('source_record_id', $contact['email_primary.id'])
-          ->addValue('source_contact_id', $contact['id'])
-          ->addValue('target_contact_id', $contact['id'])
-          ->addValue('subject', $newEmail)
-          ->addValue('activity_tracking.activity_source', 'Email Preferences')
-          ->addValue('activity_type_id:name', 'Double Opt-In')
-          ->execute();
-      }
-    }
-
     // If we are verifying an email for a contact who is emailable, then make sure
     // any other contact sharing that primary email gets opted in too (and un-snoozed).
     // If the contact is snoozed, then we don't touch any snoozes.
@@ -193,6 +178,22 @@ class VerifyEmailQueueConsumer extends QueueConsumer {
         ->setEmail($newEmail)
         ->setCheckSnooze(!$isSnoozed)
         ->execute();
+
+      // The change was confirmed from the old address, so the new one still needs double opt-in.
+      if (in_array(
+        $contact['address_primary.country_id'],
+        \Civi::settings()->get('thank_you_double_opt_in_countries')
+      )) {
+        $doubleOptInEmails = ActivityHelper::getDoubleOptInActivities($contact['id']);
+        if (empty($doubleOptInEmails[$newEmail])) {
+          DoubleOptIn::send(FALSE)
+            ->setDisplayName($contact['display_name'])
+            ->setContactID($contact['id'])
+            ->setEmail($newEmail)
+            ->setPreferredLanguage($contact['preferred_language'])
+            ->execute();
+        }
+      }
     }
   }
 }

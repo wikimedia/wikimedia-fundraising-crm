@@ -108,6 +108,7 @@ class UpdateCommunicationsPreferencesTest extends TestCase {
 
     $sentEmail = $this->getMostRecentEmail();
     $this->assertStringContainsString('From: Set Primary Email Sender <verify@example.org>', $sentEmail['headers']);
+    $this->assertStringContainsString('To: Bob <bob.roberto@test.com>', $sentEmail['headers']);
 
     WMFContact::updateCommunicationsPreferences()
       ->setEmail('test2@example.org')

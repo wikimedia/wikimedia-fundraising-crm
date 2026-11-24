@@ -261,9 +261,9 @@ class VerifyEmailQueueConsumerTest extends BaseQueueTestCase {
   }
 
   /**
-   * Test that double opt-in activity is created for specific countries.
+   * Test that double opt-in email is sent for specific countries.
    */
-  public function testDoubleOptInActivityCreatedForSpecificCountries(): void {
+  public function testDoubleOptInEmailSentForSpecificCountries(): void {
     // Get a country from the double opt-in settings
     $doubleOptInCountries = \Civi::settings()->get('thank_you_double_opt_in_countries');
 
@@ -294,81 +294,13 @@ class VerifyEmailQueueConsumerTest extends BaseQueueTestCase {
     ];
     $this->processMessageWithoutQueuing($message);
 
-    // Verify double opt-in activity was created
+    $this->assertEquals(1, $this->getMailingCount());
+    $this->assertEquals($this->newEmail, $this->getMailing(0)['to_address']);
     $doubleOptInActivities = Activity::get(FALSE)
       ->addWhere('source_contact_id', '=', $this->getContactID())
       ->addWhere('activity_type_id:name', '=', 'Double Opt-In')
-      ->addWhere('subject', '=', $this->newEmail)
       ->execute();
-
-    $this->assertGreaterThan(0, $doubleOptInActivities->count());
-  }
-
-  /**
-   * Test that double opt-in is not created twice for the same email.
-   */
-  public function testDoubleOptInIsNotCreatedTwice(): void {
-    // Get a country from the double opt-in settings
-    $doubleOptInCountries = \Civi::settings()->get('thank_you_double_opt_in_countries');
-
-    if (empty($doubleOptInCountries)) {
-      $this->markTestSkipped('No countries configured for double opt-in');
-    }
-
-    $countryId = $doubleOptInCountries[0];
-
-    // Update the contact's address to be in a double opt-in country
-    Contact::update(FALSE)
-      ->addWhere('id', '=', $this->getContactID())
-      ->setValues(['address_primary.country_id' => $countryId])
-      ->execute();
-
-    // Create initial email
-    $this->createEmail($this->primaryEmail);
-
-    // Create a valid checksum for the contact
-    $checksum = $this->generateValidChecksum($this->getContactID());
-
-    // Process the message first time
-    $message = [
-      'contact_id' => $this->getContactID(),
-      'email' => $this->newEmail,
-      'checksum' => $checksum,
-    ];
-    $this->processMessageWithoutQueuing($message);
-
-    // Count double opt-in activities
-    $doubleOptInActivitiesFirst = Activity::get(FALSE)
-      ->addWhere('source_contact_id', '=', $this->getContactID())
-      ->addWhere('activity_type_id:name', '=', 'Double Opt-In')
-      ->addWhere('subject', '=', $this->newEmail)
-      ->execute();
-
-    $firstCount = $doubleOptInActivitiesFirst->count();
-
-    // Create another email and process it
-    $anotherEmail = 'another@example.com';
-    $this->createEmail($anotherEmail);
-
-    $checksum2 = $this->generateValidChecksum($this->getContactID());
-
-    $message2 = [
-      'contact_id' => $this->getContactID(),
-      'email' => $anotherEmail,
-      'checksum' => $checksum2,
-    ];
-    $this->processMessageWithoutQueuing($message2);
-
-    // Count double opt-in activities again
-    $doubleOptInActivitiesSecond = Activity::get(FALSE)
-      ->addWhere('source_contact_id', '=', $this->getContactID())
-      ->addWhere('activity_type_id:name', '=', 'Double Opt-In')
-      ->execute();
-
-    $secondCount = $doubleOptInActivitiesSecond->count();
-
-    // Both emails should have their own double opt-in activity
-    $this->assertGreaterThanOrEqual($firstCount, $secondCount);
+    $this->assertCount(0, $doubleOptInActivities);
   }
 
   /**
