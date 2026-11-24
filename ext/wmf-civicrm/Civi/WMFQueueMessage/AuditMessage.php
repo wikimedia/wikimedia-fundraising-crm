@@ -428,11 +428,7 @@ class AuditMessage extends DonationMessage {
         return $this->existingContribution;
       }
 
-      if ($this->isAvoidGravyLookups() && $this->existingContribution) {
-        // This could have been set during the trustly contribution recur lookup.
-        return $this->existingContribution;
-      }
-
+      $this->lookupByTrustlyRecurring();
       // First check whether a standalone negative or reversal-reversing contribution already exists.
       $this->lookupByTrxnIdAndStatus();
       if ($this->isReversingPriorReversal()) {
@@ -1105,6 +1101,21 @@ class AuditMessage extends DonationMessage {
    */
   private function isAvoidGravyLookups(): bool {
     return $this->isGravyTrustly() && $this->getContributionRecurID();
+  }
+
+  /**
+   * Lookup a gravy trustly recurring by the trustly id.
+   *
+   * This sets the existing contribution when the recurring's contribution has
+   * the same backend processor txn id.
+   *
+   * @see getTrustlyRecurringContribution()
+   */
+  private function lookupByTrustlyRecurring(): void {
+    if ($this->existingContribution || !$this->isGravyTrustly()) {
+      return;
+    }
+    $this->getContributionRecurID();
   }
 
   private function getReversalReversalFinancialTypeNames(): array {
