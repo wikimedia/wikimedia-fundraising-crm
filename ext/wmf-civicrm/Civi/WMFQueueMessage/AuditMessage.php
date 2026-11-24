@@ -435,41 +435,44 @@ class AuditMessage extends DonationMessage {
 
       // First check whether a standalone negative or reversal-reversing contribution already exists.
       $this->lookupByTrxnIdAndStatus();
-      if (!$this->isReversingPriorReversal()) {
-        $this->lookupByPaymentOrchestratorReconciliationId();
-        // We are moving towards this being our preferred way of identifying transactions as it
-        // reliably matches (famous last words) the settlement file, where populated.
-        // Ideally move above the lookupByPaymentOrchestratorReconciliationId in a follow-up.
-        $this->lookupByBackendProcessorTrxnId();
-        if ($this->isDlocal()) {
-          // Try order ID lookup first for dlocal - this will only take place if there is one - in which
-          // case it is more reliable.
-          $this->lookupByOrderId();
-        }
-        $this->lookupByGatewayOriginalTxnId();
+      if ($this->isReversingPriorReversal()) {
+        // These are recorded as their own contribution, found only by their prefixed trxn_id in the lookupByTrxnIdAndStatus.
+        return $this->existingContribution;
+      }
+      // The first match wins.
+      $this->lookupByPaymentOrchestratorReconciliationId();
+      // We are moving towards this being our preferred way of identifying transactions as it
+      // reliably matches (famous last words) the settlement file, where populated.
+      // Ideally move above the lookupByPaymentOrchestratorReconciliationId in a follow-up.
+      $this->lookupByBackendProcessorTrxnId();
+      if ($this->isDlocal()) {
+        // Try order ID lookup first for dlocal - this will only take place if there is one - in which
+        // case it is more reliable.
         $this->lookupByOrderId();
+      }
+      $this->lookupByGatewayOriginalTxnId();
+      $this->lookupByOrderId();
 
-        // Do not accept existing contribution with mismatch against backend_processor_txn_id.
-        if ($this->existingContribution &&
+      // Do not accept existing contribution with mismatch against backend_processor_txn_id.
+      if ($this->existingContribution &&
+        (
           (
-            (
-              !$this->isNegative()
-              && !empty($this->message['backend_processor_txn_id'])
-              && !empty($this->existingContribution['contribution_extra.backend_processor_txn_id'])
-              && $this->message['backend_processor_txn_id'] !== $this->existingContribution['contribution_extra.backend_processor_txn_id']
-            )
-            ||
-            (
-              $this->isNegative()
-              && !empty($this->message['backend_processor_reversal_id'])
-              && !empty($this->existingContribution['contribution_extra.backend_processor_reversal_id'])
-              && $this->message['backend_processor_reversal_id'] !== $this->existingContribution['contribution_extra.backend_processor_reversal_id']
-            )
+            !$this->isNegative()
+            && !empty($this->message['backend_processor_txn_id'])
+            && !empty($this->existingContribution['contribution_extra.backend_processor_txn_id'])
+            && $this->message['backend_processor_txn_id'] !== $this->existingContribution['contribution_extra.backend_processor_txn_id']
           )
-        ) {
-          $this->parentContribution = $this->existingContribution;
-          $this->existingContribution = [];
-        }
+          ||
+          (
+            $this->isNegative()
+            && !empty($this->message['backend_processor_reversal_id'])
+            && !empty($this->existingContribution['contribution_extra.backend_processor_reversal_id'])
+            && $this->message['backend_processor_reversal_id'] !== $this->existingContribution['contribution_extra.backend_processor_reversal_id']
+          )
+        )
+      ) {
+        $this->parentContribution = $this->existingContribution;
+        $this->existingContribution = [];
       }
     }
     if (!$this->existingContribution && !$this->isAggregateRow() && !$this->isFeeRow() && !$this->isAdjustmentRow()) {
