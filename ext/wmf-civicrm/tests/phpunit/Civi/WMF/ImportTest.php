@@ -9,6 +9,7 @@ use Civi\Api4\Contribution;
 use Civi\Api4\ContributionSoft;
 use Civi\Api4\DedupeRule;
 use Civi\Api4\DedupeRuleGroup;
+use Civi\Api4\GatewayAccount;
 use Civi\Api4\GroupContact;
 use Civi\Api4\Import;
 use Civi\Api4\Relationship;
@@ -1000,6 +1001,50 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       }
     }
     throw new \CRM_Core_Exception('workplace soft credit type does not exist');
+  }
+
+  /**
+   * Batches imported as total_verified record the verification date.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testBatchImportSetsTotalVerificationDate(): void {
+    $this->imitateAdminUser();
+    $data = [
+      'Batch.batch_data.settlement_date' => '2026-10-07',
+      'Batch.batch_data.settlement_gateway_account_id' => GatewayAccount::get(FALSE)->addWhere('name', '=', 'wire')->execute()->single()['id'],
+      'Batch.title' => 'wire_batch_' . substr(uniqid(), -8),
+      'Batch.total' => '100',
+      'Batch.item_count' => '1',
+      'Batch.status_id' => 'total_verified',
+    ];
+    $this->createImportTable($data);
+    $importMappings = [];
+    foreach (array_keys($data) as $index => $columnName) {
+      $importMappings[] = ['name' => $columnName, 'default_value' => NULL, 'column_number' => $index, 'entity_data' => []];
+    }
+    $this->userJobID = UserJob::create(FALSE)->setValues([
+      'job_type' => 'import_generic',
+      'status_id' => 1,
+      'metadata' => [
+        'submitted_values' => ['dataSource' => 'CRM_Import_DataSource_SQL', 'dateFormats' => \CRM_Utils_Date::DATE_yyyy_mm_dd],
+        'base_entity' => 'Batch',
+        'Template' => ['mapping_id' => NULL],
+        'DataSource' => ['table_name' => 'civicrm_tmp_d_wmf_import', 'column_headers' => array_keys($data), 'number_of_columns' => count($data)],
+        'sqlQuery' => $this->getSelectQuery($data),
+        'entity_configuration' => ['Batch' => ['action' => 'create']],
+        'import_mappings' => $importMappings,
+      ],
+    ])->execute()->first()['id'];
+    Import::import($this->userJobID)->execute();
+    $row = Import::get($this->userJobID, FALSE)->execute()->first();
+    $this->assertEquals('IMPORTED', $row['_status'], $row['_status_message']);
+    $batch = Batch::get(FALSE)
+      ->addSelect('status_id:name', 'batch_data.last_successful_total_verification_date')
+      ->addWhere('id', '=', $row['_entity_id'])
+      ->execute()->single();
+    $this->assertEquals('total_verified', $batch['status_id:name']);
+    $this->assertNotEmpty($batch['batch_data.last_successful_total_verification_date']);
   }
 
   /**

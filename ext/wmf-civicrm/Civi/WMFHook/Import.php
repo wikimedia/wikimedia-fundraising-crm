@@ -532,6 +532,12 @@ class Import {
     $batch['type_id:name'] ??= 'Contribution';
     $batch['mode_id:name'] ??= 'Manual Batch';
     $batch['batch_data.settled_fee_amount'] ??= '0';
+    // Imported totals are verified - record when, as the audit does, so
+    // generateBatch can still export the batch if it goes to needs_attention.
+    $status = $batch['status_id:name'] ?? \CRM_Core_PseudoConstant::getName('CRM_Batch_BAO_Batch', 'status_id', $batch['status_id'] ?? NULL);
+    if ($status === 'total_verified') {
+      $batch['batch_data.last_successful_total_verification_date'] ??= date('Y-m-d H:i:s');
+    }
     if (isset($batch['total'])) {
       $batch['batch_data.settled_net_amount'] ??= $batch['total'];
       $batch['batch_data.settled_donation_amount'] ??= $batch['total'];
