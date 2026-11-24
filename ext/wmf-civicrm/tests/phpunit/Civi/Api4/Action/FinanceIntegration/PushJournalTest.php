@@ -114,6 +114,21 @@ class PushJournalTest extends TestCase implements HeadlessInterface {
     $this->assertEmpty($batch['batch_data.exchange_rate_source']);
   }
 
+  /**
+   * A row with no ACCT_NO (eg. a contribution with no GL code) must stop the
+   * push before anything is sent to Intacct.
+   */
+  public function testRowWithoutAccountIsRejected(): void {
+    file_put_contents($this->journalFile, "LINE_NO,ACCT_NO,CURRENCY,DEBIT,CREDIT,GLDIMFUNDING\n1,43481,USD,0.00,30.00,Unrestricted\n2,,USD,10.00,0.00,Unrestricted\n3,11250,USD,20.00,0.00,Unrestricted\n");
+    $this->expectException(\CRM_Core_Exception::class);
+    $this->expectExceptionMessage('Batch ' . self::BATCH_NAME . ' line 2 has no ACCT_NO');
+
+    FinanceIntegration::pushJournal(FALSE)
+      ->setJournalFile($this->journalFile)
+      ->setBatchName(self::BATCH_NAME)
+      ->execute();
+  }
+
   private function createBatch(array $values = []): void {
     $this->createTestEntity('Batch', $values + [
       'name' => self::BATCH_NAME,
