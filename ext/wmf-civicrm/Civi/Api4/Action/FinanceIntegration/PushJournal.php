@@ -329,6 +329,7 @@ class PushJournal extends AbstractAction {
    *
    * Rules:
    * - At least 2 lines
+   * - Every row has an ACCT_NO
    * - Exactly one of DEBIT or CREDIT populated per row
    * - Batch is balanced (debit == credit)
    *
@@ -348,6 +349,11 @@ class PushJournal extends AbstractAction {
     $credit = Money::zero($currency);
     $settledAmount = Money::zero($currency);
     foreach ($rows as $rowIndex => $row) {
+      $lineNo = (string) ($row['LINE_NO'] ?? ($rowIndex + 1));
+      if (trim((string) ($row['ACCT_NO'] ?? '')) === '') {
+        // Eg. a contribution with no GL code - adyen_1301_USD lost its line in Intacct.
+        throw new \CRM_Core_Exception("Batch {$batchName} line {$lineNo} has no ACCT_NO");
+      }
       $debitAmount  = (string) ($row['DEBIT'] ?? '0');
       $creditAmount = (string) ($row['CREDIT'] ?? '0');
 
@@ -358,7 +364,6 @@ class PushJournal extends AbstractAction {
       $hasCredit = !$creditMoney->isZero();
 
       if (($hasDebit && $hasCredit) || (!$hasDebit && !$hasCredit)) {
-        $lineNo = (string) ($row['LINE_NO'] ?? ($rowIndex + 1));
         throw new \CRM_Core_Exception(
           "Batch {$batchName} line {$lineNo} must have exactly one of DEBIT or CREDIT populated"
         );
