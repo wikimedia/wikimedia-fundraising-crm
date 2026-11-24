@@ -439,12 +439,8 @@ class AuditMessage extends DonationMessage {
         return $this->existingContribution;
       }
 
-      if ($this->isRefund() || $this->isChargeback() || $this->isReversal()
-        || $this->isReversingPriorReversal()
-      ) {
-        // First check whether a standalone negative or reversal-reversing contribution already exists.
-        $this->lookupByTrxnIdAndStatus();
-      }
+      // First check whether a standalone negative or reversal-reversing contribution already exists.
+      $this->lookupByTrxnIdAndStatus();
       if (!$this->isReversingPriorReversal()) {
         if (!$isAvoidGravyLookups && $this->getPaymentOrchestratorReconciliationReference()) {
           $this->lookupByPaymentOrchestratorReconciliationId();
@@ -1059,7 +1055,9 @@ class AuditMessage extends DonationMessage {
    * @throws \Civi\WMFException\WMFException
  */
   private function lookupByTrxnIdAndStatus(): void {
-    if ($this->existingContribution) {
+    if ($this->existingContribution
+      || !($this->isRefund() || $this->isChargeback() || $this->isReversal() || $this->isReversingPriorReversal())
+    ) {
       return;
     }
     $transaction = WMFTransaction::from_message($this->message);
