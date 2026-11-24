@@ -410,6 +410,11 @@ class AuditMessage extends DonationMessage {
    * @throws \Civi\WMFException\WMFException
    */
   public function getExistingContribution(): ?array {
+    if ($this->isAggregateRow()) {
+      // Aggregate/payout rows are discarded outright in BaseAuditProcessor, so
+      // they never need to resolve to a donation here.
+      return [];
+    }
     $debugInformation = [];
     if (!isset($this->existingContribution)) {
       $this->existingContribution = [];
@@ -421,11 +426,6 @@ class AuditMessage extends DonationMessage {
         // These won't use gravy so we can just match on gateway +
         // gateway_txn_id.
         $this->existingContribution = $this->lookupByGatewayTxnId() ?? [];
-        return $this->existingContribution;
-      }
-      if ($this->isAggregateRow()) {
-        // Aggregate/payout rows are discarded outright in BaseAuditProcessor, so
-        // they never need to resolve to a donation here.
         return $this->existingContribution;
       }
 

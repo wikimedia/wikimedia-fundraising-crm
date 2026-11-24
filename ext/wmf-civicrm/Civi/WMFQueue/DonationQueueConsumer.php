@@ -160,7 +160,11 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
       $message->setContributionTrackingID(empty($msg['contribution_tracking_id']) ? NULL : $msg['contribution_tracking_id']);
     }
     $this->stopAction('verify_and_stage');
-    $msg['contact_id'] = $this->saveContact($msg);
+    $contact = $this->saveContact($msg);
+    $msg['contact_id'] = $contact['id'];
+    if ($contact['referral_id']) {
+      $message->setReferralID($contact['referral_id']);
+    }
     // Make new recurring record if necessary
     $this->saveContributionRecur($message, $msg);
     // Insert the contribution record.
@@ -228,20 +232,21 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
         'contribution_id' => $contribution_result['id'],
         'contact_id' => $contribution['contact_id'],
       ]);
-      if (!empty($msg['referral_id']) && $msg['referral_id'] != $contribution['contact_id']) {
+      $referralID = $message->getReferralID();
+      if ($referralID && $referralID != $contribution['contact_id']) {
         \Civi::log('wmf')->debug('wmf_civicrm: Contribution {contribution_id} on Contact ID {contribution_contact_id} was referred by Contact ID {original_contact_id}', [
           'contribution_id' => $contribution_result['id'],
           'contribution_contact_id' => $contribution['contact_id'],
-          'original_contact_id' => $msg['referral_id'],
+          'original_contact_id' => $referralID,
         ]);
         Activity::create(FALSE)
           ->addValue('activity_type_id:name', 'Contact referral')
-          ->addValue('source_contact_id', $msg['referral_id'])
+          ->addValue('source_contact_id', $referralID)
           ->addValue('status_id:name', 'Completed')
           ->addValue('subject', 'Donor was referred')
           ->addValue('details', json_encode([
             'contribution_id' => $contribution_result['id'],
-            'referral_contact_id' =>  $msg['referral_id'],
+            'referral_contact_id' =>  $referralID,
             'contact_id' => $contribution['contact_id']
           ]))
           ->addValue('target_contact_id', $contribution['contact_id'])
@@ -411,16 +416,17 @@ class DonationQueueConsumer extends TransactionalQueueConsumer {
   /**
    * @param array $msg
    *
-   * @return int
+   * @return array
+   *   Contact id and referral_id, if a checksum contact was rejected.
    * @throws \CRM_Core_Exception
    */
-  public function saveContact(array $msg): int {
+  public function saveContact(array $msg): array {
     $this->startAction('create_contact');
     $contact = WMFContact::save(FALSE)
       ->setMessage($msg)
       ->execute()->first();
     $this->stopAction("create_contact");
-    return $contact['id'];
+    return $contact;
   }
 
   /**

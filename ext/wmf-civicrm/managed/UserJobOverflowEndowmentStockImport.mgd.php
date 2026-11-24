@@ -303,8 +303,8 @@ return [
               'column_number' => 39,
             ],
             [
-              'name' => 'Contribution.contribution_extra.gateway',
-              'default_value' => 'Overflow',
+              'name' => 'Contribution.contribution_extra.gateway_account',
+              'default_value' => 'overflowendowment',
               'column_number' => 40,
             ],
             [

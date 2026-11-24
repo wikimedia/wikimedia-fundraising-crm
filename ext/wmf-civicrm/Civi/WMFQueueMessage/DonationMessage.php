@@ -94,6 +94,13 @@ class DonationMessage extends Message {
   protected bool $isPayment;
 
   /**
+   * Contact whose contact ID was provided but not used for this donation
+   * as we believe the donation is from someone else, to create referral
+   * activity.
+   */
+  protected ?int $referralID = NULL;
+
+  /**
    * Set is Payment.
    *
    * This is set to false when being called from our recurring code when
@@ -111,6 +118,20 @@ class DonationMessage extends Message {
       return $this->isPayment;
     }
     return TRUE;
+  }
+
+  /**
+   * Set when contact matching rejects the provided contact ID.
+   */
+  public function setReferralID(?int $referralID): void {
+    $this->referralID = $referralID;
+  }
+
+  /**
+   * Only set after normalize().
+   */
+  public function getReferralID(): ?int {
+    return $this->referralID;
   }
 
   public function isChargebackReversal() : bool {
@@ -194,7 +215,7 @@ class DonationMessage extends Message {
       if (\CRM_Core_DAO::singleValueQuery('SELECT id FROM civicrm_contact WHERE id = %1 AND is_deleted = 0', [
         1 => [$this->message['contact_id'], 'Integer'],
       ])) {
-        $msg['referral_id'] = $this->message['contact_id'];
+        $this->referralID = $this->message['contact_id'];
       }
       else {
         \Civi::log('wmf')->warning('unavailable contact ID provided {contact_id}', ['contact_id' => $this->message['contact_id']]);

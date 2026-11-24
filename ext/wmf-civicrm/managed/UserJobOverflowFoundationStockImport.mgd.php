@@ -313,8 +313,8 @@ return [
               'column_number' => 41,
             ],
             [
-              'name' => 'Contribution.contribution_extra.gateway',
-              'default_value' => 'Overflow',
+              'name' => 'Contribution.contribution_extra.gateway_account',
+              'default_value' => 'overflow',
               'column_number' => 42,
             ],
             [

@@ -87,6 +87,7 @@ class Import {
     // Tweaks to apply during validate only.
     $this->inValidateModeDoNotRequireTotalAmount();
     // Tweaks to apply during validate and import.
+    $this->requireGatewayAccountInContributionCreateMode();
     $this->filterBadBenevityData();
     $this->applyFieldTransformations();
 
@@ -162,7 +163,6 @@ class Import {
             $this->userJobID);
         }
 
-        $this->deriveGatewayFromAccount();
         $existingContributionID = ContributionHelper::exists($this->mappedRow['Contribution']['contribution_extra.gateway'], $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id']);
         if ($existingContributionID) {
           throw new \CRM_Core_Exception('This contribution appears to be a duplicate of contribution id ' . $existingContributionID);
@@ -620,25 +620,32 @@ class Import {
   }
 
   /**
-   * Derive contribution_extra.gateway from the gateway account, if one was picked -
-   * before ensureTrxnIdentifiersSet() and the duplicate-contribution check use it.
+   * Require a recognised gateway account when creating a contribution via the contribution import or batch entry.
    *
    * @throws \CRM_Core_Exception
    */
-  private function deriveGatewayFromAccount(): void {
-    $gatewayAccountName = $this->mappedRow['Contribution']['contribution_extra.gateway_account'] ?? NULL;
-    if ($gatewayAccountName) {
-      $gatewayAccount = GatewayAccount::get(FALSE)
+  private function requireGatewayAccountInContributionCreateMode(): void {
+    if (!$this->isContributionCreateMode()) {
+      return;
+    }
+    // Throw rather than setting invalid_import_value as the searchkit import validate ignores the latter.
+    $gatewayAccountName = $this->mappedRow['Contribution']['contribution_extra.gateway_account'] ?? '';
+    $this->mappedRow['Contribution']['contribution_extra.gateway'] = $this->getGatewayAccount($gatewayAccountName)['gateway'];
+  }
+
+  /**
+   * Get the Gateway Account record.
+   */
+  private function getGatewayAccount(string $gatewayAccountName): array {
+    if (!array_key_exists($gatewayAccountName, \Civi::$statics[__CLASS__]['gateway_by_account'] ?? [])) {
+      \Civi::$statics[__CLASS__]['gateway_by_account'][$gatewayAccountName] = GatewayAccount::get(FALSE)
         ->addWhere('name', '=', $gatewayAccountName)
-        ->addSelect('gateway')
         ->execute()->first();
-      if ($gatewayAccount) {
-        $this->mappedRow['Contribution']['contribution_extra.gateway'] = $gatewayAccount['gateway'];
-      }
     }
-    if (empty($this->mappedRow['Contribution']['contribution_extra.gateway'])) {
-      throw new \CRM_Core_Exception('A gateway account is required');
+    if (empty(\Civi::$statics[__CLASS__]['gateway_by_account'][$gatewayAccountName])) {
+      throw new \CRM_Core_Exception('A recognised gateway account is required');
     }
+    return \Civi::$statics[__CLASS__]['gateway_by_account'][$gatewayAccountName];
   }
 
   /**
@@ -649,53 +656,29 @@ class Import {
    *
    * This does not create or update any Batch record - it only normalises
    * the reference value on the contribution itself; batch creation is
-   * handled separately.
-   *
-   * Only kicks in when contribution_extra.gateway_account is populated and
-   * recognised (a real GatewayAccount.name) - this is transitional, since
-   * gateway_account will become required soon; an unrecognised value is
-   * left alone for now rather than throwing, though that may change once
-   * gateway_account is required. Falls back to
-   * Gift_Information.import_batch_number for the raw reference value when
-   * contribution_settlement.settlement_batch_reference itself is empty.
+   * handled separately. Accepts Gift_Information.import_batch_number
+   * or settlement_batch_reference - but we are starting to prefer the former.
    *
    * Also defaults the settled_* amounts (see fillSettledAmounts()) once a
-   * gateway account is confirmed recognised, since a contribution imported
+   * gateway account is confirmed, since a contribution imported
    * this way has no other source for them.
    *
    * @throws \CRM_Core_Exception
    */
   private function fixUpSettlementBatchReference(): void {
-    if (!empty($this->mappedRow['Contribution']['id'])) {
+    if (!$this->isContributionCreateMode()) {
       // This is an update to an existing contribution - the reference (if
       // any) has already been fixed up once, and re-deriving it from
       // itself would double it up.
       return;
     }
-    $gatewayAccountName = $this->mappedRow['Contribution']['contribution_extra.gateway_account'] ?? NULL;
-    if (!$gatewayAccountName) {
+    if (!$this->getBatchReferenceInput()) {
+      // Note that we might be going to make this required but for now skip.
       return;
     }
-    $inputReference = $this->mappedRow['Contribution']['contribution_settlement.settlement_batch_reference']
-      ?? $this->mappedRow['Contribution']['Gift_Information.import_batch_number']
-      ?? NULL;
-    if (!$inputReference) {
-      return;
-    }
-    $isRecognisedGatewayAccount = (bool) GatewayAccount::get(FALSE)
-      ->addWhere('name', '=', $gatewayAccountName)
-      ->selectRowCount()
-      ->execute()->count();
-    if (!$isRecognisedGatewayAccount) {
-      // Not yet throwing for an unrecognised gateway_account - just leave
-      // the reference untouched until we do.
-      return;
-    }
-    // If it didn't settle in USD they will need to fill it in as we can't rely on original currency.
-    $currency = $this->mappedRow['Contribution']['contribution_settlement.settlement_currency'] ?? 'USD';
-    $this->mappedRow['Contribution']['contribution_settlement.settlement_currency'] = $currency;
-    $this->mappedRow['Contribution']['contribution_settlement.settlement_batch_reference'] = ($this->isFidelity() ? $this->getFidelityBatchName($gatewayAccountName, $inputReference, $currency) : NULL)
-      ?? implode('_', [$gatewayAccountName, $inputReference, $currency]);
+
+    $this->mappedRow['Contribution']['contribution_settlement.settlement_currency'] = $this->getContributionSettlementCurrency();
+    $this->mappedRow['Contribution']['contribution_settlement.settlement_batch_reference'] = $this->getContributionSettlementBatchReference();
     $this->fillSettledAmounts();
   }
 
@@ -709,10 +692,11 @@ class Import {
    * @return string|null
    *   The batch name, if exactly one batch matches.
    */
-  private function getFidelityBatchName(string $gatewayAccountName, string $achGroupID, string $currency): ?string {
+  private function getFidelityBatchName(): ?string {
+    $achGroupID = $this->getBatchReferenceInput();
     $batches = Batch::get(FALSE)
       // Escape '_' so the 'ach' account does not also match 'achendowment' batches.
-      ->addWhere('name', 'LIKE', $gatewayAccountName . '\_%' . $achGroupID . '%\_' . $currency)
+      ->addWhere('name', 'LIKE', $this->mappedRow['Contribution']['contribution_extra.gateway_account'] . '\_%' . $achGroupID . '%\_' . $this->getContributionSettlementCurrency())
       ->addSelect('name')
       ->setLimit(2)
       ->execute();
@@ -777,7 +761,7 @@ class Import {
    * Do Benevity specific wrangling.
    *
    * This includes
-   * - adding the 2 incoming fee columns together (we unset 'contribution_extra.scheme_fee' afterwards)
+   * - adding the 2 incoming fee columns together (we unset the 'additional_fee_amount' pseudo field & the legacy 'contribution_extra.scheme_fee' afterwards)
    * - handling the very specific Benevity import which has columns for the individual gift and the matched
    *   gift with either or both populated (we unset 'Matching_Gift_Information.Match_Amount' afterwards)
    *
@@ -795,7 +779,10 @@ class Import {
   private function doBenevityWrangling(): void {
     if ($this->isBenevity()) {
       // Calculate the fee_amount from the 2 fee fields.
-      $this->mappedRow['Contribution']['fee_amount'] = $this->mappedRow['Contribution']['fee_amount'] + $this->mappedRow['Contribution']['contribution_extra.scheme_fee'];
+      $this->mappedRow['Contribution']['fee_amount'] = $this->mappedRow['Contribution']['fee_amount']
+        + ($this->mappedRow['Contribution']['additional_fee_amount'] ?? 0)
+        // @todo remove once saved import templates no longer map scheme_fee.
+        + ($this->mappedRow['Contribution']['contribution_extra.scheme_fee'] ?? 0);
       if ($this->mappedRow['Contribution']['contribution_extra.original_currency'] !== 'USD') {
         $this->mappedRow['Contribution']['fee_amount'] = (float) ExchangeRate::convert(FALSE)
           ->setFromCurrency($this->mappedRow['Contribution']['contribution_extra.original_currency'])
@@ -826,10 +813,15 @@ class Import {
           'contribution_extra.gateway_txn_id' => $this->mappedRow['Contribution']['contribution_extra.gateway_txn_id'] . '_MATCHED',
           'contribution_extra.original_amount' => $this->mappedRow['Contribution']['Matching_Gift_Information.Match_Amount'],
           'contribution_extra.original_currency' => $this->mappedRow['Contribution']['contribution_extra.original_currency'],
+          'contribution_settlement.settlement_batch_reference' => $this->getContributionSettlementBatchReference(),
+          'contribution_settlement.settlement_currency' => $this->getContributionSettlementCurrency(),
+          'contribution_settlement.settled_fee_amount' => 0,
         ]);
+        // Converted from the match amount, as for the main row's total_amount.
+        $contributionValues['contribution_settlement.settled_donation_amount'] = ContributionHelper::getConvertedTotalAmount($contributionValues);
         // total_amount should be recalculated in the hook
-        // scheme fee is otherwise unmapped further down & not for saving.
-        unset($contributionValues['total_amount'], $contributionValues['contribution_extra.scheme_fee']);
+        // The additional fee fields are only for the fee_amount calculation, not for saving.
+        unset($contributionValues['total_amount'], $contributionValues['additional_fee_amount'], $contributionValues['contribution_extra.scheme_fee']);
         $contribution = \Civi\Api4\Contribution::create(FALSE)
           ->setValues($contributionValues)
           ->execute()->first();
@@ -866,7 +858,7 @@ class Import {
       }
       // Unset fields only mapped for this hook to perform the above calculations.
       unset($this->mappedRow['Contribution']['Matching_Gift_Information.Match_Amount']);
-      unset($this->mappedRow['Contribution']['contribution_extra.scheme_fee']);
+      unset($this->mappedRow['Contribution']['additional_fee_amount'], $this->mappedRow['Contribution']['contribution_extra.scheme_fee']);
     }
   }
 
@@ -950,6 +942,44 @@ class Import {
    */
   protected function isValidateMode(): bool {
     return $this->context === 'validate';
+  }
+
+  /**
+   * Is this import creating contributions.
+   */
+  private function isContributionCreateMode(): bool {
+    return !empty($this->mappedRow['Contribution']) && empty($this->mappedRow['Contribution']['id']);
+  }
+
+  /**
+   * Get the entered reference for the batch.
+   *
+   * Note that we are moving towards consolidating on 'Gift_Information.import_batch_number'
+   * at the input level.
+   */
+  private function getBatchReferenceInput(): ?string {
+    return $this->mappedRow['Contribution']['contribution_settlement.settlement_batch_reference']
+      ?? $this->mappedRow['Contribution']['Gift_Information.import_batch_number']
+      ?? NULL;
+  }
+
+  /**
+   * Get the settlement currency.
+   *
+   * If it didn't settle in USD they will need to fill it in as we can't rely on original currency.
+   */
+  private function getContributionSettlementCurrency(): string {
+    return $this->mappedRow['Contribution']['contribution_settlement.settlement_currency'] ?? 'USD';
+  }
+
+  /**
+   * Get the full resolved batch reference (e.g engage_WF1234_USD)
+   * @return string
+   * @throws \CRM_Core_Exception
+   */
+  private function getContributionSettlementBatchReference(): string {
+    return ($this->isFidelity() ? $this->getFidelityBatchName() : NULL)
+      ?? implode('_', [$this->mappedRow['Contribution']['contribution_extra.gateway_account'], $this->getBatchReferenceInput(), $this->getContributionSettlementCurrency()]);
   }
 
 }
