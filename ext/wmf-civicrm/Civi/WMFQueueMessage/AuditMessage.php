@@ -439,7 +439,6 @@ class AuditMessage extends DonationMessage {
         return $this->existingContribution;
       }
 
-      $selectFields = $this->getContributionSelectFields();
       if ($this->isRefund() || $this->isChargeback() || $this->isReversal()
         || $this->isReversingPriorReversal()
       ) {
@@ -458,21 +457,13 @@ class AuditMessage extends DonationMessage {
           // Ideally move above the lookupByPaymentOrchestratorReconciliationId in a follow-up.
           $this->lookupByBackendProcessorTrxnId();
         }
-        $orderID = $this->getOrderID();
-        $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
-        $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
         if ($this->isDlocal()) {
           // Try order ID lookup first for dlocal - this will only take place if there is one - in which
           // case it is more reliable.
           $this->lookupByOrderId();
         }
-        if (!$isAvoidGravyLookups && empty($this->existingContribution) && $this->getGatewayOriginalTxnID()) {
-          $this->existingContribution = Contribution::get(FALSE)
-            ->setSelect($selectFields)
-            ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
-            ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
-            ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayOriginalTxnID())
-            ->execute()->first() ?? [];
+        if (!$isAvoidGravyLookups && $this->getGatewayOriginalTxnID()) {
+          $this->lookupByGatewayOriginalTxnId();
         }
         if (!$this->existingContribution) {
           $this->lookupByOrderId();
@@ -1148,6 +1139,25 @@ class AuditMessage extends DonationMessage {
         ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
         ->execute()->first() ?? [];
     }
+  }
+
+  /**
+   * Lookup by the gateway txn id - or the parent's, for a refund etc.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function lookupByGatewayOriginalTxnId(): void {
+    if ($this->existingContribution) {
+      return;
+    }
+    $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
+    $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
+    $this->existingContribution = Contribution::get(FALSE)
+      ->setSelect($this->getContributionSelectFields())
+      ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
+      ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
+      ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayOriginalTxnID())
+      ->execute()->first() ?? [];
   }
 
   /**
