@@ -448,9 +448,7 @@ class AuditMessage extends DonationMessage {
           $this->lookupByOrderId();
         }
         $this->lookupByGatewayOriginalTxnId();
-        if (!$this->existingContribution) {
-          $this->lookupByOrderId();
-        }
+        $this->lookupByOrderId();
 
         // Do not accept existing contribution with mismatch against backend_processor_txn_id.
         if ($this->existingContribution &&
@@ -1013,6 +1011,9 @@ class AuditMessage extends DonationMessage {
    * @throws \CRM_Core_Exception
    */
   protected function lookupByOrderId(): void {
+    if ($this->existingContribution) {
+      return;
+    }
     $orderID = $this->getOrderID();
     if (!$orderID || !str_contains($orderID, '.')) {
       return;
