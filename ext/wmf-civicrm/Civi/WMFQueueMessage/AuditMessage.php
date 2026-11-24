@@ -1034,12 +1034,10 @@ class AuditMessage extends DonationMessage {
     if (!$orderID || !str_contains($orderID, '.')) {
       return;
     }
-    $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
-    $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
     $this->existingContribution = Contribution::get(FALSE)
       ->setSelect($this->getContributionSelectFields())
       ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
-      ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
+      ->addWhere('contribution_extra.gateway', ...$this->getGatewayClause())
       ->addClause('OR',
         ['invoice_id', '=', $orderID],
         ['invoice_id', 'LIKE', $orderID . '|%']
@@ -1150,14 +1148,19 @@ class AuditMessage extends DonationMessage {
     if ($this->existingContribution) {
       return;
     }
-    $gatewayOperator = $this->isPaypal() || $this->isPaypalGrant() ? 'LIKE' : '=';
-    $gatewayString = $this->isPaypal() || $this->isPaypalGrant() ?'paypal%' : $this->getParentTransactionGateway();
     $this->existingContribution = Contribution::get(FALSE)
       ->setSelect($this->getContributionSelectFields())
       ->addWhere('financial_type_id:name', 'NOT IN', $this->getReversalReversalFinancialTypeNames())
-      ->addWhere('contribution_extra.gateway', $gatewayOperator, $gatewayString)
+      ->addWhere('contribution_extra.gateway', ...$this->getGatewayClause())
       ->addWhere('contribution_extra.gateway_txn_id', '=', $this->getGatewayOriginalTxnID())
       ->execute()->first() ?? [];
+  }
+
+  /**
+   * Operator & value to match the gateway - any paypal variant for paypal.
+   */
+  private function getGatewayClause(): array {
+    return $this->isPaypal() || $this->isPaypalGrant() ? ['LIKE', 'paypal%'] : ['=', $this->getParentTransactionGateway()];
   }
 
   /**
