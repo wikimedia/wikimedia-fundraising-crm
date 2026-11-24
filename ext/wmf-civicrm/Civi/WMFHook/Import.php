@@ -761,7 +761,7 @@ class Import {
    * Do Benevity specific wrangling.
    *
    * This includes
-   * - adding the 2 incoming fee columns together (we unset 'contribution_extra.scheme_fee' afterwards)
+   * - adding the 2 incoming fee columns together (we unset the 'additional_fee_amount' pseudo field & the legacy 'contribution_extra.scheme_fee' afterwards)
    * - handling the very specific Benevity import which has columns for the individual gift and the matched
    *   gift with either or both populated (we unset 'Matching_Gift_Information.Match_Amount' afterwards)
    *
@@ -779,7 +779,10 @@ class Import {
   private function doBenevityWrangling(): void {
     if ($this->isBenevity()) {
       // Calculate the fee_amount from the 2 fee fields.
-      $this->mappedRow['Contribution']['fee_amount'] = $this->mappedRow['Contribution']['fee_amount'] + $this->mappedRow['Contribution']['contribution_extra.scheme_fee'];
+      $this->mappedRow['Contribution']['fee_amount'] = $this->mappedRow['Contribution']['fee_amount']
+        + ($this->mappedRow['Contribution']['additional_fee_amount'] ?? 0)
+        // @todo remove once saved import templates no longer map scheme_fee.
+        + ($this->mappedRow['Contribution']['contribution_extra.scheme_fee'] ?? 0);
       if ($this->mappedRow['Contribution']['contribution_extra.original_currency'] !== 'USD') {
         $this->mappedRow['Contribution']['fee_amount'] = (float) ExchangeRate::convert(FALSE)
           ->setFromCurrency($this->mappedRow['Contribution']['contribution_extra.original_currency'])
@@ -812,8 +815,8 @@ class Import {
           'contribution_extra.original_currency' => $this->mappedRow['Contribution']['contribution_extra.original_currency'],
         ]);
         // total_amount should be recalculated in the hook
-        // scheme fee is otherwise unmapped further down & not for saving.
-        unset($contributionValues['total_amount'], $contributionValues['contribution_extra.scheme_fee']);
+        // The additional fee fields are only for the fee_amount calculation, not for saving.
+        unset($contributionValues['total_amount'], $contributionValues['additional_fee_amount'], $contributionValues['contribution_extra.scheme_fee']);
         $contribution = \Civi\Api4\Contribution::create(FALSE)
           ->setValues($contributionValues)
           ->execute()->first();
@@ -850,7 +853,7 @@ class Import {
       }
       // Unset fields only mapped for this hook to perform the above calculations.
       unset($this->mappedRow['Contribution']['Matching_Gift_Information.Match_Amount']);
-      unset($this->mappedRow['Contribution']['contribution_extra.scheme_fee']);
+      unset($this->mappedRow['Contribution']['additional_fee_amount'], $this->mappedRow['Contribution']['contribution_extra.scheme_fee']);
     }
   }
 

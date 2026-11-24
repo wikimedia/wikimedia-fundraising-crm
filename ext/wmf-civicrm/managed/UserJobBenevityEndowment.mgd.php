@@ -106,7 +106,7 @@ return [
             ['name' => 'Contribution.contribution_extra.original_amount', 'default_value' => NULL, 'column_number' => 18],
             ['name' => 'Contribution.Matching_Gift_Information.Match_Amount', 'default_value' => NULL, 'column_number' => 19],
             ['name' => 'Contribution.fee_amount', 'default_value' => NULL, 'column_number' => 20],
-            ['name' => 'Contribution.contribution_extra.scheme_fee', 'default_value' => NULL, 'column_number' => 21],
+            ['name' => 'Contribution.additional_fee_amount', 'default_value' => NULL, 'column_number' => 21],
             ['name' => '', 'default_value' => '', 'column_number' => 22],
             ['name' => 'Contribution.contribution_extra.gateway_account', 'default_value' => 'achendowment', 'column_number' => 23],
             ['name' => 'Contribution.payment_instrument_id', 'default_value' => 'EFT', 'column_number' => 24],
