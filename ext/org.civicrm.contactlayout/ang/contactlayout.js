@@ -1,4 +1,4 @@
-(function(angular, $, _) {
+(function(angular, $) {
   "use strict";
 
   // Define module & autoload dependencies.
@@ -14,22 +14,20 @@
 
       // for each relationship type, it includes an option for the a_b relationship
       // and another for the b_a relationship.
-      function formatRelationshipOptions (relationshipTypeResponse) {
-        return _.chain(relationshipTypeResponse)
-          .reduce(function (result, relationshipType) {
+      function formatRelationshipOptions(relationshipTypeResponse) {
+        return relationshipTypeResponse
+          .flatMap((relationshipType) => {
             const isReciprocal = relationshipType.label_a_b === relationshipType.label_b_a;
 
             if (isReciprocal) {
-              result.push({ id: relationshipType.id + '_r', text: relationshipType.label_a_b });
-            } else {
-              result.push({ id: relationshipType.id + '_ab', text: relationshipType.label_a_b });
-              result.push({ id: relationshipType.id + '_ba', text: relationshipType.label_b_a });
+              return [{ id: relationshipType.id + '_r', text: relationshipType.label_a_b }];
             }
-
-            return result;
-          }, [])
-          .sortBy('text')
-          .value();
+            return [
+              { id: relationshipType.id + '_ab', text: relationshipType.label_a_b },
+              { id: relationshipType.id + '_ba', text: relationshipType.label_b_a }
+            ];
+          })
+          .sort((a, b) => a.text.localeCompare(b.text));
       }
 
       // Returns the relationship type data and direction for the given relationship option
@@ -45,4 +43,4 @@
       }
     });
 
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);

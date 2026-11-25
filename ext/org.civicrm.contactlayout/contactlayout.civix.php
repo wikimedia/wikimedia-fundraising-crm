@@ -89,20 +89,12 @@ class CRM_Contactlayout_ExtensionUtil {
 
 use CRM_Contactlayout_ExtensionUtil as E;
 
-pathload()->addSearchDir(__DIR__ . '/mixin/lib');
 spl_autoload_register('_contactlayout_civix_class_loader', TRUE, TRUE);
 
 function _contactlayout_civix_class_loader($class) {
   if ($class === 'CRM_Contactlayout_DAO_Base') {
-    if (version_compare(CRM_Utils_System::version(), '5.74.beta', '>=')) {
-      class_alias('CRM_Core_DAO_Base', 'CRM_Contactlayout_DAO_Base');
-      // ^^ Materialize concrete names -- encourage IDE's to pick up on this association.
-    }
-    else {
-      $realClass = 'CiviMix\\Schema\\Contactlayout\\DAO';
-      class_alias($realClass, $class);
-      // ^^ Abstract names -- discourage IDE's from picking up on this association.
-    }
+    class_alias('CRM_Core_DAO_Base', 'CRM_Contactlayout_DAO_Base');
+    // ^^ Materialize concrete names -- encourage IDE's to pick up on this association.
     return;
   }
 
@@ -189,48 +181,5 @@ function _contactlayout_civix_insert_navigation_menu(&$menu, $path, $item) {
       }
     }
     return $found;
-  }
-}
-
-/**
- * (Delegated) Implements hook_civicrm_navigationMenu().
- */
-function _contactlayout_civix_navigationMenu(&$nodes) {
-  if (!is_callable(['CRM_Core_BAO_Navigation', 'fixNavigationMenu'])) {
-    _contactlayout_civix_fixNavigationMenu($nodes);
-  }
-}
-
-/**
- * Given a navigation menu, generate navIDs for any items which are
- * missing them.
- */
-function _contactlayout_civix_fixNavigationMenu(&$nodes) {
-  $maxNavID = 1;
-  array_walk_recursive($nodes, function($item, $key) use (&$maxNavID) {
-    if ($key === 'navID') {
-      $maxNavID = max($maxNavID, $item);
-    }
-  });
-  _contactlayout_civix_fixNavigationMenuItems($nodes, $maxNavID, NULL);
-}
-
-function _contactlayout_civix_fixNavigationMenuItems(&$nodes, &$maxNavID, $parentID) {
-  $origKeys = array_keys($nodes);
-  foreach ($origKeys as $origKey) {
-    if (!isset($nodes[$origKey]['attributes']['parentID']) && $parentID !== NULL) {
-      $nodes[$origKey]['attributes']['parentID'] = $parentID;
-    }
-    // If no navID, then assign navID and fix key.
-    if (!isset($nodes[$origKey]['attributes']['navID'])) {
-      $newKey = ++$maxNavID;
-      $nodes[$origKey]['attributes']['navID'] = $newKey;
-      $nodes[$newKey] = $nodes[$origKey];
-      unset($nodes[$origKey]);
-      $origKey = $newKey;
-    }
-    if (isset($nodes[$origKey]['child']) && is_array($nodes[$origKey]['child'])) {
-      _contactlayout_civix_fixNavigationMenuItems($nodes[$origKey]['child'], $maxNavID, $nodes[$origKey]['attributes']['navID']);
-    }
   }
 }

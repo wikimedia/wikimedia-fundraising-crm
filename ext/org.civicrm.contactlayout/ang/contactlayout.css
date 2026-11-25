@@ -18,11 +18,11 @@
   top: -6px;
 }
 #bootstrap-theme #contactLayoutEditor .panel-heading .btn {
-  padding: 7px 13px;
-  border-color: white;
+  padding: var(--crm-btn-padding-block, 7px) var(--crm-btn-padding-inline, 13px);
+  border-color: currentcolor;
 }
 #bootstrap-theme #contactLayoutEditor .panel-heading .btn i {
-  margin-right: 4px;
+  margin-right: var(--crm-btn-icon-spacing, 4px);
 }
 #bootstrap-theme #contactLayoutEditor .panel-heading .panel-title form {
   position: relative;
@@ -30,21 +30,21 @@
 }
 
 #bootstrap-theme #contactLayoutEditor .alert {
-  padding: 10px;
+  padding: var(--crm-alert-padding, 10px);
   margin: 0;
 }
 
 #bootstrap-theme #contactLayoutEditor .cse-layout-item {
-  border-radius: 4px;
-  border: 1px solid grey;
+  border-radius: var(--crm-l-radius, 4px);
+  border: 1px solid var(--crm-border-color, grey);
   padding: 3px;
   margin-bottom: 10px;
-  background-color: #f8f8f8;
+  background-color: var(--crm-layer1-bg-color, #f8f8f8);
   position: relative;
 }
 
 #bootstrap-theme #contactLayoutEditor .cse-layout-system-default {
-  border-radius: 4px;
+  border-radius: var(--crm-l-radius, 4px);
   font-style: italic;
   cursor: pointer;
 }
@@ -54,9 +54,13 @@
   margin: 7px 0;
 }
 
+#bootstrap-theme #contactLayoutEditor .cse-item-selected,
+#bootstrap-theme #contactLayoutEditor .cse-item-selected h4.cse-layout-item-title {
+  color: var(--crm-info-text-color, inherit);
+}
 #bootstrap-theme #contactLayoutEditor .cse-item-selected {
-  background-color: #a2d2f3;
-  border-color: #0071bd;
+  background-color: var(--crm-info-color, #a2d2f3);
+  border-color: var(--crm-link-color, #0071bd);
 }
 #bootstrap-theme #contactLayoutEditor .navbar {
   border-radius: 0;
@@ -93,17 +97,17 @@
   margin: 0;
 }
 .cse-block-container-editable .cse-col {
-  border: 2px dashed #adadad;
-  background-color: #f8f8f8;
+  border: 2px dashed var(--crm-border-color, #adadad);
+  background-color: var(--crm-layer1-bg-color, #f8f8f8);
 }
 #cse-rows .cse-add-col,
 #cse-rows .cse-add-row {
   display: block;
   flex: none;
-  border: 2px dashed grey;
+  border: 2px dashed var(--crm-border-color, grey);
   width: 20px;
   height: 20px;
-  color: grey;
+  color: var(--crm-input-description, grey);
   margin-right: 8px;
   text-align: center;
   line-height: 1.3;
@@ -111,10 +115,10 @@
 
 #cse-block-container #cse-palette-col > h4 {
   padding: 11px 10px;
-  border-radius: 2px 2px 0 0;
+  border-radius: var(--crm-l-radius, 2px) var(--crm-l-radius, 2px) 0 0;
   margin: 0;
-  background-color: #0071bd;
-  color: white;
+  background-color: var(--crm-info-color, #0071bd);
+  color: var(--crm-info-text-color, white);
   font-weight: 600;
   position: relative;
 }
@@ -123,22 +127,23 @@
   top: -5px;
 }
 #cse-block-container #cse-palette-col > h4 .btn {
-  padding: 3px 8px;
-  border-color: white;
+  padding: var(--crm-btn-small-padding, 3px 8px);
+  border-color: currentcolor;
 }
 #cse-block-container #cse-palette {
-  color: #333;
-  background-color: lightgrey;
-  border-radius: 0 0 2px 2px;
-  border: 1px solid #0071bd;
+  color: var(--crm-text-color, #333);
+  background-color: var(--crm-layer1-bg-color, lightgrey);
+  border-radius: 0 0 var(--crm-l-radius, 2px) var(--crm-l-radius, 2px);
+  border: 1px solid var(--crm-link-color, #0071bd);
   padding: 2px 4px;
   min-height: 200px;
 }
 #cse-block-container .cse-block {
-  border-radius: 4px;
-  border: 2px solid #0071bd;
+  border-radius: var(--crm-l-radius, 4px);
+  border: 2px solid var(--crm-link-color, #0071bd);
   position: relative;
-  background-color: white;
+  background-color: var(--crm-paper, white);
+  color: var(--crm-text-color, inherit);
   margin-bottom: 14px;
   margin-top: 2px;
   min-height: 28px;
@@ -166,7 +171,7 @@
   opacity: 1;
 }
 #cse-block-container .cse-block h5 {
-  color: #0071bd;
+  color: var(--crm-link-color, #0071bd);
   top: -18px;
   left: 8px;
   margin: 5px 0;
@@ -174,7 +179,7 @@
 #cse-block-container .cse-layout-col .cse-block h5 {
   padding: 0 3px;
   position: absolute;
-  background: white linear-gradient(to bottom, #f8f8f8 0%,#f8f8f8 50%,#fff 65%,#fff 100%);
+  background: var(--crm-paper, white);
 }
 #contactLayoutEditor .crm-editable-enabled,
 #contactLayoutEditor .cse-tab-title {
@@ -183,33 +188,33 @@
   border: 2px solid transparent !important;
 }
 #contactLayoutEditor .crm-editable-enabled:hover:not(:focus) {
-  border: 2px dashed grey !important;
+  border: 2px dashed var(--crm-border-color, grey) !important;
 }
-#contactLayoutEditor .crm-editable-enabled:before,
-#contactLayoutEditor .crm-editable-enabled:after {
+#contactLayoutEditor .crm-editable-enabled::before,
+#contactLayoutEditor .crm-editable-enabled::after {
   content: '';
   display: none;
 }
 #cse-block-container .cse-block h5 [contenteditable]:focus {
   cursor: text;
-  background: white;
+  background: var(--crm-paper, white);
 }
-#cse-block-container .cse-layout-col .cse-block:not(.collapsible):not(.show-title) h5 {
+#cse-block-container .cse-layout-col .cse-block:not(.collapsible, .show-title) h5 {
   font-weight: normal;
-  color: grey;
+  color: var(--crm-input-description, grey);
 }
 #cse-block-container .cse-block-sample {
   margin-left: 8px;
   margin-bottom: 4px;
 }
 #cse-block-container .cse-block-sample p {
-  color: grey;
+  color: var(--crm-input-description, grey);
   font-size: 10px;
   padding: 1px;
   margin: 0;
 }
 #cse-block-container #cse-palette .cse-block {
-  border: 1px solid #0071bd;
+  border: 1px solid var(--crm-link-color, #0071bd);
   margin-bottom: 6px;
   margin-top: 6px;
 }
@@ -232,11 +237,11 @@
   background-color: rgba(88, 183, 209, 0.7);
 }
 #cse-block-container .cse-block .cse-block-collapsible-toggle button:hover {
-  background-color: #58b7d1;
+  background-color: var(--crm-link-color, #58b7d1);
 }
 #cse-block-container .cse-block .cse-block-collapsible-toggle button span span:last-child {
   text-transform: none;
-  color: white;
+  color: inherit;
 }
 #cse-block-container #cse-palette .cse-block .cse-block-sample,
 #cse-block-container #cse-palette .cse-block .cse-block-collapsible-toggle,
@@ -253,81 +258,75 @@
   cursor: not-allowed;
 }
 #cse-block-container #cse-palette .invalid-block h5 {
-  color: grey;
+  color: var(--crm-input-description, grey);
   text-decoration: line-through;
 }
 #cse-block-container .cse-layout-col .block-multiple:not(.collapsed) {
   margin-bottom: 40px;
 }
-#cse-block-container .cse-layout-col .block-multiple:not(.collapsed):after {
+#cse-block-container .cse-layout-col .block-multiple:not(.collapsed)::after {
   display: block;
   position: absolute;
   bottom: -28px;
-  border: 2px solid grey;
-  border-radius: 4px;
-  background-color: white;
+  border: 2px solid var(--crm-border-color, grey);
+  border-radius: var(--crm-l-radius, 4px);
+  background-color: var(--crm-paper, white);
   height: 24px;
   margin: 0 -2px;
   width: calc(100% + 4px);
   padding-left: 8px;
   padding-top: 2px;
-  color: grey;
+  color: var(--crm-input-description, grey);
   font-size: 11px;
   box-sizing: border-box;
 }
 
 #cse-tabs-container {
-  padding-left: 6px;
-  padding-bottom: 5px;
+  padding: 0 var(--crm-tabs-padding, 6px);
   margin-bottom: 5px;
-  background: lightgrey;
+  background: var(--crm-tabs-bg-color, lightgrey);
 }
 
+/* The strip is a preview of the contact summary tabs, so it takes its look from
+   the theme rather than setting its own; only the editing affordances are styled here.
+   Inline-block rather than the theme's flex layout: jQuery UI only treats a list as
+   horizontal when its items float or are inline, and silently refuses to reorder a
+   flex row. */
+#cse-tabs-container ul.nav-tabs {
+  display: block;
+}
 #cse-tabs-container .cse-tab {
   display: inline-block;
-  position: relative;
-  padding: 1px 15px 0 8px;
-  border-radius: 4px;
-  border: 2px solid #0071bd;
-  margin-top: 5px;
-  margin-right: 5px;
-  font-size: 12px;
-  height: 30px;
-  background-color: #f8f8f8;
+  float: none;
+  cursor: move;
 }
-#cse-tabs-container .cse-tab[data-tab-id=summary] {
-  background-color: #a2d2f3;
-  padding-right: 8px;
+/* Room for the show/hide toggle, which only the editable strip draws, and never
+   on the summary tab because that one cannot be hidden. */
+#cse-tabs-container .cse-tabs-editable .cse-tab:not([data-tab-id="summary"]) > a {
+  padding-right: 24px;
+  position: relative;
 }
 #cse-tabs-container .cse-tab.cse-tab-disabled {
-  background-color: #bdbdbd;
+  opacity: .6;
 }
 #cse-tabs-container .cse-tab.cse-tab-disabled .cse-tab-title {
   text-decoration: line-through;
 }
-#cse-tabs-container .cse-tab-icon {
-  margin-right: -4px;
-}
-#cse-tabs-container .cse-tab-icon i {
-  padding-left: 2px;
-  padding-right: 2px;
-}
 #cse-tabs-container .cse-tab-toggle {
   color: inherit;
+  background: none;
+  border: 0 none;
+  box-shadow: none;
+  padding: 0;
+  line-height: 1;
   position: absolute;
   font-size: 10px;
-  top: -1px;
-  right:  3px;
+  top: 4px;
+  right: 4px;
   opacity: .5;
 }
 #cse-tabs-container .cse-tab:hover .cse-tab-toggle {
   opacity: 1;
-}
-#cse-tabs-container .cse-tab.ui-sortable-helper {
-  padding-right: 0;
-}
-#cse-tabs-container .cse-tab .fa-arrows {
-  cursor: move;
 }
 
 /* Relationship dialog styles */
@@ -337,7 +336,7 @@
 
 .contactlayout__relatioonship-dialog__illustration {
   align-items: center;
-  color: gray;
+  color: var(--crm-input-description, gray);
   display: flex;
   margin-top: 2em;
   text-align: center;

@@ -14,6 +14,37 @@ function contactlayout_civicrm_config(&$config) {
 }
 
 /**
+ * Implements hook_civicrm_ufGroupTypes().
+ *
+ * Offers "Contact Summary" on the profile settings form, so a profile can be turned into a
+ * summary-screen block from the same place as every other way of exposing it.
+ */
+function contactlayout_civicrm_ufGroupTypes(array &$ufGroupTypes): void {
+  $ufGroupTypes['Contact Summary'] = E::ts('Contact Summary Block');
+}
+
+/**
+ * Implements hook_civicrm_buildForm().
+ *
+ * Pre-ticks the placements a new block needs when the profile form is opened from the layout
+ * editor: "Contact Summary" to make it a block, "Profile" so the block can be edited in place
+ * on the summary screen. Both remain visible for the user to change.
+ */
+function contactlayout_civicrm_buildForm($formName, &$form) {
+  if ($formName !== 'CRM_UF_Form_Group' || !($form->getAction() & CRM_Core_Action::ADD)) {
+    return;
+  }
+  if (CRM_Utils_Request::retrieve('contact_summary', 'Boolean', $form, FALSE, FALSE)) {
+    $form->setDefaults([
+      'uf_group_type' => [
+        'Contact Summary' => 1,
+        'Profile' => 1,
+      ],
+    ]);
+  }
+}
+
+/**
  * Implements hook_civicrm_install().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_install

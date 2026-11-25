@@ -10,7 +10,7 @@
 {literal}
   <style>
     #cse-block-container .cse-layout-col .block-multiple:not(.collapsed):after {
-      content: '+ {/literal}{ts}Multiple{/ts}{literal}';
+      content: '+ {/literal}{ts escape='js'}Multiple{/ts}{literal}';
     }
   </style>
 {/literal}
