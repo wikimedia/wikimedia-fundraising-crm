@@ -98,6 +98,33 @@ class EngageSummaryTest extends TestCase {
   }
 
   /**
+   * Without a Currency column International rows get UNKNOWN (so they fail
+   * to import) and the rest default to USD.
+   */
+  public function testInternationalRowsHaveNoCurrencyWithoutCurrencyColumn(): void {
+    $headers = ['Batch Type', 'Batch', 'Amount'];
+    $rows = [['Clean', '300110', '10.00'], ['international', '700001', '20.00']];
+
+    [$headers, $rows] = $this->invoke('appendSettlementCurrencyColumn', $headers, $rows);
+
+    $this->assertSame(['Batch Type', 'Batch', 'Amount', 'Settlement Currency'], $headers);
+    $this->assertSame(['USD', 'UNKNOWN'], array_column($rows, 3));
+  }
+
+  /**
+   * An added Currency column is moved to the end as Settlement Currency.
+   */
+  public function testCurrencyColumnIsMovedToSettlementCurrency(): void {
+    $headers = ['batch type', 'CURRENCY', 'Batch', 'Amount'];
+    $rows = [['Clean', '', '300110', '10.00'], ['INTERNATIONAL', 'eur', '700001', '20.00']];
+
+    [$headers, $rows] = $this->invoke('appendSettlementCurrencyColumn', $headers, $rows);
+
+    $this->assertSame(['batch type', 'Batch', 'Amount', 'Settlement Currency'], $headers);
+    $this->assertSame([['Clean', '300110', '10.00', 'USD'], ['INTERNATIONAL', '700001', '20.00', 'EUR']], $rows);
+  }
+
+  /**
    * Header labels are matched case-insensitively.
    */
   public function testHeadersAreCaseInsensitive(): void {

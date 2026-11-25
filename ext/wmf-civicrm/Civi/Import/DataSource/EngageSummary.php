@@ -75,6 +75,19 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
 
   private const BATCH_STATUS_VALUE = 'total_verified';
 
+  /**
+   * Optional column, added by hand, giving the currency of International rows.
+   */
+  private const CURRENCY_HEADER = 'Currency';
+
+  private const SETTLEMENT_CURRENCY_HEADER = 'Settlement Currency';
+
+  private const INTERNATIONAL_BATCH_TYPE = 'International';
+
+  private const DEFAULT_CURRENCY = 'USD';
+
+  private const UNKNOWN_CURRENCY = 'UNKNOWN';
+
   public function getInfo(): array {
     return [
       'title' => ts('Engage Summary'),
@@ -176,6 +189,8 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
     $dataRows = $this->convertBatchDateColumn($columnHeaders, $dataRows);
     [$columnHeaders, $dataRows] = $this->convertGroupValueToSettlementGatewayAccountId($columnHeaders, $dataRows, $isEndowment);
     [$columnHeaders, $dataRows] = $this->appendBatchStatusColumn($columnHeaders, $dataRows);
+    [$columnHeaders, $dataRows] = $this->appendSettlementCurrencyColumn($columnHeaders, $dataRows);
+    $this->warnAboutUnknownCurrencies($dataRows);
     $columns = $this->getColumnNamesFromHeaders($columnHeaders);
 
     $tableName = $this->createTempTableFromColumns($columns);
@@ -447,6 +462,40 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
   }
 
   /**
+   * Move any "Currency" column to the end as "Settlement Currency".
+   *
+   * The report has no currency, so it's USD unless the row is International.
+   * International rows without a Currency column get UNKNOWN, so they fail
+   * to import.
+   *
+   * @param string[] $headers
+   * @param array[] $rows
+   *
+   * @return array{0: string[], 1: array[]}
+   */
+  private function appendSettlementCurrencyColumn(array $headers, array $rows): array {
+    $typeIndex = self::getHeaderIndex($headers, self::BATCH_TYPE_HEADER);
+    $currencyIndex = self::getHeaderIndex($headers, self::CURRENCY_HEADER);
+    if ($currencyIndex !== FALSE) {
+      array_splice($headers, $currencyIndex, 1);
+    }
+    $headers[] = self::SETTLEMENT_CURRENCY_HEADER;
+    foreach ($rows as &$row) {
+      $isInternational = $typeIndex !== FALSE && mb_strtolower($row[$typeIndex] ?? '') === mb_strtolower(self::INTERNATIONAL_BATCH_TYPE);
+      $currency = '';
+      if ($currencyIndex !== FALSE) {
+        $currency = mb_strtoupper($row[$currencyIndex] ?? '');
+        array_splice($row, $currencyIndex, 1);
+      }
+      if ($currency === '') {
+        $currency = $isInternational ? self::UNKNOWN_CURRENCY : self::DEFAULT_CURRENCY;
+      }
+      $row[] = $currency;
+    }
+    return [$headers, $rows];
+  }
+
+  /**
    * Case-insensitive array_search() for a header label.
    *
    * @param string[] $headers
@@ -460,6 +509,23 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
       }
     }
     return FALSE;
+  }
+
+  /**
+   * Flag International rows that got UNKNOWN currency on screen.
+   *
+   * @param array[] $rows
+   */
+  private function warnAboutUnknownCurrencies(array $rows): void {
+    $unknownCount = 0;
+    foreach ($rows as $row) {
+      if (end($row) === self::UNKNOWN_CURRENCY) {
+        $unknownCount++;
+      }
+    }
+    if ($unknownCount) {
+      \CRM_Core_Session::setStatus(ts('%1 International row(s) have no currency and will not import. Add a "Currency" column to the report and re-upload.', [1 => $unknownCount]), ts('Currency missing'), 'error');
+    }
   }
 
 }
