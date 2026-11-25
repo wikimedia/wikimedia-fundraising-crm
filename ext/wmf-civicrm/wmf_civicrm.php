@@ -40,6 +40,7 @@ function wmf_civicrm_civicrm_config(&$config) {
 
   // Import hooks.
   $dispatcher->addListener('hook_civicrm_importAlterMappedRow', [Import::class, 'alterMappedRow']);
+  $dispatcher->addListener('civi.entity.fields::Batch', [Import::class, 'makeBatchNameImportable']);
 
   // Increase the weight on the angular directory in this extension so it overrides the others.
   // This ensures our tweaks take precedence, specifically we are overriding the form from the deduper extension.

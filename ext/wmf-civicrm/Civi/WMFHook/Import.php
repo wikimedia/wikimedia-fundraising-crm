@@ -30,6 +30,15 @@ class Import {
   private int $userJobID;
 
   /**
+   * Make Batch.name importable, so the Finance Spreadsheet can set it.
+   *
+   * @param \Civi\Core\Event\GenericHookEvent $event
+   */
+  public static function makeBatchNameImportable(GenericHookEvent $event): void {
+    $event->fields['name']['usage'][] = 'import';
+  }
+
+  /**
    * Call WMF import hook functionality.
    *
    * @param \Civi\Core\Event\GenericHookEvent $event

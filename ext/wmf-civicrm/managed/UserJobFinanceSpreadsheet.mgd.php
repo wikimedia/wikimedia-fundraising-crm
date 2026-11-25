@@ -1,26 +1,24 @@
 <?php
 
+use Civi\Import\DataSource\FinanceSpreadsheet;
+
 /**
- * Saved field mapping template for the "Finance Spreadsheet" batch import -
- * see Civi\Import\DataSource\FinanceSpreadsheet and
- * Civi\WMFHook\Import::applyBatchImportDefaults().
+ * Saved field mapping template for the "Finance Spreadsheet" batch import.
  *
- * Column 4 (BALANCE (USD), a running balance) isn't mapped to anything.
- * Columns 1 (Settlement Gateway Account, originally TRANSACTION TYPE), 5
- * (Item Count) and 6 (Batch Status) are computed/synthetic columns the
- * datasource builds itself - see FinanceSpreadsheet.
+ * Maps the columns FinanceSpreadsheet calculates (see
+ * FinanceSpreadsheet::CALCULATED_HEADERS).
  */
 $importMappings = [
-  ['name' => 'Batch.batch_data.settlement_date', 'default_value' => NULL, 'column_number' => 0, 'entity_data' => []],
-  ['name' => 'Batch.batch_data.settlement_gateway_account_id', 'default_value' => NULL, 'column_number' => 1, 'entity_data' => []],
-  ['name' => 'Batch.title', 'default_value' => NULL, 'column_number' => 2, 'entity_data' => []],
-  ['name' => 'Batch.total', 'default_value' => NULL, 'column_number' => 3, 'entity_data' => []],
-  ['name' => '', 'default_value' => NULL, 'column_number' => 4, 'entity_data' => []],
-  // Column 5 is blank unless Finance has manually added a "Count" column to
-  // the source file - default_value fills it in as 1 (each row is one
-  // ACH/Wire deposit, so always exactly one item) when it's blank.
-  ['name' => 'Batch.item_count', 'default_value' => '1', 'column_number' => 5, 'entity_data' => []],
-  ['name' => 'Batch.status_id', 'default_value' => NULL, 'column_number' => 6, 'entity_data' => []],
+  ['name' => 'Batch.name', 'default_value' => NULL, 'column_number' => 0, 'entity_data' => []],
+  ['name' => 'Batch.batch_data.settlement_gateway', 'default_value' => NULL, 'column_number' => 1, 'entity_data' => []],
+  ['name' => 'Batch.batch_data.settlement_gateway_account_id', 'default_value' => NULL, 'column_number' => 2, 'entity_data' => []],
+  ['name' => 'Batch.batch_data.settlement_date', 'default_value' => NULL, 'column_number' => 3, 'entity_data' => []],
+  ['name' => 'Batch.title', 'default_value' => NULL, 'column_number' => 4, 'entity_data' => []],
+  ['name' => 'Batch.total', 'default_value' => NULL, 'column_number' => 5, 'entity_data' => []],
+  ['name' => 'Batch.batch_data.settlement_currency', 'default_value' => NULL, 'column_number' => 6, 'entity_data' => []],
+  ['name' => 'Batch.item_count', 'default_value' => NULL, 'column_number' => 7, 'entity_data' => []],
+  ['name' => 'Batch.status_id', 'default_value' => NULL, 'column_number' => 8, 'entity_data' => []],
+  ['name' => 'Batch.batch_data.last_successful_total_verification_date', 'default_value' => NULL, 'column_number' => 9, 'entity_data' => []],
 ];
 
 return [
@@ -45,7 +43,7 @@ return [
           // Pins the datasource (unlike most templates) since this mapping
           // only makes sense for the Finance Spreadsheet's own columns.
           'submitted_values' => [
-            'dataSource' => \Civi\Import\DataSource\FinanceSpreadsheet::class,
+            'dataSource' => FinanceSpreadsheet::class,
             'dateFormats' => \CRM_Utils_Date::DATE_mm_dd_yyyy,
           ],
           // Explicit rather than url-derived, since this template is also

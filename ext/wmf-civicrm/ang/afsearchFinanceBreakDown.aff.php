@@ -6,7 +6,7 @@ return [
   'title' => E::ts('Batch Financial Breakdown'),
   'icon' => 'fa-table-list',
   'server_route' => 'civicrm/accounting/breakdown',
-  'permission' => ['administer CiviCRM'],
+  'permission' => ['access CiviContribute'],
   'navigation' => [
     'parent' => 'Contributions',
     'label' => E::ts('Batch Financial Breakdown'),

@@ -933,7 +933,8 @@ class GenerateBatch extends AbstractAction {
   }
 
   /**
-   * For engage, ach and wire, trust our per-contribution count/fee/donation
+   * For manually entered batches (engage & the Finance Spreadsheet import
+   * gateways), trust our per-contribution count/fee/donation
    * breakdown over the batch's entered figures whenever the net settled amount
    * (and reversals) already reconcile.
    *
@@ -951,7 +952,7 @@ class GenerateBatch extends AbstractAction {
    */
   private function adjustManualBatchSecondaryTotals(array $batch, array &$result): void {
     $auditGateway = $this->getAuditGateway($batch['name']);
-    if (!in_array($auditGateway, ['engage', 'ach', 'wire'], TRUE)) {
+    if (!in_array($auditGateway, ['engage', 'ach', 'wire', 'bankcheck', 'citibank', 'cck', 'boa'], TRUE)) {
       return;
     }
     $mustBalance = array_filter([
