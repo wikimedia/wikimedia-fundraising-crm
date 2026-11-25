@@ -465,10 +465,19 @@ class AuditMessage extends DonationMessage {
   /**
    * Is the matched contribution a different transaction to this row?
    *
-   * The backend processor ids disagree - eg. it is the parent donation of
-   * this refund, rather than a record of the refund itself. A differing
-   * capture_id is only treated as different for the shared subscription id
-   * case - otherwise it is logged.
+   * - Reversals:
+   *   1) we might get more than one reversal so treat different reversal IDs as different transactions
+   *   (return TRUE).
+   * - Donations:
+   *   1) if we have a capture ID on both records AND they match we treat that as
+   *   a definitive match on the assumption capture_id is 'settlement information'
+   *   (return FALSE)
+   *   2) If the capture ID is present but does not match we think this is always a problem
+   *     a) but at the moment we are only sure this is the case when we are looking at
+   *     paypal_ec recurrings (return TRUE based on subscr_id comparison).
+   *     b) Otherwise we are in a log-and-monitor situation (return FALSE)
+   *   3) Absent a matching capture_id then a differing backend_processor_txn_id is a different transaction
+   *   (return TRUE).
    */
   private function isDifferentTransaction(array $contribution): bool {
     if ($this->isNegative()) {
@@ -476,19 +485,23 @@ class AuditMessage extends DonationMessage {
         && !empty($contribution['contribution_extra.backend_processor_reversal_id'])
         && $this->message['backend_processor_reversal_id'] !== $contribution['contribution_extra.backend_processor_reversal_id'];
     }
+    if ($this->getCaptureID() && ($contribution['contribution_extra.capture_id'] ?? NULL) === $this->getCaptureID()) {
+      // Capture is the most specific id - backend_processor_txn_id may be the auth on one
+      // side & the capture on the other (eg. Braintree PayPal vs the PayPal STL).
+      // @see https://phabricator.wikimedia.org/T444253
+      return FALSE;
+    }
     if (!empty($this->message['backend_processor_txn_id'])
       && !empty($contribution['contribution_extra.backend_processor_txn_id'])
       && $this->message['backend_processor_txn_id'] !== $contribution['contribution_extra.backend_processor_txn_id']
     ) {
       return TRUE;
     }
-    if (!$this->getCaptureID() || empty($contribution['contribution_extra.capture_id'])
-      || $contribution['contribution_extra.capture_id'] === $this->getCaptureID()
-    ) {
+    if (!$this->getCaptureID() || empty($contribution['contribution_extra.capture_id'])) {
       return FALSE;
     }
     if (!empty($this->message['subscr_id']) && $this->message['subscr_id'] === ($this->message['backend_processor_txn_id'] ?? NULL)) {
-      // The backend_processor_txn_id is the subscription id (eg. PayPal STL recurring),
+      // The backend_processor_txn_id is the subscription id - this is a paypal_ec recurring scenario,
       // so it matched an earlier instalment.
       // @see https://phabricator.wikimedia.org/T442644
       return TRUE;
