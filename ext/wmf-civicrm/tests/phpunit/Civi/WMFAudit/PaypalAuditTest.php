@@ -28,6 +28,9 @@ class PaypalAuditTest extends BaseAuditTestCase {
     Batch::delete(FALSE)
       ->addWhere('name', 'LIKE', 'paypal%_202601%')
       ->execute();
+    Batch::delete(FALSE)
+      ->addWhere('name', '=', 'paypal_20261123_GBP')
+      ->execute();
     $transactions = [
       '1V551844CE5526421',
       '5W55',
@@ -515,6 +518,36 @@ class PaypalAuditTest extends BaseAuditTestCase {
       ->execute()->single();
     $this->assertEquals($contributionID, $contribution['id']);
     $this->assertEquals('paypal_20261123_GBP', $contribution['contribution_settlement.settlement_batch_reference']);
+  }
+
+  /**
+   * A failing batch is explained in plain English, naming the STL file to check against.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testValidateExplainsDiscrepancy(): void {
+    $this->testSTLBraintreePaypalDonation();
+    $this->createTestEntity('Contribution', [
+      'contact_id' => $this->ids['Contact']['donor'],
+      'financial_type_id:name' => 'Cash',
+      'total_amount' => 2,
+      'currency' => 'GBP',
+      'receive_date' => '2026-11-23 14:00:00',
+      'trxn_id' => 'PAYPAL EXTRA0000000001',
+      'contribution_extra.gateway' => 'paypal',
+      'contribution_extra.gateway_txn_id' => 'EXTRA0000000001',
+      'contribution_settlement.settlement_batch_reference' => 'paypal_20261123_GBP',
+      'contribution_settlement.settlement_currency' => 'GBP',
+      'contribution_settlement.settled_donation_amount' => 2,
+      'contribution_settlement.settled_fee_amount' => -0.45,
+    ], 'extra');
+
+    $result = Batch::validate(FALSE)
+      ->addWhere('name', '=', 'paypal_20261123_GBP')
+      ->execute()->single();
+
+    $this->assertStringStartsWith('CiviCRM has 1 more transaction, GBP 2.00 more donations, GBP 0.45 more fees, GBP 1.55 more net than the batch expects.', $result['explanation']);
+    $this->assertStringContainsString('Check against ' . $this->getIncomingPath('stl_braintree_paypal_donation') . 'STL-20261123.01.009.csv.', $result['explanation']);
   }
 
   /**

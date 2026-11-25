@@ -37,6 +37,29 @@ class PaypalAuditProcessor extends BaseAuditProcessor {
     return '/TRR|STL-/';
   }
 
+  /**
+   * PayPal batches are paypal_YYYYMMDD_CUR and files are named for the day they cover - STL-YYYYMMDD.NN.NNN.CSV
+   * (settlement, has the RF totals footer the batch is verified against) and TRR-YYYYMMDD.NN.NNN.CSV
+   * (transactions, batched by completion date).
+   *
+   * STL is primary when present as only it can total_verify a batch. 'other' is that day's TRR plus the
+   * neighbouring days' files - day boundaries are where a stray transaction usually belongs.
+   */
+  public function getFilesForSettlementBatch(string $batchName): array {
+    $date = explode('_', $batchName)[1] ?? '';
+    if (!preg_match('/^\d{8}$/', $date)) {
+      return parent::getFilesForSettlementBatch($batchName);
+    }
+    $stl = $this->findAuditFiles(["STL-$date.*", "stl-$date.*"]);
+    $trr = $this->findAuditFiles(["TRR-$date.*", "trr-$date.*"]);
+    $other = $stl ? $trr : [];
+    foreach (['-1 day', '+1 day'] as $offset) {
+      $day = date('Ymd', strtotime("$date $offset"));
+      $other = array_merge($other, $this->findAuditFiles(["STL-$day.*", "stl-$day.*", "TRR-$day.*", "trr-$day.*"]));
+    }
+    return ['primary' => $stl ?: $trr, 'other' => $other];
+  }
+
   protected function regexForFilesToIgnore(): string {
     return '/(DDR-|PPA-|RPP-|WIkimedia_)/';
   }

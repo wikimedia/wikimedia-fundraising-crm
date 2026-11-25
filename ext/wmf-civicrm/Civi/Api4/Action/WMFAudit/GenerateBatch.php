@@ -11,6 +11,7 @@ use Civi\Api4\Contribution;
 use Civi\Api4\Generic\AbstractAction;
 use Civi\Api4\Generic\Result;
 use Civi\Api4\GatewayAccount;
+use Civi\WMFBatch\BatchDiscrepancyExplainer;
 use Civi\WMFBatch\BatchSummaryMailer;
 use Civi\WMFBatch\FinanceConstants;
 use Civi\WMFBatch\JournalGenerator;
@@ -915,6 +916,8 @@ class GenerateBatch extends AbstractAction {
       $this->log('The following batches have been validated ' . implode(',', array_keys($this->batchSummary)));
     }
     else {
+      $result['explanation'] = trim(BatchDiscrepancyExplainer::explain($result['validation'], $batch['batch_data.settlement_currency']) . ' ' . $this->getFilesToCheck($batch['name']));
+      $this->log($batch['name'] . ': ' . $result['explanation']);
       foreach (array_filter($result['validation']) as $key => $value) {
         if ($key !== 'count') {
           $value = \Civi::format()->money($value, $this->batchSummary[$batch['name']]['currency']);
@@ -930,6 +933,36 @@ class GenerateBatch extends AbstractAction {
       }
     }
     return $result;
+  }
+
+  /**
+   * Name the audit file(s) to check a failing batch against, where the gateway's processor implements getFilesForSettlementBatch().
+   */
+  private function getFilesToCheck(string $batchName): string {
+    $gateway = $this->getAuditGateway($batchName);
+    $class = '\Civi\WMFAudit\\' . ucfirst($gateway) . 'AuditProcessor';
+    // Gateway accounts with their own incoming directory (e.g. paypalfrup) aren't in the processor's default directories.
+    if ($gateway !== $this->getGateway($batchName) || !class_exists($class)) {
+      return '';
+    }
+    try {
+      $files = (new $class(['file_limit' => NULL]))->getFilesForSettlementBatch($batchName);
+    }
+    catch (\CRM_Core_Exception $e) {
+      // e.g. audit directory not configured.
+      return '';
+    }
+    if (!$files) {
+      return '';
+    }
+    if (empty($files['primary'])) {
+      return 'No audit file was found for this batch in the incoming or completed directories.';
+    }
+    $text = 'Check against ' . implode(', ', $files['primary']) . '.';
+    if (!empty($files['other'])) {
+      $text .= ' A stray transaction may be in ' . implode(', ', array_map('basename', $files['other'])) . '.';
+    }
+    return $text;
   }
 
   /**

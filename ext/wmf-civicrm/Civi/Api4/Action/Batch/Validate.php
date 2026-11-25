@@ -52,6 +52,7 @@ class Validate extends BasicBatchAction {
         'batch' => $item['name'],
         'previous_status' => $statusBefore,
         'validation' => $record['validation'] ?? [],
+        'explanation' => $record['explanation'] ?? '',
         'changes_since_export' => $record['changes_since_export'] ?? [],
       ]);
     }
