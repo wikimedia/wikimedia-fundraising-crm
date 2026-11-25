@@ -98,6 +98,18 @@ class EngageSummaryTest extends TestCase {
   }
 
   /**
+   * Header labels are matched case-insensitively.
+   */
+  public function testHeadersAreCaseInsensitive(): void {
+    $headers = ['BATCH TYPE', 'Group Value', 'batch', 'Batch Date', 'docs', 'CHECKS', 'Total Item', 'Amount'];
+    $rows = [['Credit Cards', '', '900012', '10/08/2026', '4', '0', '4', '400.00']];
+
+    $rows = $this->invoke('useDocsAsChecksForCardRows', $headers, $rows);
+
+    $this->assertSame('4', $rows[0][5]);
+  }
+
+  /**
    * @param string[] $overrides column letter => value
    * @return string[]
    */
