@@ -7,24 +7,67 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 /**
- * DataSource for importing Julie's finance spreadsheet (xls, xlsx or csv) - a
- * plain table of DATE / TRANSACTION TYPE / DESCRIPTION / AMOUNT (USD) /
- * BALANCE (USD) rows, some blank, only the ACH and Wire rows of which are
- * real batches to import. BALANCE (USD), a running balance, isn't touched
- * here - it's just left for the saved mapping to ignore.
+ * DataSource for importing Finance's bank transaction exports (xls, xlsx or csv).
+ *
+ * We now get one for the 'main' account and one for the Citibank account (International checks).
+ *
+ * Each donation row is imported as a batch, with the gateway account
+ * worked out from the memo. There will be other rows in the import which are ignored.
+ * This is an opt-in approach.
+ *
+ * The table holds only the batch values calculated from each row
+ * (CALCULATED_HEADERS), so the saved mapping fits whatever the
+ * spreadsheet's columns are.
  */
 class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInterface {
   use DataSourceTrait;
 
   protected const NUM_ROWS_TO_INSERT = 100;
 
-  private const DATE_HEADER = 'DATE';
+  private const REFERENCE_HEADER = 'Batch Reference';
 
-  private const TRANSACTION_TYPE_HEADER = 'TRANSACTION TYPE';
+  private const GATEWAY_HEADER = 'Settlement Gateway';
 
-  private const SETTLEMENT_GATEWAY_ACCOUNT_HEADER = 'Settlement Gateway Account';
+  private const GATEWAY_ACCOUNT_HEADER = 'Settlement Gateway Account';
 
-  private const IMPORTABLE_TRANSACTION_TYPES = ['ach', 'wire'];
+  private const SETTLEMENT_DATE_HEADER = 'Settlement Date';
+
+  private const TITLE_HEADER = 'Batch Title';
+
+  private const TOTAL_HEADER = 'Total';
+
+  private const CURRENCY_HEADER = 'Currency';
+
+  private const ITEM_COUNT_HEADER = 'Item Count';
+
+  private const STATUS_HEADER = 'Batch Status';
+
+  private const VERIFIED_DATE_HEADER = 'Total Verified Date';
+
+  // The table's columns, in the order the saved mapping expects - see
+  // UserJobFinanceSpreadsheet.mgd.php.
+  private const CALCULATED_HEADERS = [
+    self::REFERENCE_HEADER,
+    self::GATEWAY_HEADER,
+    self::GATEWAY_ACCOUNT_HEADER,
+    self::SETTLEMENT_DATE_HEADER,
+    self::TITLE_HEADER,
+    self::TOTAL_HEADER,
+    self::CURRENCY_HEADER,
+    self::ITEM_COUNT_HEADER,
+    self::STATUS_HEADER,
+    self::VERIFIED_DATE_HEADER,
+  ];
+
+  // The signed amount, used over Txn amt (which is unsigned) when present -
+  // it is not in the Citibank export. Older exports have 'USD Amount'.
+  private const AMOUNT_HEADERS = ['amount $', 'usd amount'];
+
+  // e.g. "Citibank - EUR Public #2 Donation Received from 1/ANNA MOUSE 10/02/2026".
+  private const CITIBANK_DONATION_PATTERN = '#Donation Received from\s#i';
+
+  // e.g. "Donation Check # 1982 10/20/2026" or "Donation Check 5 Checks 10/20/2026".
+  private const CHECK_PATTERN = '#^Donation Check\s+(?:\#\s*(\S+)|(\d+)\s+Checks)\s+(\d{1,2})/(\d{1,2})/(\d{4})#i';
 
   private const ENDOWMENT_FILENAME_MARKER = 'END';
 
@@ -32,15 +75,7 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
 
   private const BATCH_DATE_FORMAT = 'm/d/Y';
 
-  private const BATCH_STATUS_HEADER = 'Batch Status';
-
-  private const BATCH_STATUS_VALUE = 'total_verified';
-
-  private const ITEM_COUNT_HEADER = 'Item Count';
-
-  // Manually added by Finance to the source file sometimes - not always
-  // present, and not necessarily cased the same way each time.
-  private const COUNT_HEADER = 'Count';
+  private const BATCH_STATUS = 'total_verified';
 
   public function getInfo(): array {
     return [
@@ -60,6 +95,8 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
       $this->setUserJobID(\CRM_Utils_Request::retrieveValue('user_job_id', 'Integer'));
     }
     $form->add('hidden', 'hidden_dataSource', self::class);
+    // extractDataRows() finds the header row - this makes the map screen show the headers.
+    $form->add('hidden', 'skipColumnHeader', 1);
     $maxFileSizeMegaBytes = \CRM_Utils_File::getMaxFileSize();
     $maxFileSizeBytes = $maxFileSizeMegaBytes * 1024 * 1024;
     $form->assign('uploadSize', $maxFileSizeMegaBytes);
@@ -87,7 +124,7 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
   }
 
   public function getSubmittableFields(): array {
-    return ['uploadFile'];
+    return ['uploadFile', 'skipColumnHeader'];
   }
 
   /**
@@ -103,10 +140,9 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
       ]);
     }
     catch (\Throwable $e) {
-      // Broad catch rather than just ReaderException - an unreadable file
-      // (e.g. a format-specific dependency issue) can throw something else
-      // entirely, and left uncaught that surfaces as a bare wizard-session
-      // error rather than a useful message.
+      // Broad catch - an unreadable file can throw something other than a
+      // ReaderException, which would otherwise surface as a bare
+      // wizard-session error.
       throw new \CRM_Core_Exception(ts('Spreadsheet not loaded.') . ' ' . $e->getMessage());
     }
   }
@@ -118,44 +154,35 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
    */
   private function uploadToTable(): array {
     $fileName = $this->getSubmittedValue('uploadFile')['name'];
-    $file_type = IOFactory::identify($fileName);
-    $objReader = IOFactory::createReader($file_type);
+    $objReader = IOFactory::createReader(IOFactory::identify($fileName));
     $objReader->setReadDataOnly(TRUE);
     $spreadsheet = $objReader->load($fileName);
 
-    $columnHeaders = NULL;
+    $foundHeaders = FALSE;
     $dataRows = [];
     foreach ($spreadsheet->getAllSheets() as $sheet) {
-      // formatData=FALSE - a date cell would otherwise come back as a string
-      // already rendered in whatever locale/format that cell happens to
-      // carry (e.g. NZ-style dd/mm/yyyy), rather than the raw numeric serial
-      // convertDateColumn() explicitly converts to US-style m/d/Y.
-      $sheetRows = $sheet->toArray(NULL, TRUE, FALSE, FALSE);
-      [$sheetHeaders, $sheetDataRows] = $this->extractDataRows($sheetRows);
-      if ($sheetHeaders !== NULL) {
-        $columnHeaders = $sheetHeaders;
-        $dataRows = array_merge($dataRows, $sheetDataRows);
+      // formatData=FALSE - so dates come back as Excel serials rather than
+      // strings in whatever locale the cell carries.
+      $sheetRows = $this->extractDataRows($sheet->toArray(NULL, TRUE, FALSE, FALSE));
+      if ($sheetRows !== NULL) {
+        $foundHeaders = TRUE;
+        $dataRows = array_merge($dataRows, $sheetRows);
       }
     }
-    if ($columnHeaders === NULL) {
-      throw new \CRM_Core_Exception(ts('Could not find the "%1" header row in the uploaded spreadsheet.', [1 => self::DATE_HEADER]));
+    if (!$foundHeaders) {
+      throw new \CRM_Core_Exception(ts('Could not find a header row with a "Memo/Description" column in the uploaded spreadsheet.'));
     }
-    $dataRows = $this->keepOnlyAchAndWireRows($columnHeaders, $dataRows);
-    $dataRows = $this->convertDateColumn($columnHeaders, $dataRows);
-    [$columnHeaders, $dataRows] = $this->convertTransactionTypeToSettlementGatewayAccountId($columnHeaders, $dataRows, $this->isEndowmentFile($fileName));
-    [$columnHeaders, $dataRows] = $this->appendItemCountColumn($columnHeaders, $dataRows);
-    [$columnHeaders, $dataRows] = $this->appendConstantColumns($columnHeaders, $dataRows, [
-      self::BATCH_STATUS_HEADER => self::BATCH_STATUS_VALUE,
-    ]);
-    $columns = $this->getColumnNamesFromHeaders($columnHeaders);
-
+    $dataRows = $this->addGatewayAccounts($dataRows, $this->isEndowmentFile($fileName));
+    $columns = $this->getColumnNamesFromHeaders(self::CALCULATED_HEADERS);
     $tableName = $this->createTempTableFromColumns($columns);
-    $numColumns = count($columns);
 
     $sql = [];
     foreach ($dataRows as $row) {
-      $row = array_map(['CRM_Core_DAO', 'escapeString'], $row);
-      $sql[] = "('" . implode("', '", $row) . "')";
+      $values = [];
+      foreach (self::CALCULATED_HEADERS as $header) {
+        $values[] = \CRM_Core_DAO::escapeString($row[$header]);
+      }
+      $sql[] = "('" . implode("', '", $values) . "')";
       if (count($sql) >= self::NUM_ROWS_TO_INSERT) {
         \CRM_Core_DAO::executeQuery("INSERT IGNORE INTO $tableName VALUES " . implode(', ', $sql));
         $sql = [];
@@ -168,128 +195,177 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
 
     return [
       'import_table_name' => $tableName,
-      'number_of_columns' => $numColumns,
-      'column_headers' => $columnHeaders,
+      'number_of_columns' => count($columns),
+      'column_headers' => self::CALCULATED_HEADERS,
     ];
   }
 
   /**
-   * Walk one sheet's raw rows and pull out the header row and data rows.
-   *
-   * A plain table (DATE, TRANSACTION TYPE, DESCRIPTION, AMOUNT (USD)),
-   * unlike the block-structured Engage report - just skips rows with no
-   * non-blank value at all.
+   * Get the batch rows, keyed by header, from one sheet's raw rows.
    *
    * @param array $sheetRows
    *
-   * @return array{0: ?string[], 1: array[]}
-   *   [column headers, data rows] - headers is NULL if this sheet has no
-   *   header row.
+   * @return array[]|null
+   *   NULL if this sheet has no header row.
    */
-  private function extractDataRows(array $sheetRows): array {
-    $headerColumns = NULL;
+  private function extractDataRows(array $sheetRows): ?array {
+    $columns = NULL;
     $rows = [];
     foreach ($sheetRows as $sheetRow) {
-      $row = array_map(fn($value): string => self::trimWhitespace((string) ($value ?? '')), $sheetRow);
-      if ($headerColumns === NULL) {
-        if (($row[0] ?? '') === self::DATE_HEADER) {
-          $headerColumns = array_values($row);
-        }
+      $row = array_values(array_map(fn($value): string => self::trimWhitespace((string) ($value ?? '')), $sheetRow));
+      if ($columns === NULL) {
+        $columns = $this->getColumns($row);
         continue;
       }
-      if (!array_filter($row, fn(string $value): bool => $value !== '')) {
-        continue;
+      $batchRow = $this->getCalculatedValues($row, $columns);
+      if ($batchRow !== NULL) {
+        $rows[] = $batchRow;
       }
-      $rows[] = array_values($row);
     }
-    return [$headerColumns, $rows];
+    return $columns === NULL ? NULL : $rows;
   }
 
   /**
-   * Keep only rows whose TRANSACTION TYPE is ACH or Wire - the rest (fees,
-   * interest, other transaction types) aren't batches to import.
+   * Get the column indexes if this is the header row - the one with Memo/Description.
    *
-   * @param string[] $headers
-   * @param array[] $rows
+   * @param string[] $row
    *
-   * @return array[]
+   * @return array|null
+   * @throws \CRM_Core_Exception
+   *   If the header row is missing a column we need.
    */
-  private function keepOnlyAchAndWireRows(array $headers, array $rows): array {
-    $typeIndex = array_search(self::TRANSACTION_TYPE_HEADER, $headers, TRUE);
-    if ($typeIndex === FALSE) {
-      return $rows;
+  private function getColumns(array $row): ?array {
+    // Older exports have 'Memo / Description'.
+    $columns = array_flip(array_map(fn(string $header): string => strtolower(str_replace(' / ', '/', $header)), $row));
+    if (!isset($columns['memo/description'])) {
+      return NULL;
     }
-    return array_values(array_filter(
-      $rows,
-      fn(array $row): bool => in_array(strtolower($row[$typeIndex] ?? ''), self::IMPORTABLE_TRANSACTION_TYPES, TRUE)
-    ));
+    $missing = [];
+    foreach (['Doc dt.', 'Txn amt', 'Curr'] as $header) {
+      if (!isset($columns[strtolower($header)])) {
+        $missing[] = $header;
+      }
+    }
+    if ($missing) {
+      throw new \CRM_Core_Exception(ts('The spreadsheet is missing the column(s): %1.', [1 => implode(', ', $missing)]));
+    }
+    return $columns;
   }
 
   /**
-   * Convert the "DATE" column to a plain m/d/Y string.
+   * Get the calculated values, keyed by header, with the gateway from the memo.
    *
-   * uploadToTable() reads with formatData=FALSE, so a date cell in a real
-   * spreadsheet (xls/xlsx) is always a bare Excel serial number here,
-   * e.g. "45660" - not a string pre-formatted in whatever locale that cell
-   * happens to carry.
+   * The reference & gateway account are added once the gateway is known -
+   * see addGatewayAccounts().
    *
-   * A CSV has no cell types at all though, so its dates are always literal
-   * text, in whatever format the source file happens to use - if that's
-   * day-first (d/m/Y), it's only unambiguous when the first number is >12
-   * (can't be a month), but that's exactly the case that was otherwise
-   * failing import validation outright, so it's swapped to m/d/Y. A day
-   * <=12 is left alone as already-ambiguous, assumed to be m/d/Y as-is.
+   * @param string[] $row
+   * @param array $columns
    *
-   * @param string[] $headers
-   * @param array[] $rows
-   *
-   * @return array[]
+   * @return array<string, string>|null
+   *   NULL if the row is not a batch to import.
    */
-  private function convertDateColumn(array $headers, array $rows): array {
-    $dateIndex = array_search(self::DATE_HEADER, $headers, TRUE);
-    if ($dateIndex === FALSE) {
-      return $rows;
+  private function getCalculatedValues(array $row, array $columns): ?array {
+    $title = $row[$columns['memo/description']] ?? '';
+    $itemCount = '1';
+    if (preg_match(self::CITIBANK_DONATION_PATTERN, $title)) {
+      $account = 'citibank-public2';
     }
-    foreach ($rows as &$row) {
-      $value = $row[$dateIndex] ?? '';
-      if ($value === '') {
-        continue;
-      }
-      if (is_numeric($value)) {
-        $row[$dateIndex] = ExcelDate::excelToDateTimeObject((float) $value)->format(self::BATCH_DATE_FORMAT);
-      }
-      elseif (preg_match('#^(\d{1,2})/(\d{1,2})/(\d{4})$#', $value, $matches) && (int) $matches[1] > 12) {
-        $row[$dateIndex] = sprintf('%02d/%02d/%d', (int) $matches[2], (int) $matches[1], (int) $matches[3]);
-      }
+    elseif (preg_match('/^ACH-/i', $title)) {
+      $account = 'ach';
     }
-    return $rows;
+    elseif (preg_match('/^WIRE FROM\b/i', $title)) {
+      $account = 'wire';
+    }
+    elseif (preg_match(self::CHECK_PATTERN, $title, $matches)) {
+      // The check number alone is not unique, so title it {number}-{check date}
+      // - or just the date where the row covers more than one check.
+      [, $checkNumber, $checkCount, $month, $day, $year] = $matches;
+      $account = 'bankcheck';
+      $date = sprintf('%d%02d%02d', $year, $month, $day);
+      $title = $checkNumber !== '' ? $checkNumber . '-' . $date : $date;
+      $itemCount = $checkCount !== '' ? $checkCount : '1';
+    }
+    elseif (preg_match('/^Engage Deposited Check Return\b/i', $title)) {
+      $account = 'engage';
+    }
+    elseif (preg_match('/^CCK\b/i', $title)) {
+      $account = 'cck';
+    }
+    elseif (preg_match('/\bStock Donations\b/i', $title)) {
+      $account = 'boa';
+    }
+    else {
+      return NULL;
+    }
+    $amount = $this->getAmount($row, $columns);
+    return [
+      self::REFERENCE_HEADER => '',
+      self::GATEWAY_HEADER => $account,
+      self::GATEWAY_ACCOUNT_HEADER => '',
+      self::SETTLEMENT_DATE_HEADER => $this->formatDate($row[$columns['doc dt.']] ?? ''),
+      self::TITLE_HEADER => $title,
+      self::TOTAL_HEADER => $amount,
+      self::CURRENCY_HEADER => $row[$columns['curr']] ?? '',
+      self::ITEM_COUNT_HEADER => $itemCount,
+      self::STATUS_HEADER => self::BATCH_STATUS,
+      // Importing the batch is verifying its total.
+      self::VERIFIED_DATE_HEADER => date(self::BATCH_DATE_FORMAT . ' H:i:s'),
+    ];
   }
 
   /**
-   * Replace the raw "TRANSACTION TYPE" column with a "Settlement Gateway
-   * Account" column holding the GatewayAccount.id - "ach"/"wire" are
-   * themselves GatewayAccount names, with "endowment" appended for an
-   * Endowment file (see isEndowmentFile()).
+   * Get the amount - Amount $ if present, else Txn amt.
    *
-   * Resolves the id explicitly here rather than mapping the plain name and
-   * leaving Civi\WMFHook\Data::batchPre() to derive it at save time.
+   * @param string[] $row
+   * @param array $columns
    *
-   * @param string[] $headers
+   * @return string
+   */
+  private function getAmount(array $row, array $columns): string {
+    $value = fn(string $header): string => isset($columns[$header]) ? str_replace(',', '', $row[$columns[$header]] ?? '') : '';
+    foreach (self::AMOUNT_HEADERS as $amountHeader) {
+      if ($value($amountHeader) !== '') {
+        return $value($amountHeader);
+      }
+    }
+    return $value('txn amt');
+  }
+
+  /**
+   * Format the date as m/d/Y.
+   *
+   * xls/xlsx dates are Excel serials (see uploadToTable()) and the Citibank
+   * export has 2 digit years, e.g. 10/2/26.
+   *
+   * @param string $value
+   *
+   * @return string
+   */
+  private function formatDate(string $value): string {
+    if (is_numeric($value)) {
+      return ExcelDate::excelToDateTimeObject((float) $value)->format(self::BATCH_DATE_FORMAT);
+    }
+    if (preg_match('#^(\d{1,2})/(\d{1,2})/(\d{2}|\d{4})$#', $value, $matches)) {
+      return sprintf('%02d/%02d/%d', $matches[1], $matches[2], strlen($matches[3]) === 2 ? 2000 + $matches[3] : $matches[3]);
+    }
+    return $value;
+  }
+
+  /**
+   * Add the gateway account - the endowment one for an endowment file - and
+   * the batch reference, {gateway account}_{title}_{currency}, which is
+   * also the title.
+   *
    * @param array[] $rows
    * @param bool $isEndowment
    *
-   * @return array{0: string[], 1: array[]}
+   * @return array[]
    * @throws \CRM_Core_Exception
    */
-  private function convertTransactionTypeToSettlementGatewayAccountId(array $headers, array $rows, bool $isEndowment): array {
-    $typeIndex = array_search(self::TRANSACTION_TYPE_HEADER, $headers, TRUE);
-    if ($typeIndex === FALSE) {
-      return [$headers, $rows];
-    }
+  private function addGatewayAccounts(array $rows, bool $isEndowment): array {
     $accountIDs = [];
-    $headers[$typeIndex] = self::SETTLEMENT_GATEWAY_ACCOUNT_HEADER;
     foreach ($rows as &$row) {
-      $accountName = strtolower($row[$typeIndex] ?? '') . ($isEndowment ? self::ENDOWMENT_SUFFIX : '');
+      $accountName = $row[self::GATEWAY_HEADER] . ($isEndowment ? self::ENDOWMENT_SUFFIX : '');
       if (!isset($accountIDs[$accountName])) {
         $accountIDs[$accountName] = GatewayAccount::get(FALSE)
           ->addWhere('name', '=', $accountName)
@@ -299,16 +375,18 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
           throw new \CRM_Core_Exception(ts('No GatewayAccount named "%1" found.', [1 => $accountName]));
         }
       }
-      $row[$typeIndex] = (string) $accountIDs[$accountName];
+      $row[self::GATEWAY_HEADER] = $accountName;
+      $row[self::GATEWAY_ACCOUNT_HEADER] = (string) $accountIDs[$accountName];
+      $row[self::REFERENCE_HEADER] = $row[self::TITLE_HEADER] = implode('_', [$accountName, $row[self::TITLE_HEADER], $row[self::CURRENCY_HEADER]]);
     }
-    return [$headers, $rows];
+    return $rows;
   }
 
   /**
    * Is this file for the Endowment (rather than the Foundation)?
    *
-   * Signalled by the literal substring "END" somewhere in the filename
-   * (e.g. "September END 9.01.26 to 9.15.26.xlsx").
+   * Signalled by "END" (case-sensitive) or "endowment" in the filename,
+   * e.g. "September END 9.01.26 to 9.15.26.xlsx".
    *
    * @param string $fileName
    *
@@ -316,87 +394,7 @@ class FinanceSpreadsheet extends \CRM_Import_DataSource implements DataSourceInt
    */
   private function isEndowmentFile(string $fileName): bool {
     return str_contains($fileName, self::ENDOWMENT_FILENAME_MARKER)
-      // Also permit endowment, this one not case-sensitive.
       || str_contains(strtolower($fileName), 'endowment');
-  }
-
-  /**
-   * Append columns with the same constant value for every row.
-   *
-   * Used for Batch Status - status_id is required, and the importer's
-   * "missing required fields" check only looks at what's mapped, so a
-   * default set later by Civi\WMFHook\Import::applyBatchImportDefaults()
-   * doesn't count.
-   *
-   * @param string[] $headers
-   * @param array[] $rows
-   * @param array<string, string> $constants
-   *   Header => value to append.
-   *
-   * @return array{0: string[], 1: array[]}
-   */
-  private function appendConstantColumns(array $headers, array $rows, array $constants): array {
-    foreach (array_keys($constants) as $header) {
-      $headers[] = $header;
-    }
-    foreach ($rows as &$row) {
-      foreach ($constants as $value) {
-        $row[] = $value;
-      }
-    }
-    return [$headers, $rows];
-  }
-
-  /**
-   * Append an "Item Count" column, ahead of Batch Status, sourced from a
-   * "Count" column Finance adds to the source file - not always present,
-   * and not necessarily cased the same way each time, hence the
-   * case-insensitive match. Left blank unless that column holds an actual
-   * number - the saved import mapping's own default_value fills it in as 1
-   * from there, rather than this defaulting or passing through non-numeric
-   * junk.
-   *
-   * The original "Count" column, if found, is removed rather than left in
-   * place - otherwise its presence would shift every later column (Item
-   * Count, Batch Status) along by one, breaking the saved mapping's fixed
-   * column numbers.
-   *
-   * @param string[] $headers
-   * @param array[] $rows
-   *
-   * @return array{0: string[], 1: array[]}
-   */
-  private function appendItemCountColumn(array $headers, array $rows): array {
-    $countIndex = $this->findColumnIndexCaseInsensitive($headers, self::COUNT_HEADER);
-    if ($countIndex !== FALSE) {
-      unset($headers[$countIndex]);
-      $headers = array_values($headers);
-    }
-    $headers[] = self::ITEM_COUNT_HEADER;
-    foreach ($rows as &$row) {
-      $value = $countIndex === FALSE ? '' : trim((string) ($row[$countIndex] ?? ''));
-      if ($countIndex !== FALSE) {
-        unset($row[$countIndex]);
-        $row = array_values($row);
-      }
-      $row[] = is_numeric($value) ? $value : '';
-    }
-    return [$headers, $rows];
-  }
-
-  /**
-   * @param string[] $headers
-   * @param string $headerName
-   *
-   * @return int|false
-   */
-  private function findColumnIndexCaseInsensitive(array $headers, string $headerName) {
-    foreach ($headers as $index => $header) {
-      if (strcasecmp(trim($header), $headerName) === 0) {
-        return $index;
-      }
-    }
-    return FALSE;
   }
 
 }

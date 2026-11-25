@@ -1018,6 +1018,47 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
       'Batch.item_count' => '1',
       'Batch.status_id' => 'total_verified',
     ];
+    $row = $this->importBatch($data);
+    $batch = Batch::get(FALSE)
+      ->addSelect('status_id:name', 'batch_data.last_successful_total_verification_date')
+      ->addWhere('id', '=', $row['_entity_id'])
+      ->execute()->single();
+    $this->assertEquals('total_verified', $batch['status_id:name']);
+    $this->assertNotEmpty($batch['batch_data.last_successful_total_verification_date']);
+  }
+
+  /**
+   * Batch.name can be imported, as the Finance Spreadsheet does, and is used as is.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testBatchImportWithName(): void {
+    $this->imitateAdminUser();
+    $name = 'wire_WIRE FROM ' . substr(uniqid(), -8) . '_USD';
+    $data = [
+      'Batch.name' => $name,
+      'Batch.title' => $name,
+      'Batch.batch_data.settlement_date' => '2026-10-07',
+      'Batch.batch_data.settlement_gateway_account_id' => GatewayAccount::get(FALSE)->addWhere('name', '=', 'wire')->execute()->single()['id'],
+      'Batch.total' => '100',
+      'Batch.item_count' => '1',
+      'Batch.status_id' => 'total_verified',
+    ];
+    $row = $this->importBatch($data);
+    $batch = Batch::get(FALSE)
+      ->addSelect('name', 'title')
+      ->addWhere('id', '=', $row['_entity_id'])
+      ->execute()->single();
+    $this->assertEquals($name, $batch['name']);
+    $this->assertEquals($name, $batch['title']);
+  }
+
+  /**
+   * Import one batch row, mapping each column to the field it is keyed by.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  private function importBatch(array $data): array {
     $this->createImportTable($data);
     $importMappings = [];
     foreach (array_keys($data) as $index => $columnName) {
@@ -1039,12 +1080,7 @@ class ImportTest extends TestCase implements HeadlessInterface, HookInterface {
     Import::import($this->userJobID)->execute();
     $row = Import::get($this->userJobID, FALSE)->execute()->first();
     $this->assertEquals('IMPORTED', $row['_status'], $row['_status_message']);
-    $batch = Batch::get(FALSE)
-      ->addSelect('status_id:name', 'batch_data.last_successful_total_verification_date')
-      ->addWhere('id', '=', $row['_entity_id'])
-      ->execute()->single();
-    $this->assertEquals('total_verified', $batch['status_id:name']);
-    $this->assertNotEmpty($batch['batch_data.last_successful_total_verification_date']);
+    return $row;
   }
 
   /**

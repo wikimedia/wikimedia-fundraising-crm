@@ -602,6 +602,10 @@ class GenerateBatchTest extends BaseAuditTestCase {
       'engage' => ['engage_341'],
       'ach' => ['ach_341'],
       'wire' => ['wire_341'],
+      'bankcheck' => ['bankcheck_341'],
+      'citibank' => ['citibank-public2_341'],
+      'cck' => ['cck_341'],
+      'boa' => ['boa_341'],
     ];
   }
 
