@@ -7,7 +7,7 @@ return [
   'description' => E::ts('Column selection & formatting to finance needs'),
   'icon' => 'fa-list-alt',
   'server_route' => 'civicrm/batch-finance',
-  'permission' => ['administer CiviCRM data'],
+  'permission' => ['access CiviContribute'],
   'navigation' => [
     'parent' => 'Contributions',
     'label' => E::ts('Accounting Journals for Finance'),

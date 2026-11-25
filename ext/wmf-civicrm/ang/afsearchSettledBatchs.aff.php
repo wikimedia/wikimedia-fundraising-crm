@@ -6,4 +6,5 @@ return [
   'title' => E::ts('Settled batchs'),
   'icon' => 'fa-cash-register',
   'server_route' => 'civicrm/contribution/settled',
+  'permission' => ['access CiviContribute'],
 ];

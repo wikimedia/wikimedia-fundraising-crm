@@ -29,4 +29,11 @@ class ExchangeRate extends Generic\DAOEntity {
     return (new Action\ExchangeRate\GetLatest(__CLASS__, __FUNCTION__))
       ->setCheckPermissions($checkPermissions);
   }
+
+  public static function permissions(): array {
+    $permissions = parent::permissions();
+    $permissions['get'] = ['access CiviContribute'];
+    return $permissions;
+  }
+
 }
