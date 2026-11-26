@@ -14,6 +14,7 @@ use Civi\WMFBatch\BatchFileComparer;
  *
  * @method $this setIncomingDirectory(string $incomingDirectory)
  * @method $this setIsAlwaysCompareFile(bool $isAlwaysCompareFile)
+ * @method $this setIsShowOffsetting(bool $isShowOffsetting)
  */
 class Diagnose extends BasicBatchAction {
 
@@ -30,6 +31,13 @@ class Diagnose extends BasicBatchAction {
    * @var bool
    */
   protected bool $isAlwaysCompareFile = FALSE;
+
+  /**
+   * List CiviCRM-only & file-only rows that offset each other (same type, gross & fee) - by default they are counted but not listed.
+   *
+   * @var bool
+   */
+  protected bool $isShowOffsetting = FALSE;
 
   protected function getSelect(): array {
     return ['id', 'name', 'status_id:name', 'mode_id:name'];
@@ -52,7 +60,7 @@ class Diagnose extends BasicBatchAction {
       'summary' => [($record['explanation'] ?? '') ?: 'Batch totals match.'],
     ];
     if (!$diagnosis['is_valid'] || $this->isAlwaysCompareFile) {
-      $diagnosis['file_check'] = (new BatchFileComparer($item, $this->incomingDirectory))->compare();
+      $diagnosis['file_check'] = (new BatchFileComparer($item, $this->incomingDirectory, $this->isShowOffsetting))->compare();
       $diagnosis['summary'] = array_merge($diagnosis['summary'], $diagnosis['file_check']['summary']);
       if (isset($diagnosis['file_check']['explained'])) {
         $diagnosis['summary'][] = $this->describeRemainder($diagnosis['civicrm_minus_expected'], $diagnosis['file_check']['explained']);

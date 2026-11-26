@@ -11,6 +11,9 @@ use Civi\WMFAudit\BaseAuditProcessor;
  *
  * Gateway knowledge (where files live & how they are named) comes from the audit processor's
  * getFilesForSettlementBatch(); file parsing uses the same SmashPig parser that built the expected totals.
+ *
+ * This is a diagnostic aid we are iterating on in real discrepancy hunts - expect the matching & output to change
+ * as we learn what helps.
  */
 class BatchFileComparer {
 
@@ -35,7 +38,13 @@ class BatchFileComparer {
    */
   private array $parsed = [];
 
-  public function __construct(array $batch, string $incomingDirectory = '') {
+  /**
+   * List CiviCRM-only & file-only rows that offset each other (same kind, gross & fee) rather than hiding them.
+   */
+  private bool $isShowOffsetting;
+
+  public function __construct(array $batch, string $incomingDirectory = '', bool $isShowOffsetting = FALSE) {
+    $this->isShowOffsetting = $isShowOffsetting;
     $this->batchName = $batch['name'];
     $this->gatewayPrefix = explode('_', $batch['name'])[0];
     $this->processor = $this->loadProcessor($incomingDirectory);
@@ -72,6 +81,12 @@ class BatchFileComparer {
         $mismatched[] = ['file' => $fileRow, 'civicrm' => $civiLine];
       }
     }
+    // Offsetting pairs net to zero, so they count towards 'explained' whether or not they are listed.
+    $explained = $this->getExplained($civiOnly, $fileOnly, $mismatched);
+    $offsetting = [];
+    if (!$this->isShowOffsetting) {
+      [$civiOnly, $fileOnly, $offsetting] = $this->removeOffsetting($civiOnly, $fileOnly);
+    }
     foreach ($civiOnly as &$civiLine) {
       $civiLine['found_in'] = $this->findInOtherFiles($civiLine['keys'], $files['other']);
     }
@@ -87,12 +102,56 @@ class BatchFileComparer {
       'other_files' => array_map('basename', $files['other']),
       'file_row_count' => count($fileRows),
       'civicrm_row_count' => count($civiLines),
-      'explained' => $this->getExplained($civiOnly, $fileOnly, $mismatched),
+      'explained' => $explained,
       'civicrm_only' => array_slice($civiOnly, 0, self::LIST_LIMIT),
       'file_only' => array_slice($fileOnly, 0, self::LIST_LIMIT),
       'amount_mismatch' => array_slice($mismatched, 0, self::LIST_LIMIT),
-      'summary' => $this->summarise($civiOnly, $fileOnly, $mismatched),
+      'offsetting' => $offsetting,
+      'summary' => array_merge($this->summarise($civiOnly, $fileOnly, $mismatched, (bool) $offsetting), $this->summariseOffsetting($offsetting)),
     ];
+  }
+
+  /**
+   * Take out CiviCRM-only & file-only rows that pair up on kind, gross & fee.
+   *
+   * Pairing is by amount, not id, on purpose: CiviCRM's id matching (gateway vs backend processor ids, auth vs
+   * capture, Gravy, recurring references) may itself be what put a row on the wrong batch, so replicating it here
+   * could hide the problem. Rows that cancel out are most likely id mismatches; what is left is more likely to be a
+   * truly missing or extra donation. They are counted in the summary, never dropped silently.
+   *
+   * @return array [remaining civi-only lines, remaining file-only rows, offsetting groups]
+   */
+  private function removeOffsetting(array $civiOnly, array $fileOnly): array {
+    $signature = fn(array $row) => $row['kind'] . '|' . $row['gross'] . '|' . $row['fee'];
+    $fileBySignature = [];
+    foreach ($fileOnly as $index => $row) {
+      $fileBySignature[$signature($row)][] = $index;
+    }
+    $offsetting = $remainingCivi = [];
+    foreach ($civiOnly as $line) {
+      $key = $signature($line);
+      if (empty($fileBySignature[$key])) {
+        $remainingCivi[] = $line;
+        continue;
+      }
+      unset($fileOnly[array_shift($fileBySignature[$key])]);
+      $offsetting[$key] ??= ['kind' => $line['kind'], 'gross' => $line['gross'], 'fee' => $line['fee'], 'count' => 0, 'contribution_ids' => []];
+      $offsetting[$key]['count']++;
+      $offsetting[$key]['contribution_ids'][] = $line['contribution_id'];
+    }
+    return [$remainingCivi, array_values($fileOnly), array_values($offsetting)];
+  }
+
+  private function summariseOffsetting(array $offsetting): array {
+    if (!$offsetting) {
+      return [];
+    }
+    $total = $parts = [];
+    foreach ($offsetting as $group) {
+      $total[] = $group['count'];
+      $parts[] = sprintf('%d x %s gross %s fee %s', $group['count'], $group['kind'], $group['gross'], $group['fee']);
+    }
+    return [sprintf('Not listed: %d CiviCRM-only rows offset by file-only rows with the same type, gross & fee (%s) - probably id mismatches. Add isShowOffsetting=1 to list them.', array_sum($total), implode('; ', array_slice($parts, 0, 10)) . (count($parts) > 10 ? '; ...' : ''))];
   }
 
   private function loadProcessor(string $incomingDirectory): ?BaseAuditProcessor {
@@ -301,7 +360,7 @@ class BatchFileComparer {
     return $ids ? ', ' . implode(', ', $ids) : '';
   }
 
-  private function summarise(array $civiOnly, array $fileOnly, array $mismatched): array {
+  private function summarise(array $civiOnly, array $fileOnly, array $mismatched, bool $hasOffsetting): array {
     $lines = [];
     foreach (array_slice($civiOnly, 0, 10) as $line) {
       $text = sprintf('In CiviCRM but not the file: contribution %d (%s) %s gross %s fee %s%s.', $line['contribution_id'], $line['trxn_id'], $line['kind'], $line['gross'], $line['fee'], $this->describeIds($line));
@@ -329,7 +388,7 @@ class BatchFileComparer {
     if (max(count($civiOnly), count($fileOnly), count($mismatched)) > 10) {
       $lines[] = 'More differences than shown - see civicrm_only / file_only / amount_mismatch.';
     }
-    if (!$lines) {
+    if (!$lines && !$hasOffsetting) {
       $lines[] = 'Every file row matched a CiviCRM row with the same amounts - the discrepancy is not per-transaction (check fee-only/adjustment rows and the batch\'s saved expected totals against the file).';
     }
     return $lines;
