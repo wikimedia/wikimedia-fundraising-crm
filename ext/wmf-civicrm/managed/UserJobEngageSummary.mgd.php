@@ -13,8 +13,9 @@
  * instrument, column 0) isn't mapped either: Batch.payment_instrument_id
  * has no 'import' usage in core's own Batch.entityType.php, so it isn't
  * importable without a core fix.
- * Columns 1 (Settlement Gateway Account) and 8 (Batch Status) are synthetic
- * columns the datasource appends itself - see EngageSummary.
+ * Columns 1 (Settlement Gateway Account), 8 (Batch Status) and 9
+ * (Settlement Currency) are synthetic columns the datasource adds itself -
+ * see EngageSummary.
  */
 $importMappings = [
   ['name' => '', 'default_value' => NULL, 'column_number' => 0, 'entity_data' => []],
@@ -26,6 +27,7 @@ $importMappings = [
   ['name' => '', 'default_value' => NULL, 'column_number' => 6, 'entity_data' => []],
   ['name' => 'Batch.total', 'default_value' => NULL, 'column_number' => 7, 'entity_data' => []],
   ['name' => 'Batch.status_id', 'default_value' => NULL, 'column_number' => 8, 'entity_data' => []],
+  ['name' => 'Batch.batch_data.settlement_currency', 'default_value' => NULL, 'column_number' => 9, 'entity_data' => []],
 ];
 
 return [

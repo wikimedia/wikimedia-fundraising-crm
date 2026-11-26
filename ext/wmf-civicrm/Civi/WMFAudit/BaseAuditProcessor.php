@@ -2449,6 +2449,18 @@ abstract class BaseAuditProcessor {
   }
 
   /**
+   * Parse an audit file with the gateway's SmashPig parser - the same parse the batch's expected totals came from.
+   *
+   * @param string $path may be gzipped
+   *
+   * @return array
+   */
+  public function parseFileForDiagnosis(string $path): array {
+    // fopen in the SmashPig parsers handles the zlib wrapper, so .gz files need no temp copy.
+    return $this->get_audit_parser()->parseFile(str_ends_with($path, '.gz') ? 'compress.zlib://' . $path : $path);
+  }
+
+  /**
    * Glob the incoming & completed directories for files matching any of the patterns.
    *
    * @param string[] $patterns
