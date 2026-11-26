@@ -527,7 +527,45 @@ class PaypalAuditTest extends BaseAuditTestCase {
    */
   public function testValidateExplainsDiscrepancy(): void {
     $this->testSTLBraintreePaypalDonation();
-    $this->createTestEntity('Contribution', [
+    $this->createExtraSettledContribution();
+
+    $result = Batch::validate(FALSE)
+      ->addWhere('name', '=', 'paypal_20261123_GBP')
+      ->execute()->single();
+
+    $this->assertStringStartsWith('CiviCRM has 1 more transaction, GBP 2.00 more donations, GBP 0.45 more fees, GBP 1.55 more net than the batch expects.', $result['explanation']);
+    $this->assertStringContainsString('Check against ' . $this->getIncomingPath('stl_braintree_paypal_donation') . 'STL-20261123.01.009.csv.', $result['explanation']);
+  }
+
+  /**
+   * Batch.diagnose pins a one-transaction discrepancy on the contribution that is not in the STL file.
+   *
+   * @throws \CRM_Core_Exception
+   */
+  public function testDiagnoseExtraCiviContribution(): void {
+    $this->testSTLBraintreePaypalDonation();
+    $extraID = $this->createExtraSettledContribution();
+
+    $diagnosis = Batch::diagnose(FALSE)
+      ->addWhere('name', '=', 'paypal_20261123_GBP')
+      ->execute()->single();
+
+    $this->assertFalse($diagnosis['is_valid']);
+    $this->assertEquals(['count' => 1, 'gross' => 2.0, 'refunds' => 0.0, 'fee' => 0.45, 'net' => 1.55], $diagnosis['civicrm_minus_expected']);
+    $this->assertEquals(['STL-20261123.01.009.csv'], $diagnosis['file_check']['files']);
+    $this->assertCount(1, $diagnosis['file_check']['civicrm_only'], print_r($diagnosis, TRUE));
+    $this->assertEquals($extraID, $diagnosis['file_check']['civicrm_only'][0]['contribution_id']);
+    $this->assertEmpty($diagnosis['file_check']['file_only']);
+    $this->assertEmpty($diagnosis['file_check']['amount_mismatch']);
+    $this->assertEquals($diagnosis['civicrm_minus_expected'], $diagnosis['file_check']['explained']);
+    $this->assertContains('The transactions listed fully account for the discrepancy.', $diagnosis['summary']);
+  }
+
+  /**
+   * Settle a 2.00 GBP (0.45 fee) contribution to paypal_20261123_GBP that is not in its STL file.
+   */
+  private function createExtraSettledContribution(): int {
+    return $this->createTestEntity('Contribution', [
       'contact_id' => $this->ids['Contact']['donor'],
       'financial_type_id:name' => 'Cash',
       'total_amount' => 2,
@@ -540,14 +578,7 @@ class PaypalAuditTest extends BaseAuditTestCase {
       'contribution_settlement.settlement_currency' => 'GBP',
       'contribution_settlement.settled_donation_amount' => 2,
       'contribution_settlement.settled_fee_amount' => -0.45,
-    ], 'extra');
-
-    $result = Batch::validate(FALSE)
-      ->addWhere('name', '=', 'paypal_20261123_GBP')
-      ->execute()->single();
-
-    $this->assertStringStartsWith('CiviCRM has 1 more transaction, GBP 2.00 more donations, GBP 0.45 more fees, GBP 1.55 more net than the batch expects.', $result['explanation']);
-    $this->assertStringContainsString('Check against ' . $this->getIncomingPath('stl_braintree_paypal_donation') . 'STL-20261123.01.009.csv.', $result['explanation']);
+    ], 'extra')['id'];
   }
 
   /**
