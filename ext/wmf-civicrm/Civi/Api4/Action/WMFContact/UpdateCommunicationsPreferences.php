@@ -159,7 +159,7 @@ class UpdateCommunicationsPreferences extends AbstractAction {
         if (
           in_array($countryID,\Civi::settings()->get('thank_you_double_opt_in_countries')) &&
           !$this->hasDoubleOptInActivity() &&
-          !$isEmailUpdated // On email change we will send a verification email in step 5
+          !$isEmailUpdated // On email change double opt-in is sent once the change is verified
         ) {
           $this->sendDoubleOptInEmail($contact);
         }
@@ -475,7 +475,8 @@ class UpdateCommunicationsPreferences extends AbstractAction {
       'html' => $emailTemplate['html'],
       'text' => $emailTemplate['text'],
       'subject' => $emailTemplate['subject'],
-      'toEmail' => $this->email,
+      // Fallback only applies in the highly unlikely case that the user has no current email
+      'toEmail' => $contact['email.email'] ?: $this->email,
       'toName' => $contact['first_name'],
       'from' => "$fromName <$fromAddress>",
     ];

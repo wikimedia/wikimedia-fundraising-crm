@@ -1,0 +1,21 @@
+{
+  "indent": 2,
+  "esversion": 11,
+  "undef": true,
+  "predef": [
+    "angular",
+    "CRM",
+    "ts",
+    "jQuery",
+
+    "window",
+    "document",
+    "console",
+    "location",
+    "setTimeout",
+    "clearTimeout",
+    "alert",
+    "structuredClone"
+  ],
+  "-W097": true
+}

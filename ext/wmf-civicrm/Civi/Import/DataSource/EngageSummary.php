@@ -241,9 +241,9 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
     foreach ($sheetRows as $sheetRow) {
       $row = array_map(fn($value): string => self::trimWhitespace((string) ($value ?? '')), $sheetRow);
       if ($headerColumns === NULL) {
-        if (($row[self::HEADER_MARKER_COLUMN] ?? '') === self::HEADER_MARKER_VALUE) {
+        if (mb_strtolower($row[self::HEADER_MARKER_COLUMN] ?? '') === mb_strtolower(self::HEADER_MARKER_VALUE)) {
           $headerColumns = array_filter($row, fn(string $value): bool => $value !== '');
-          $batchIdIndex = array_search(self::BATCH_ID_HEADER, array_values($headerColumns), TRUE);
+          $batchIdIndex = self::getHeaderIndex(array_values($headerColumns), self::BATCH_ID_HEADER);
         }
         elseif (!$isEndowment && stripos(implode(' ', $row), 'Endowment') !== FALSE) {
           $isEndowment = TRUE;
@@ -305,9 +305,9 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
    * @return array[]
    */
   private function useDocsAsChecksForCardRows(array $headers, array $rows): array {
-    $typeIndex = array_search(self::BATCH_TYPE_HEADER, $headers, TRUE);
-    $docsIndex = array_search(self::DOCS_HEADER, $headers, TRUE);
-    $checksIndex = array_search(self::CHECKS_HEADER, $headers, TRUE);
+    $typeIndex = self::getHeaderIndex($headers, self::BATCH_TYPE_HEADER);
+    $docsIndex = self::getHeaderIndex($headers, self::DOCS_HEADER);
+    $checksIndex = self::getHeaderIndex($headers, self::CHECKS_HEADER);
     if ($typeIndex === FALSE || $docsIndex === FALSE || $checksIndex === FALSE) {
       return $rows;
     }
@@ -334,7 +334,7 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
    * @return array[]
    */
   private function convertBatchDateColumn(array $headers, array $rows): array {
-    $dateIndex = array_search(self::BATCH_DATE_HEADER, $headers, TRUE);
+    $dateIndex = self::getHeaderIndex($headers, self::BATCH_DATE_HEADER);
     if ($dateIndex === FALSE) {
       return $rows;
     }
@@ -365,7 +365,7 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
    * @throws \CRM_Core_Exception
    */
   private function convertGroupValueToSettlementGatewayAccountId(array $headers, array $rows, bool $isEndowment): array {
-    $groupValueIndex = array_search(self::GROUP_VALUE_HEADER, $headers, TRUE);
+    $groupValueIndex = self::getHeaderIndex($headers, self::GROUP_VALUE_HEADER);
     if ($groupValueIndex === FALSE) {
       return [$headers, $rows];
     }
@@ -395,7 +395,7 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
    * @return array[]
    */
   private function skipRowsWithoutBatchId(array $headers, array $rows): array {
-    $batchIdIndex = array_search(self::BATCH_ID_HEADER, $headers, TRUE);
+    $batchIdIndex = self::getHeaderIndex($headers, self::BATCH_ID_HEADER);
     if ($batchIdIndex === FALSE) {
       return $rows;
     }
@@ -412,7 +412,7 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
    * @return array[]
    */
   private function skipRowsWithoutChecks(array $headers, array $rows): array {
-    $checksIndex = array_search(self::CHECKS_HEADER, $headers, TRUE);
+    $checksIndex = self::getHeaderIndex($headers, self::CHECKS_HEADER);
     if ($checksIndex === FALSE) {
       return $rows;
     }
@@ -444,6 +444,22 @@ class EngageSummary extends \CRM_Import_DataSource implements DataSourceInterfac
       $row[] = self::BATCH_STATUS_VALUE;
     }
     return [$headers, $rows];
+  }
+
+  /**
+   * Case-insensitive array_search() for a header label.
+   *
+   * @param string[] $headers
+   *
+   * @return int|false
+   */
+  private static function getHeaderIndex(array $headers, string $label) {
+    foreach (array_values($headers) as $index => $header) {
+      if (mb_strtolower($header) === mb_strtolower($label)) {
+        return $index;
+      }
+    }
+    return FALSE;
   }
 
 }

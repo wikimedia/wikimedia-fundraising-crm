@@ -381,7 +381,7 @@ class BatchSummaryMailer {
       <td style=\"$cellRight\">" . ($remoteURL ? "<a href='{$remoteURL}'>{$remoteBatch['txn_number']}</a>" : '') . "</td>
       <td style=\"$cellRight\">{$exchangeRate}</td><td style=\"$cellRight\">" . ($this->isOutputCsv && $numberOfTransactions ? "<a href='{$transactionsUrl}'> Download Transactions</a>" . "<br><a href='{$journalUrl}'> Download Journals</a>" : '') . "</td>
     </tr>
-    ";
+    " . (empty($batch['explanation']) ? '' : "<tr><td colspan=\"9\" style=\"$cell color: #b30000;\">" . htmlspecialchars($batch['explanation'], ENT_QUOTES, 'UTF-8') . '</td></tr>');
   }
 
   /**

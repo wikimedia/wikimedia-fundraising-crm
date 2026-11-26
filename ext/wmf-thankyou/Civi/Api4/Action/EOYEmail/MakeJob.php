@@ -105,7 +105,9 @@ WHERE receive_date BETWEEN '{$year_start}' AND '{$year_end}'
 -- will still be included in the WHAT to email.
   AND contribution_recur.frequency_unit != 'year'
 GROUP BY email.email
-HAVING c > 1) as emails
+-- Don't include new donors who only had one payment in Dec, but do include
+-- those who had one payment in Jan from a previously existing recurring
+HAVING c > 1 OR MIN(contribution_recur.start_date) < '{$year_start}') as emails
 ";
 
     CRM_Core_DAO::executeQuery($email_insert_sql);

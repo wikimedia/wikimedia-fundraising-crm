@@ -2433,4 +2433,40 @@ abstract class BaseAuditProcessor {
     $this->batches[$file][$batchName] = $values + $this->batches[$file][$batchName];
   }
 
+  /**
+   * Audit files (full paths, incoming & completed) for a settlement batch.
+   *
+   * Gateways opt in by overriding this - the default empty array means 'no file lookup for this gateway yet'.
+   *
+   * @param string $batchName e.g. paypal_20261120_USD
+   *
+   * @return array{primary?: string[], other?: string[]}
+   *   primary - the files the batch's expected totals were built from;
+   *   other - where a stray transaction might really belong (e.g. neighbouring days, PayPal TRR vs STL).
+   */
+  public function getFilesForSettlementBatch(string $batchName): array {
+    return [];
+  }
+
+  /**
+   * Glob the incoming & completed directories for files matching any of the patterns.
+   *
+   * @param string[] $patterns
+   *
+   * @return string[]
+   */
+  protected function findAuditFiles(array $patterns): array {
+    $files = [];
+    $incoming = rtrim($this->getIncomingFilesDirectory(), DIRECTORY_SEPARATOR);
+    foreach ([$incoming, rtrim(str_replace('incoming', 'completed', $incoming), DIRECTORY_SEPARATOR)] as $directory) {
+      foreach ($patterns as $pattern) {
+        foreach (glob($directory . DIRECTORY_SEPARATOR . $pattern) ?: [] as $file) {
+          $files[basename($file)] = $file;
+        }
+      }
+    }
+    ksort($files);
+    return array_values($files);
+  }
+
 }

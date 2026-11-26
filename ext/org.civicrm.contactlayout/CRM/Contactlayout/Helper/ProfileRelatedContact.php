@@ -36,7 +36,8 @@ class CRM_Contactlayout_Helper_ProfileRelatedContact {
     if ($isReciprocal) {
       $relationshipJoinCondition = 'ON r.contact_id_a = c.id OR r.contact_id_b = c.id';
       $contactCondition = 'AND (r.contact_id_a = %1 OR r.contact_id_b = %1)';
-    } else {
+    }
+    else {
       $isAToB = $direction == 'ab';
       $relationshipJoinCondition = $isAToB ? 'ON r.contact_id_a = c.id' : 'ON r.contact_id_b = c.id';
       $contactCondition = $isAToB ? 'AND r.contact_id_b = %1' : 'AND r.contact_id_a = %1';

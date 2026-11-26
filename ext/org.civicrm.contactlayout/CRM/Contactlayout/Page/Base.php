@@ -1,15 +1,22 @@
 <?php
+use Civi\Api4\OptionValue;
+use Civi\Api4\Setting;
 use CRM_Contactlayout_ExtensionUtil as E;
 
 class CRM_Contactlayout_Page_Base extends CRM_Core_Page {
 
   public function run() {
-    $this->assign('perm');
-    $contactEditOptions = CRM_Core_OptionGroup::values('contact_edit_options', TRUE, FALSE, FALSE, NULL, 'name');
-    $settings = \Civi\Api4\Setting::get(FALSE)
+    $contactEditOptions = OptionValue::get(FALSE)
+      ->addSelect('name', 'value')
+      ->addWhere('option_group_id:name', '=', 'contact_edit_options')
+      ->addWhere('is_active', '=', TRUE)
+      ->addOrderBy('weight')
+      ->execute()
+      ->column('value', 'name');
+    $settings = Setting::get(FALSE)
       ->addSelect('contact_edit_options', 'contactlayout_default_tabs')
       ->execute()
-      ->indexBy('name')->column('value');
+      ->column('value', 'name');
 
     Civi::resources()->addVars(E::SHORT_NAME, [
       'layouts' => (array) civicrm_api4('ContactLayout', 'get', ['orderBy' => ['weight' => 'ASC']]),
@@ -29,9 +36,6 @@ class CRM_Contactlayout_Page_Base extends CRM_Core_Page {
       'systemDefaultsEnabled' => array_intersect($contactEditOptions, $settings['contact_edit_options']),
       'defaultTabs' => $settings['contactlayout_default_tabs'] ?: NULL,
     ]);
-
-    // JS for editing profile blocks
-    CRM_UF_Page_ProfileEditor::registerProfileScripts();
 
     // Load AngularJs module.
     Civi::service('angularjs.loader')->addModules('contactlayout');

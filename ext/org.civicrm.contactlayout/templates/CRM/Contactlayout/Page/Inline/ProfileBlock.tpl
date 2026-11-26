@@ -14,15 +14,12 @@
       {/if}
       {foreach from=$profileBlock item='profileRow'}
         <div class="crm-summary-row profile-block-{$profileRow.name}">
+        {if $profileRow.name == 'tag'}
+          {include file="CRM/Contact/Page/Inline/Tags.tpl" tagsLabel=$profileRow.label}
+        {else}
           <div class="crm-label">{$profileRow.label|escape}</div>
           <div class="crm-content">
-            {if $profileRow.name == 'tag'}
-              {foreach from=$contactTag item=tagName key=tagId}
-                <span class="crm-tag-item" {if !empty($allTags.$tagId.color)}style="background-color: {$allTags.$tagId.color}; color: {$allTags.$tagId.color|colorContrast};"{/if} title="{$allTags.$tagId.description|escape}">
-                  {$tagName}
-                </span>
-              {/foreach}
-            {elseif $profileRow.name == 'image_URL' && !empty($imageURL)}
+            {if $profileRow.name == 'image_URL' && !empty($imageURL)}
               <div id="crm-contact-thumbnail">
                 {include file="CRM/Contact/Page/ContactImage.tpl"}
               </div>
@@ -30,6 +27,7 @@
               {$profileRow.value|purify}
             {/if}
           </div>
+        {/if}
         </div>
       {/foreach}
     </div>

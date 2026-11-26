@@ -1,4 +1,4 @@
-(function(angular, $, _) {
+(function(angular, $) {
   "use strict";
 
   angular.module('contactlayout').component('contactLayoutEditTabs', {
@@ -12,14 +12,16 @@
     controller: function($scope) {
       const ts = $scope.ts = CRM.ts('contactlayout');
       const ctrl = this;
-      const allTabs = _.indexBy(CRM.vars.contactlayout.tabs, 'id');
+      const allTabs = Object.fromEntries(CRM.vars.contactlayout.tabs.map(tab => [tab.id, tab]));
 
       let editingTabIcon;
 
       // Settings for ui-sortable
+      // 'a' is deliberately not cancelled: the tab body sits inside the anchor, so
+      // cancelling on it would leave nothing draggable.
       this.sortableOptions = {
         containment: '#cse-tabs-container',
-        cancel: 'input,textarea,button,select,option,a,.crm-editable-enabled,[contenteditable]'
+        cancel: 'input,textarea,button,select,option,.crm-editable-enabled,[contenteditable]'
       };
 
       this.$onInit = () => {
@@ -74,4 +76,4 @@
     }
   });
 
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);

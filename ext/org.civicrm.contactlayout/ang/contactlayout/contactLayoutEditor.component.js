@@ -1,16 +1,15 @@
-(function(angular, $, _) {
+(function(angular, $) {
   "use strict";
 
   angular.module('contactlayout').component('contactLayoutEditor', {
     templateUrl: '~/contactlayout/contactLayoutEditor.html',
-    controller: function($rootScope, $scope, $timeout, $q, contactLayoutRelationshipOptions,
+    controller: function($rootScope, $scope, $timeout, contactLayoutRelationshipOptions,
              crmApi4, crmStatus, dialogService) {
       // Adding ts to $rootScope makes it available to dialogService modals
       const ts = $rootScope.ts = $scope.ts = CRM.ts('contactlayout'),
         ctrl = this,
         vars = CRM.vars.contactlayout,
-        profilesReady = $q.defer(),
-        allTabs = _.indexBy(vars.tabs, 'id');
+        allTabs = Object.fromEntries(vars.tabs.map(tab => [tab.id, tab]));
       $scope.selectedLayout = null;
       $scope.changesSaved = 1;
       $scope.saving = false;
@@ -24,7 +23,6 @@
       $scope.systemBlocks = [];
       $scope.systemLayout = [];
       let newLayoutCount = 0;
-      const profileEntities = [{entity_name: "contact_1", entity_type: "IndividualModel"}];
       const allBlocks = [];
       // Default icons if missing from the database
       const CONTACT_ICONS = {
@@ -123,17 +121,12 @@
 
       $scope.editBlock = function(block) {
         let edited = false;
-        if (block.profile_id) {
-          profilesReady.promise.then(function() {
-            editProfile(block.profile_id);
-          });
-        }
         // Cannot use angular pages in a popup
-        else if (block.edit.includes('#')) {
+        if (!block.popup) {
           window.open(CRM.url(block.edit), '_blank');
         } else {
           CRM.loadForm(CRM.url(block.edit))
-            .on('crmFormSuccess', function() {
+            .on('crmPopupFormSuccess crmFormSuccess', function(e) {
               edited = true;
             })
             .on('crmLoad', function(e) {
@@ -147,7 +140,6 @@
             .on('dialogclose', function() {
               if (edited) {
                 reloadBlocks();
-                CRM.Schema.reloadModels();
               }
             });
         }
@@ -261,10 +253,12 @@
       }
 
       $scope.deleteBlock = function(block) {
-        const message = [_.escape(ts('Delete the block "%1"?', {1: block.title}))];
+        const message = [
+          CRM.utils.escapeHtml(ts('Delete the block "%1"?', {1: block.title}))
+        ];
         ctrl.data.layouts.forEach(layout => {
           if (getBlocksInLayout(layout).some(item => item.name === block.name)) {
-            message.push(_.escape(ts('It is currently part of the "%1" layout.', {1: layout.label})));
+            message.push(CRM.utils.escapeHtml(ts('It is currently part of the "%1" layout.', {1: layout.label})));
           }
         });
         CRM.confirm({
@@ -366,50 +360,16 @@
       };
 
       $scope.newProfile = function() {
-        profilesReady.promise.then(newProfile);
+        // contact_summary=1 tells this extension's buildForm hook to pre-tick the placements a
+        // block needs; the profile itself is created entirely by the core form.
+        CRM.loadForm(CRM.url('civicrm/admin/uf/group/add', {reset: 1, action: 'add', contact_summary: 1}))
+          .on('crmFormSuccess', (e, data) => {
+            if (data.id) {
+              reloadBlocks();
+              window.open(CRM.url('civicrm/admin/uf/group/field') + '#/?gid=' + data.id, '_blank');
+            }
+          });
       };
-
-      function newProfile() {
-        const profileEditor = new CRM.Designer.DesignerDialog({
-          findCreateUfGroupModel: function(options) {
-            // Initialize new UF group
-            const ufGroupModel = new CRM.UF.UFGroupModel();
-            ufGroupModel.getRel('ufEntityCollection').reset(profileEntities);
-            options.onLoad(ufGroupModel);
-          }
-        }).render();
-        CRM.designerApp.vent.off('ufSaved', null, 'contactlayout');
-        CRM.designerApp.vent.on('ufSaved', function() {
-          const newId = profileEditor.model.get('id');
-          // Save a record of this new profile as a contact summary block so this extension recognizes it.
-          // Also save it as a profile form so that you can click to edit and it will render a form on the summary screen.
-          reloadBlocks([
-            ['UFJoin', 'create', {values: {module: "Profile", uf_group_id: newId}}],
-            ['UFJoin', 'create', {values: {module: "Contact Summary", uf_group_id: newId}}]
-          ]);
-        }, 'contactlayout');
-      }
-
-      function editProfile(ufId) {
-        new CRM.Designer.DesignerDialog({
-          // Copied from crm.profile-selector.js doEdit() method.
-          findCreateUfGroupModel: function(options) {
-            CRM.api('UFGroup', 'getsingle', {id: ufId, "api.UFField.get": 1}, {
-              success: function(formData) {
-                // Note: With chaining, API returns some extraneous keys that aren't part of UFGroupModel
-                const ufGroupModel = new CRM.UF.UFGroupModel(_.pick(formData, _.keys(CRM.UF.UFGroupModel.prototype.schema)));
-                ufGroupModel.setUFGroupModel(ufGroupModel.calculateContactEntityType(), profileEntities);
-                ufGroupModel.getRel('ufFieldCollection').reset(_.values(formData["api.UFField.get"].values));
-                options.onLoad(ufGroupModel);
-              }
-            });
-          }
-        }).render();
-        CRM.designerApp.vent.off('ufSaved', null, 'contactlayout');
-        CRM.designerApp.vent.on('ufSaved', function() {
-          reloadBlocks();
-        }, 'contactlayout');
-      }
 
       // Called when pressing the save button
       $scope.save = function() {
@@ -476,7 +436,8 @@
 
       // Return the editable properties of a block
       function getBlockProperties(block) {
-        return _.pick(block, 'name', 'title', 'collapsible', 'collapsed', 'showTitle', 'related_rel');
+        const allowed = ['name', 'title', 'collapsible', 'collapsed', 'showTitle', 'related_rel'];
+        return Object.fromEntries(Object.entries(block).filter(([k, v]) => allowed.includes(k) && v !== undefined));
       }
 
       // Write layout data to the server
@@ -526,7 +487,7 @@
       }
 
       function loadLayout(layout) {
-        layout.palette = _.cloneDeep(allBlocks);
+        layout.palette = structuredClone(allBlocks);
 
         if (!layout.settings || Array.isArray(layout.settings)) {
           layout.settings = {};
@@ -601,16 +562,6 @@
       this.$onInit = function() {
         loadBlocks(vars.blocks);
         loadLayouts();
-
-        // Load schema for backbone-based profile editor
-        CRM.civiSchema = {
-          IndividualModel: null,
-          OrganizationModel: null,
-          HouseholdModel: null
-        };
-        CRM.Schema.reloadModels().then(function() {
-          profilesReady.resolve();
-        });
       };
 
       // Set changesSaved to true on initial load, false thereafter whenever changes are made to the model
@@ -621,4 +572,4 @@
     }
   });
 
-})(angular, CRM.$, CRM._);
+})(angular, CRM.$);
