@@ -126,13 +126,17 @@ class BatchFileComparer {
       $isReversal = (float) ($message['settled_total_amount'] ?? 0) < 0;
       $keys = $isReversal
         ? [$message['gateway_refund_id'] ?? NULL, $message['backend_processor_reversal_id'] ?? NULL, $message['gateway_parent_id'] ?? NULL, $message['backend_processor_parent_id'] ?? NULL]
-        : [$message['gateway_txn_id'] ?? NULL, $message['capture_id'] ?? NULL];
+        : [$message['gateway_txn_id'] ?? NULL, $message['capture_id'] ?? NULL, $message['backend_processor_txn_id'] ?? NULL];
       $rows[] = [
         'kind' => $isReversal ? 'reversal' : 'donation',
         'type' => $message['type'] ?? 'donation',
         'batch' => $rowBatch,
         'gateway' => $message['gateway'] ?? '',
         'gateway_txn_id' => $message['gateway_txn_id'] ?? '',
+        'capture_id' => $message['capture_id'] ?? '',
+        'backend_processor_txn_id' => $message['backend_processor_txn_id'] ?? '',
+        'payment_orchestrator_reconciliation_id' => $message['payment_orchestrator_reconciliation_id'] ?? '',
+        'order_id' => $message['order_id'] ?? '',
         'keys' => array_values(array_unique(array_filter($keys))),
         'gross' => round((float) ($message['settled_total_amount'] ?? 0), 2),
         'fee' => round((float) ($message['settled_fee_amount'] ?? 0), 2),
@@ -148,7 +152,7 @@ class BatchFileComparer {
    */
   private function getCiviLines(): array {
     $contributions = Contribution::get(FALSE)
-      ->addSelect('id', 'trxn_id', 'contribution_status_id:name', 'contribution_settlement.*', 'contribution_extra.gateway_txn_id', 'contribution_extra.capture_id', 'contribution_extra.backend_processor_txn_id', 'contribution_extra.backend_processor_reversal_id')
+      ->addSelect('id', 'trxn_id', 'invoice_id', 'contribution_status_id:name', 'contribution_settlement.*', 'contribution_extra.gateway_txn_id', 'contribution_extra.capture_id', 'contribution_extra.backend_processor_txn_id', 'contribution_extra.backend_processor_reversal_id', 'contribution_extra.payment_orchestrator_reconciliation_id')
       ->addClause('OR', ['contribution_settlement.settlement_batch_reference', '=', $this->batchName], ['contribution_settlement.settlement_batch_reversal_reference', '=', $this->batchName])
       ->addWhere('is_template', '=', FALSE)
       ->execute();
@@ -158,6 +162,11 @@ class BatchFileComparer {
         'contribution_id' => $contribution['id'],
         'trxn_id' => $contribution['trxn_id'],
         'status' => $contribution['contribution_status_id:name'],
+        'gateway_txn_id' => $contribution['contribution_extra.gateway_txn_id'],
+        'capture_id' => $contribution['contribution_extra.capture_id'],
+        'backend_processor_txn_id' => $contribution['contribution_extra.backend_processor_txn_id'],
+        'payment_orchestrator_reconciliation_id' => $contribution['contribution_extra.payment_orchestrator_reconciliation_id'],
+        'order_id' => $contribution['invoice_id'],
       ];
       $txnKeys = [$contribution['contribution_extra.gateway_txn_id'], $contribution['contribution_extra.capture_id'], $contribution['contribution_extra.backend_processor_txn_id']];
       if ($contribution['contribution_settlement.settlement_batch_reference'] === $this->batchName) {
@@ -244,6 +253,7 @@ class BatchFileComparer {
       ->addClause('OR',
         ['contribution_extra.gateway_txn_id', 'IN', $keys],
         ['contribution_extra.capture_id', 'IN', $keys],
+        ['contribution_extra.backend_processor_txn_id', 'IN', $keys],
         ['contribution_extra.backend_processor_reversal_id', 'IN', $keys]
       )
       ->setLimit(5)
@@ -278,10 +288,23 @@ class BatchFileComparer {
     return $explained;
   }
 
+  /**
+   * The ids on an unmatched row, so a missed match can be traced by eye.
+   */
+  private function describeIds(array $row): string {
+    $ids = [];
+    foreach (['gateway_txn_id', 'capture_id', 'backend_processor_txn_id', 'payment_orchestrator_reconciliation_id', 'order_id'] as $field) {
+      if (!empty($row[$field])) {
+        $ids[] = $field . ' ' . $row[$field];
+      }
+    }
+    return $ids ? ', ' . implode(', ', $ids) : '';
+  }
+
   private function summarise(array $civiOnly, array $fileOnly, array $mismatched): array {
     $lines = [];
     foreach (array_slice($civiOnly, 0, 10) as $line) {
-      $text = sprintf('In CiviCRM but not the file: contribution %d (%s) %s gross %s fee %s.', $line['contribution_id'], $line['trxn_id'], $line['kind'], $line['gross'], $line['fee']);
+      $text = sprintf('In CiviCRM but not the file: contribution %d (%s) %s gross %s fee %s%s.', $line['contribution_id'], $line['trxn_id'], $line['kind'], $line['gross'], $line['fee'], $this->describeIds($line));
       foreach ($line['found_in'] as $found) {
         $text .= sprintf(' Found in %s for batch %s%s.', $found['file'], $found['batch'], $found['batch'] === $this->batchName ? '' : ' - its settlement batch reference looks wrong');
       }
@@ -291,7 +314,7 @@ class BatchFileComparer {
       $lines[] = $text;
     }
     foreach (array_slice($fileOnly, 0, 10) as $row) {
-      $text = sprintf('In %s but not settled to this batch in CiviCRM: %s %s %s gross %s fee %s.', $row['file'], $row['gateway'], $row['type'], $row['gateway_txn_id'], $row['gross'], $row['fee']);
+      $text = sprintf('In %s but not settled to this batch in CiviCRM: %s %s gross %s fee %s%s.', $row['file'], $row['gateway'], $row['type'], $row['gross'], $row['fee'], $this->describeIds($row));
       if (!$row['civicrm']) {
         $text .= ' No matching contribution - it is still missing (re-run the audit, or check the pending/missing queues).';
       }
