@@ -60,6 +60,7 @@ function wmf_civicrm_civicrm_config(&$config) {
 
   $dispatcher->addListener('hook_civicrm_pre::Individual', ['Civi\WMFHook\Contact', 'pre']);
   $dispatcher->addListener('hook_civicrm_pre::Organization', ['Civi\WMFHook\Contact', 'pre']);
+  $dispatcher->addListener('hook_civicrm_merge', ['Civi\WMFHook\Contact', 'merge']);
   // Gift coding runs late so it sees params as modified by the other listeners,
   // GL code after it because it depends on the appeal, and FinancialDataChange
   // last so it sees the GL code.

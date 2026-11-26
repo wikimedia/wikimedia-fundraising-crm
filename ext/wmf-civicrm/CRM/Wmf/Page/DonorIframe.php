@@ -139,7 +139,7 @@ class CRM_Wmf_Page_DonorIframe extends IframePage {
         'wmf_donor.donor_status_recur_overall',
         'wmf_donor.donor_status_recur_overall:label',
         'Communication.last_donor_portal_login',
-        'Prospect.Relationship_Manager:label'
+        'Prospect.Relationship_Manager.display_name'
       )
       ->execute()->first();
     $activeRecurCount = $this->getActiveRecurCount($contactID);
@@ -159,7 +159,7 @@ class CRM_Wmf_Page_DonorIframe extends IframePage {
       'is_secondary_email' => FALSE,
       'shares_email_with_daf' => FALSE,
       'donor_portal_login' => $this->getRecentDonorPortalLogin($contact['Communication.last_donor_portal_login']),
-      'relationship_manager' => $contact['Prospect.Relationship_Manager:label'],
+      'relationship_manager' => $contact['Prospect.Relationship_Manager.display_name'],
       'is_legacy_society' => $this->isLegacySocietyMember($contactID),
       'is_portal_eligible' => $activeRecurCount && PreferencesLink::isDonorPortalEligible($contactID),
       'active_recur_count' => $activeRecurCount,
