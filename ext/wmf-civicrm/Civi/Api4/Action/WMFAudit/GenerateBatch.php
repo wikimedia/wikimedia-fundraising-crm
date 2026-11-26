@@ -958,11 +958,7 @@ class GenerateBatch extends AbstractAction {
     if (empty($files['primary'])) {
       return 'No audit file was found for this batch in the incoming or completed directories.';
     }
-    $text = 'Check against ' . implode(', ', $files['primary']) . '.';
-    if (!empty($files['other'])) {
-      $text .= ' A stray transaction may be in ' . implode(', ', array_map('basename', $files['other'])) . '.';
-    }
-    return $text;
+    return 'Batch file: ' . implode(', ', $files['primary']) . '.';
   }
 
   /**

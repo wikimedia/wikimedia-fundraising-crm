@@ -533,8 +533,8 @@ class PaypalAuditTest extends BaseAuditTestCase {
       ->addWhere('name', '=', 'paypal_20261123_GBP')
       ->execute()->single();
 
-    $this->assertStringStartsWith('CiviCRM has 1 more transaction, GBP 2.00 more donations, GBP 0.45 more fees, GBP 1.55 more net than the batch expects.', $result['explanation']);
-    $this->assertStringContainsString('Check against ' . $this->getIncomingPath('stl_braintree_paypal_donation') . 'STL-20261123.01.009.csv.', $result['explanation']);
+    $this->assertStringStartsWith('CiviCRM has 1 more transaction than the batch expects (donations +GBP 2.00, fees +GBP 0.45, net +GBP 1.55).', $result['explanation']);
+    $this->assertStringContainsString('Batch file: ' . $this->getIncomingPath('stl_braintree_paypal_donation') . 'STL-20261123.01.009.csv.', $result['explanation']);
   }
 
   /**
