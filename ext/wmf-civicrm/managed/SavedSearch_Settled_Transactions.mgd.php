@@ -41,6 +41,9 @@ return [
             'contribution_extra.payment_orchestrator_reconciliation_id',
             'contribution_extra.backend_processor',
             'contribution_extra.backend_processor_txn_id',
+            'contribution_extra.auth_id',
+            'contribution_extra.capture_id',
+            'contribution_extra.backend_processor_reversal_id',
             'contribution_extra.source_type',
             'invoice_id',
             'contact_id',
@@ -202,6 +205,24 @@ return [
               'tally' => [
                 'fn' => NULL,
               ],
+            ],
+            [
+              'type' => 'field',
+              'key' => 'contribution_extra.auth_id',
+              'label' => E::ts('Auth ID'),
+              'sortable' => TRUE,
+            ],
+            [
+              'type' => 'field',
+              'key' => 'contribution_extra.capture_id',
+              'label' => E::ts('Capture ID'),
+              'sortable' => TRUE,
+            ],
+            [
+              'type' => 'field',
+              'key' => 'contribution_extra.backend_processor_reversal_id',
+              'label' => E::ts('Backend Processor Reversal ID'),
+              'sortable' => TRUE,
             ],
             [
               'type' => 'field',
